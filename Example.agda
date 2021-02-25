@@ -6,12 +6,13 @@ open import Prelude
 open import CBPV
 open import CostEffect
 
-postulate
-  bool : tp pos
-  tt ff : val bool
+module Bool where
+  postulate
+    bool : tp pos
+    tt ff : val bool
 
 boolc : tp pos
-boolc = ► bool
+boolc = ► Bool.bool
 
 
 -- This version of the dependent product costs a step to apply.
@@ -24,11 +25,11 @@ postulate
   𝒱 : □
   [_] : 𝒱 → tp pos
   _⇒_ : 𝒱 → 𝒱 → 𝒱
-  bool' : 𝒱
+  𝔹 : 𝒱
 
   [⇒] : ∀ {α β} → [ α ⇒ β ] ≡ U (Πc [ α ] λ _ → F [ β ])
-  [bool'] : [ bool' ] ≡ boolc
-  {-# REWRITE [⇒] [bool'] #-}
+  [𝔹] : [ 𝔹 ] ≡ boolc
+  {-# REWRITE [⇒] [𝔹] #-}
 
 infix 10 ⊢_
 
@@ -47,13 +48,16 @@ app α β M N =
   bind (F _) M λ f →
   ▷/match (F [ β ]) (f x) (λ z → z)
 
-tt' : ⊢ bool'
-tt' = ret (►/ret _ tt)
+tt : ⊢ 𝔹
+tt = ret (►/ret _ Bool.tt)
 
-fun : ⊢ bool' ⇒ bool'
-fun = lam bool' bool' λ x → ►/match (F [ bool' ]) x λ b → tt'
+ff : ⊢ 𝔹
+ff = ret (►/ret _ Bool.ff)
 
-test = app bool' bool' fun tt'
+fun : ⊢ 𝔹 ⇒ 𝔹
+fun = lam 𝔹 𝔹 λ x → ►/match (F [ 𝔹 ]) x λ b → tt
+
+test = app 𝔹 𝔹 fun tt
 
 _ : ∀ {α β f u} → app α β (lam α β f) (ret u) ≡ step (F [ β ]) (f u)
 _ = refl
