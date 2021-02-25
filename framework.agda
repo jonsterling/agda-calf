@@ -23,6 +23,13 @@ open sub public
 symm : {A : □} {a b : A} → a ≡ b → b ≡ a
 symm refl = refl
 
+record iso (A B : □) : □ where
+  field
+    fwd : A → B
+    bwd : B → A
+    fwd-bwd : ∀ x → fwd (bwd x) ≡ x
+    bwd-fwd : ∀ x → bwd (fwd x) ≡ x
+
 postulate
   ext : Ω
   mode : □
@@ -99,13 +106,21 @@ postulate
 
 
 -- I am a little less scared of this version.
--- TODO: make the following operations be the identity underneath 'ext'.
 postulate
   ► : tp pos → tp pos
   ►/ret : ∀ A → val A → val (► A)
   ►/match : ∀ {A} X → val (► A) → (val A → cmp X) → cmp X
   ►/match/ret : ∀ {A X} {u : val A} {f : val A → cmp X} → ►/match X (►/ret A u) f ≡ step X (f u)
   {-# REWRITE ►/match/ret #-}
+
+  ►/ext : ∀ A → ext → val (► A) → val A
+  ►/ext/β : ∀ {A} {z : ext} {u : val A} → ►/ext A z (►/ret A u) ≡ u
+  {-# REWRITE ►/ext/β #-}
+
+  ►/ext/η : ∀ {A} (z : ext) (u : val (► A)) → ►/ret A (►/ext A z u) ≡ u
+
+►/ext/match : ∀ {A X} {u : val (► A)} {f : val A → cmp X} {z : ext} → ►/match X u f ≡ f (►/ext A z u)
+►/ext/match {A} {X} {u} {f} {z} rewrite (symm (►/ext/η z u)) = step/ext {X} (f (►/ext A z u)) z
 
 -- I don't know the above is strong enough, but at least it seems not
 -- too strong lol.  The thing I am struggling with is, I basically
@@ -119,6 +134,15 @@ postulate
   ▷/match : ∀ {X} Y → cmp (▷ X) → (cmp X → cmp Y) → cmp Y
   ▷/match/ret : ∀ {X Y} {e : cmp X} {f : cmp X → cmp Y} → ▷/match Y (▷/ret X e) f ≡ step Y (f e)
   {-# REWRITE ▷/match/ret #-}
+
+  ▷/ext : ∀ X → ext → cmp (▷ X) → cmp X
+  ▷/ext/β : ∀ {X} {z : ext} {u : cmp X} → ▷/ext X z (▷/ret X u) ≡ u
+  {-# REWRITE ▷/ext/β #-}
+
+  ▷/ext/η : ∀ {X} (z : ext) (u : cmp (▷ X)) → ▷/ret X (▷/ext X z u) ≡ u
+
+▷/ext/match : ∀ {Y X} {u : cmp (▷ Y)} {f : cmp Y → cmp X} {z : ext} → ▷/match X u f ≡ f (▷/ext Y z u)
+▷/ext/match {Y} {X} {u} {f} {z} rewrite (symm (▷/ext/η z u)) = step/ext {X} (f (▷/ext Y z u)) z
 
 postulate
   bool : tp pos
