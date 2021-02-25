@@ -10,11 +10,20 @@ open import CostEffect
 
 postulate
   ext : Ω
-  step/ext : ∀ X → (e : cmp X) → ext → step X e ≡ e
-  -- sadly the above cannot be made an Agda rewrite rule
+
+◯ : □ → □
+◯ A = ext → A
 
 postulate
-  ►/ext : ∀ A → ext → val (► A) → val A
+  step/ext : ∀ X → (e : cmp X) → ◯ (step X e ≡ e)
+  -- sadly the above cannot be made an Agda rewrite rule
+
+
+-- Underneath the open modality, we ensure that the abstract types
+-- that force you to take steps don't do anything.
+
+postulate
+  ►/ext : ∀ A → ◯ (val (► A) → val A)
   ►/ext/β : ∀ {A} {z : ext} {u : val A} → ►/ext A z (►/ret A u) ≡ u
   {-# REWRITE ►/ext/β #-}
 
@@ -24,7 +33,7 @@ postulate
 ►/ext/match {A} {X} {u} {f} {z} rewrite (symm (►/ext/η z u)) = step/ext X (f (►/ext A z u)) z
 
 postulate
-  ▷/ext : ∀ X → ext → cmp (▷ X) → cmp X
+  ▷/ext : ∀ X → ◯ (cmp (▷ X) → cmp X)
   ▷/ext/β : ∀ {X} {z : ext} {u : cmp X} → ▷/ext X z (▷/ret X u) ≡ u
   {-# REWRITE ▷/ext/β #-}
 
