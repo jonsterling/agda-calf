@@ -1,0 +1,24 @@
+basically my fear is the following.
+
+Suppose have a computation e : F bool, and you also have ● (∃ e' : F bool, e = step e').
+First, we note that ● (∃ e' : F bool, e = step e') is equivalent to (∃ e' : F bool, e = step e').
+That's because we already have ○ (∃ e' : F bool, e = step e') choosing e itself. So by the fracture
+theorem, these two things combine to be the ordinary statement.
+
+But on free algebras, we would expect to have "step" be
+injective. We haven't added such a rule, but it would hold in the
+obvious model. In this case, the principle of unique choice is
+going to bite us: the injectivity of "step" on free algebras means
+that the element e' such that e = step e' is unique, hence we may
+extract it.
+
+All of the above gives us a function of the following type:
+
+        (e : {F bool | ● ∃ e' : F bool, e = step e'}) → {e' : F bool | e' = step e}
+
+
+Naively this feels like it subverts the cost discipline, because it
+allows us to replace a computation by its value. Suppose that we
+have a function (bool -> F bool) that always computes its results
+in five steps. Then we seem to be able to replace this by a
+function that computes its result instantly.
