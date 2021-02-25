@@ -50,6 +50,7 @@ postulate
 
 
 postulate
+  -- the primitive "at least one step" refinement
   ▷ : tp neg → tp neg
   ▷/inv : ∀ {X} → cmp X → cmp (▷ X)
   ▷/dir : ∀ {X} → cmp (▷ X) → cmp X
@@ -57,6 +58,11 @@ postulate
   ▷/step : ∀ {X} {e : cmp (▷ X)} → step (▷ X) e ≡ ▷/inv (▷/dir e)
   {-# REWRITE ▷/beta ▷/step #-}
 
-  Π : (A : tp pos) (X[_] : val A → tp neg) → tp neg
-  Π/cmp : ∀ {A} {X[_] : val A → tp neg} → val (U (Π A X[_])) ≡ ((x : val A) → cmp X[ x ])
+  -- cost-insensitive dependent product
+  Π : (A : tp pos) (X : val A → tp neg) → tp neg
+  Π/cmp : ∀ {A} {X : val A → tp neg} → val (U (Π A X)) ≡ ((x : val A) → cmp (X x))
   {-# REWRITE Π/cmp #-}
+
+  Πc : (A : tp pos) (X : val A → tp neg) → tp neg
+  Πc/cmp : ∀ {A} {X : val A → tp neg} → val (U (Πc A X)) ≡ ((x : val A) → cmp (▷ (X x)))
+  {-# REWRITE Πc/cmp #-}
