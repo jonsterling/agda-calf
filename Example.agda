@@ -5,11 +5,14 @@ module Example where
 open import Prelude
 open import Metalanguage
 open import CostEffect
+open import PhaseDistinction
 
 module Bool where
+  data Bool : □ where tt ff : Bool
   postulate
     bool : tp pos
-    tt ff : val bool
+    bool/decode : val bool ≡ Bool
+    {-# REWRITE bool/decode #-}
 
 boolc : tp pos
 boolc = ► Bool.bool
@@ -54,10 +57,31 @@ tt = ret (►/ret _ Bool.tt)
 ff : ⊢ 𝔹
 ff = ret (►/ret _ Bool.ff)
 
-fun : ⊢ 𝔹 ⇒ 𝔹
-fun = lam 𝔹 𝔹 λ x → ►/match (F [ 𝔹 ]) x λ b → tt
+not : ⊢ 𝔹 ⇒ 𝔹
+not =
+  ret λ x →
+  ▷/ret
+   (F [ 𝔹 ])
+   (►/match (F [ 𝔹 ]) x λ where
+     Bool.tt → ff
+     Bool.ff → tt)
 
-test = app 𝔹 𝔹 fun tt
+notnot : ⊢ 𝔹 ⇒ 𝔹
+notnot = lam 𝔹 𝔹 (λ x → app 𝔹 𝔹 not (app 𝔹 𝔹 not (ret x)))
+
+
+match-unfold : ∀ {A} {P : val (► A) → □} → ◯ ((∀ x → P (►/ret _ x)) → ∀ x → P x)
+match-unfold {A} {P} z f x rewrite (symm (►/ext/η z x))= f (►/ext A z x)
+
+foo : ◯ (notnot ≡ lam 𝔹 𝔹 (λ x → ret x))
+foo z =
+  cong ret
+   (funext
+    (match-unfold z λ where
+     Bool.tt → cong (▷/ret _) (trans (step/ext (F boolc) _ z) (trans (step/ext (F boolc) _ z) (trans (step/ext (F boolc) _ z) (step/ext (F boolc) _ z))))
+     Bool.ff → cong (▷/ret _) (trans (step/ext (F boolc) _ z) (trans (step/ext (F boolc) _ z) (trans (step/ext (F boolc) _ z) (step/ext (F boolc) _ z))))))
+
+test = app 𝔹 𝔹 not tt
 
 _ : ∀ {α β f u} → app α β (lam α β f) (ret u) ≡ step (F [ β ]) (f u)
 _ = refl
