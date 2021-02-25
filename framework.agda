@@ -20,8 +20,6 @@ record sub (A : □) (ϕ : A → Ω) : □ where
 
 open sub public
 
-
-
 symm : {A : □} {a b : A} → a ≡ b → b ≡ a
 symm refl = refl
 
@@ -100,30 +98,22 @@ postulate
   {-# REWRITE Σ++/decode #-}
 
 
+-- The interesting thing is that these don't seem to actually be the same as the image of step, etc.?
+-- It ultimately seems kind of important that these are abtract. But this makes me concerned about
+-- proving the correctness/adequacy of the whole setup.
 postulate
-  ▷ : (X : tp neg) → tp neg
-  ▷/decode : ∀ {X} → val (U (▷ X)) ≡ sub (cmp X) (image _ _ (step X))
-  {-# REWRITE ▷/decode #-}
+  ▷ : tp neg → tp neg
+  ▷/inv : ∀ {X} → cmp X → cmp (▷ X)
+  ▷/dir : ∀ {X} → cmp (▷ X) → cmp X
+  ▷/beta : ∀ {X} {e : cmp X} → ▷/dir {X} (▷/inv e) ≡ step X e
+  ▷/step : ∀ {X} {e : cmp (▷ X)} → step (▷ X) e ≡ ▷/inv (▷/dir e)
+  {-# REWRITE ▷/beta ▷/step #-}
 
-▷/dir : (X : tp neg) → cmp (▷ X) → cmp X
-▷/dir X x = sub/wit x
-
-▷/inv : (X : tp neg) → cmp X → cmp (▷ X)
-sub/wit (▷/inv X x) = step X x
-sub/prf (▷/inv X x) = image/in x
-
-postulate
-  ▷/step : ∀ {X} (x : cmp (▷ X)) → step (▷ X) x ≡ ▷/inv X (▷/dir X x)
-  {-# REWRITE ▷/step #-}
-
-▷/beta : ∀ {X} {x : cmp X} → ▷/dir X (▷/inv X x) ≡ step X x
-▷/beta = refl
-
-
-postulate
-  ► : (X : tp pos) → tp pos
-  ►/decode : ∀ {X} → val (► X) ≡ sub (cmp (F X)) (image _ _ λ x → step (F X) (ret x))
-  {-# REWRITE ►/decode #-}
+  ► : tp pos → tp pos
+  ►/inv : ∀ {A} → val A → val (► A)
+  ►/dir : ∀ {A} → val (► A) → cmp (F A)
+  ►/step : ∀ {A a} → ►/dir (►/inv a) ≡ step (F A) (ret a)
+  {-# REWRITE ►/step #-}
 
 
 postulate
@@ -135,5 +125,7 @@ boolc = ► bool
 
 
 -- This version of the dependent product costs a step to apply.
+-- One thing I noticed is that this version may not quite capture what I had in mind trying to force
+-- the application to take a step.
 Πc : (A : tp pos) (X : val A → tp neg) → tp neg
 Πc A X = Π A λ x → ▷ (X x)
