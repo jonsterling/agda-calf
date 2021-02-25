@@ -101,6 +101,9 @@ postulate
 -- The interesting thing is that these don't seem to actually be the same as the image of step, etc.?
 -- It ultimately seems kind of important that these are abtract. But this makes me concerned about
 -- proving the correctness/adequacy of the whole setup.
+
+-- Mathematically speaking, I think these would be the same notion if the step-function is always injective,
+-- but I feel kind of concerned _both_ in case that is true _and_ in case that is false, LOL.
 postulate
   ▷ : tp neg → tp neg
   ▷/inv : ∀ {X} → cmp X → cmp (▷ X)
