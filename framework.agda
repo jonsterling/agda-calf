@@ -9,6 +9,22 @@ open import Agda.Builtin.Sigma
 Ω = Prop
 □ = Set
 
+data image (A B : □) (f : A → B) : B → Ω where
+  image/in : (x : A) → image A B f (f x)
+
+record sub (A : □) (ϕ : A → Ω) : □ where
+  constructor sub/in
+  field
+    sub/wit : A
+    sub/prf : ϕ sub/wit
+
+open sub public
+
+
+
+symm : {A : □} {a b : A} → a ≡ b → b ≡ a
+symm refl = refl
+
 postulate
   ext : Ω
   mode : □
@@ -51,7 +67,6 @@ postulate
   step/ext : ∀ {X} → (e : cmp X) → ext → step X e ≡ e
   -- sadly the above cannot be made an Agda rewrite rule
 
-
 postulate
   -- I think this is the law that we want to forget costs when constructing elements of a computation type
   U_step : ∀ {A} {X : val A → tp neg} {e} → U (tbind (step (F A) e) X) ≡ U (tbind e X)
@@ -62,20 +77,6 @@ postulate
   {-# REWRITE bind/step dbind/step #-}
 
 postulate
-  -- the image of step
-  ▷ : tp neg → tp neg
-  ▷/inv : ∀ {X} → cmp X → cmp (▷ X)
-  ▷/dir : ∀ {X} → cmp (▷ X) → cmp X
-  ▷/beta : ∀ {X} {e : cmp X} → ▷/dir {X} (▷/inv e) ≡ step X e
-  ▷/step : ∀ {X} {e : cmp (▷ X)} → step (▷ X) e ≡ ▷/inv (▷/dir e)
-  {-# REWRITE ▷/beta ▷/step #-}
-
-  -- the image of step ∘ ret
-  ► : tp pos → tp pos
-  ►/inv : ∀ {A} → val A → val (► A)
-  ►/dir : ∀ {A} → val (► A) → cmp (F A)
-  ►/step : ∀ {A a} → ►/dir (►/inv a) ≡ step (F A) (ret a)
-  {-# REWRITE ►/step #-}
 
   -- cost-insensitive dependent product
   Π : (A : tp pos) (X : val A → tp neg) → tp neg
@@ -98,9 +99,20 @@ postulate
   Σ++/decode : ∀ {A} {B : val A → tp pos} → val (Σ++ A B) ≡ Σ (val A) λ x → val (B x)
   {-# REWRITE Σ++/decode #-}
 
+
+postulate
+  bool : tp pos
+  tt ff : val bool
+
+postulate
+  ▷ : (X : tp neg) → tp neg
+  ▷/decode : ∀ {X} → val (U (▷ X)) ≡ sub (cmp X) (image _ _ (step X))
+  {-# REWRITE ▷/decode #-}
+
+  ► : (X : tp pos) → tp pos
+  ►/decode : ∀ {X} → val (► X) ≡ sub (cmp (F X)) (image _ _ λ x → step (F X) (ret x))
+  {-# REWRITE ►/decode #-}
+
 -- This version of the dependent product costs a step to apply.
 Πc : (A : tp pos) (X : val A → tp neg) → tp neg
 Πc A X = Π A λ x → ▷ (X x)
-
-Σ++c : (A : tp pos) (B : val A → tp pos) → tp pos
-Σ++c A B = ► (Σ++ A B)

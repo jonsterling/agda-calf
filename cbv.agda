@@ -3,6 +3,7 @@
 module cbv where
 
 open import framework
+open import Agda.Builtin.Sigma
 
 postulate
   𝒱 : □
@@ -21,13 +22,13 @@ _⊢_ : 𝒱 → 𝒱 → □
 α ⊢ β = val [ α ] → ⊢ β
 
 lam : (α β : 𝒱) → α ⊢ β → ⊢ α →cbv β
-lam _ _ M = ret (λ x → ▷/inv (M x))
+lam _ β M = ret λ x → sub/in (step (F [ β ]) (M x)) (image/in (M x))
 
 app : (α β : 𝒱) → ⊢ α →cbv β → ⊢ α → ⊢ β
 app α β M N =
   bind (F [ β ]) N λ x →
   bind (F _) M λ f →
-  ▷/dir (f x)
+  sub/wit (f x)
 
 _ : ∀ {α β f u} → app α β (lam α β f) (ret u) ≡ step (F [ β ]) (f u)
 _ = refl
