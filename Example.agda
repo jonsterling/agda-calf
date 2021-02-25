@@ -69,12 +69,12 @@ notnot = lam 𝔹 𝔹 (λ x → app 𝔹 𝔹 not (app 𝔹 𝔹 not (ret x)))
 
 foo : ◯ (notnot ≡ lam 𝔹 𝔹 (λ x → ret x))
 foo z =
-  let unstep = λ x → step/ext (F boolc) x z in
+  let instance _ = z in
   cong ret
    (funext
     (►/ind z λ where
-     Bool.tt → cong (▷/ret _) (trans (unstep _) (trans (unstep _) (trans (unstep _) (unstep _))))
-     Bool.ff → cong (▷/ret _) (trans (unstep _) (trans (unstep _) (trans (unstep _) (unstep _))))))
+     Bool.tt → refl
+     Bool.ff → refl))
 
 _ : ∀ {α β f u} → app α β (lam α β f) (ret u) ≡ step (F [ β ]) (f u)
 _ = refl
