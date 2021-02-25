@@ -59,26 +59,20 @@ ff = ret (►/ret _ Bool.ff)
 
 not : ⊢ 𝔹 ⇒ 𝔹
 not =
-  ret λ x →
-  ▷/ret
-   (F [ 𝔹 ])
-   (►/match (F [ 𝔹 ]) x λ where
-     Bool.tt → ff
-     Bool.ff → tt)
+  lam 𝔹 𝔹 λ x →
+  ►/match (F [ 𝔹 ]) x λ where
+    Bool.tt → ff
+    Bool.ff → tt
 
 notnot : ⊢ 𝔹 ⇒ 𝔹
 notnot = lam 𝔹 𝔹 (λ x → app 𝔹 𝔹 not (app 𝔹 𝔹 not (ret x)))
-
-
-match-unfold : ∀ {A} {P : val (► A) → □} → ◯ ((∀ x → P (►/ret _ x)) → ∀ x → P x)
-match-unfold {A} z f x rewrite (symm (►/ext/η z x)) = f (►/ext A z x)
 
 foo : ◯ (notnot ≡ lam 𝔹 𝔹 (λ x → ret x))
 foo z =
   let unstep = λ x → step/ext (F boolc) x z in
   cong ret
    (funext
-    (match-unfold z λ where
+    (►/ind z λ where
      Bool.tt → cong (▷/ret _) (trans (unstep _) (trans (unstep _) (trans (unstep _) (unstep _))))
      Bool.ff → cong (▷/ret _) (trans (unstep _) (trans (unstep _) (trans (unstep _) (unstep _))))))
 

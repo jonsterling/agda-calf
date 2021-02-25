@@ -41,3 +41,6 @@ postulate
 
 ▷/ext/match : ∀ {Y X} {u : cmp (▷ Y)} {f : cmp Y → cmp X} {z : ext} → ▷/match X u f ≡ f (▷/ext Y z u)
 ▷/ext/match {Y} {X} {u} {f} {z} rewrite (symm (▷/ext/η z u)) = step/ext X (f (▷/ext Y z u)) z
+
+►/ind : ∀ {A} {P : val (► A) → □} → ◯ ((∀ x → P (►/ret _ x)) → ∀ x → P x)
+►/ind {A} z f x rewrite (symm (►/ext/η z x)) = f (►/ext A z x)
