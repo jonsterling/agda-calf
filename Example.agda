@@ -3,7 +3,7 @@
 module Example where
 
 open import Prelude
-open import CBPV
+open import Metalanguage
 open import CostEffect
 
 module Bool where

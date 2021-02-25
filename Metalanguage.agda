@@ -2,7 +2,7 @@
 
 -- The is the basic CBPV metalanguage.
 
-module CBPV where
+module Metalanguage where
 
 open import Prelude
 

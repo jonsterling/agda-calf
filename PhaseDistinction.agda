@@ -5,7 +5,7 @@
 module PhaseDistinction where
 
 open import Prelude
-open import CBPV
+open import Metalanguage
 open import CostEffect
 
 postulate

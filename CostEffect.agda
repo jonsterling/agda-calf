@@ -5,7 +5,7 @@
 module CostEffect where
 
 open import Prelude
-open import CBPV
+open import Metalanguage
 
 postulate
   step : ∀ X → cmp X → cmp X
