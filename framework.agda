@@ -4,6 +4,7 @@ module framework where
 
 open import Agda.Builtin.Equality public
 open import Agda.Builtin.Equality.Rewrite public
+open import Agda.Builtin.Sigma
 
 Ω = Prop
 □ = Set
@@ -61,7 +62,7 @@ postulate
   {-# REWRITE bind/step dbind/step #-}
 
 postulate
-  -- the primitive "at least one step" refinement
+  -- the image of step
   ▷ : tp neg → tp neg
   ▷/inv : ∀ {X} → cmp X → cmp (▷ X)
   ▷/dir : ∀ {X} → cmp (▷ X) → cmp X
@@ -69,14 +70,37 @@ postulate
   ▷/step : ∀ {X} {e : cmp (▷ X)} → step (▷ X) e ≡ ▷/inv (▷/dir e)
   {-# REWRITE ▷/beta ▷/step #-}
 
+  -- the image of step ∘ ret
+  ► : tp pos → tp pos
+  ►/inv : ∀ {A} → val A → val (► A)
+  ►/dir : ∀ {A} → val (► A) → cmp (F A)
+  ►/step : ∀ {A a} → ►/dir (►/inv a) ≡ step (F A) (ret a)
+  {-# REWRITE ►/step #-}
+
   -- cost-insensitive dependent product
   Π : (A : tp pos) (X : val A → tp neg) → tp neg
-  Π/cmp : ∀ {A} {X : val A → tp neg} → val (U (Π A X)) ≡ ((x : val A) → cmp (X x))
-  {-# REWRITE Π/cmp #-}
+  Π/decode : ∀ {A} {X : val A → tp neg} → val (U (Π A X)) ≡ ((x : val A) → cmp (X x))
+  {-# REWRITE Π/decode #-}
 
   Π/step : ∀ {A} {X : val A → tp neg} {f : cmp (Π A X)} → step (Π A X) f ≡ λ x → step (X x) (f x)
   {-# REWRITE Π/step #-}
 
+  -- cost-insensitive mixed polarity dependent sum
+  Σ+- : (A : tp pos) (X : val A → tp neg) → tp neg
+  Σ+-/decode : ∀ {A} {X : val A → tp neg} → val (U (Σ+- A X)) ≡ Σ (val A) λ x → cmp (X x)
+  {-# REWRITE Σ+-/decode #-}
+
+  Σ+-/step : ∀ {A} {X : val A → tp neg} {p : cmp (Σ+- A X)} → step (Σ+- A X) p ≡ (fst p , step (X (fst p)) (snd p))
+  {-# REWRITE Σ+-/step #-}
+
+  -- cost-insensitive positive dependent sum
+  Σ++ : (A : tp pos) (B : val A → tp pos) → tp pos
+  Σ++/decode : ∀ {A} {B : val A → tp pos} → val (Σ++ A B) ≡ Σ (val A) λ x → val (B x)
+  {-# REWRITE Σ++/decode #-}
+
 -- This version of the dependent product costs a step to apply.
 Πc : (A : tp pos) (X : val A → tp neg) → tp neg
 Πc A X = Π A λ x → ▷ (X x)
+
+Σ++c : (A : tp pos) (B : val A → tp pos) → tp pos
+Σ++c A B = ► (Σ++ A B)
