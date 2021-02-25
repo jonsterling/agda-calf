@@ -71,17 +71,16 @@ notnot = lam 𝔹 𝔹 (λ x → app 𝔹 𝔹 not (app 𝔹 𝔹 not (ret x)))
 
 
 match-unfold : ∀ {A} {P : val (► A) → □} → ◯ ((∀ x → P (►/ret _ x)) → ∀ x → P x)
-match-unfold {A} {P} z f x rewrite (symm (►/ext/η z x))= f (►/ext A z x)
+match-unfold {A} z f x rewrite (symm (►/ext/η z x)) = f (►/ext A z x)
 
 foo : ◯ (notnot ≡ lam 𝔹 𝔹 (λ x → ret x))
 foo z =
+  let unstep = λ x → step/ext (F boolc) x z in
   cong ret
    (funext
     (match-unfold z λ where
-     Bool.tt → cong (▷/ret _) (trans (step/ext (F boolc) _ z) (trans (step/ext (F boolc) _ z) (trans (step/ext (F boolc) _ z) (step/ext (F boolc) _ z))))
-     Bool.ff → cong (▷/ret _) (trans (step/ext (F boolc) _ z) (trans (step/ext (F boolc) _ z) (trans (step/ext (F boolc) _ z) (step/ext (F boolc) _ z))))))
-
-test = app 𝔹 𝔹 not tt
+     Bool.tt → cong (▷/ret _) (trans (unstep _) (trans (unstep _) (trans (unstep _) (unstep _))))
+     Bool.ff → cong (▷/ret _) (trans (unstep _) (trans (unstep _) (trans (unstep _) (unstep _))))))
 
 _ : ∀ {α β f u} → app α β (lam α β f) (ret u) ≡ step (F [ β ]) (f u)
 _ = refl
