@@ -98,7 +98,8 @@ postulate
   {-# REWRITE Σ++/decode #-}
 
 
--- I am a little less scared of this version:
+-- I am a little less scared of this version.
+-- TODO: make the following operations be the identity underneath 'ext'.
 postulate
   ► : tp pos → tp pos
   ►/ret : ∀ A → val A → val (► A)
@@ -106,20 +107,18 @@ postulate
   ►/match/ret : ∀ {A X} {u : val A} {f : val A → cmp X} → ►/match X (►/ret A u) f ≡ step X (f u)
   {-# REWRITE ►/match/ret #-}
 
-
--- The interesting thing is that these don't seem to actually be the same as the image of step?
--- It ultimately seems kind of important that these are abtract. But this makes me concerned about
--- proving the correctness/adequacy of the whole setup.
-
--- Mathematically speaking, I think these would be the same notion if the step-function is always injective,
--- but I feel kind of concerned _both_ in case that is true _and_ in case that is false, LOL.
+-- I don't know the above is strong enough, but at least it seems not
+-- too strong lol.  The thing I am struggling with is, I basically
+-- want some kind of abstract type in the LF that forces you to take a
+-- step, but I don't want you to be able to extract the thing that
+-- takes that step internally. That's why this is not really the same
+-- as the refinement that you get by looking at the image of "step".
 postulate
   ▷ : tp neg → tp neg
-  ▷/inv : ∀ {X} → cmp X → cmp (▷ X)
-  ▷/dir : ∀ {X} → cmp (▷ X) → cmp X
-  ▷/beta : ∀ {X} {e : cmp X} → ▷/dir {X} (▷/inv e) ≡ step X e
-  ▷/step : ∀ {X} {e : cmp (▷ X)} → step (▷ X) e ≡ ▷/inv (▷/dir e)
-  {-# REWRITE ▷/beta ▷/step #-}
+  ▷/ret : ∀ X → cmp X → cmp (▷ X)
+  ▷/match : ∀ {X} Y → cmp (▷ X) → (cmp X → cmp Y) → cmp Y
+  ▷/match/ret : ∀ {X Y} {e : cmp X} {f : cmp X → cmp Y} → ▷/match Y (▷/ret X e) f ≡ step Y (f e)
+  {-# REWRITE ▷/match/ret #-}
 
 postulate
   bool : tp pos
