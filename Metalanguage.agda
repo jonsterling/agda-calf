@@ -30,7 +30,7 @@ postulate
   dbind : ∀ {A} (X : val A → tp neg) (e : cmp (F A)) (f : (x : val A) → cmp (X x)) → cmp (tbind e X)
 
   -- note that bind is not a special case of dbind: in general, one does not expect (tbind e (λ _ → m)) ≡ m.
-  -- This would hold, however, in the case of a language where the only effect is stepping. But we don't want
+  -- This would hold, however, in the case of a language where there are no true effects. But we don't want
   -- to assume that.
   bind : ∀ {A} X → cmp (F A) → (val A → cmp X) → cmp X
 
