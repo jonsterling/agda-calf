@@ -101,17 +101,38 @@ postulate
 
 
 postulate
-  bool : tp pos
-  tt ff : val bool
-
-postulate
   ▷ : (X : tp neg) → tp neg
   ▷/decode : ∀ {X} → val (U (▷ X)) ≡ sub (cmp X) (image _ _ (step X))
   {-# REWRITE ▷/decode #-}
 
+▷/dir : (X : tp neg) → cmp (▷ X) → cmp X
+▷/dir X x = sub/wit x
+
+▷/inv : (X : tp neg) → cmp X → cmp (▷ X)
+sub/wit (▷/inv X x) = step X x
+sub/prf (▷/inv X x) = image/in x
+
+postulate
+  ▷/step : ∀ {X} (x : cmp (▷ X)) → step (▷ X) x ≡ ▷/inv X (▷/dir X x)
+  {-# REWRITE ▷/step #-}
+
+▷/beta : ∀ {X} {x : cmp X} → ▷/dir X (▷/inv X x) ≡ step X x
+▷/beta = refl
+
+
+postulate
   ► : (X : tp pos) → tp pos
   ►/decode : ∀ {X} → val (► X) ≡ sub (cmp (F X)) (image _ _ λ x → step (F X) (ret x))
   {-# REWRITE ►/decode #-}
+
+
+postulate
+  bool : tp pos
+  tt ff : val bool
+
+boolc : tp pos
+boolc = ► bool
+
 
 -- This version of the dependent product costs a step to apply.
 Πc : (A : tp pos) (X : val A → tp neg) → tp neg
