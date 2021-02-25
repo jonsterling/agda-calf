@@ -98,7 +98,16 @@ postulate
   {-# REWRITE Σ++/decode #-}
 
 
--- The interesting thing is that these don't seem to actually be the same as the image of step, etc.?
+-- I am a little less scared of this version:
+postulate
+  ► : tp pos → tp pos
+  ►/ret : ∀ A → val A → val (► A)
+  ►/match : ∀ {A} X → val (► A) → (val A → cmp X) → cmp X
+  ►/match/ret : ∀ {A X} {u : val A} {f : val A → cmp X} → ►/match X (►/ret A u) f ≡ step X (f u)
+  {-# REWRITE ►/match/ret #-}
+
+
+-- The interesting thing is that these don't seem to actually be the same as the image of step?
 -- It ultimately seems kind of important that these are abtract. But this makes me concerned about
 -- proving the correctness/adequacy of the whole setup.
 
@@ -111,13 +120,6 @@ postulate
   ▷/beta : ∀ {X} {e : cmp X} → ▷/dir {X} (▷/inv e) ≡ step X e
   ▷/step : ∀ {X} {e : cmp (▷ X)} → step (▷ X) e ≡ ▷/inv (▷/dir e)
   {-# REWRITE ▷/beta ▷/step #-}
-
-  ► : tp pos → tp pos
-  ►/inv : ∀ {A} → val A → val (► A)
-  ►/dir : ∀ {A} → val (► A) → cmp (F A)
-  ►/step : ∀ {A a} → ►/dir (►/inv a) ≡ step (F A) (ret a)
-  {-# REWRITE ►/step #-}
-
 
 postulate
   bool : tp pos

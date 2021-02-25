@@ -35,10 +35,10 @@ app α β M N =
   ▷/dir (f x)
 
 tt' : ⊢ cbv/bool
-tt' = ret (►/inv tt)
+tt' = ret (►/ret _ tt)
 --
 fun : ⊢ cbv/bool →cbv cbv/bool
-fun = lam cbv/bool cbv/bool λ x → bind (F [ cbv/bool ]) (►/dir x) λ b → tt'
+fun = lam cbv/bool cbv/bool λ x → ►/match (F [ cbv/bool ]) x λ b → tt'
 
 test = app cbv/bool cbv/bool fun tt'
 
