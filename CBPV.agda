@@ -1,5 +1,7 @@
 {-# OPTIONS --prop --rewriting #-}
 
+-- The is the basic CBPV metalanguage.
+
 module CBPV where
 
 open import Prelude
@@ -39,17 +41,17 @@ postulate
   -- todo: add bind/assoc
   -- todo: add dbind/assoc
 
-  -- cost-insensitive dependent product
+  -- dependent product
   Π : (A : tp pos) (X : val A → tp neg) → tp neg
   Π/decode : ∀ {A} {X : val A → tp neg} → val (U (Π A X)) ≡ ((x : val A) → cmp (X x))
   {-# REWRITE Π/decode #-}
 
-  -- cost-insensitive mixed polarity dependent sum
+  -- mixed polarity dependent sum
   Σ+- : (A : tp pos) (X : val A → tp neg) → tp neg
   Σ+-/decode : ∀ {A} {X : val A → tp neg} → val (U (Σ+- A X)) ≡ Σ (val A) λ x → cmp (X x)
   {-# REWRITE Σ+-/decode #-}
 
-  -- cost-insensitive positive dependent sum
+  -- positive dependent sum
   Σ++ : (A : tp pos) (B : val A → tp pos) → tp pos
   Σ++/decode : ∀ {A} {B : val A → tp pos} → val (Σ++ A B) ≡ Σ (val A) λ x → val (B x)
   {-# REWRITE Σ++/decode #-}

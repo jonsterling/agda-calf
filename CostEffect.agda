@@ -1,15 +1,14 @@
 {-# OPTIONS --prop --rewriting #-}
 
+-- This module extends the CBPV metalanguage with effects corresponding to computational steps.
+
 module CostEffect where
 
 open import Prelude
 open import CBPV
 
 postulate
-  ext : Ω
   step : ∀ X → cmp X → cmp X
-  step/ext : ∀ {X} → (e : cmp X) → ext → step X e ≡ e
-  -- sadly the above cannot be made an Agda rewrite rule
 
   Π/step : ∀ {A} {X : val A → tp neg} {f : cmp (Π A X)} → step (Π A X) f ≡ λ x → step (X x) (f x)
   {-# REWRITE Π/step #-}
@@ -34,15 +33,6 @@ postulate
   ►/match/ret : ∀ {A X} {u : val A} {f : val A → cmp X} → ►/match X (►/ret A u) f ≡ step X (f u)
   {-# REWRITE ►/match/ret #-}
 
-  ►/ext : ∀ A → ext → val (► A) → val A
-  ►/ext/β : ∀ {A} {z : ext} {u : val A} → ►/ext A z (►/ret A u) ≡ u
-  {-# REWRITE ►/ext/β #-}
-
-  ►/ext/η : ∀ {A} (z : ext) (u : val (► A)) → ►/ret A (►/ext A z u) ≡ u
-
-►/ext/match : ∀ {A X} {u : val (► A)} {f : val A → cmp X} {z : ext} → ►/match X u f ≡ f (►/ext A z u)
-►/ext/match {A} {X} {u} {f} {z} rewrite (symm (►/ext/η z u)) = step/ext {X} (f (►/ext A z u)) z
-
 -- I don't know the above is strong enough, but at least it seems not
 -- too strong lol.  The thing I am struggling with is, I basically
 -- want some kind of abstract type in the LF that forces you to take a
@@ -55,12 +45,3 @@ postulate
   ▷/match : ∀ {X} Y → cmp (▷ X) → (cmp X → cmp Y) → cmp Y
   ▷/match/ret : ∀ {X Y} {e : cmp X} {f : cmp X → cmp Y} → ▷/match Y (▷/ret X e) f ≡ step Y (f e)
   {-# REWRITE ▷/match/ret #-}
-
-  ▷/ext : ∀ X → ext → cmp (▷ X) → cmp X
-  ▷/ext/β : ∀ {X} {z : ext} {u : cmp X} → ▷/ext X z (▷/ret X u) ≡ u
-  {-# REWRITE ▷/ext/β #-}
-
-  ▷/ext/η : ∀ {X} (z : ext) (u : cmp (▷ X)) → ▷/ret X (▷/ext X z u) ≡ u
-
-▷/ext/match : ∀ {Y X} {u : cmp (▷ Y)} {f : cmp Y → cmp X} {z : ext} → ▷/match X u f ≡ f (▷/ext Y z u)
-▷/ext/match {Y} {X} {u} {f} {z} rewrite (symm (▷/ext/η z u)) = step/ext {X} (f (▷/ext Y z u)) z
