@@ -59,15 +59,18 @@ postulate
   step' : ∀ (B : tp neg) → cmp 𝒞 → cmp B → cmp B 
   step'/id : ∀ {B : tp neg} {e : cmp B} → 
     step' B (λ _ → ret zero) e ≡ e 
+  {-# REWRITE step'/id #-}
   step'/concat : ∀ {B e p q} → 
     step' B p (step' B q e) ≡ step' B (p ⊕ q) e
+  {-# REWRITE step'/concat #-}
 
 -- Arithmetic. This can be defined as an inductive type if that is available. 
 -- Otherwise it can also be a type computation, which requires universes. 
 postulate
-  le : val nat → val nat → tp pos 
+  le : val nat → val nat → tp pos
   le/zero : ∀ {n} → val (le zero n)
-  le/succ : ∀ {n m} → val (le n m) → val (le (suc n) (suc m))
+
+  lt : val nat → val nat → tp pos
 
 le/cmp : cmp (F nat) → cmp (F nat) → tp neg 
 le/cmp c1 c2 = 
@@ -77,3 +80,41 @@ le/cmp c1 c2 =
 
 le/ext : cmp 𝒞 → cmp 𝒞 → tp neg
 le/ext p q = ext/cmp (λ u → le/cmp (p u) (q u))
+
+lt/cmp : cmp (F nat) → cmp (F nat) → tp neg 
+lt/cmp c1 c2 = 
+  tbind c1 λ n1 → 
+  tbind c2 λ n2 → 
+  F(lt n1 n2)
+
+lt/ext : cmp 𝒞 → cmp 𝒞 → tp neg
+lt/ext p q = ext/cmp (λ u → lt/cmp (p u) (q u))
+-- Just assume arithmetic is true. Equations should be expressed using an equality type, but since 
+-- I am using equality reflection this is equivalent.
+postulate
+  add/comm : ∀ {n m : val nat} → add n m ≡ add m n
+  le/add : ∀ {n1 n2 m1 m2} → val (le n1 m1) → val (le n2 m2) → cmp (le/cmp (add n1 n2) (add m1 m2))
+
+-- This doesn't follow from le/add; dbind needs to record more info...
+-- le/add/cmp : ∀ {c1 c2 d1 d2} → cmp (le/cmp c1 d1) → cmp (le/cmp c2 d2) → cmp (le/cmp (add/cmp c1 c2) (add/cmp d1 d2)) 
+-- le/add/cmp {c1} {c2} {d1} {d2} h1 h2 = 
+--   dbind _ c1 λ n1 → 
+--   dbind _ c2 λ n2 → 
+--   dbind _ (add n1 n2) λ z1 →
+--   dbind _ d1 λ m1 → 
+--   dbind _ d2 λ m2 →
+--   dbind _ (add m1 m2) λ z2 → {! ?  !}
+     
+postulate 
+  le/add/cmp : ∀ {c1 c2 d1 d2} → cmp (le/cmp c1 d1) → cmp (le/cmp c2 d2) → cmp (le/cmp (add/cmp c1 c2) (add/cmp d1 d2)) 
+  add/comm/cmp : ∀ {c1 c2} → add/cmp c1 c2 ≡ add/cmp c2 c1 
+  le/refl/cmp : ∀ {c} → cmp (le/cmp c c)
+
+le/add/ext : ∀ {p1 p2 q1 q2} → cmp (le/ext p1 q1) → cmp (le/ext p2 q2) → cmp (le/ext (p1 ⊕ p2) (q1 ⊕ q2)) 
+le/add/ext {p1} {p2} {q1} {q2} h1 h2 = λ u → le/add/cmp {c1 = p1 u} {c2 = p2 u} {d1 = q1 u} {d2 = q2 u} (h1 u) (h2 u)
+
+add/comm/ext : ∀ {p q} → p ⊕ q ≡ q ⊕ p 
+add/comm/ext {p} {q} = funext/Ω λ u → add/comm/cmp {c1 = p u} {c2 = q u}
+
+le/refl/ext : ∀ {p} → cmp (le/ext p p)
+le/refl/ext {p} = λ u → le/refl/cmp {p u}

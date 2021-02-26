@@ -31,6 +31,7 @@ cong f refl = refl
 
 postulate
   funext : {A B : □} {f g : A → B} → (∀ x → f x ≡ g x) → f ≡ g
+  funext/Ω : {A : Prop} {B : □} {f g : A → B} → (∀ x → f x ≡ g x) → f ≡ g
 
 record iso (A B : □) : □ where
   field

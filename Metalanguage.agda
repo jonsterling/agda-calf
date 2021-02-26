@@ -38,6 +38,9 @@ postulate
   dbind/ret : ∀ {A} {X : val A → tp neg} {v : val A} {f : (x : val A) → cmp (X x)} → dbind X (ret v) f ≡ f v
   {-# REWRITE bind/ret dbind/ret #-}
 
+  tbind/assoc : ∀ {A B X} {e : cmp (F A)} {f : val A → cmp (F B)} → 
+    tbind {B} (bind (F B) e f) X ≡ tbind {A} e (λ v → tbind {B} (f v) X)
+  {-# REWRITE tbind/assoc #-}
   -- todo: add bind/assoc
   -- todo: add dbind/assoc
 
