@@ -20,6 +20,7 @@ postulate
     ((a : val A) → th (X a) (f a)) → 
     th (tbind e X) (dbind X e f) 
 
+
   El : (k : ℕ) → (X : cmp (F (univ pos k))) → th (F (univ pos k)) X → val (univ pos k)
   ℰℓ : (k : ℕ) → (X : cmp (F (univ pos k))) → th (F (univ pos k)) X → cmp (univ neg k)
   ⇑ : ∀ {k} → (X : cmp (F (univ pos k))) → (h : th (F (univ pos k)) X) → 
@@ -66,6 +67,29 @@ postulate
   {-# REWRITE ⇓/⇑ #-}
 
 
+compatible : ∀ {A X} → (cmp (F A) → cmp X) → (cmp (F A)) → □ 
+compatible {A} {X} f t = (bind X t λ a → f (ret a)) ≡ f t
 
+thunkable : ∀ {A} → cmp (F A)→ □ 
+thunkable {A} t = ∀ {X} → (f : cmp (F A) → cmp X) → compatible {A} {X} f t
 
+postulate
+  th/thunkable : ∀ {A} → (t : cmp (F A)) → th (F A) t → thunkable {A} t
     
+-- type level versions
+compatible/tp : ∀ {A} → (cmp (F A) → tp neg) → (cmp (F A)) → □ 
+compatible/tp {A} f t = (tbind t λ a → f (ret a)) ≡ f t
+
+thunkable/tp : ∀ {A} → cmp (F A)→ □ 
+thunkable/tp {A} t = ∀ (f : cmp (F A) → tp neg) → compatible/tp {A} f t
+
+postulate
+  th/thunkable/tp : ∀ {A} → (t : cmp (F A)) → th (F A) t → thunkable/tp {A} t
+
+postulate
+  th⁻ : (B : tp neg) → cmp B → tp neg 
+  th⁻/decode : ∀ {B e} → val (U (th⁻ B e)) ≡ th B e
+{-# REWRITE th⁻/decode #-}
+
+postulate
+  th/uni : ∀ {B e} → (t1 t2 : th B e) → t1 ≡ t2

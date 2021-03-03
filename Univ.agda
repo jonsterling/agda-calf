@@ -4,6 +4,7 @@ open import Prelude
 open import Metalanguage
 open import Data.Nat.Base
 open import Data.Nat.Properties
+open import Eq
 
 ≥-refl : ∀ {k} → k ≥ k 
 ≥-refl = ≤-reflexive refl
@@ -41,7 +42,21 @@ postulate
 postulate
   F̂ : ∀ {k} → val (univ pos k) → cmp (univ neg k)
   F̂/decode : ∀ {k} → (Â : val (univ pos k)) → el⁻ k (F̂ Â) ≡ F (el⁺ k Â)
+  {-# REWRITE F̂/decode #-}
 
 postulate
   Û : ∀ {k} → cmp (univ neg k) → val (univ pos k) 
   Û/decode : ∀ {k} → (B̂ : cmp (univ neg k)) → el⁺ k (Û B̂) ≡ U (el⁻ k B̂)
+  {-# REWRITE Û/decode #-}
+
+postulate
+  eq/code : ∀ {k} → (Â : val (univ pos k)) → val (el⁺ k Â) → val (el⁺ k Â) → val (univ pos k) 
+  eq/decode : ∀ {k} → (Â : val (univ pos k)) → (a1 : val (el⁺ k Â)) → (a2 : val (el⁺ k Â)) → 
+    el⁺ k (eq/code Â a1 a2) ≡ eq (el⁺ k Â) a1 a2
+  {-# REWRITE eq/decode #-}
+
+postulate
+  bind/decode : ∀ {k A} → (e : cmp (F A)) → (f : val A → cmp (univ neg k)) → 
+    el⁻ k (bind (univ neg k) e f) ≡ tbind e (λ a → el⁻ k (f a))
+  {-# REWRITE bind/decode #-}
+
