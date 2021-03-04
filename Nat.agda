@@ -13,6 +13,16 @@ postulate
     cmp (X zero) → 
     ((n : val nat) → val (U (X n)) → cmp (X (suc n))) → 
     cmp (X n)
+  rec/beta/zero : (X : val nat → tp neg) → 
+    (e0 : cmp (X zero)) → 
+    (e1 : (n : val nat) → val (U (X n)) → cmp (X (suc n))) → 
+    rec zero X e0 e1 ≡ e0
+  {-# REWRITE rec/beta/zero #-}
+  rec/beta/suc : (n : val nat) → (X : val nat → tp neg) → 
+    (e0 : cmp (X zero)) → 
+    (e1 : (n : val nat) → val (U (X n)) → cmp (X (suc n))) → 
+    rec (suc n) X e0 e1 ≡ e1 n (rec n X e0 e1)
+  {-# REWRITE rec/beta/suc #-}
 
 postulate
   th/rec : ∀ (n : val nat) → 

@@ -5,6 +5,8 @@ open import Metalanguage
 open import Data.Nat.Base
 open import Data.Nat.Properties
 open import Eq
+open import Unit 
+open import Void
 
 ≥-refl : ∀ {k} → k ≥ k 
 ≥-refl = ≤-reflexive refl
@@ -60,3 +62,12 @@ postulate
     el⁻ k (bind (univ neg k) e f) ≡ tbind e (λ a → el⁻ k (f a))
   {-# REWRITE bind/decode #-}
 
+postulate
+  unit/code : val (univ pos 0)
+  unit/decode : el⁺ _ unit/code ≡ unit
+  {-# REWRITE unit/decode #-}
+
+postulate
+  void/code : val (univ pos 0)
+  void/decode : el⁺ _ void/code ≡ void
+  {-# REWRITE void/decode #-}

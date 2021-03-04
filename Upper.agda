@@ -8,8 +8,8 @@ open import Eq
 
 data ub (A : tp pos) : cmp (F A) → cmp 𝒞 → □ where
   ub/intro : ∀ {e p q a} → 
-    cmp (le/ext q p) → 
-    val (eq (U(F A)) e (step' (F A) q (ret a))) → 
+    cmp (le/cost q p) → 
+    cmp (F (eq (U(F A)) e (step' (F A) q (ret a)))) → 
     ub A e p
 
 -- Alternative definition. Either way cannot have 
