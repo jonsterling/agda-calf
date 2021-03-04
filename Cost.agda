@@ -100,11 +100,11 @@ le/cmp c1 c2 =
 le/cost : cmp 𝒞 → cmp 𝒞 → tp neg
 le/cost p q = ext/cmp (λ u → le/cmp (p u . fst) (q u . fst))
 
-lt/cmp : cmp (F nat) → cmp (F nat) → tp neg 
+lt/cmp : cmp (F nat) → cmp (F nat) → cmp (univ neg 0)
 lt/cmp c1 c2 = 
-  tbind c1 λ n1 → 
-  tbind c2 λ n2 → 
-  el⁻ _ (lt n1 n2)
+  bind (univ neg 0) c1 λ n1 → 
+  bind (univ neg 0) c2 λ n2 → 
+  lt n1 n2
 
 -- lt/ext : cmp 𝒞 → cmp 𝒞 → tp neg
 -- lt/ext p q = ext/cmp (λ u → lt/cmp (p u) (q u))

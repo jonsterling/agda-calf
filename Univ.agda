@@ -33,13 +33,30 @@ postulate
   lift⁻/assoc : ∀ {m l k} → (h1 : m ≥ l) → (h2 : l ≥ k) → (u : cmp (univ neg k)) →
     lift⁻ h1 (lift⁻ h2 u) ≡ lift⁻ (≥-trans h1 h2) u
   cumul⁺ : ∀ {l k} → (h : l ≥ k) → (u : val (univ pos k)) → el⁺ l (lift⁺ h u) ≡ el⁺ k u
+  {-# REWRITE cumul⁺ #-}
   cumul⁻ : ∀ {l k} → (h : l ≥ k) → (u : cmp (univ neg k)) → el⁻ l (lift⁻ h u) ≡ el⁻ k u
+  {-# REWRITE cumul⁻ #-}
   
 postulate
   Π̂ : ∀ {k} → (Â : val (univ pos k)) → (val (el⁺ k Â) → cmp (univ neg k)) → 
     cmp (univ neg k)
   Π̂/decode : ∀ {k} → (Â : val (univ pos k)) → (B̂ : val (el⁺ k Â) → cmp (univ neg k)) → 
     el⁻ k (Π̂ Â B̂) ≡ Π (el⁺ k Â) (λ a → el⁻ k (B̂ a))
+  {-# REWRITE Π̂/decode #-}
+
+postulate 
+  Σ++/code : ∀ {k} → (Â : val (univ pos k)) → (val (el⁺ k Â) → val (univ pos k)) → 
+    val (univ pos k)
+  Σ++/code/decode : ∀ {k} → (Â : val (univ pos k)) → (B̂ : val (el⁺ k Â) → val (univ pos k)) →  
+    el⁺ k (Σ++/code Â B̂) ≡ Σ++ (el⁺ _ Â) (λ a → el⁺ _ (B̂ a))
+  {-# REWRITE Σ++/code/decode #-}
+
+postulate 
+  Σ+-/code : ∀ {k} → (Â : val (univ pos k)) → (val (el⁺ k Â) → cmp (univ neg k)) → 
+    cmp (univ neg k)
+  Σ+-/code/decode : ∀ {k} → (Â : val (univ pos k)) → (B̂ : val (el⁺ k Â) → cmp (univ neg k)) →  
+    el⁻ k (Σ+-/code Â B̂) ≡ Σ+- (el⁺ _ Â) (λ a → el⁻ _ (B̂ a))
+  {-# REWRITE Σ+-/code/decode #-}
 
 postulate
   F̂ : ∀ {k} → val (univ pos k) → cmp (univ neg k)
