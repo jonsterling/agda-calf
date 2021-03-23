@@ -2,6 +2,7 @@
 
 open import Prelude
 open import Metalanguage
+open import PhaseDistinction
 open import Data.Nat.Base
 open import Data.Nat.Properties
 open import Eq
@@ -88,3 +89,19 @@ postulate
   void/code : val (univ pos 0)
   void/decode : el⁺ _ void/code ≡ void
   {-# REWRITE void/decode #-}
+
+postulate
+  ext/val/code : ∀ {k} → (ext → val (univ pos k)) → val (univ pos k)
+  ext/val/code/decode : ∀ {k} →  (Â : ext → val (univ pos k)) → el⁺ k (ext/val/code Â) ≡ ext/val (λ u → el⁺ k (Â u)) 
+  {-# REWRITE ext/val/code/decode #-}
+
+postulate
+  ext/cmp/code : ∀ {k} → (ext → cmp (univ neg k)) → cmp (univ neg k)
+  ext/cmp/code/decode : ∀ {k} →  (Â : ext → cmp (univ neg k)) → el⁻ k (ext/cmp/code Â) ≡ ext/cmp (λ u → el⁻ k (Â u)) 
+  {-# REWRITE ext/cmp/code/decode #-}
+
+◯⁺/code : ∀ {k} → val (univ pos k) → val (univ pos k)
+◯⁺/code Â = ext/val/code (λ _ → Â)
+
+◯⁻/code : ∀ {k} → cmp (univ neg k) → cmp (univ neg k)
+◯⁻/code Â = ext/cmp/code (λ _ → Â)

@@ -14,6 +14,22 @@ postulate
 ◯ : □ → □
 ◯ A = ext → A
 
+infix 10 ◯⁺_
+infix 10 ◯⁻_
+postulate
+  ext/val : (ext → tp pos) → tp pos 
+  ext/val/decode : ∀ {A} → val (ext/val A) ≡ ∀ (u : ext) → (val (A u))
+  {-# REWRITE ext/val/decode #-}
+
+  ext/cmp : (ext → tp neg) → tp neg 
+  ext/cmp/decode : ∀ {A} → val (U (ext/cmp A)) ≡ ∀ (u : ext) → (cmp (A u))
+  {-# REWRITE ext/cmp/decode #-}
+
+◯⁺_ : tp pos → tp pos
+◯⁺ A = ext/val (λ _ → A)
+◯⁻_ : tp neg → tp neg
+◯⁻ A = ext/cmp (λ _ → A)
+
 postulate
   step/ext : ∀ X → (e : cmp X) → ◯ (step X e ≡ e)
   -- sadly the above cannot be made an Agda rewrite rule

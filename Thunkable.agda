@@ -5,7 +5,7 @@ open import Metalanguage
 open import Data.Nat.Base
 open import Univ
 
--- Built-in notion of thunability from fire triangle 
+-- Built-in notion of thunkability from fire triangle 
 -- (Fig. 8, p.17). Thunkability judgment (th) is not part of the connectives as originally 
 -- described.
 postulate
@@ -36,7 +36,7 @@ postulate
   --   el⁻ k (ℰℓ k X h) ≡ (tbind X λ u → F (el⁺ k u))
   -- {-# REWRITE ℰℓ/decode #-}
   
-  ℰℓ/ret : ∀ {k A} → el⁻ k (ℰℓ k (ret A) (th/ret A)) ≡ F (el⁺ k A)
+  ℰℓ/ret : ∀ {k Â} → ℰℓ k (ret Â) (th/ret Â) ≡ F̂ Â
   {-# REWRITE ℰℓ/ret #-}
 
   -- codomain are the thunkable types at level k.
@@ -66,7 +66,6 @@ postulate
     ⇓ X h (⇑ X h t h1) ≡ t
   {-# REWRITE ⇓/⇑ #-}
 
-
 compatible : ∀ {A X} → (cmp (F A) → cmp X) → (cmp (F A)) → □ 
 compatible {A} {X} f t = (bind X t λ a → f (ret a)) ≡ f t
 
@@ -78,7 +77,7 @@ postulate
     
 -- type level versions
 compatible/tp : ∀ {A} → (cmp (F A) → tp neg) → (cmp (F A)) → □ 
-compatible/tp {A} f t = (tbind t λ a → f (ret a)) ≡ f t
+compatible/tp {A} f t = (tbind t (λ a → f (ret a))) ≡ f t
 
 thunkable/tp : ∀ {A} → cmp (F A)→ □ 
 thunkable/tp {A} t = ∀ (f : cmp (F A) → tp neg) → compatible/tp {A} f t
@@ -90,6 +89,11 @@ postulate
   th⁻ : (B : tp neg) → cmp B → tp neg 
   th⁻/decode : ∀ {B e} → val (U (th⁻ B e)) ≡ th B e
 {-# REWRITE th⁻/decode #-}
+
+postulate
+  th⁻/code : ∀ {k} (B̂ : cmp (univ neg k)) → cmp (el⁻ _ B̂) → cmp (univ neg k)
+  th⁻/code/decode : ∀ {k B̂ e} → el⁻ k (th⁻/code B̂ e) ≡ th⁻ (el⁻ _ B̂) e
+{-# REWRITE th⁻/code/decode #-}
 
 postulate
   th/uni : ∀ {B e} → (t1 t2 : th B e) → t1 ≡ t2

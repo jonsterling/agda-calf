@@ -20,7 +20,7 @@ record sub (A : □) (ϕ : A → Ω) : □ where
 
 open sub public
 
-symm : {A : □} {a b : A} → a ≡ b → b ≡ a
+symm : ∀ {ℓ} {A : Set ℓ} {a b : A} → a ≡ b → b ≡ a
 symm refl = refl
 
 trans : {A : □} {a b c : A} → a ≡ b → b ≡ c → a ≡ c
@@ -30,7 +30,7 @@ cong : {A B : □} {a b : A} (f : A → B) → a ≡ b → f a ≡ f b
 cong f refl = refl
 
 postulate
-  funext : {A B : □} {f g : A → B} → (∀ x → f x ≡ g x) → f ≡ g
+  funext : ∀ {a b} {A : Set a} {B : A → Set b} {f g : (a : A) → B a} → (∀ x → f x ≡ g x) → f ≡ g
   funext/Ω : {A : Prop} {B : □} {f g : A → B} → (∀ x → f x ≡ g x) → f ≡ g
 
 record iso (A B : □) : □ where
