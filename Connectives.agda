@@ -39,69 +39,59 @@ e/pair : ∀ {A B} →
   (cA : Ext A) →
   (cB : (a : val A) → Ext (B a)) →
   Ext (Σ++ A B)
-e/pair {A} {B} cA cB = record
-  { Carrier = Σ (Carrier cA) λ a → Carrier (cB (bwd (rep cA) a))
-  ; rep = record
-      { fwd = λ (a , b) →
-        iso.fwd (Ext.rep cA) a , P.subst (λ a → Carrier (cB a)) (symm (bwd-fwd (rep cA) a)) (fwd (rep (cB a)) b)
-      ; bwd = λ (a , b) →  bwd (rep cA) a , bwd (rep (cB (bwd (rep cA) a))) b
-      ; fwd-bwd = λ x →
-          let e1 = fwd-bwd (rep cA) (fst x) in
-            Inverse.f Σ-≡,≡↔≡ (e1 , e)
-      ; bwd-fwd = λ x → Inverse.f Σ-≡,≡↔≡ (bwd-fwd (rep cA) (fst x) , e2)}
-  }
+
+Carrier (e/pair {A} {B} cA cB) =
+  Σ (Carrier cA) (λ a → Carrier (cB (bwd (rep cA) a)))
+
+fst (fwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
+  iso.fwd (Ext.rep cA) a
+snd (fwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
+  P.subst (Carrier ∘ cB) (symm (bwd-fwd (rep cA) a)) (fwd (rep (cB a)) b)
+
+fst (bwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
+  bwd (rep cA) a
+snd (bwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
+  bwd (rep (cB (bwd (rep cA) a))) b
+
+fwd-bwd (rep (e/pair {A} {B} cA cB)) (a , b) =
+  Inverse.f Σ-≡,≡↔≡
+    (fwd-bwd (rep cA) a ,
+     H.≅-to-≡ (H.trans p (H.trans q (H.≡-to-≅ (fwd-bwd (rep (cB _)) b)))))
   where
-  e' : ∀ {x} → P.subst (λ a → Carrier (cB (bwd (rep cA) a)))
-        (fwd-bwd (rep cA) (fst x))
-        (P.subst (λ a → Carrier (cB a))
-        (symm (bwd-fwd (rep cA) (bwd (rep cA) (fst x))))
-        (fwd (rep (cB (bwd (rep cA) (fst x))))
-          (bwd (rep (cB (bwd (rep cA) (fst x)))) (snd x))))
-        H.≅ snd x
-  e' {x} =
-    let h = H.≡-subst-removable (λ a → Carrier (cB (bwd (rep cA) a))) (fwd-bwd (rep cA) (fst x))
-          (P.subst (λ a → Carrier (cB a))
-          (symm (bwd-fwd (rep cA) (bwd (rep cA) (fst x))))
-          (fwd (rep (cB (bwd (rep cA) (fst x))))
-            (bwd (rep (cB (bwd (rep cA) (fst x)))) (snd x)))) in
-    let h1 = H.≡-subst-removable (λ a → Carrier (cB a))
-              (symm (bwd-fwd (rep cA) (bwd (rep cA) (fst x))))
-              (fwd (rep (cB (bwd (rep cA) (fst x))))
-                (bwd (rep (cB (bwd (rep cA) (fst x)))) (snd x))) in
-    let h2 =  H.≡-to-≅ (fwd-bwd (rep (cB (bwd (rep cA) (fst x)))) (snd x)) in
-   H.trans h (H.trans h1 h2)
+    abstract
+      p =
+        H.≡-subst-removable
+         (λ a → Carrier (cB (bwd (rep cA) a)))
+         (fwd-bwd (rep cA) a)
+         (P.subst (λ a → Carrier (cB a))
+          (symm (bwd-fwd (rep cA) (bwd (rep cA) a)))
+          (fwd (rep (cB (bwd (rep cA) a)))
+           (bwd (rep (cB (bwd (rep cA) a))) b)))
 
-  e : ∀ {x} → P.subst (λ a → Carrier (cB (bwd (rep cA) a)))
-        (fwd-bwd (rep cA) (fst x))
-        (P.subst (λ a → Carrier (cB a))
-        (symm (bwd-fwd (rep cA) (bwd (rep cA) (fst x))))
-        (fwd (rep (cB (bwd (rep cA) (fst x))))
-          (bwd (rep (cB (bwd (rep cA) (fst x)))) (snd x))))
-        ≡ snd x
-  e {x} = H.≅-to-≡ e'
+      q =
+        H.≡-subst-removable
+         (λ a → Carrier (cB a))
+         (symm (bwd-fwd (rep cA) (bwd (rep cA) a)))
+         (fwd (rep (cB (bwd (rep cA) a)))
+          (bwd (rep (cB (bwd (rep cA) a))) b))
 
-  e2' : ∀ {x} → P.subst (λ x₁ → val (B x₁)) (bwd-fwd (rep cA) (fst x))
-    (bwd (rep (cB (bwd (rep cA) (fwd (rep cA) (fst x)))))
-     (P.subst (λ a → Carrier (cB a)) (symm (bwd-fwd (rep cA) (fst x)))
-      (fwd (rep (cB (fst x))) (snd x))))
-    H.≅ snd x
-  e2' {x} =
-    let h = H.≡-subst-removable (λ x₁ → val (B x₁)) (bwd-fwd (rep cA) (fst x))
-            (bwd (rep (cB (bwd (rep cA) (fwd (rep cA) (fst x)))))
-            (P.subst (λ a → Carrier (cB a)) (symm (bwd-fwd (rep cA) (fst x)))
-              (fwd (rep (cB (fst x))) (snd x)))) in
-    let h1 = H.≡-subst-removable (λ a → Carrier (cB a)) (symm (bwd-fwd (rep cA) (fst x)))
-              (fwd (rep (cB (fst x))) (snd x)) in
-    let h2 = H.icong (λ i → Carrier (cB i)) (bwd-fwd (rep cA) (fst x)) (λ {k} z → bwd (rep (cB k)) z) h1 in
-    let h3 = H.≡-to-≅ (bwd-fwd (rep (cB (fst x))) (snd x)) in
-    H.trans h (H.trans h2 h3)
+bwd-fwd (rep (e/pair {A} {B} cA cB)) (a , b) =
+  Inverse.f Σ-≡,≡↔≡
+    (bwd-fwd (rep cA) a ,
+     H.≅-to-≡ (H.trans p (H.trans r s)))
+  where
+    abstract
+      p =
+        H.≡-subst-removable
+         (val ∘ B)
+         (bwd-fwd (rep cA) a)
+         (bwd
+          (rep (cB (bwd (rep cA) (fwd (rep cA) a))))
+          (P.subst (Carrier ∘ cB) (symm (bwd-fwd (rep cA) a)) (fwd (rep (cB a)) b)))
 
-  e2 : ∀ {x} → P.subst (λ x₁ → val (B x₁)) (bwd-fwd (rep cA) (fst x))
-    (bwd (rep (cB (bwd (rep cA) (fwd (rep cA) (fst x)))))
-     (P.subst (λ a → Carrier (cB a)) (symm (bwd-fwd (rep cA) (fst x)))
-      (fwd (rep (cB (fst x))) (snd x))))
-    ≡ snd x
-  e2 = H.≅-to-≡ e2'
+      q = H.≡-subst-removable (Carrier ∘ cB) (symm (bwd-fwd (rep cA) a)) (fwd (rep (cB a)) b)
+      r = H.icong (Carrier ∘ cB) (bwd-fwd (rep cA) a) (λ {k} z → bwd (rep (cB k)) z) q
+      s = H.≡-to-≅ (bwd-fwd (rep (cB a)) b)
 
 _⇒_[_,_] : (A : tp pos) → (B : val A → tp pos) → (h : Ext A) → (Carrier h → ℕ) → tp neg
 A ⇒ B [ h , p ] =
@@ -121,15 +111,11 @@ postulate
   {-# REWRITE meta/out #-}
 
 e/meta : ∀ A → Ext (U (meta A))
-e/meta A = record {
-    Carrier = A
-  ; rep = record {
-      fwd = id
-    ; bwd = id
-    ; fwd-bwd = λ _ → refl
-    ; bwd-fwd = λ _ → refl
-    }
-  }
+Carrier (e/meta A) = A
+fwd (rep (e/meta A)) = id
+bwd (rep (e/meta A)) = id
+fwd-bwd (rep (e/meta A)) _ = refl
+bwd-fwd (rep (e/meta A)) _ = refl
 
 -- fun :
 --   (A : tp pos) →
