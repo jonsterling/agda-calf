@@ -17,11 +17,11 @@ postulate
 infix 10 ◯⁺_
 infix 10 ◯⁻_
 postulate
-  ext/val : (ext → tp pos) → tp pos 
+  ext/val : (ext → tp pos) → tp pos
   ext/val/decode : ∀ {A} → val (ext/val A) ≡ ∀ (u : ext) → (val (A u))
   {-# REWRITE ext/val/decode #-}
 
-  ext/cmp : (ext → tp neg) → tp neg 
+  ext/cmp : (ext → tp neg) → tp neg
   ext/cmp/decode : ∀ {A} → val (U (ext/cmp A)) ≡ ∀ (u : ext) → (cmp (A u))
   {-# REWRITE ext/cmp/decode #-}
 
