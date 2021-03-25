@@ -53,6 +53,17 @@ ub/bind/const {f = f} h p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
 ... | _ | refl = 
   ub/intro {q = q1 + q2} b (+-mono-≤ h1 h4) (ret {eq _ _ _} (eq/intro refl))
 
+ub/bind/suc : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)} 
+  (h : Ext A) (p : ℕ) →
+  ub A e 1 → 
+  ((a : val A) → ub B (f a) p) → 
+  ub B (bind {A} (F B) e f) (suc p)
+ub/bind/suc {f = f} h p (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2 
+... | refl with h3 a 
+... | ub/intro {q = q2} b h4 h5 with (f a) | eq/ref h5 
+... | _ | refl = 
+  ub/intro {q = q1 + q2} b (P.subst (λ n → q1 + q2 ≤ n) refl (+-mono-≤ h1 h4)) (ret {eq _ _ _} (eq/intro refl))
+
 if : ∀ {A : ℕ → Set} → (n : ℕ) → (A 0) → ((n : ℕ) → A (suc n)) → A n
 if zero n f = n 
 if (suc m) n f = f m

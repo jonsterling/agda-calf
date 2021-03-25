@@ -120,8 +120,8 @@ postulate
   meta/out : ∀ {A} → val (U(meta A)) ≡ A
   {-# REWRITE meta/out #-}
 
-e/meta : ∀ {A} → Ext (U (meta A)) 
-e/meta {A} = record {
+e/meta : ∀ A → Ext (U (meta A)) 
+e/meta A = record {
     Carrier = A
   ; rep = record { 
       fwd = id 
