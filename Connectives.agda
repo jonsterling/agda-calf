@@ -5,7 +5,7 @@ open import Metalanguage
 open import PhaseDistinction
 open import Cost
 open import Upper
-open import Data.Nat using (ℕ; _+_; _<_)
+open import Data.Nat
 open import Relation.Binary
 open import Level using (Level; _⊔_)
 open import Induction.WellFounded
@@ -17,6 +17,7 @@ import Relation.Binary.HeterogeneousEquality as H
 open import Data.Product.Properties
 open import Function.Bundles
 open import Induction
+import Level as L
 
 private
   variable
@@ -93,8 +94,8 @@ bwd-fwd (rep (e/pair {A} {B} cA cB)) (a , b) =
       r = H.icong (Carrier ∘ cB) (bwd-fwd (rep cA) a) (λ {k} z → bwd (rep (cB k)) z) q
       s = H.≡-to-≅ (bwd-fwd (rep (cB a)) b)
 
-_⇒_[_,_] : (A : tp pos) → (B : val A → tp pos) → (h : Ext A) → (Carrier h → ℕ) → tp neg
-A ⇒ B [ h , p ] =
+Ψ : (A : tp pos) → (B : val A → tp pos) → (h : Ext A) → (Carrier h → ℕ) → tp neg
+Ψ A B h p =
   Σ+- (U(Π A (λ a → F (B a)))) λ f →
     Π A λ a → ub⁻ (B a) (f a) ((p ∘ (iso.fwd (rep h))) a)
 
@@ -117,10 +118,11 @@ bwd (rep (e/meta A)) = id
 fwd-bwd (rep (e/meta A)) _ = refl
 bwd-fwd (rep (e/meta A)) _ = refl
 
--- fun :
---   (A : tp pos) →
---   (h : Ext A) →
---   (B : val A → tp pos) →
---   (p : Ext.𝒜 h → ℕ) →
---   (body : (a : val A) →
---           (self : cmp (Σ++ A λ a' → meta (lt/cost h p a' a) ⇒ (λ s → B (s . fst)) [ h ,  ] ) )
+dom : ∀ {ℓ} {a} {A : Set a} {B : Set a} → Rel B ℓ → Rel (A → B) (a L.⊔ ℓ)
+dom {A = A} r f1 f2 = ∀ (a : A) → r (f1 a) (f2 a)
+
+pitime/relax : ∀ A B h {p p'} → dom _≤_ p p' →
+                 (f : cmp (Ψ A B h p)) →
+                 cmp (Ψ A B h p')
+pitime/relax A B _ h (func , prf) = func ,
+  λ a → ub⁻/decode .fwd (ub/relax (h _) (ub⁻/decode .bwd (prf a)))

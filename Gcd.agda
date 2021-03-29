@@ -7,7 +7,7 @@ open import Cost
 open import Upper
 open import Eq
 open import Data.Nat as Nat
-open import Connectives renaming (_⇒_[_,_] to Ψ)
+open import Connectives
 open import Function
 open import Relation.Binary.PropositionalEquality as P
 open import Num
@@ -28,8 +28,6 @@ open import Relation.Binary using (Rel)
 open import Relation.Unary using (Pred; _⊆′_)
 open import Data.Nat.DivMod.Core
 open import Axiom.UniquenessOfIdentityProofs.WithK using (uip)
-
-
 
 mod-tp : (x y : val num) → cmp (meta (False (to-nat y ≟ 0))) → tp pos
 mod-tp x y h = Σ++ num λ z → (U (meta (to-nat z ≡ _%_ (to-nat x) (to-nat y) {h})))
@@ -325,7 +323,6 @@ gcd/code : cmp (Π gcd/i λ _ → F num)
 gcd/code (x , y , h) =
   All.wfRec (lt/cost/wf {gcd/i} {e/gcd} {gcd/cost})
   _ (const (cmp (F num))) gcd/body ((x , (y , h)))
-
 
 gcd : cmp (Ψ gcd/i (λ { _ → num }) e/gcd gcd/cost)
 gcd = gcd/code ,

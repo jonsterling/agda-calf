@@ -6,6 +6,7 @@ open import PhaseDistinction
 open import Cost
 open import Eq
 open import Data.Nat
+open import Data.Nat.Properties
 
 -- postulate
 --   le/ext : ◯ (cmp (F nat)) → ◯ (cmp (F nat)) → tp neg
@@ -31,3 +32,6 @@ data ub (A : tp pos) : cmp (F A) → cmp (F nat) → □ where
 postulate
   ub⁻ : (A : tp pos) → cmp (F A) → (cmp (F nat)) → tp neg
   ub⁻/decode : ∀ {A e p} → iso (ub A e p) (cmp (ub⁻ A e p))
+
+ub/relax : ∀ {A e p p'} → p ≤ p' → ub A e p → ub A e p'
+ub/relax h (ub/intro {q = q} a h1 eqn) = ub/intro {q = q} a (≤-trans h1 h) eqn
