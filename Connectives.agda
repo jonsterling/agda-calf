@@ -28,6 +28,8 @@ bounded A n = Σ+- (U (F A)) λ u → ub⁻ A u n
 
 -- used for extracting the extension from a program in order to compute measure/cost
 -- information.
+-- val A → ℕ
+-- val A → Carrier → ℕ
 record Ext (A : tp pos) : Set₁ where
   field
     Carrier : Set
@@ -104,12 +106,6 @@ lt/cost h p = _<_ on (p ∘ (iso.fwd (rep h)))
 
 lt/cost/wf : ∀ {A h p} → WellFounded (lt/cost {A} h p)
 lt/cost/wf {A} {h} {p} = On.wellFounded (p ∘ (iso.fwd (rep h))) <-wellFounded
-
--- place to store meta info about cost internally
-postulate
-  meta : Set → tp neg
-  meta/out : ∀ {A} → val (U(meta A)) ≡ A
-  {-# REWRITE meta/out #-}
 
 e/meta : ∀ A → Ext (U (meta A))
 Carrier (e/meta A) = A

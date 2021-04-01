@@ -35,7 +35,8 @@ ub/bind : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
   (h : Ext A) (p : ℕ) (q : Carrier h → ℕ) →
   ub A e p →
   ((a : val A) → ub B (f a) (q (fwd (rep h) a))) →
-  ub B (bind {A} (F B) e f) (bind {A} (F nat) e (λ a → p + q (fwd (rep h) a)))
+  ub B (bind {A} (F B) e f)
+       (bind {A} (meta ℕ) e (λ a → p + q (fwd (rep h) a)))
 ub/bind {f = f} h p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
 ... | refl with h3 a
 ... | ub/intro {q = q2} b h4 h5 with (f a) | eq/ref h5

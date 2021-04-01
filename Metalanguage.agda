@@ -5,6 +5,7 @@
 module Metalanguage where
 
 open import Prelude
+open import Data.Nat
 
 postulate
   mode : □
@@ -58,3 +59,26 @@ postulate
   Σ++ : (A : tp pos) (B : val A → tp pos) → tp pos
   Σ++/decode : ∀ {A} {B : val A → tp pos} → val (Σ++ A B) ≡ Σ (val A) λ x → val (B x)
   {-# REWRITE Σ++/decode #-}
+
+  -- agda sets
+  meta : Set → tp neg
+  meta/out : ∀ {A} → val (U(meta A)) ≡ A
+  {-# REWRITE meta/out #-}
+
+  step' : ∀ (B : tp neg) → (cmp (meta ℕ)) → cmp B → cmp B
+  step'/id : ∀ {B : tp neg} {e : cmp B} →
+    step' B zero e ≡ e
+  {-# REWRITE step'/id #-}
+  step'/concat : ∀ {B e p q} →
+    step' B p (step' B q e) ≡ step' B (p + q) e
+  {-# REWRITE step'/concat #-}
+
+  U_step' : ∀ {A} {X : val A → tp neg} {e n} → U (tbind {A} (step' (F A) n e) X) ≡ U (tbind {A} e X)
+  {-# REWRITE U_step' #-}
+
+  bind/step' : ∀ {A} {X} {e f n} → bind {A} X (step' (F A) n e) f ≡ step' X n (bind {A} X e f)
+  dbind/step' : ∀ {A} {X : val A → tp neg} {e f n} → dbind {A} X (step' (F A) n e) f ≡ step' (tbind {A} e X) n (dbind {A} X e f)
+  {-# REWRITE bind/step' dbind/step' #-}
+
+  meta/step' : ∀ {A n} → (e : cmp (meta A)) → step' (meta A) n e ≡ e
+  {-# REWRITE meta/step' #-}

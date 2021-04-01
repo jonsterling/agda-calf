@@ -52,34 +52,7 @@ A ⇒ B = Π A (λ _ → B)
 -- add/cost : cmp (U 𝒞 ⇒ U 𝒞 ⇒ 𝒞)
 -- add/cost c1 c2 u = add/cmp (c1 u) (c2 u)
 
-≤-≡ : ∀ {m n} → m ≡ n → m ≤ n
-≤-≡ refl = ≤-refl
 
-postulate
-  nat : tp pos
-  nat/decode : val (U (F nat)) ≡ ℕ
-  {-# REWRITE nat/decode #-}
-
-postulate
-  step' : ∀ (B : tp neg) → (cmp (F nat)) → cmp B → cmp B
-  step'/id : ∀ {B : tp neg} {e : cmp B} →
-    step' B zero e ≡ e
-  {-# REWRITE step'/id #-}
-  step'/concat : ∀ {B e p q} →
-    step' B p (step' B q e) ≡ step' B (p + q) e
-  {-# REWRITE step'/concat #-}
-
-  U_step' : ∀ {A} {X : val A → tp neg} {e n} → U (tbind {A} (step' (F A) n e) X) ≡ U (tbind {A} e X)
-  {-# REWRITE U_step' #-}
-
-  bind/step' : ∀ {A} {X} {e f n} → bind {A} X (step' (F A) n e) f ≡ step' X n (bind {A} X e f)
-  dbind/step' : ∀ {A} {X : val A → tp neg} {e f n} → dbind {A} X (step' (F A) n e) f ≡ step' (tbind {A} e X) n (dbind {A} X e f)
-  {-# REWRITE bind/step' dbind/step' #-}
-
-  step'/ext : ∀ X → (e : cmp X) → (n : (cmp (F nat))) → ◯ (step' X n e ≡ e)
-  -- {-# REWRITE step'/ext #-}
-  nat/step' : ∀ {c : cmp (F nat)} {n : ℕ} → step' (F nat) n c ≡ c
-  {-# REWRITE nat/step' #-}
 -- Arithmetic. This can be defined as an inductive type if that is available.
 -- Otherwise it can also be a type computation, which requires universes.
 

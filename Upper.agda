@@ -12,7 +12,7 @@ open import Data.Nat.Properties
 --   le/ext : ◯ (cmp (F nat)) → ◯ (cmp (F nat)) → tp neg
 --   le/ext/decode : ∀ {p q} → cmp (le/ext p q) ≡ ((u : ext) → p u ≤ q u)
 
-data ub (A : tp pos) : cmp (F A) → cmp (F nat) → □ where
+data ub (A : tp pos) : cmp (F A) → cmp (meta ℕ) → □ where
   ub/intro : ∀ {e p q} (a : val A) →
     q ≤ p →
     cmp (F (eq (U(F A)) e (step' (F A) q (ret {A} a)))) →

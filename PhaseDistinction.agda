@@ -7,6 +7,7 @@ module PhaseDistinction where
 open import Prelude
 open import Metalanguage
 open import CostEffect
+open import Data.Nat using (ℕ)
 
 postulate
   ext : Ω
@@ -33,6 +34,7 @@ postulate
 postulate
   step/ext : ∀ X → (e : cmp X) → ◯ (step X e ≡ e)
   -- sadly the above cannot be made an Agda rewrite rule
+  step'/ext : ∀ X → (e : cmp X) → (n : ℕ) → ◯ (step' X n e ≡ e)
 
 
 -- Underneath the open modality, we ensure that the abstract types
