@@ -3,7 +3,6 @@
 open import Prelude
 open import Metalanguage
 open import PhaseDistinction
-open import Cost
 open import Upper
 open import Eq
 open import Data.Nat

@@ -3,11 +3,8 @@
 open import Prelude
 open import Metalanguage
 open import PhaseDistinction
-open import Cost
 open import Upper
 open import Eq
-open import Thunkable
-open import Univ
 open import Data.Nat as Nat
 open import Connectives
 open import Function

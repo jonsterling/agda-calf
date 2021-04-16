@@ -3,7 +3,6 @@
 open import Prelude
 open import Metalanguage
 open import PhaseDistinction
-open import Cost
 open import Upper
 open import Data.Nat
 open import Relation.Binary
@@ -23,7 +22,7 @@ private
   variable
     a b c ℓ ℓ₁ ℓ₂ ℓ₃ : Level
 
-bounded : (A : tp pos) → (cmp (F nat)) → tp neg
+bounded : (A : tp pos) → (cmp (meta ℕ)) → tp neg
 bounded A n = Σ+- (U (F A)) λ u → ub⁻ A u n
 
 -- used for extracting the extension from a program in order to compute measure/cost

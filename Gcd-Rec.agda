@@ -3,7 +3,6 @@
 
 open import Prelude
 open import Metalanguage
-open import Cost
 open import Num
 open import PhaseDistinction
 open import Connectives
@@ -12,6 +11,7 @@ open import Upper
 open import Eq
 
 open import Gcd
+open import Gcd-direct
 open import Data.Nat.GCD
 open import Data.Nat.DivMod
 open import Data.Nat
@@ -142,4 +142,4 @@ gcd/cost/closed/ub i@(x , y , h) =
   (<⇒≤ (gcd/cost/bound _ i (<-transˡ g g1) (<-trans h g)))
 
 gcd/closed : cmp (Ψ gcd/i (λ { _ → num }) e/gcd gcd/cost/closed)
-gcd/closed = pitime/relax gcd/i (const num) e/gcd gcd/cost/closed/ub Gcd.gcd
+gcd/closed = pitime/relax gcd/i (const num) e/gcd gcd/cost/closed/ub Gcd-direct.gcd

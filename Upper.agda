@@ -3,7 +3,6 @@
 open import Prelude
 open import Metalanguage
 open import PhaseDistinction
-open import Cost
 open import Eq
 open import Data.Nat
 open import Data.Nat.Properties
@@ -30,7 +29,7 @@ data ub (A : tp pos) : cmp (F A) → cmp (meta ℕ) → □ where
 --   {-# REWRITE ub/decode #-}
 
 postulate
-  ub⁻ : (A : tp pos) → cmp (F A) → (cmp (F nat)) → tp neg
+  ub⁻ : (A : tp pos) → cmp (F A) → (cmp (meta ℕ)) → tp neg
   ub⁻/decode : ∀ {A e p} → iso (ub A e p) (cmp (ub⁻ A e p))
 
 ub/relax : ∀ {A e p p'} → p ≤ p' → ub A e p → ub A e p'
