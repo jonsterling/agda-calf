@@ -15,6 +15,7 @@ open import Induction
 open import Axiom.UniquenessOfIdentityProofs.WithK
 open import Relation.Binary.Definitions
 open import Function using (const)
+open import Sum
 
 open Ext
 open iso
@@ -22,7 +23,6 @@ open iso
 ub/ret : ∀ {A a} (n : ℕ) → ub A (ret {A} a) n
 ub/ret {A} {a} n = ub/intro {q = 0} a z≤n (ret {eq _ _ _} (eq/intro refl))
 
--- Need to understand with-abstraction.
 ub/step : ∀ {A e} (p q : ℕ) →
   ub A e p →
   ub A (step' (F A) q e) (p + q)
@@ -30,24 +30,30 @@ ub/step p q (ub/intro {q = q1} a h1 h2) with eq/ref h2 | p + q | +-comm p q
 ...                                              | refl | _ | refl =
    ub/intro {q = q + q1} a (+-monoʳ-≤ q h1) (ret {eq _ _ _}(eq/intro refl))
 
-ub/bind : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
-  (h : Ext A) (p : ℕ) (q : Carrier h → ℕ) →
+ub/step/suc : ∀ {A e} (p : ℕ) →
   ub A e p →
-  ((a : val A) → ub B (f a) (q (fwd (rep h) a))) →
+  ub A (step' (F A) 1 e) (suc p)
+ub/step/suc p (ub/intro {q = q1} a h1 h2) with eq/ref h2
+...                                              | refl = ub/intro {q = suc q1} a (s≤s h1) (ret {eq _ _ _} (eq/intro refl))
+
+ub/bind : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
+  (p : ℕ) (q : val A → ℕ) →
+  ub A e p →
+  ((a : val A) → ub B (f a) (q a)) →
   ub B (bind {A} (F B) e f)
-       (bind {A} (meta ℕ) e (λ a → p + q (fwd (rep h) a)))
-ub/bind {f = f} h p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
+       (bind {A} (meta ℕ) e (λ a → p + q a))
+ub/bind {f = f} p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
 ... | refl with h3 a
 ... | ub/intro {q = q2} b h4 h5 with (f a) | eq/ref h5
 ... | _ | refl =
   ub/intro {q = q1 + q2} b (+-mono-≤ h1 h4) (ret {eq _ _ _} (eq/intro refl))
 
 ub/bind/const : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
-  (h : Ext A) (p q : ℕ) →
+  (p q : ℕ) →
   ub A e p →
   ((a : val A) → ub B (f a) q) →
   ub B (bind {A} (F B) e f) (p + q)
-ub/bind/const {f = f} h p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
+ub/bind/const {f = f} p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
 ... | refl with h3 a
 ... | ub/intro {q = q2} b h4 h5 with (f a) | eq/ref h5
 ... | _ | refl =
@@ -90,3 +96,17 @@ ub/ifz B x e0 e1 p1 p2 h1 h2 =
           (λ h → h1)
           (λ y g1 g2 →  h2 y (trans' refl (symm g2)))
           refl
+
+
+ub/sum/case/const/const : ∀ A B (C : val (sum A B) → tp pos) →
+  (s : val (sum A B)) →
+  (e0 : (a : val A) → cmp (F (C (inl a)))) →
+  (e1 : (b : val B) → cmp (F (C (inr b)))) →
+  (p : ℕ) →
+  ((a : val A) → ub (C (inl a)) (e0 a) p) →
+  ((b : val B) → ub (C (inr b)) (e1 b) p) →
+  ub (C s) (sum/case A B (λ s → F (C s)) s e0 e1) p
+ub/sum/case/const/const A B C s e0 e1 p h1 h2 = sum/case A B
+  (λ s → meta (ub (C s) (sum/case A B (λ s₁ → F (C s₁)) s e0 e1) p)) s h1 h2
+
+
