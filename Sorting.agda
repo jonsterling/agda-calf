@@ -5,8 +5,13 @@ module Sorting where
 open import Prelude
 open import Metalanguage
 open import Num
+open import Upper
+open import Eq
+open import Refinement
+import Relation.Binary.PropositionalEquality as Eq
 open import Data.Nat
-open import Data.Bool using (true ; false)
+open import Data.Nat.Properties
+open import Data.Bool using (true; false; if_then_else_)
 open import Data.List using ([]; _∷_)
 
 module List where
@@ -48,6 +53,11 @@ module List where
   of-list []       = nil
   of-list (x ∷ xs) = cons (to-num x) (of-list xs)
 
+  length : ∀ {A n} → val (list n A) → ℕ
+  length l = list/ind l (λ _ → meta ℕ) zero λ _ _ → suc
+
+cost = meta ℕ
+
 module InsertionSort where
   open List hiding (list)
   list = List.list 1 num
@@ -59,6 +69,23 @@ module InsertionSort where
       inductive-step y ys ih with to-nat y ≤ᵇ to-nat x
       ... | false = ret (cons x (cons y ys))
       ... | true  = bind (F list) ih λ ih → ret (cons y ih)
+
+  insert/cost : cmp (Π num λ _ → Π list λ _ → cost)
+  insert/cost _ = List.length
+
+  insert≤insert/cost : ∀ x l → ub list (insert x l) (insert/cost x l)
+  insert≤insert/cost x l =
+    list/ind
+      l
+      (λ l → meta (ub list (insert x l) (insert/cost x l)))
+      (ub/ret 0)
+      inductive-step
+    where
+      inductive-step : (y : val num) (ys : val (List.list 1 num)) → ub list (insert x ys) (length ys) → cmp (meta (ub list (insert x (cons y ys)) (length (cons y ys))))
+      inductive-step y ys h with to-nat y ≤ᵇ to-nat x
+      ... | false = ub/intro _ (s≤s z≤n) (ret (eq/intro refl))
+      ... | true  with ub/bind/const _ 0 h (λ _ → ub/ret zero) 
+      ...   | h-bind rewrite +-identityʳ (length ys) = ub/step/suc (length ys) h-bind
 
   ex-insert : cmp (F list)
   ex-insert = insert (to-num 3) (of-list (1 ∷ 2 ∷ 4 ∷ []))
