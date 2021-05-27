@@ -8,7 +8,6 @@ open import Eq
 open import Data.Nat
 open import Data.Nat.Properties
 open import Connectives
-open import Num
 open import Nat
 open import Relation.Binary.PropositionalEquality as P
 open import Data.Nat.Induction
@@ -77,26 +76,6 @@ if (suc m) n f = f m
 
 trans' : ∀ {a} {A : Set a} → Transitive {A = A} _≡_
 trans' eq refl = eq
-
-ub/ifz :
-  (B : ℕ → tp pos)
-  (x : val num)
-  (e0 : cmp (F (B 0)))
-  (e1 : (y : val num) → suc (to-nat y) ≡ to-nat x → cmp (F (B (suc (to-nat y)))))
-  (p1 : ℕ)
-  (p2 : ℕ → ℕ) →
-  (ub (B 0) e0 p1) →
-  ((y : val num) → (h : suc (to-nat y) ≡ to-nat x) → ub (B (suc (to-nat y))) (e1 y h) (p2 (to-nat y))) →
-  ub (B (to-nat x)) (ifz (λ n → F (B n)) x e0 e1) (if {λ _ → ℕ} (to-nat x) p1 p2)
-ub/ifz B x e0 e1 p1 p2 h1 h2 =
-    ifz
-        (λ n →
-          meta ((h1 : to-nat x ≡ n) →  ub (B (to-nat (to-num n)))
-          (ifz (λ n → F (B n)) (to-num n) e0 (λ y h → e1 y (trans' h (symm h1))))
-          (if (to-nat (to-num n)) p1 p2))) x
-          (λ h → h1)
-          (λ y g1 g2 →  h2 y (trans' refl (symm g2)))
-          refl
 
 ub/rec :
   (B : val nat → tp pos)

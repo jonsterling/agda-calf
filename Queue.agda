@@ -10,7 +10,7 @@ open import Data.Nat as Nat
 open import Connectives
 open import Function
 open import Relation.Binary.PropositionalEquality as P
-open import Num
+open import Nat
 open import Induction.WellFounded
 open import Induction
 open import Data.Nat.Properties
@@ -39,8 +39,8 @@ record Queue : Set where
   field
     Q : tp pos
     emp : val Q
-    enq : cmp (Π Q λ _ → Π num λ _ → F Q)
-    deq : cmp (Π Q λ _ → F (sum unit (Σ++ Q λ _ → num)))
+    enq : cmp (Π Q λ _ → Π nat λ _ → F Q)
+    deq : cmp (Π Q λ _ → F (sum unit (Σ++ Q λ _ → nat)))
 
 -- Suppose we want to implement the Queue signature above using lists.
 -- One cost model is to count the number of times a cons node is inspected.
@@ -88,8 +88,8 @@ list/match l X e0 e1 = list/ind l X e0 (λ a l _ → e1 a l)
 --   list/rec (cons a ►/l) X e0 e1 ≡ e1 a ►/l (bind X (►/out ►/l) (λ l → list/rec l X e0 e1))
 -- {-# REWRITE list/rec/cons #-}
 
-ex : val (list 0 num)
-ex = cons (to-num 0) ((cons (to-num 1) (nil)))
+ex : val (list 0 nat)
+ex = cons (tonat 0) ((cons (tonat 1) (nil)))
 
 len : ∀ {A n} → val (list n A) → ℕ
 len l = list/ind l (λ _ → meta ℕ) 0 λ a l r → 1 + r
@@ -98,7 +98,7 @@ len l = list/ind l (λ _ → meta ℕ) 0 λ a l r → 1 + r
 module FrontBack where
 
   -- For simplicity, we charge 1 step for each cons node destruction.
-  L = list 1 num
+  L = list 1 nat
 
   Q : tp pos
   Q = Σ++ L λ _ → L
@@ -106,7 +106,7 @@ module FrontBack where
   emp : val Q
   emp = (nil , nil)
 
-  enq : cmp (Π Q λ _ → Π num λ _ → F Q)
+  enq : cmp (Π Q λ _ → Π nat λ _ → F Q)
   enq (f , b) x = ret (f , cons x b)
 
   enq≤0 : ∀ q x → ub Q (enq q x) 0
@@ -138,9 +138,9 @@ module FrontBack where
 
   rev/cost = len
 
-  rev/helper/cons : ∀ l x r → Σ ℕ λ n → Σ (val num) λ x' → Σ (val L) λ l' → (len l' ≡ len r + len l) × rev/helper (cons x l) r ≡ step' (F L) n (ret (cons x' l'))
+  rev/helper/cons : ∀ l x r → Σ ℕ λ n → Σ (val nat) λ x' → Σ (val L) λ l' → (len l' ≡ len r + len l) × rev/helper (cons x l) r ≡ step' (F L) n (ret (cons x' l'))
   rev/helper/cons l = list/ind l
-    (λ l → meta (∀ x r → Σ ℕ λ n → Σ (val num) λ x' → Σ (val L) λ l' → len l' ≡ len r + len l × rev/helper (cons x l) r ≡ step' (F L) n (ret (cons x' l'))))
+    (λ l → meta (∀ x r → Σ ℕ λ n → Σ (val nat) λ x' → Σ (val L) λ l' → len l' ≡ len r + len l × rev/helper (cons x l) r ≡ step' (F L) n (ret (cons x' l'))))
     (λ x r → 1 , x , r , P.sym (+-identityʳ (len r)) , refl)
     λ y ys ih → λ x r →
     let (n , x' , l' , eqn1 , eqn2) = ih y (cons x r) in
@@ -176,10 +176,10 @@ module FrontBack where
   rev/ret l with rev≤rev/cost l
   ... | ub/intro {q = q} a h eqn = q , a , eq/ref eqn
 
-  rev/cons : ∀ x l → Σ ℕ λ n → Σ (val num) λ x' → Σ (val L) λ l' → len l' ≡ len l × rev (cons x l) ≡ step' (F L) n (ret (cons x' l'))
+  rev/cons : ∀ x l → Σ ℕ λ n → Σ (val nat) λ x' → Σ (val L) λ l' → len l' ≡ len l × rev (cons x l) ≡ step' (F L) n (ret (cons x' l'))
   rev/cons x l rewrite rev/unfold (cons x l) = rev/helper/cons l x nil
 
-  deq-tp = sum unit (Σ++ Q λ _ → num)
+  deq-tp = sum unit (Σ++ Q λ _ → nat)
 
   deq/emp : val L → cmp (F deq-tp)
   deq/emp = (λ l → list/match l (λ _ → F deq-tp) (ret (inl triv)) λ a l' → ret (inr ((l' , nil) , a)))
@@ -234,7 +234,7 @@ module FrontBack where
   -- The goal is to bound the cost of a single-thread sequence of queue operations staring with an initial queue q0,
   -- where an operation is either an enqueue or a dequeue.
   data op : Set where
-    op/enq : (x : val num) → op
+    op/enq : (x : val nat) → op
     op/deq : op
 
   -- Potential function
@@ -247,7 +247,7 @@ module FrontBack where
   _operate_ : op → val Q → cmp (F Q)
   (op/enq x) operate q = enq q x
   (op/deq) operate q =
-    bind (F Q) (deq q) λ s → (sum/case unit (Σ++ Q λ _ → num) (λ _ → F Q) s
+    bind (F Q) (deq q) λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s
     (λ _ → ret (nil , nil))
     (λ { (q , x) → ret q }))
 
@@ -265,7 +265,7 @@ module FrontBack where
           ((op/deq operateϕ (f , b)) ≡
             bind (meta ℕ) (op/deq operate (f , b)) ϕ))
         (list/ind b (λ b → meta ((op/deq operateϕ (nil , b)) ≡ bind (meta ℕ) (op/deq operate (nil , b)) ϕ))
-        (P.subst (λ x → 0 ≡ bind (meta ℕ) (bind (F Q) (bind (F deq-tp) x deq/emp) λ s → (sum/case unit (Σ++ Q λ _ → num) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ { (q , x) → ret q }))) ϕ)
+        (P.subst (λ x → 0 ≡ bind (meta ℕ) (bind (F Q) (bind (F deq-tp) x deq/emp) λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ { (q , x) → ret q }))) ϕ)
         (P.sym (rev/unfold nil)) refl)
         λ a l ih → emp/cons a l)
         λ a l → refl
@@ -299,11 +299,11 @@ module FrontBack where
   -- cost o q upperbounds the cost of o operate q.
   op≤cost : ∀ o q → ub Q (o operate q) (cost o q)
   op≤cost (op/enq x) q = enq≤0 q x
-  op≤cost op/deq q rewrite P.sym (+-identityʳ (cost (op/deq) q)) = ub/bind/const {A = deq-tp} {e = deq q} {f = λ s → (sum/case unit (Σ++ Q λ _ → num) (λ _ → F Q) s
+  op≤cost op/deq q rewrite P.sym (+-identityʳ (cost (op/deq) q)) = ub/bind/const {A = deq-tp} {e = deq q} {f = λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s
     (λ _ → ret (nil , nil))
     (λ { (q , x) → ret q }))} (cost op/deq q) 0
     (P.subst (λ x → ub deq-tp (deq q) x) (deq/cost≡cost/deq q) (deq≤deq/cost q))
-    λ a → ub/sum/case/const/const unit ((Σ++ Q λ _ → num)) (λ _ → Q) a ((λ _ → ret (nil , nil))) (λ { (q , x) → ret q }) 0
+    λ a → ub/sum/case/const/const unit ((Σ++ Q λ _ → nat)) (λ _ → Q) a ((λ _ → ret (nil , nil))) (λ { (q , x) → ret q }) 0
     (λ _ → ub/ret 0)
     (λ _ → ub/ret 0)
 
