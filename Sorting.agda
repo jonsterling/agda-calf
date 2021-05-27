@@ -4,7 +4,7 @@ module Sorting where
 
 open import Prelude
 open import Metalanguage
-open import Num
+open import Nat
 open import Data.Nat
 open import Data.Bool using (true ; false)
 open import Data.List using ([]; _∷_)
@@ -44,24 +44,24 @@ module List where
       list/ind (cons a l) X e0 e1 ≡ step' (X (cons a l)) n (e1 a l (list/ind l X e0 e1))
     {-# REWRITE list/ind/cons #-}
 
-  of-list : ∀ {n} → Data.List.List ℕ → val (list n num)
+  of-list : ∀ {n} → Data.List.List ℕ → val (list n nat)
   of-list []       = nil
-  of-list (x ∷ xs) = cons (to-num x) (of-list xs)
+  of-list (x ∷ xs) = cons (tonat x) (of-list xs)
 
 module InsertionSort where
   open List hiding (list)
-  list = List.list 1 num
+  list = List.list 1 nat
 
-  insert : cmp (Π num λ _ → Π list λ _ → F list)
+  insert : cmp (Π nat λ _ → Π list λ _ → F list)
   insert x l = list/ind l (λ _ → F list) (ret (cons x nil)) inductive-step
     where
-      inductive-step : val num → val list → val (U (F list)) → cmp (F list)
-      inductive-step y ys ih with to-nat y ≤ᵇ to-nat x
+      inductive-step : val nat → val list → val (U (F list)) → cmp (F list)
+      inductive-step y ys ih with toℕ y ≤ᵇ toℕ x
       ... | false = ret (cons x (cons y ys))
       ... | true  = bind (F list) ih λ ih → ret (cons y ih)
 
   ex-insert : cmp (F list)
-  ex-insert = insert (to-num 3) (of-list (1 ∷ 2 ∷ 4 ∷ []))
+  ex-insert = insert (tonat 3) (of-list (1 ∷ 2 ∷ 4 ∷ []))
 
   sort : cmp (Π list λ _ → F list)
   sort l = list/ind l (λ _ → F list) (ret nil) λ x _ ys → bind (F list) ys (insert x)
