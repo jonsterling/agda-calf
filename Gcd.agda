@@ -11,7 +11,7 @@ open import Data.Nat as Nat
 open import Connectives
 open import Function
 open import Relation.Binary.PropositionalEquality as P
-open import Num
+open import Nat
 open import Induction.WellFounded
 open import Induction
 open import Data.Nat.Properties
@@ -30,28 +30,23 @@ open import Relation.Unary using (Pred; _⊆′_)
 open import Data.Nat.DivMod.Core
 open import Axiom.UniquenessOfIdentityProofs.WithK using (uip)
 
-mod-tp : (x y : val num) → cmp (meta (False (to-nat y ≟ 0))) → tp pos
-mod-tp x y h = Σ++ num λ z → (U (meta (to-nat z ≡ _%_ (to-nat x) (to-nat y) {h})))
+mod-tp : (x y : val nat) → cmp (meta (False (toℕ y ≟ 0))) → tp pos
+mod-tp x y h = Σ++ nat λ z → (U (meta (toℕ z ≡ _%_ (toℕ x) (toℕ y) {h})))
 
-e/mod-tp : (x y : val num) → (h : cmp (meta (False (to-nat y ≟ 0)))) → Ext (mod-tp x y h)
-e/mod-tp x y h = e/pair e/num (λ z → e/meta (to-nat z ≡ _%_ (to-nat x) (to-nat y) {h}))
+mod : cmp (
+        Π nat λ x →
+        Π nat λ y →
+        Π (U (meta (False (toℕ y ≟ 0)))) λ h →
+        F (mod-tp x y h))
+mod x y h = step' (F (mod-tp x y h)) 1 (ret {mod-tp x y h} (tonat (_%_ (toℕ x) (toℕ y) {h}) , refl))
 
-postulate
-  mod : cmp (
-          Π num λ x →
-          Π num λ y →
-          Π (U (meta (False (to-nat y ≟ 0)))) λ h →
-          F (mod-tp x y h))
-
-  -- mod/coh : ∀ {x y} → (h : False (to-nat y ≟ 0)) →
-            -- bind {num} (F nat) (mod x y h) to-nat ≡ (_%_ (to-nat x) (to-nat y) {h})
-
-  mod/cost : ∀ {x y h} → ub (mod-tp x y h) (mod x y h) 1
+e/mod-tp : (x y : val nat) → (h : cmp (meta (False (toℕ y ≟ 0)))) → Ext (mod-tp x y h)
+e/mod-tp x y h = e/pair e/nat (λ z → e/meta (toℕ z ≡ _%_ (toℕ x) (toℕ y) {h}))
 
 m>n = Σ ℕ λ m → Σ ℕ λ n → (m > n)
 
 gcd/cost/helper : ∀ n → ((m : ℕ) → m < n → (k : ℕ) → (k > m) → ℕ) → (m : ℕ) → (m > n) → ℕ
-gcd/cost/helper zero h m h' = zero
+gcd/cost/helper zero h m h' = 0
 gcd/cost/helper n@(suc n') h m h' = suc (h (m % n) (m%n<n m n') n (m%n<n m n'))
 
 gcd/cost : m>n → ℕ
@@ -90,7 +85,7 @@ module irr
                                     P.cong-app (P.cong-app g y') h'
                                   }))
 
-gcd/cost-unfold-zero : ∀ {x h} → gcd/cost (x , zero , h) ≡ zero
+gcd/cost-unfold-zero : ∀ {x h} → gcd/cost (x , 0 , h) ≡ 0
 gcd/cost-unfold-zero = refl
 
 gcd/cost-unfold-suc : ∀ {x y h} → gcd/cost (x , suc y , h) ≡
@@ -114,14 +109,14 @@ gcd/cost-unfold-suc {x} {y} {h} = P.cong suc
     refl
   )
 
-gcd/cost-unfold : ∀ {x y h} → gcd/cost (x , y , h) ≡ if {λ _ → ℕ} y zero (λ y' → suc (gcd/cost (suc y' , x % suc y' , m%n<n x y')))
+gcd/cost-unfold : ∀ {x y h} → gcd/cost (x , y , h) ≡ if {λ _ → ℕ} y 0 (λ y' → suc (gcd/cost (suc y' , x % suc y' , m%n<n x y')))
 gcd/cost-unfold {x} {zero} {h} = refl
 gcd/cost-unfold {x} {suc y'} {h} = gcd/cost-unfold-suc {x} {y'} {h}
 
-gcd/i = Σ++ num λ x → Σ++ num λ y → U (meta (to-nat x > to-nat y))
+gcd/i = Σ++ nat λ x → Σ++ nat λ y → U (meta (toℕ x > toℕ y))
 
 e/gcd : Ext gcd/i
-e/gcd = e/pair e/num (λ x → e/pair e/num (λ y → e/meta (to-nat x > to-nat y)))
+e/gcd = e/pair e/nat (λ x → e/pair e/nat (λ y → e/meta (toℕ x > toℕ y)))
 
 to-ext = iso.fwd (Ext.rep e/gcd)
 
@@ -134,83 +129,56 @@ snd/subst : ∀ {a b} {A B : Set a} {C : A → B → Set b} {x y : A} {p : Σ B 
             P.subst (λ b → C y b) (symm (fst/subst e)) (P.subst (λ x → C x (fst p)) e (snd p))
 snd/subst refl = refl
 
-to-ext-unfold : ∀ (i@(x , y , h) : val gcd/i) → to-ext (x , y , h) ≡ (to-nat x , to-nat y , h)
+to-ext-unfold : ∀ (i@(x , y , h) : val gcd/i) → to-ext (x , y , h) ≡ (toℕ x , toℕ y , h)
 to-ext-unfold i@(x , y , h) =
   Inverse.f Σ-≡,≡↔≡ (refl , Inverse.f Σ-≡,≡↔≡
-    (fst/subst (symm (nat-num x)) , ≅-to-≡
-      (H.trans (≡-subst-removable ((λ a → Ext.Carrier (e/meta  (to-nat (iso.bwd (Ext.rep e/num) (to-nat x)) > to-nat (iso.bwd (Ext.rep e/num) a)))))
-      ((fst/subst (symm (nat-num x)))) (snd    (P.subst     (λ a →        Ext.Carrier        (e/pair e/num         (λ y₁ → e/meta (to-nat (iso.bwd (Ext.rep e/num) a) > to-nat y₁))))
+    (fst/subst (symm ( ℕ-nat x)) , ≅-to-≡
+      (H.trans (≡-subst-removable ((λ a → Ext.Carrier (e/meta  (toℕ (iso.bwd (Ext.rep e/nat) (toℕ x)) > toℕ (iso.bwd (Ext.rep e/nat) a)))))
+      ((fst/subst (symm ( ℕ-nat x)))) (snd    (P.subst     (λ a →        Ext.Carrier        (e/pair e/nat         (λ y₁ → e/meta (toℕ (iso.bwd (Ext.rep e/nat) a) > toℕ y₁))))
            refl (snd (to-ext (x , y , h))))))
-      (let g = snd/subst {C = λ x n → n < to-nat x} {p = (to-nat y ,
-                                  P.subst (λ a → suc (to-nat a) ≤ to-nat x) (symm (nat-num y)) h)}
-                                  (symm (nat-num x)) in
+      (let g = snd/subst {C = λ x n → n < toℕ x} {p = (toℕ y ,
+                                  P.subst (λ a → suc (toℕ a) ≤ toℕ x) (symm ( ℕ-nat y)) h)}
+                                  (symm ( ℕ-nat x)) in
                                    H.trans (≡-to-≅ g)
                                    (H.trans
-                                   (H.trans (≡-subst-removable ((λ n → n < to-nat (to-num (to-nat x))))
-                                   ((symm (fst/subst (symm (nat-num x)))))
-                                   ((P.subst (λ x₁ → to-nat y < to-nat x₁) (symm (nat-num x))
-                                   (P.subst (λ a → suc (to-nat a) ≤ to-nat x) (symm (nat-num y)) h))))
-                                   (≡-subst-removable (λ x₁ → to-nat y < to-nat x₁) (symm (nat-num x)) (P.subst (λ a → suc (to-nat a) ≤ to-nat x) (symm (nat-num y)) h)))
-                                   (≡-subst-removable (λ a → suc (to-nat a) ≤ to-nat x) (symm (nat-num y)) h))))))
+                                   (H.trans (≡-subst-removable ((λ n → n <  (toℕ x)))
+                                   ((symm (fst/subst (symm ( ℕ-nat x)))))
+                                   ((P.subst (λ x₁ → toℕ y < toℕ x₁) (symm ( ℕ-nat x))
+                                   (P.subst (λ a → suc (toℕ a) ≤ toℕ x) (symm ( ℕ-nat y)) h))))
+                                   (≡-subst-removable (λ x₁ → toℕ y < toℕ x₁) (symm ( ℕ-nat x)) (P.subst (λ a → suc (toℕ a) ≤ toℕ x) (symm ( ℕ-nat y)) h)))
+                                   (≡-subst-removable (λ a → suc (toℕ a) ≤ toℕ x) (symm ( ℕ-nat y)) h))))))
 
 gcd/cost-unfold' : ∀ (i@(x , y , h) : val gcd/i) → gcd/cost (to-ext i) ≡
-                      if {λ _ → ℕ} (to-nat y) zero
-                      (λ y' → suc (gcd/cost (suc y' , to-nat x % suc y' , m%n<n (to-nat x) y')))
-gcd/cost-unfold' i@(x , y , h) rewrite symm (gcd/cost-unfold {to-nat x} {to-nat y} {h}) =
-  P.cong gcd/cost {x = to-ext i} {y = (to-nat x , to-nat y , h)}
+                      if {λ _ → ℕ} (toℕ y) 0
+                      (λ y' → suc (gcd/cost (suc y' , toℕ x % suc y' , m%n<n (toℕ x) y')))
+gcd/cost-unfold' i@(x , y , h) rewrite symm (gcd/cost-unfold {toℕ x} {toℕ y} {h}) =
+  P.cong gcd/cost {x = to-ext i} {y = (toℕ x , toℕ y , h)}
   (Inverse.f Σ-≡,≡↔≡ (refl ,
-    Inverse.f Σ-≡,≡↔≡ (fst/subst (symm (nat-num x)) ,
+    Inverse.f Σ-≡,≡↔≡ (fst/subst (symm ( ℕ-nat x)) ,
     ≅-to-≡
       ( H.trans
-      (≡-subst-removable (_>_ (to-nat x)) ((fst/subst (symm (nat-num x))))
+      (≡-subst-removable (_>_ (toℕ x)) ((fst/subst (symm ( ℕ-nat x))))
       ((snd
      (P.subst
       (λ a →
-         Ext.Carrier (e/pair e/num (λ y₁ → e/meta (to-nat a > to-nat y₁))))
-      (symm (nat-num x))
+         Ext.Carrier (e/pair e/nat (λ y₁ → e/meta (toℕ a > toℕ y₁))))
+      (symm ( ℕ-nat x))
       (iso.fwd
-       (Ext.rep (e/pair e/num (λ y₁ → e/meta (to-nat x > to-nat y₁))))
+       (Ext.rep (e/pair e/nat (λ y₁ → e/meta (toℕ x > toℕ y₁))))
        (y , h))))))
         (let g = ≡-subst-removable (λ a →
-                    Ext.Carrier (e/pair e/num (λ y₁ → e/meta (to-nat a > to-nat y₁))))
-                (symm (nat-num x))
+                    Ext.Carrier (e/pair e/nat (λ y₁ → e/meta (toℕ a > toℕ y₁))))
+                (symm ( ℕ-nat x))
                 (iso.fwd
-                  (Ext.rep (e/pair e/num (λ y₁ → e/meta (to-nat x > to-nat y₁))))
+                  (Ext.rep (e/pair e/nat (λ y₁ → e/meta (toℕ x > toℕ y₁))))
                   (y , h)) in
          let g1 = H.cong snd g in
-         let g2 = ≡-subst-removable (λ a → suc (to-nat a) ≤ to-nat x) (symm (nat-num y)) h in
+         let g2 = ≡-subst-removable (λ a → suc (toℕ a) ≤ toℕ x) (symm ( ℕ-nat y)) h in
           H.trans g1 g2)
        ))))
 
 m%n<n' : ∀ m n h → _%_ m n {h} < n
 m%n<n' m (suc n) h = m%n<n m n
-
-gcd/cost-next' : ∀ {x y z} → (h1 : False (y ≟ 0)) → (h : x > y) → (g : z ≡ _%_ x y {h1}) → (h3 : y > z) → gcd/cost (x , y , h) > gcd/cost (y , x % y , P.subst (_>_ y) g h3)
-gcd/cost-next' {zero} h1 h g h3 = case h of λ { () }
-gcd/cost-next' {suc x'} {zero} h1 h g h3 = case h3 of λ { () }
-gcd/cost-next' {suc x'} {suc y'} h1 h g h3 rewrite gcd/cost-unfold-suc {suc x'} {y'} {h} =
-  ≤-reflexive (P.cong suc
-      (P.cong (gcd/cost/helper (mod-helper 0 y' (suc x') y')
-      (λ y y<x → gcd/cost/helper y
-      (Some.wfRecBuilder (λ y₁ → (x : ℕ) → suc y₁ ≤ x → ℕ)
-      gcd/cost/helper y
-      (Subrelation.accessible ≤⇒≤′
-      (Data.Nat.Induction.<′-wellFounded′ (mod-helper 0 y' (suc x') y') y
-      (≤⇒≤′ y<x)))))
-      (suc y'))
-  (<-irrelevant (P.subst (λ n → suc n ≤ suc y') g h3) (s≤s (Data.Nat.DivMod.Core.a[modₕ]n<n 0 (suc x') y')))
-   ))
-
-gcd/cost-next : ∀ {x y z} → (h : x > y) → (h1 : False (y ≟ 0)) → (h2 : z ≡ _%_ x y {h1}) →
-                (h3 : y > z) →
-                gcd/cost (x , (y , h)) > gcd/cost (y , (z , h3))
-gcd/cost-next {x} {y} {z} h h1 h2 h3 =
-  let h4 : ∀ {n} → z ≡ n → y > n
-      h4 = λ h → P.subst (λ n → y > n) h h3 in
-  P.subst (λ n →
-            (g : z ≡ n) → gcd/cost (x , (y , h)) > gcd/cost (y , (n , P.subst (λ n → y > n) g h3))) (symm h2)
-            (λ g → gcd/cost-next' h1 h h2 h3)
-            refl
 
 suc≢0 : ∀ {n m} → suc n ≡ m → False (m ≟ 0)
 suc≢0 h = P.subst (λ n → False (n ≟ 0)) h tt
