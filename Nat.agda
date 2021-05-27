@@ -23,14 +23,16 @@ postulate
   rec/succ : ∀ {n X e0 e1} → rec (succ n) X e0 e1 ≡ e1 n (rec n X e0 e1)
   {-# REWRITE rec/zero rec/succ #-}
 
+-- Converting nat to ℕ
 -- Better to keep these as postulates so some equations are rewritten automatically
 postulate
   toℕ : val nat → ℕ
   tonat : ℕ → val nat
   ℕ-nat : ∀ x → tonat (toℕ x) ≡ x
   nat-ℕ : ∀ n → toℕ (tonat n) ≡ n
+  toℕ-zero : toℕ zero ≡ 0
   toℕ-succ : ∀ {x} → toℕ (succ x) ≡ Nat.suc (toℕ x)
-  {-# REWRITE nat-ℕ ℕ-nat toℕ-succ #-}
+  {-# REWRITE nat-ℕ ℕ-nat toℕ-zero toℕ-succ #-}
 
 e/nat : Ext nat
 e/nat = record

@@ -9,6 +9,7 @@ open import Data.Nat
 open import Data.Nat.Properties
 open import Connectives
 open import Num
+open import Nat
 open import Relation.Binary.PropositionalEquality as P
 open import Data.Nat.Induction
 open import Induction
@@ -60,11 +61,11 @@ ub/bind/const {f = f} p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
   ub/intro {q = q1 + q2} b (+-mono-≤ h1 h4) (ret {eq _ _ _} (eq/intro refl))
 
 ub/bind/suc : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
-  (h : Ext A) (p : ℕ) →
+  (p : ℕ) →
   ub A e 1 →
   ((a : val A) → ub B (f a) p) →
   ub B (bind {A} (F B) e f) (suc p)
-ub/bind/suc {f = f} h p (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
+ub/bind/suc {f = f} p (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
 ... | refl with h3 a
 ... | ub/intro {q = q2} b h4 h5 with (f a) | eq/ref h5
 ... | _ | refl =
@@ -97,6 +98,18 @@ ub/ifz B x e0 e1 p1 p2 h1 h2 =
           (λ y g1 g2 →  h2 y (trans' refl (symm g2)))
           refl
 
+ub/rec :
+  (B : val nat → tp pos)
+  (x : val nat)
+  (e0 : cmp (F (B Nat.zero)))
+  (e1 : (y : val nat) → cmp (F (B (succ y))))
+  (p1 : ℕ)
+  (p2 : ℕ → ℕ) →
+  (ub (B Nat.zero) e0 p1) →
+  ((y : val nat) → ub (B (succ y)) (e1 y) (p2 (toℕ y))) →
+  ub (B x) (Nat.rec x (λ x → F (B x)) e0 (λ y _ → e1 y )) (if {λ _ → ℕ} (toℕ x) p1 p2)
+ub/rec B x e0 e1 p1 p2 h1 h2 = Nat.rec x (λ x → meta (ub (B x) (Nat.rec x (λ x → F (B x)) e0 (λ y _ → e1 y )) (if {λ _ → ℕ} (toℕ x) p1 p2)))
+  h1 λ y _ → h2 y
 
 ub/sum/case/const/const : ∀ A B (C : val (sum A B) → tp pos) →
   (s : val (sum A B)) →

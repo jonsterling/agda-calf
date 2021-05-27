@@ -180,33 +180,6 @@ gcd/cost-unfold' i@(x , y , h) rewrite symm (gcd/cost-unfold {toℕ x} {toℕ y}
 m%n<n' : ∀ m n h → _%_ m n {h} < n
 m%n<n' m (suc n) h = m%n<n m n
 
-gcd/cost-next' : ∀ {x y z} → (h1 : False (y ≟ 0)) → (h : x > y) → (g : z ≡ _%_ x y {h1}) → (h3 : y > z) → gcd/cost (x , y , h) > gcd/cost (y , x % y , P.subst (_>_ y) g h3)
-gcd/cost-next' {zero} h1 h g h3 = case h of λ { () }
-gcd/cost-next' {suc x'} {zero} h1 h g h3 = case h3 of λ { () }
-gcd/cost-next' {suc x'} {suc y'} h1 h g h3 rewrite gcd/cost-unfold-suc {suc x'} {y'} {h} =
-  ≤-reflexive (P.cong suc
-      (P.cong (gcd/cost/helper (mod-helper 0 y' (suc x') y')
-      (λ y y<x → gcd/cost/helper y
-      (Some.wfRecBuilder (λ y₁ → (x : ℕ) → suc y₁ ≤ x → ℕ)
-      gcd/cost/helper y
-      (Subrelation.accessible ≤⇒≤′
-      (Data.Nat.Induction.<′-wellFounded′ (mod-helper 0 y' (suc x') y') y
-      (≤⇒≤′ y<x)))))
-      (suc y'))
-  (<-irrelevant (P.subst (λ n → suc n ≤ suc y') g h3) (s≤s (Data.Nat.DivMod.Core.a[modₕ]n<n 0 (suc x') y')))
-   ))
-
-gcd/cost-next : ∀ {x y z} → (h : x > y) → (h1 : False (y ≟ 0)) → (h2 : z ≡ _%_ x y {h1}) →
-                (h3 : y > z) →
-                gcd/cost (x , (y , h)) > gcd/cost (y , (z , h3))
-gcd/cost-next {x} {y} {z} h h1 h2 h3 =
-  let h4 : ∀ {n} → z ≡ n → y > n
-      h4 = λ h → P.subst (λ n → y > n) h h3 in
-  P.subst (λ n →
-            (g : z ≡ n) → gcd/cost (x , (y , h)) > gcd/cost (y , (n , P.subst (λ n → y > n) g h3))) (symm h2)
-            (λ g → gcd/cost-next' h1 h h2 h3)
-            refl
-
 suc≢0 : ∀ {n m} → suc n ≡ m → False (m ≟ 0)
 suc≢0 h = P.subst (λ n → False (n ≟ 0)) h tt
 
