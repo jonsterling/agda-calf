@@ -59,9 +59,9 @@ module InsertionSort where
   insert x l = list/ind l (λ _ → F list) (ret (cons x nil)) inductive-step
     where
       inductive-step : val nat → val list → cmp (F list) → cmp (F list)
-      inductive-step y ys ih with Nat.toℕ y ≤ᵇ Nat.toℕ x
+      inductive-step y ys ys' with Nat.toℕ y ≤ᵇ Nat.toℕ x
       ... | false = ret (cons x (cons y ys))
-      ... | true  = bind (F list) ih λ ys' → ret (cons y ys')
+      ... | true  = bind (F list) ys' (ret ∘ cons y)
 
   insert/length : ∀ {A} x l → (k : ℕ → A) → bind (meta A) (insert x l) (k ∘ length) ≡ k (suc (length l))
   insert/length {A} x l = list/ind l (λ _ → meta _) (λ k → refl) inductive-step
@@ -73,6 +73,8 @@ module InsertionSort where
       ... | false = refl
       ... | true  =
         begin
+          bind (meta A) (bind (F list) (insert x ys) (ret ∘ cons y)) (k ∘ length)
+        ≡⟨⟩
           bind _ (bind (F list) (insert x ys) (ret ∘ cons y)) (k ∘ length)
         ≡⟨ bind/assoc {B = list} {C = meta A} {e = insert x ys} {f1 = ret ∘ cons y} {f2 = k ∘ length} ⟩
           bind _ (insert x ys) (λ ys' → bind {A = list} (meta A) (ret (cons y ys')) (k ∘ length))
