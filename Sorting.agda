@@ -69,9 +69,9 @@ module InsertionSort where
       inductive-step : (y : val nat) (ys : val list) →
         (∀ k → bind (meta A) (insert x         ys ) (k ∘ length) ≡ k (suc (length         ys ))) →
         (∀ k → bind (meta A) (insert x (cons y ys)) (k ∘ length) ≡ k (suc (length (cons y ys))))
-      inductive-step y ys h with Nat.toℕ y ≤ᵇ Nat.toℕ x
-      ... | false = λ k → refl
-      ... | true  = λ k →
+      inductive-step y ys h k with Nat.toℕ y ≤ᵇ Nat.toℕ x
+      ... | false = refl
+      ... | true  =
         begin
           bind _ (bind (F list) (insert x ys) (ret ∘ cons y)) (k ∘ length)
         ≡⟨ bind/assoc {B = list} {C = meta A} {e = insert x ys} {f1 = ret ∘ cons y} {f2 = k ∘ length} ⟩
@@ -103,13 +103,25 @@ module InsertionSort where
   sort : cmp (Π list λ _ → F list)
   sort l = list/ind l (λ _ → F list) (ret nil) λ x _ ys → bind (F list) ys (insert x)
 
-  sort/length : ∀ {A} (k : ℕ → A) → ∀ l → bind (meta A) (sort l) (λ l' → k (length l')) ≡ k (length l)
-  sort/length {A} k l =
-    list/ind
-      l
-      (λ l → meta (bind (meta A) (sort l) (λ l' → k (length l')) ≡ k (length l)))
-      refl
-      λ x xs h → {!   !}
+  sort/length : ∀ {A} l → (k : ℕ → A) → bind (meta A) (sort l) (k ∘ length) ≡ k (length l)
+  sort/length {A} l = list/ind l (λ l → meta ((k : ℕ → A) → bind (meta A) (sort l) (k ∘ length) ≡ k (length l))) (λ _ → refl) inductive-step
+    where
+      inductive-step : (x : val nat) (xs : val list) →
+        (∀ k → bind (meta A) (sort         xs ) (k ∘ length) ≡ k (length         xs )) →
+        (∀ k → bind (meta A) (sort (cons x xs)) (k ∘ length) ≡ k (length (cons x xs)))
+      inductive-step x xs h k =
+        begin
+          bind (meta A) (sort (cons x xs)) (k ∘ length)
+        ≡⟨⟩
+          bind (meta A) (bind (F list) (sort xs) (insert x)) (k ∘ length)
+        ≡⟨ bind/assoc {B = list} {C = meta A} {e = sort xs} {f1 = insert x} ⟩
+          bind (meta A) (sort xs) (λ xs' → bind (meta A) (insert x xs') (k ∘ length))
+        ≡⟨ Eq.cong (bind (meta A) (sort xs)) (funext λ xs' → insert/length x xs' k)  ⟩
+          bind (meta A) (sort xs) (λ xs' → k (suc (length xs')))
+        ≡⟨  h (k ∘ suc)  ⟩
+          k (length (cons x xs))
+        ∎
+          where open ≡-Reasoning
 
   sort/cost : cmp (Π list λ _ → cost)
   sort/cost l = list/ind l (λ _ → meta ℕ) zero (λ x xs c → suc (insert/cost x xs + c))
@@ -121,7 +133,7 @@ module InsertionSort where
         cmp (meta (ub list (sort         xs ) (sort/cost         xs ))) →
         cmp (meta (ub list (sort (cons x xs)) (sort/cost (cons x xs))))
       inductive-step x xs h with ub/step/suc _ (ub/bind (sort/cost xs) (insert/cost x) h (insert≤insert/cost x))
-      ... | h-step rewrite sort/length (_+_ (sort/cost xs)) xs | +-comm (sort/cost xs) (length xs) = h-step
+      ... | h-step rewrite sort/length xs (_+_ (sort/cost xs)) | +-comm (sort/cost xs) (length xs) = h-step
 
   ex-sort : cmp (F list)
   ex-sort = sort (of-list (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ []))
