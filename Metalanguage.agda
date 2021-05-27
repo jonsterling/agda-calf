@@ -41,9 +41,10 @@ postulate
 
   tbind/assoc : ∀ {A B X} {e : cmp (F A)} {f : val A → cmp (F B)} →
     tbind {B} (bind (F B) e f) X ≡ tbind {A} e (λ v → tbind {B} (f v) X)
-  {-# REWRITE tbind/assoc #-}
-  -- todo: add bind/assoc
+  bind/assoc : ∀ {A B C} {e : cmp (F A)} {f1 : val A → cmp (F B)} {f2 : val B → cmp C} →
+    bind C (bind (F B) e f1) f2 ≡ bind C e (λ v → bind C (f1 v) f2)
   -- todo: add dbind/assoc
+  {-# REWRITE tbind/assoc bind/assoc #-}
 
   -- dependent product
   Π : (A : tp pos) (X : val A → tp neg) → tp neg
@@ -62,7 +63,7 @@ postulate
 
   -- agda sets
   meta : Set → tp neg
-  meta/out : ∀ {A} → val (U(meta A)) ≡ A
+  meta/out : ∀ {A} → val (U (meta A)) ≡ A
   {-# REWRITE meta/out #-}
 
   step' : ∀ (B : tp neg) → (cmp (meta ℕ)) → cmp B → cmp B
