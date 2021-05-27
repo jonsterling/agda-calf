@@ -73,7 +73,7 @@ module InsertionSort where
       ... | false = refl
       ... | true  =
         begin
-          bind (meta A) (bind (F list) (insert x ys) (ret ∘ cons y)) (k ∘ length)
+          bind _ (bind (F list) (insert x ys) (ret ∘ cons y)) (k ∘ length)
         ≡⟨⟩
           bind _ (bind (F list) (insert x ys) (ret ∘ cons y)) (k ∘ length)
         ≡⟨ bind/assoc {B = list} {C = meta A} {e = insert x ys} {f1 = ret ∘ cons y} {f2 = k ∘ length} ⟩
