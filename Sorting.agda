@@ -9,7 +9,8 @@ open import Nat using (nat)
 open import Upper
 open import Eq
 open import Refinement
-import Relation.Binary.PropositionalEquality as Eq
+open import Relation.Binary.PropositionalEquality as Eq
+open import Function
 open import Data.Nat
 open import Data.Nat.Properties
 open import Data.Bool using (true; false; if_then_else_)
@@ -57,20 +58,30 @@ module InsertionSort where
   insert : cmp (Π nat λ _ → Π list λ _ → F list)
   insert x l = list/ind l (λ _ → F list) (ret (cons x nil)) inductive-step
     where
-      inductive-step : val nat → val list → val (U (F list)) → cmp (F list)
+      inductive-step : val nat → val list → cmp (F list) → cmp (F list)
       inductive-step y ys ih with Nat.toℕ y ≤ᵇ Nat.toℕ x
       ... | false = ret (cons x (cons y ys))
       ... | true  = bind (F list) ih λ ys' → ret (cons y ys')
 
-  insert/length : ∀ {A} (k : ℕ → A) → ∀ x l → bind (meta A) (insert x l) (λ l' → k (length l')) ≡ k (suc (length l))
-  insert/length {A} k x l = list/ind l (λ _ → meta _) refl inductive-step
+  insert/length : ∀ {A} x l → (k : ℕ → A) → bind (meta A) (insert x l) (k ∘ length) ≡ k (suc (length l))
+  insert/length {A} x l = list/ind l (λ _ → meta _) (λ k → refl) inductive-step
     where
       inductive-step : (y : val nat) (ys : val list) →
-        cmp (meta (bind (meta A) (insert x         ys ) (λ l' → k (length l')) ≡ k (suc (length         ys )))) →
-        cmp (meta (bind (meta A) (insert x (cons y ys)) (λ l' → k (length l')) ≡ k (suc (length (cons y ys))))) 
+        (∀ k → bind (meta A) (insert x         ys ) (k ∘ length) ≡ k (suc (length         ys ))) →
+        (∀ k → bind (meta A) (insert x (cons y ys)) (k ∘ length) ≡ k (suc (length (cons y ys))))
       inductive-step y ys h with Nat.toℕ y ≤ᵇ Nat.toℕ x
-      ... | false = refl
-      ... | true  = {!   !}
+      ... | false = λ k → refl
+      ... | true  = λ k →
+        begin
+          bind _ (bind (F list) (insert x ys) (ret ∘ cons y)) (k ∘ length)
+        ≡⟨ bind/assoc {B = list} {C = meta A} {e = insert x ys} {f1 = ret ∘ cons y} {f2 = k ∘ length} ⟩
+          bind _ (insert x ys) (λ ys' → bind {A = list} (meta A) (ret (cons y ys')) (k ∘ length))
+        ≡⟨ Eq.cong (bind {A = list} (meta A) (insert x ys)) (funext λ ys' → sym (bind/ret {A = list} {X = meta A} {v = cons y ys'} {f = k ∘ length})) ⟩
+          bind _ (insert x ys) (k ∘ length ∘ cons y)
+        ≡⟨ h (k ∘ suc) ⟩
+          k (suc (length (cons y ys)))
+        ∎
+          where open ≡-Reasoning
 
   insert/cost : cmp (Π nat λ _ → Π list λ _ → cost)
   insert/cost _ = length
@@ -79,8 +90,8 @@ module InsertionSort where
   insert≤insert/cost x l = list/ind l (λ _ → meta _) (ub/ret zero) inductive-step
     where
       inductive-step : (y : val nat) (ys : val list) →
-        ub list (insert x ys) (length ys) →
-        cmp (meta (ub list (insert x (cons y ys)) (length (cons y ys))))
+        ub list (insert x         ys ) (length         ys ) →
+        ub list (insert x (cons y ys)) (length (cons y ys))
       inductive-step y ys h with Nat.toℕ y ≤ᵇ Nat.toℕ x
       ... | false = ub/intro _ (s≤s z≤n) (ret (eq/intro refl))
       ... | true with ub/bind/const _ zero h (λ _ → ub/ret zero)
@@ -107,7 +118,7 @@ module InsertionSort where
   sort≤sort/cost l = list/ind l (λ _ → meta _) (ub/ret zero) inductive-step
     where
       inductive-step : (x : val nat) (xs : val list) →
-        val (U (meta (ub list (sort xs) (sort/cost xs)))) →
+        cmp (meta (ub list (sort         xs ) (sort/cost         xs ))) →
         cmp (meta (ub list (sort (cons x xs)) (sort/cost (cons x xs))))
       inductive-step x xs h with ub/step/suc _ (ub/bind (sort/cost xs) (insert/cost x) h (insert≤insert/cost x))
       ... | h-step rewrite sort/length (_+_ (sort/cost xs)) xs | +-comm (sort/cost xs) (length xs) = h-step
