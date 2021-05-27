@@ -3,7 +3,7 @@
 
 open import Prelude
 open import Metalanguage
-open import Num
+open import Nat
 open import PhaseDistinction
 open import Connectives
 open import Refinement
@@ -11,7 +11,7 @@ open import Upper
 open import Eq
 
 open import Gcd
-open import Gcd-direct
+open import Gcd-new
 open import Data.Nat.GCD
 open import Data.Nat.DivMod
 open import Data.Nat
@@ -39,7 +39,7 @@ fib 1 = 1
 fib (suc (suc n)) = fib (suc n) + fib n
 
 fib⁻¹/helper : ℕ → ℕ → ℕ
-fib⁻¹/helper F zero = zero
+fib⁻¹/helper F zero = 0
 fib⁻¹/helper F (suc i) with fib (suc i) ≤? F
 ... | (true because (ofʸ py)) = suc i
 ... | (false because (ofⁿ pn)) = fib⁻¹/helper F i
@@ -141,5 +141,5 @@ gcd/cost/closed/ub i@(x , y , h) =
       g1 = fib-mono-< {1 + fib⁻¹ x} {2 + fib⁻¹ x} (+-monoˡ-< (fib⁻¹ x) (s≤s (s≤s z≤n))) in
   (<⇒≤ (gcd/cost/bound _ i (<-transˡ g g1) (<-trans h g)))
 
-gcd/closed : cmp (Ψ gcd/i (λ { _ → num }) e/gcd gcd/cost/closed)
-gcd/closed = pitime/relax gcd/i (const num) e/gcd gcd/cost/closed/ub Gcd-direct.gcd
+gcd/closed : cmp (Ψ gcd/i (λ { _ → nat }) e/gcd gcd/cost/closed)
+gcd/closed = pitime/relax gcd/i (const nat) e/gcd gcd/cost/closed/ub Gcd-new.gcd
