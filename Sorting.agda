@@ -4,6 +4,8 @@ module Sorting where
 
 open import Prelude
 open import Metalanguage
+open import Sum
+open import Unit
 import Nat
 open import Nat using (nat)
 open import Upper
@@ -49,12 +51,12 @@ module List where
   length : ∀ {A n} → val (list n A) → cmp (meta ℕ)
   length l = list/ind l (λ _ → meta ℕ) zero λ _ _ → suc
 
+open List hiding (list)
+list = List.list 1 nat
+
 cost = meta ℕ
 
 module InsertionSort where
-  open List hiding (list)
-  list = List.list 1 nat
-
   insert : cmp (Π nat λ _ → Π list λ _ → F list)
   insert x l = list/ind l (λ _ → F list) (ret (cons x nil)) inductive-step
     where
@@ -139,3 +141,41 @@ module InsertionSort where
 
   ex-sort : cmp (F list)
   ex-sort = sort (of-list (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ []))
+
+module MergeSort where
+  pair = Σ++ list λ _ → list
+
+  module Option where
+    option : tp pos → tp pos
+    option A = sum A unit
+
+    some : ∀ {A} → val A → val (option A)
+    some = inl
+
+    none : ∀ {A} → val (option A)
+    none = inr triv
+
+  open Option
+
+  split : cmp (Π list λ _ → F pair)
+  split l =
+    bind (F pair) (aux l) (λ { (opt , xs , ys) →
+      sum/case _ _ (λ _ → F pair) opt
+        (λ x → ret ((cons x xs) , ys))
+        (λ _ → ret (xs , ys))
+    })
+    where
+      acc-tp = Σ++ (option nat) λ _ → pair
+
+      aux : cmp (Π list λ _ → F acc-tp)
+      aux l =
+        list/ind l (λ _ → F acc-tp)
+          (ret (none , nil , nil))
+          λ x _ acc → bind (F acc-tp) acc (λ { (opt , xs , ys) →
+            sum/case _ _ (λ _ → F acc-tp) opt
+              (λ y → ret (none , cons x xs , cons y ys))
+              (λ _ → ret (some x , xs , ys))
+          })
+
+  ex-split : cmp (F pair)
+  ex-split = split (of-list (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ []))
