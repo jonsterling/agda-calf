@@ -191,7 +191,7 @@ module MergeSort where
   ex/split = split (of-list (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ []))
 
   merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F list)
-  merge/clocked zero    (l₁ , l₂) = ret l₁
+  merge/clocked zero    _         = ret nil
   merge/clocked (suc k) (l₁ , l₂) =
     list/match l₁ (λ _ → F list)
       (ret l₂)
@@ -200,8 +200,32 @@ module MergeSort where
           (ret l₁)
           λ y ys →
             if Nat.toℕ x ≤ᵇ Nat.toℕ y
-              then bind (F list) (merge/clocked k (xs , l₂)) (λ res → ret (cons x res))
-              else bind (F list) (merge/clocked k (l₁ , xs)) (λ res → ret (cons y res))
+              then bind (F list) (merge/clocked k (xs , cons y ys)) (ret ∘ cons x)
+              else bind (F list) (merge/clocked k (cons x xs , ys)) (ret ∘ cons y)
 
-  ex-merge : cmp (F list)
-  ex-merge = merge/clocked 7 (of-list (2 ∷ 3 ∷ 6 ∷ 8 ∷ []) , of-list (1 ∷ 5 ∷ 8 ∷ []))
+  merge : cmp (Π pair λ _ → F list)
+  merge (l₁ , l₂) = merge/clocked (length l₁ + length l₂) (l₁ , l₂)
+
+  ex/merge : cmp (F list)
+  ex/merge = merge (of-list (2 ∷ 3 ∷ 6 ∷ 8 ∷ []) , of-list (1 ∷ 5 ∷ 8 ∷ []))
+
+  sort/clocked : cmp (Π (U (meta ℕ)) λ _ → Π list λ _ → F list)
+  sort/clocked zero    l = ret l
+  sort/clocked (suc k) l =
+    bind (F list) (split l) λ { (l₁ , l₂) →
+      bind (F list) (sort/clocked k l₁) λ l₁' →
+        bind (F list) (sort/clocked k l₂) λ l₂' →
+          merge (l₁' , l₂')
+    }
+
+  sort : cmp (Π list λ _ → F list)
+  sort l = sort/clocked (length l) l  -- TODO: log2 clock
+
+  ex/sort/forward : cmp (F list)
+  ex/sort/forward = sort/clocked 4 (of-list test/forward)  -- cost: 162
+
+  ex/sort/backward : cmp (F list)
+  ex/sort/backward = sort/clocked 4 (of-list test/backward) -- cost: 177
+
+  ex/sort/shuffled : cmp (F list)
+  ex/sort/shuffled = sort/clocked 4 (of-list test/shuffled) -- cost: 156
