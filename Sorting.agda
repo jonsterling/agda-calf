@@ -165,8 +165,6 @@ module MergeSort where
     none : ∀ {A} → val (option A)
     none = inr triv
 
-  open Option
-
   split : cmp (Π list λ _ → F pair)
   split l =
     bind (F pair) (aux l) (λ { (opt , xs , ys) →
@@ -175,6 +173,7 @@ module MergeSort where
         (λ _ → ret (xs , ys))
     })
     where
+      open Option
       aux-tp = Σ++ (option nat) λ _ → pair
 
       aux : cmp (Π list λ _ → F aux-tp)
