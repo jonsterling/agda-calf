@@ -56,6 +56,10 @@ list = List.list 1 nat
 
 cost = meta ℕ
 
+test/forward  = 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ 6 ∷ 7 ∷ 8 ∷ 9 ∷ 10 ∷ 11 ∷ 12 ∷ 13 ∷ 14 ∷ 15 ∷ 16 ∷ []
+test/backward = 16 ∷ 15 ∷ 14 ∷ 13 ∷ 12 ∷ 11 ∷ 10 ∷ 9 ∷ 8 ∷ 7 ∷ 6 ∷ 5 ∷ 4 ∷ 3 ∷ 2 ∷ 1 ∷ []
+test/shuffled = 4 ∷ 8 ∷ 12 ∷ 16 ∷ 13 ∷ 3 ∷ 5 ∷ 14 ∷ 9 ∷ 6 ∷ 7 ∷ 10 ∷ 11 ∷ 1 ∷ 2 ∷ 15 ∷ []
+
 module InsertionSort where
   insert : cmp (Π nat λ _ → Π list λ _ → F list)
   insert x l = list/ind l (λ _ → F list) (ret (cons x nil)) inductive-step
@@ -101,8 +105,8 @@ module InsertionSort where
       ... | true with ub/bind/const _ zero h (λ _ → ub/ret zero)
       ...   | h-bind rewrite +-identityʳ (length ys) = ub/step/suc _ h-bind
 
-  ex-insert : cmp (F list)
-  ex-insert = insert (Nat.tonat 3) (of-list (1 ∷ 2 ∷ 4 ∷ []))
+  ex/insert : cmp (F list)
+  ex/insert = insert (Nat.tonat 3) (of-list (1 ∷ 2 ∷ 4 ∷ []))
 
   sort : cmp (Π list λ _ → F list)
   sort l = list/ind l (λ _ → F list) (ret nil) λ x _ ys → bind (F list) ys (insert x)
@@ -139,8 +143,14 @@ module InsertionSort where
       inductive-step x xs h with ub/step/suc _ (ub/bind (sort/cost xs) (insert/cost x) h (insert≤insert/cost x))
       ... | h-step rewrite sort/length xs (_+_ (sort/cost xs)) | +-comm (sort/cost xs) (length xs) = h-step
 
-  ex-sort : cmp (F list)
-  ex-sort = sort (of-list (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ []))
+  ex/sort/forward : cmp (F list)
+  ex/sort/forward = sort (of-list test/forward)  -- cost: 31
+
+  ex/sort/backward : cmp (F list)
+  ex/sort/backward = sort (of-list test/backward)  -- cost: 136
+
+  ex/sort/shuffled : cmp (F list)
+  ex/sort/shuffled = sort (of-list test/shuffled)  -- cost: 92
 
 module MergeSort where
   pair = Σ++ list λ _ → list
@@ -177,8 +187,8 @@ module MergeSort where
               (λ _ → ret (some x , xs , ys))
           })
 
-  ex-split : cmp (F pair)
-  ex-split = split (of-list (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ []))
+  ex/split : cmp (F pair)
+  ex/split = split (of-list (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ []))
 
   merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F list)
   merge/clocked zero    (l₁ , l₂) = ret l₁
