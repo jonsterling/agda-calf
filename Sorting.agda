@@ -179,3 +179,19 @@ module MergeSort where
 
   ex-split : cmp (F pair)
   ex-split = split (of-list (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ []))
+
+  merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F list)
+  merge/clocked zero    (l₁ , l₂) = ret l₁
+  merge/clocked (suc k) (l₁ , l₂) =
+    list/match l₁ (λ _ → F list)
+      (ret l₂)
+      λ x xs →
+        list/match l₂ (λ _ → F list)
+          (ret l₁)
+          λ y ys →
+            if Nat.toℕ x ≤ᵇ Nat.toℕ y
+              then bind (F list) (merge/clocked k (xs , l₂)) (λ res → ret (cons x res))
+              else bind (F list) (merge/clocked k (l₁ , xs)) (λ res → ret (cons y res))
+
+  ex-merge : cmp (F list)
+  ex-merge = merge/clocked 7 (of-list (2 ∷ 3 ∷ 6 ∷ 8 ∷ []) , of-list (1 ∷ 5 ∷ 8 ∷ []))
