@@ -165,14 +165,14 @@ module MergeSort where
         (λ _ → ret (xs , ys))
     })
     where
-      acc-tp = Σ++ (option nat) λ _ → pair
+      aux-tp = Σ++ (option nat) λ _ → pair
 
-      aux : cmp (Π list λ _ → F acc-tp)
+      aux : cmp (Π list λ _ → F aux-tp)
       aux l =
-        list/ind l (λ _ → F acc-tp)
+        list/ind l (λ _ → F aux-tp)
           (ret (none , nil , nil))
-          λ x _ acc → bind (F acc-tp) acc (λ { (opt , xs , ys) →
-            sum/case _ _ (λ _ → F acc-tp) opt
+          λ x _ acc → bind (F aux-tp) acc (λ { (opt , xs , ys) →
+            sum/case _ _ (λ _ → F aux-tp) opt
               (λ y → ret (none , cons x xs , cons y ys))
               (λ _ → ret (some x , xs , ys))
           })
