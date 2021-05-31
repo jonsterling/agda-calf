@@ -246,9 +246,6 @@ module MergeSort
               (λ _ → ret (some x , xs , ys))
           })
 
-  -- ex/split : cmp (F pair)
-  -- ex/split = split (of-list (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ []))
-
   merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F (list A))
   merge/clocked zero    _         = ret nil
   merge/clocked (suc k) (l₁ , l₂) =
@@ -258,16 +255,12 @@ module MergeSort
         list/match l₂ (λ _ → F (list A))
           (ret l₁)
           λ y ys →
-            {!   !}            
-            -- if Nat.toℕ x ≤ᵇ Nat.toℕ y
-            --   then bind (F (list A)) (merge/clocked k (xs , cons y ys)) (ret ∘ cons x)
-            --   else bind (F (list A)) (merge/clocked k (cons x xs , ys)) (ret ∘ cons y)
+            bind (F (list A)) (x ≤ᵇ y)
+              λ { false → bind (F (list A)) (merge/clocked k (cons x xs , ys)) (ret ∘ cons y)
+                ; true  → bind (F (list A)) (merge/clocked k (xs , cons y ys)) (ret ∘ cons x) }
 
   merge : cmp (Π pair λ _ → F (list A))
   merge (l₁ , l₂) = merge/clocked (length l₁ + length l₂) (l₁ , l₂)
-
-  -- ex/merge : cmp (F (list A))
-  -- ex/merge = merge (of-list (2 ∷ 3 ∷ 6 ∷ 8 ∷ []) , of-list (1 ∷ 5 ∷ 8 ∷ []))
 
   sort/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → F (list A))
   sort/clocked zero    l = ret l
@@ -281,11 +274,30 @@ module MergeSort
   sort : cmp (Π (list A) λ _ → F (list A))
   sort l = sort/clocked (length l) l  -- TODO: log2 clock
 
-  -- ex/sort/forward : cmp (F (list A))
-  -- ex/sort/forward = sort/clocked 4 (of-list test/forward)  -- cost: 162
+module Ex/MergeSort where
+  module Sort =
+    MergeSort
+      Nat.nat
+      (λ m n → step' (F Bool.bool) 1 (ret (Nat.toℕ m ≤ᵇ Nat.toℕ n)))
+      (ub/step/suc 0 (ub/ret 0))
 
-  -- ex/sort/backward : cmp (F (list A))
-  -- ex/sort/backward = sort/clocked 4 (of-list test/backward) -- cost: 177
+  list = List.list nat
+  of-list = List.of-list {A = Nat.nat} Nat.tonat
 
-  -- ex/sort/shuffled : cmp (F (list A))
-  -- ex/sort/shuffled = sort/clocked 4 (of-list test/shuffled) -- cost: 156
+  ex/split : cmp (F Sort.pair)
+  ex/split = Sort.split (of-list (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ []))
+
+  ex/merge : cmp (F list)
+  ex/merge = Sort.merge (of-list (2 ∷ 3 ∷ 6 ∷ 8 ∷ []) , of-list (1 ∷ 5 ∷ 8 ∷ []))
+
+  ex/sort : cmp (F list)
+  ex/sort = Sort.sort (of-list (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ []))
+
+  ex/sort/forward : cmp (F list)
+  ex/sort/forward = Sort.sort (of-list test/forward)
+
+  ex/sort/backward : cmp (F list)
+  ex/sort/backward = Sort.sort (of-list test/backward)
+
+  ex/sort/shuffled : cmp (F list)
+  ex/sort/shuffled = Sort.sort (of-list test/shuffled)
