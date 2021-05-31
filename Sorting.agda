@@ -18,41 +18,65 @@ open import Data.Nat.Properties
 open import Data.Bool using (true; false; if_then_else_)
 open import Data.List using ([]; _∷_)
 
-module List where
-  postulate
-    list : ∀ (n : ℕ) → tp pos → tp pos
-    nil : ∀ {A n} → val (list n A)
-    cons : ∀ {A n} → val A → val (list n A) → val (list n A)
+private
+  variable
+    α : Set
 
-    list/ind : ∀ {A n} → (l : val (list n A)) → (X : val (list n A) → tp neg) → cmp (X nil) →
-      ((a : val A) → (l : val (list n A)) → (r : val (U (X l))) →
+module List where
+  private
+    variable
+      A : tp pos
+
+  postulate
+    list : tp pos → tp pos
+    nil : val (list A)
+    cons : val A → val (list A) → val (list A)
+
+    list/ind : (l : val (list A)) → (X : val (list A) → tp neg) → cmp (X nil) →
+      ((a : val A) → (l : val (list A)) → (r : val (U (X l))) →
         cmp (X (cons a l))) →
       cmp (X l)
-    list/ind/nil : ∀ {A n X} → (e0 : cmp (X nil)) →
-        (e1 : (a : val A) → (l : val ((list n A))) → (r : val (U (X l))) →
+    list/ind/nil : ∀ {X} → (e0 : cmp (X nil)) →
+        (e1 : (a : val A) → (l : val ((list A))) → (r : val (U (X l))) →
         cmp (X (cons a l))) →
       list/ind nil X e0 e1 ≡ e0
     {-# REWRITE list/ind/nil #-}
-    list/ind/cons : ∀ {A n X} → (a : val A) → (l : val ((list n A))) → (e0 : cmp (X nil)) →
-        (e1 : (a : val A) → (l : val ((list n A))) → (r : val (U (X l))) →
+    list/ind/cons : ∀ {X} → (a : val A) → (l : val ((list A))) → (e0 : cmp (X nil)) →
+        (e1 : (a : val A) → (l : val ((list A))) → (r : val (U (X l))) →
         cmp (X (cons a l))) →
-      list/ind (cons a l) X e0 e1 ≡ step' (X (cons a l)) n (e1 a l (list/ind l X e0 e1))
+      list/ind (cons a l) X e0 e1 ≡ e1 a l (list/ind l X e0 e1)
     {-# REWRITE list/ind/cons #-}
 
-  list/match : ∀ {A n} → (l : val (list n A)) → (X : val (list n A) → tp neg) → cmp (X nil) →
-    ((a : val A) → (l : val (list n A)) → cmp (X (cons a l))) →
+  list/match : (l : val (list A)) → (X : val (list A) → tp neg) → cmp (X nil) →
+    ((a : val A) → (l : val (list A)) → cmp (X (cons a l))) →
     cmp (X l)
   list/match l X e0 e1 = list/ind l X e0 (λ a l _ → e1 a l)
 
-  of-list : ∀ {n} → Data.List.List ℕ → val (list n Nat.nat)
-  of-list []       = nil
-  of-list (x ∷ xs) = cons (Nat.tonat x) (of-list xs)
+  of-list : {α : Set} → (α → val A) → Data.List.List α → val (list A)
+  of-list f []       = nil
+  of-list f (x ∷ xs) = cons (f x) (of-list f xs)
 
-  length : ∀ {A n} → val (list n A) → cmp (meta ℕ)
+  length : val (list A) → cmp (meta ℕ)
   length l = list/ind l (λ _ → meta ℕ) zero λ _ _ → suc
 
-open List hiding (list)
-list = List.list 1 nat
+module Bool where
+  postulate
+    bool : tp pos
+
+    ff tt : val bool
+
+    bool/if : (X : val bool → tp neg) (b : val bool) → cmp (X tt) → cmp (X ff) → cmp (X b)
+
+    if/tt : ∀ {X} → (e1 : cmp (X tt)) → (e2 : cmp (X ff)) → bool/if X tt e1 e2 ≡ e1
+    if/ff : ∀ {X} → (e1 : cmp (X tt)) → (e2 : cmp (X ff)) → bool/if X ff e1 e2 ≡ e2
+    {-# REWRITE if/tt if/ff #-}
+
+    bool/decode : val bool ≡ Data.Bool.Bool
+    {-# REWRITE bool/decode #-}
+
+    bool/decode/ff : ff ≡ false
+    bool/decode/tt : tt ≡ true
+    {-# REWRITE bool/decode/ff bool/decode/tt #-}
 
 cost = meta ℕ
 
@@ -60,100 +84,136 @@ test/forward  = 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ 6 ∷ 7 ∷ 8 ∷ 9 ∷ 10 ∷ 11 
 test/backward = 16 ∷ 15 ∷ 14 ∷ 13 ∷ 12 ∷ 11 ∷ 10 ∷ 9 ∷ 8 ∷ 7 ∷ 6 ∷ 5 ∷ 4 ∷ 3 ∷ 2 ∷ 1 ∷ []
 test/shuffled = 4 ∷ 8 ∷ 12 ∷ 16 ∷ 13 ∷ 3 ∷ 5 ∷ 14 ∷ 9 ∷ 6 ∷ 7 ∷ 10 ∷ 11 ∷ 1 ∷ 2 ∷ 15 ∷ []
 
-module InsertionSort where
-  insert : cmp (Π nat λ _ → Π list λ _ → F list)
-  insert x l = list/ind l (λ _ → F list) (ret (cons x nil)) inductive-step
-    where
-      inductive-step : val nat → val list → cmp (F list) → cmp (F list)
-      inductive-step y ys ys' with Nat.toℕ y ≤ᵇ Nat.toℕ x
-      ... | false = ret (cons x (cons y ys))
-      ... | true  = bind (F list) ys' (ret ∘ cons y)
+module InsertionSort
+  (A : tp pos)
+  (_≤ᵇ_ : val A → val A → cmp (F Bool.bool))
+  (h-cost : {x y : val A} → ub Bool.bool (x ≤ᵇ y) 1)
+  where
+  open List
+  open Bool
 
-  insert/length : ∀ {A} x l → (k : ℕ → A) → bind (meta A) (insert x l) (k ∘ length) ≡ k (suc (length l))
-  insert/length {A} x l = list/ind l (λ _ → meta _) (λ k → refl) inductive-step
+  insert : cmp (Π A λ _ → Π (list A) λ _ → F (list A))
+  insert x l = list/ind l (λ _ → F (list A)) (ret (cons x nil)) inductive-step
     where
-      inductive-step : (y : val nat) (ys : val list) →
-        (∀ k → bind (meta A) (insert x         ys ) (k ∘ length) ≡ k (suc (length         ys ))) →
-        (∀ k → bind (meta A) (insert x (cons y ys)) (k ∘ length) ≡ k (suc (length (cons y ys))))
-      inductive-step y ys h k with Nat.toℕ y ≤ᵇ Nat.toℕ x
-      ... | false = refl
-      ... | true  =
+      inductive-step : val A → val (list A) → cmp (F (list A)) → cmp (F (list A))
+      inductive-step y ys ys' = bind (F (list A)) (x ≤ᵇ y)
+        λ { false → bind (F (list A)) ys' (ret ∘ cons y)
+          ; true  → ret (cons x (cons y ys)) }
+
+  insert/length : ∀ {α} x l (k : ℕ → α) → bind (meta α) (insert x l) (k ∘ length) ≡ k (suc (length l))
+  insert/length {α} x l = list/ind l (λ _ → meta _) (λ _ → refl) inductive-step
+    where
+      inductive-step : (y : val A) (ys : val (list A)) →
+        (∀ k → bind (meta α) (insert x         ys ) (k ∘ length) ≡ k (suc (length         ys ))) →
+        (∀ k → bind (meta α) (insert x (cons y ys)) (k ∘ length) ≡ k (suc (length (cons y ys))))
+      inductive-step y ys h k with h-cost {x} {y}
+      ... | ub/intro false _ h-eq rewrite eq/ref h-eq =
         begin
-          bind _ (bind (F list) (insert x ys) (ret ∘ cons y)) (k ∘ length)
-        ≡⟨⟩
-          bind _ (bind (F list) (insert x ys) (ret ∘ cons y)) (k ∘ length)
-        ≡⟨ bind/assoc {B = list} {C = meta A} {e = insert x ys} {f1 = ret ∘ cons y} {f2 = k ∘ length} ⟩
-          bind _ (insert x ys) (λ ys' → bind {A = list} (meta A) (ret (cons y ys')) (k ∘ length))
-        ≡⟨ Eq.cong (bind {A = list} (meta A) (insert x ys)) (funext λ ys' → sym (bind/ret {A = list} {X = meta A} {v = cons y ys'} {f = k ∘ length})) ⟩
+          bind _ (bind (F (list A)) (insert x ys) (ret ∘ cons y)) (k ∘ length)
+        ≡⟨ bind/assoc {B = (list A)} {C = meta α} {e = insert x ys} {f1 = ret ∘ cons y} {f2 = k ∘ length} ⟩
+          bind _ (insert x ys) (λ ys' → bind {A = (list A)} (meta α) (ret (cons y ys')) (k ∘ length))
+        ≡⟨ Eq.cong (bind {A = (list A)} _ (insert x ys)) (funext λ ys' → sym (bind/ret {A = (list A)} {X = meta α} {v = cons y ys'} {f = k ∘ length})) ⟩
           bind _ (insert x ys) (k ∘ length ∘ cons y)
         ≡⟨ h (k ∘ suc) ⟩
           k (suc (length (cons y ys)))
         ∎
           where open ≡-Reasoning
+      ... | ub/intro true  _ h-eq rewrite eq/ref h-eq = refl
 
-  insert/cost : cmp (Π nat λ _ → Π list λ _ → cost)
+  insert/cost : cmp (Π A λ _ → Π (list A) λ _ → cost)
   insert/cost _ = length
 
-  insert≤insert/cost : ∀ x l → ub list (insert x l) (insert/cost x l)
+  insert≤insert/cost : ∀ x l → ub (list A) (insert x l) (insert/cost x l)
   insert≤insert/cost x l = list/ind l (λ _ → meta _) (ub/ret zero) inductive-step
     where
-      inductive-step : (y : val nat) (ys : val list) →
-        ub list (insert x         ys ) (length         ys ) →
-        ub list (insert x (cons y ys)) (length (cons y ys))
-      inductive-step y ys h with Nat.toℕ y ≤ᵇ Nat.toℕ x
-      ... | false = ub/intro _ (s≤s z≤n) (ret (eq/intro refl))
-      ... | true with ub/bind/const _ zero h (λ _ → ub/ret zero)
-      ...   | h-bind rewrite +-identityʳ (length ys) = ub/step/suc _ h-bind
+      inductive-step : (y : val A) (ys : val (list A)) →
+        ub (list A) (insert x         ys ) (length         ys ) →
+        ub (list A) (insert x (cons y ys)) (length (cons y ys))
+      inductive-step y ys h with h-cost {x} {y}
+      ... | ub/intro true  q≤1 h-eq rewrite eq/ref h-eq = ub/intro _ (≤-trans q≤1 (s≤s z≤n)) (ret (eq/intro refl))
+      ... | ub/intro {q = q} false q≤1 h-eq rewrite eq/ref h-eq =
+              ub/relax
+                (begin
+                  length ys + q + 0
+                ≡⟨ +-identityʳ _ ⟩
+                  length ys + q
+                ≡⟨ +-comm (length ys) q ⟩
+                  q + length ys
+                ≤⟨ +-monoˡ-≤ _ q≤1 ⟩
+                  suc (length ys)
+                ∎)
+                (ub/bind/const _ _ (ub/step (length ys) q h) λ _ → ub/ret zero)
+                where open ≤-Reasoning
 
-  ex/insert : cmp (F list)
-  ex/insert = insert (Nat.tonat 3) (of-list (1 ∷ 2 ∷ 4 ∷ []))
+  sort : cmp (Π (list A) λ _ → F (list A))
+  sort l = list/ind l (λ _ → F (list A)) (ret nil) λ x _ ys → bind (F (list A)) ys (insert x)
 
-  sort : cmp (Π list λ _ → F list)
-  sort l = list/ind l (λ _ → F list) (ret nil) λ x _ ys → bind (F list) ys (insert x)
-
-  sort/length : ∀ {A} l → (k : ℕ → A) → bind (meta A) (sort l) (k ∘ length) ≡ k (length l)
-  sort/length {A} l = list/ind l (λ l → meta ((k : ℕ → A) → bind (meta A) (sort l) (k ∘ length) ≡ k (length l))) (λ _ → refl) inductive-step
+  sort/length : ∀ {α} l (k : ℕ → α) → bind (meta α) (sort l) (k ∘ length) ≡ k (length l)
+  sort/length {α} l = list/ind l (λ l → meta (∀ k → bind (meta α) (sort l) (k ∘ length) ≡ k (length l))) (λ _ → refl) inductive-step
     where
-      inductive-step : (x : val nat) (xs : val list) →
-        (∀ k → bind (meta A) (sort         xs ) (k ∘ length) ≡ k (length         xs )) →
-        (∀ k → bind (meta A) (sort (cons x xs)) (k ∘ length) ≡ k (length (cons x xs)))
+      inductive-step : (x : val A) (xs : val (list A)) →
+        (∀ k → bind (meta α) (sort         xs ) (k ∘ length) ≡ k (length         xs )) →
+        (∀ k → bind (meta α) (sort (cons x xs)) (k ∘ length) ≡ k (length (cons x xs)))
       inductive-step x xs h k =
         begin
-          bind (meta A) (sort (cons x xs)) (k ∘ length)
+          bind (meta α) (sort (cons x xs)) (k ∘ length)
         ≡⟨⟩
-          bind (meta A) (bind (F list) (sort xs) (insert x)) (k ∘ length)
-        ≡⟨ bind/assoc {B = list} {C = meta A} {e = sort xs} {f1 = insert x} ⟩
-          bind (meta A) (sort xs) (λ xs' → bind (meta A) (insert x xs') (k ∘ length))
-        ≡⟨ Eq.cong (bind (meta A) (sort xs)) (funext λ xs' → insert/length x xs' k)  ⟩
-          bind (meta A) (sort xs) (λ xs' → k (suc (length xs')))
-        ≡⟨  h (k ∘ suc)  ⟩
+          bind (meta α) (bind (F (list A)) (sort xs) (insert x)) (k ∘ length)
+        ≡⟨ bind/assoc {B = (list A)} {C = meta α} {e = sort xs} {f1 = insert x} ⟩
+          bind (meta α) (sort xs) (λ xs' → bind (meta α) (insert x xs') (k ∘ length))
+        ≡⟨ Eq.cong (bind (meta α) (sort xs)) (funext λ xs' → insert/length x xs' k)  ⟩
+          bind (meta α) (sort xs) (λ xs' → k (suc (length xs')))
+        ≡⟨ h (k ∘ suc) ⟩
           k (length (cons x xs))
         ∎
           where open ≡-Reasoning
 
-  sort/cost : cmp (Π list λ _ → cost)
-  sort/cost l = list/ind l (λ _ → meta ℕ) zero (λ x xs c → suc (insert/cost x xs + c))
+  sort/cost : cmp (Π (list A) λ _ → cost)
+  sort/cost l = list/ind l (λ _ → meta ℕ) zero (λ x xs c → c + insert/cost x xs)
 
-  sort≤sort/cost : ∀ l → ub list (sort l) (sort/cost l)
+  sort≤sort/cost : ∀ l → ub (list A) (sort l) (sort/cost l)
   sort≤sort/cost l = list/ind l (λ _ → meta _) (ub/ret zero) inductive-step
     where
-      inductive-step : (x : val nat) (xs : val list) →
-        cmp (meta (ub list (sort         xs ) (sort/cost         xs ))) →
-        cmp (meta (ub list (sort (cons x xs)) (sort/cost (cons x xs))))
-      inductive-step x xs h with ub/step/suc _ (ub/bind (sort/cost xs) (insert/cost x) h (insert≤insert/cost x))
-      ... | h-step rewrite sort/length xs (_+_ (sort/cost xs)) | +-comm (sort/cost xs) (length xs) = h-step
+      inductive-step : (x : val A) (xs : val (list A)) →
+        cmp (meta (ub (list A) (sort         xs ) (sort/cost         xs ))) →
+        cmp (meta (ub (list A) (sort (cons x xs)) (sort/cost (cons x xs))))
+      inductive-step x xs h with ub/bind {e = sort xs} (sort/cost xs) length h (insert≤insert/cost x)
+      ... | h-bind rewrite sort/length xs (_+_ (sort/cost xs)) = h-bind
+
+module Ex/InsertionSort where
+  module Sort =
+    InsertionSort
+      Nat.nat
+      (λ m n → step' (F Bool.bool) 1 (ret (Nat.toℕ m ≤ᵇ Nat.toℕ n)))
+      (ub/step/suc 0 (ub/ret 0))
+
+  list = List.list nat
+  of-list = List.of-list {A = Nat.nat} Nat.tonat
+
+  ex/insert : cmp (F list)
+  ex/insert = Sort.insert (Nat.tonat 3) (of-list (1 ∷ 2 ∷ 4 ∷ []))
+
+  ex/sort : cmp (F list)
+  ex/sort = Sort.sort (of-list (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ []))
 
   ex/sort/forward : cmp (F list)
-  ex/sort/forward = sort (of-list test/forward)  -- cost: 31
+  ex/sort/forward = Sort.sort (of-list test/forward)  -- cost: 15
 
   ex/sort/backward : cmp (F list)
-  ex/sort/backward = sort (of-list test/backward)  -- cost: 136
+  ex/sort/backward = Sort.sort (of-list test/backward)  -- cost: 120
 
   ex/sort/shuffled : cmp (F list)
-  ex/sort/shuffled = sort (of-list test/shuffled)  -- cost: 92
+  ex/sort/shuffled = Sort.sort (of-list test/shuffled)  -- cost: 76
 
-module MergeSort where
-  pair = Σ++ list λ _ → list
+module MergeSort
+  (A : tp pos)
+  (_≤ᵇ_ : val A → val A → cmp (F Bool.bool))
+  (h-cost : {x y : val A} → ub Bool.bool (x ≤ᵇ y) 1)
+  where
+  open List
+  open Bool
+
+  pair = Σ++ (list A) λ _ → (list A)
 
   module Option where
     option : tp pos → tp pos
@@ -165,7 +225,7 @@ module MergeSort where
     none : ∀ {A} → val (option A)
     none = inr triv
 
-  split : cmp (Π list λ _ → F pair)
+  split : cmp (Π (list A) λ _ → F pair)
   split l =
     bind (F pair) (aux l) (λ { (opt , xs , ys) →
       sum/case _ _ (λ _ → F pair) opt
@@ -174,9 +234,9 @@ module MergeSort where
     })
     where
       open Option
-      aux-tp = Σ++ (option nat) λ _ → pair
+      aux-tp = Σ++ (option A) λ _ → pair
 
-      aux : cmp (Π list λ _ → F aux-tp)
+      aux : cmp (Π (list A) λ _ → F aux-tp)
       aux l =
         list/ind l (λ _ → F aux-tp)
           (ret (none , nil , nil))
@@ -186,45 +246,46 @@ module MergeSort where
               (λ _ → ret (some x , xs , ys))
           })
 
-  ex/split : cmp (F pair)
-  ex/split = split (of-list (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ []))
+  -- ex/split : cmp (F pair)
+  -- ex/split = split (of-list (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ []))
 
-  merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F list)
+  merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F (list A))
   merge/clocked zero    _         = ret nil
   merge/clocked (suc k) (l₁ , l₂) =
-    list/match l₁ (λ _ → F list)
+    list/match l₁ (λ _ → F (list A))
       (ret l₂)
       λ x xs →
-        list/match l₂ (λ _ → F list)
+        list/match l₂ (λ _ → F (list A))
           (ret l₁)
           λ y ys →
-            if Nat.toℕ x ≤ᵇ Nat.toℕ y
-              then bind (F list) (merge/clocked k (xs , cons y ys)) (ret ∘ cons x)
-              else bind (F list) (merge/clocked k (cons x xs , ys)) (ret ∘ cons y)
+            {!   !}            
+            -- if Nat.toℕ x ≤ᵇ Nat.toℕ y
+            --   then bind (F (list A)) (merge/clocked k (xs , cons y ys)) (ret ∘ cons x)
+            --   else bind (F (list A)) (merge/clocked k (cons x xs , ys)) (ret ∘ cons y)
 
-  merge : cmp (Π pair λ _ → F list)
+  merge : cmp (Π pair λ _ → F (list A))
   merge (l₁ , l₂) = merge/clocked (length l₁ + length l₂) (l₁ , l₂)
 
-  ex/merge : cmp (F list)
-  ex/merge = merge (of-list (2 ∷ 3 ∷ 6 ∷ 8 ∷ []) , of-list (1 ∷ 5 ∷ 8 ∷ []))
+  -- ex/merge : cmp (F (list A))
+  -- ex/merge = merge (of-list (2 ∷ 3 ∷ 6 ∷ 8 ∷ []) , of-list (1 ∷ 5 ∷ 8 ∷ []))
 
-  sort/clocked : cmp (Π (U (meta ℕ)) λ _ → Π list λ _ → F list)
+  sort/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → F (list A))
   sort/clocked zero    l = ret l
   sort/clocked (suc k) l =
-    bind (F list) (split l) λ { (l₁ , l₂) →
-      bind (F list) (sort/clocked k l₁) λ l₁' →
-        bind (F list) (sort/clocked k l₂) λ l₂' →
+    bind (F (list A)) (split l) λ { (l₁ , l₂) →
+      bind (F (list A)) (sort/clocked k l₁) λ l₁' →
+        bind (F (list A)) (sort/clocked k l₂) λ l₂' →
           merge (l₁' , l₂')
     }
 
-  sort : cmp (Π list λ _ → F list)
+  sort : cmp (Π (list A) λ _ → F (list A))
   sort l = sort/clocked (length l) l  -- TODO: log2 clock
 
-  ex/sort/forward : cmp (F list)
-  ex/sort/forward = sort/clocked 4 (of-list test/forward)  -- cost: 162
+  -- ex/sort/forward : cmp (F (list A))
+  -- ex/sort/forward = sort/clocked 4 (of-list test/forward)  -- cost: 162
 
-  ex/sort/backward : cmp (F list)
-  ex/sort/backward = sort/clocked 4 (of-list test/backward) -- cost: 177
+  -- ex/sort/backward : cmp (F (list A))
+  -- ex/sort/backward = sort/clocked 4 (of-list test/backward) -- cost: 177
 
-  ex/sort/shuffled : cmp (F list)
-  ex/sort/shuffled = sort/clocked 4 (of-list test/shuffled) -- cost: 156
+  -- ex/sort/shuffled : cmp (F (list A))
+  -- ex/sort/shuffled = sort/clocked 4 (of-list test/shuffled) -- cost: 156
