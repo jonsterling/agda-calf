@@ -18,6 +18,10 @@ open import Data.Nat.Properties
 open import Data.Bool using (true; false; if_then_else_)
 open import Data.List using ([]; _∷_)
 
+private
+  variable
+    α : Set
+
 module List where
   private
     variable
@@ -92,24 +96,22 @@ module InsertionSort
         λ { false → bind (F (list A)) ys' (ret ∘ cons y)
           ; true  → ret (cons x (cons y ys)) }
 
-  insert/length : ∀ x l → bind (meta ℕ) (insert x l) length ≡ suc (length l)
-  insert/length x l = list/ind l (λ _ → meta _) refl inductive-step
+  insert/length : ∀ {α} x l (k : ℕ → α) → bind (meta α) (insert x l) (k ∘ length) ≡ k (suc (length l))
+  insert/length {α} x l = list/ind l (λ _ → meta _) (λ _ → refl) inductive-step
     where
       inductive-step : (y : val A) (ys : val (list A)) →
-        (bind (meta ℕ) (insert x         ys ) length ≡ suc (length         ys )) →
-        (bind (meta ℕ) (insert x (cons y ys)) length ≡ suc (length (cons y ys)))
-      inductive-step y ys h with h-cost {x} {y}
+        (∀ k → bind (meta α) (insert x         ys ) (k ∘ length) ≡ k (suc (length         ys ))) →
+        (∀ k → bind (meta α) (insert x (cons y ys)) (k ∘ length) ≡ k (suc (length (cons y ys))))
+      inductive-step y ys h k with h-cost {x} {y}
       ... | ub/intro false _ h-eq rewrite eq/ref h-eq =
         begin
-          bind _ (bind (F (list A)) (insert x ys) (ret ∘ cons y)) length
-        ≡⟨ bind/assoc {B = (list A)} {C = meta ℕ} {e = insert x ys} {f1 = ret ∘ cons y} {f2 = length} ⟩
-          bind _ (insert x ys) (λ ys' → bind {A = (list A)} (meta ℕ) (ret (cons y ys')) length)
-        ≡⟨ Eq.cong (bind {A = (list A)} (meta ℕ) (insert x ys)) (funext λ ys' → sym (bind/ret {A = (list A)} {X = meta ℕ} {v = cons y ys'} {f = length})) ⟩
-          bind _ (insert x ys) (length ∘ cons y)
-        ≡⟨ Eq.sym (bind/meta (list A) ℕ ℕ (insert x ys) length suc) ⟩
-          suc (bind (meta ℕ) (insert x ys) length)
-        ≡⟨ Eq.cong suc h ⟩
-          suc (length (cons y ys))
+          bind _ (bind (F (list A)) (insert x ys) (ret ∘ cons y)) (k ∘ length)
+        ≡⟨ bind/assoc {B = (list A)} {C = meta α} {e = insert x ys} {f1 = ret ∘ cons y} {f2 = k ∘ length} ⟩
+          bind _ (insert x ys) (λ ys' → bind {A = (list A)} (meta α) (ret (cons y ys')) (k ∘ length))
+        ≡⟨ Eq.cong (bind {A = (list A)} _ (insert x ys)) (funext λ ys' → sym (bind/ret {A = (list A)} {X = meta α} {v = cons y ys'} {f = k ∘ length})) ⟩
+          bind _ (insert x ys) (k ∘ length ∘ cons y)
+        ≡⟨ h (k ∘ suc) ⟩
+          k (suc (length (cons y ys)))
         ∎
           where open ≡-Reasoning
       ... | ub/intro true  _ h-eq rewrite eq/ref h-eq = refl
@@ -139,31 +141,26 @@ module InsertionSort
                 (ub/bind/const _ _ (ub/step (length ys) q h) λ _ → ub/ret zero)
                 where open ≤-Reasoning
 
-  -- ex-insert : cmp (F (list A))
-  -- ex-insert = insert (Nat.tonat 3) (of-list (1 ∷ 2 ∷ 4 ∷ []))
-
   sort : cmp (Π (list A) λ _ → F (list A))
   sort l = list/ind l (λ _ → F (list A)) (ret nil) λ x _ ys → bind (F (list A)) ys (insert x)
 
-  sort/length : ∀ l → bind (meta ℕ) (sort l) length ≡ length l
-  sort/length l = list/ind l (λ l → meta (bind (meta ℕ) (sort l) length ≡ length l)) refl inductive-step
+  sort/length : ∀ {α} l (k : ℕ → α) → bind (meta α) (sort l) (k ∘ length) ≡ k (length l)
+  sort/length {α} l = list/ind l (λ l → meta (∀ k → bind (meta α) (sort l) (k ∘ length) ≡ k (length l))) (λ _ → refl) inductive-step
     where
       inductive-step : (x : val A) (xs : val (list A)) →
-        (bind (meta ℕ) (sort         xs ) length ≡ length         xs ) →
-        (bind (meta ℕ) (sort (cons x xs)) length ≡ length (cons x xs))
-      inductive-step x xs h =
+        (∀ k → bind (meta α) (sort         xs ) (k ∘ length) ≡ k (length         xs )) →
+        (∀ k → bind (meta α) (sort (cons x xs)) (k ∘ length) ≡ k (length (cons x xs)))
+      inductive-step x xs h k =
         begin
-          bind (meta ℕ) (sort (cons x xs)) length
+          bind (meta α) (sort (cons x xs)) (k ∘ length)
         ≡⟨⟩
-          bind (meta ℕ) (bind (F (list A)) (sort xs) (insert x)) length
-        ≡⟨ bind/assoc {B = (list A)} {C = meta ℕ} {e = sort xs} {f1 = insert x} ⟩
-          bind (meta ℕ) (sort xs) (λ xs' → bind (meta ℕ) (insert x xs') length)
-        ≡⟨ Eq.cong (bind (meta ℕ) (sort xs)) (funext λ xs' → insert/length x xs')  ⟩
-          bind (meta ℕ) (sort xs) (λ xs' → suc (length xs'))
-        ≡⟨ Eq.sym (bind/meta (list A) ℕ ℕ (sort xs) length suc)  ⟩
-          suc (bind (meta ℕ) (sort xs) length)
-        ≡⟨ Eq.cong suc h  ⟩
-          length (cons x xs)
+          bind (meta α) (bind (F (list A)) (sort xs) (insert x)) (k ∘ length)
+        ≡⟨ bind/assoc {B = (list A)} {C = meta α} {e = sort xs} {f1 = insert x} ⟩
+          bind (meta α) (sort xs) (λ xs' → bind (meta α) (insert x xs') (k ∘ length))
+        ≡⟨ Eq.cong (bind (meta α) (sort xs)) (funext λ xs' → insert/length x xs' k)  ⟩
+          bind (meta α) (sort xs) (λ xs' → k (suc (length xs')))
+        ≡⟨ h (k ∘ suc) ⟩
+          k (length (cons x xs))
         ∎
           where open ≡-Reasoning
 
@@ -176,23 +173,21 @@ module InsertionSort
       inductive-step : (x : val A) (xs : val (list A)) →
         cmp (meta (ub (list A) (sort         xs ) (sort/cost         xs ))) →
         cmp (meta (ub (list A) (sort (cons x xs)) (sort/cost (cons x xs))))
-      inductive-step x xs h =
-        let foo = ub/bind {e = sort xs} (sort/cost xs) length h (insert≤insert/cost x)
-        in {!   !} -- subst {!   !} (sym (bind/meta {!   !} {!   !} {!   !} (sort xs) (insert x) {!   !})) {!   !}
-        -- ub/step/suc
-        --   (length xs + sort/cost xs)
-        --   (ub/bind/const {e = {!   !}} {!   !} {! length xs  !} {!   !} {!   !})
-      --  with ub/step/suc _ (ub/bind (sort/cost xs) (insert/cost x) h (insert≤insert/cost x))
-      -- ... | h-step rewrite sort/length xs = {! h-step  !} --  rewrite sort/length xs (_+_ (sort/cost xs)) | +-comm (sort/cost xs) (length xs) = h-step
+      inductive-step x xs h with ub/bind {e = sort xs} (sort/cost xs) length h (insert≤insert/cost x)
+      ... | h-bind rewrite sort/length xs (_+_ (sort/cost xs)) = h-bind
 
-  -- ex-sort : cmp (F (list A))
-  -- ex-sort = sort (of-list (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ []))
+module Ex/InsertionSort where
+  module Sort =
+    InsertionSort
+      Nat.nat
+      (λ m n → step' (F Bool.bool) 1 (ret (Nat.toℕ m ≤ᵇ Nat.toℕ n)))
+      (ub/step/suc 0 (ub/ret 0))
 
-ex/insert : cmp (F (List.list nat))
-ex/insert = Sort.insert (Nat.tonat 3) (List.of-list Nat.tonat (1 ∷ 2 ∷ 4 ∷ []))
-  where
-    module Sort =
-      InsertionSort
-        Nat.nat
-        (λ m n → ret (Nat.toℕ m ≤ᵇ Nat.toℕ n))
-        (ub/ret 1)
+  list = List.list nat
+  of-list = List.of-list {A = Nat.nat} Nat.tonat
+
+  ex/insert : cmp (F list)
+  ex/insert = Sort.insert (Nat.tonat 3) (of-list (1 ∷ 2 ∷ 4 ∷ []))
+
+  ex/sort : cmp (F list)
+  ex/sort = Sort.sort (of-list (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ []))
