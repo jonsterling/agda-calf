@@ -17,46 +17,49 @@ open import Data.Bool using (true; false; if_then_else_)
 open import Data.List using ([]; _∷_)
 
 module List where
-  postulate
-    list : ∀ (n : ℕ) → tp pos → tp pos
-    nil : ∀ {A n} → val (list n A)
-    cons : ∀ {A n} → val A → val (list n A) → val (list n A)
+  private
+    variable
+      A : tp pos
 
-    list/ind : ∀ {A n} → (l : val (list n A)) → (X : val (list n A) → tp neg) → cmp (X nil) →
-      ((a : val A) → (l : val (list n A)) → (r : val (U (X l))) →
+  postulate
+    list : tp pos → tp pos
+    nil : val (list A)
+    cons : val A → val (list A) → val (list A)
+
+    list/ind : (l : val (list A)) → (X : val (list A) → tp neg) → cmp (X nil) →
+      ((a : val A) → (l : val (list A)) → (r : val (U (X l))) →
         cmp (X (cons a l))) →
       cmp (X l)
-    list/ind/nil : ∀ {A n X} → (e0 : cmp (X nil)) →
-        (e1 : (a : val A) → (l : val ((list n A))) → (r : val (U (X l))) →
+    list/ind/nil : ∀ {X} → (e0 : cmp (X nil)) →
+        (e1 : (a : val A) → (l : val ((list A))) → (r : val (U (X l))) →
         cmp (X (cons a l))) →
       list/ind nil X e0 e1 ≡ e0
     {-# REWRITE list/ind/nil #-}
-    list/ind/cons : ∀ {A n X} → (a : val A) → (l : val ((list n A))) → (e0 : cmp (X nil)) →
-        (e1 : (a : val A) → (l : val ((list n A))) → (r : val (U (X l))) →
+    list/ind/cons : ∀ {X} → (a : val A) → (l : val ((list A))) → (e0 : cmp (X nil)) →
+        (e1 : (a : val A) → (l : val ((list A))) → (r : val (U (X l))) →
         cmp (X (cons a l))) →
-      list/ind (cons a l) X e0 e1 ≡ step' (X (cons a l)) n (e1 a l (list/ind l X e0 e1))
+      list/ind (cons a l) X e0 e1 ≡ e1 a l (list/ind l X e0 e1)
     {-# REWRITE list/ind/cons #-}
 
-  list/match : ∀ {A n} → (l : val (list n A)) → (X : val (list n A) → tp neg) → cmp (X nil) →
-    ((a : val A) → (l : val (list n A)) → cmp (X (cons a l))) →
+  list/match : (l : val (list A)) → (X : val (list A) → tp neg) → cmp (X nil) →
+    ((a : val A) → (l : val (list A)) → cmp (X (cons a l))) →
     cmp (X l)
   list/match l X e0 e1 = list/ind l X e0 (λ a l _ → e1 a l)
 
-  of-list : ∀ {n} → Data.List.List ℕ → val (list n Nat.nat)
-  of-list []       = nil
-  of-list (x ∷ xs) = cons (Nat.tonat x) (of-list xs)
+  of-list : {α : Set} → (α → val A) → Data.List.List α → val (list A)
+  of-list f []       = nil
+  of-list f (x ∷ xs) = cons (f x) (of-list f xs)
 
-  length : ∀ {A n} → val (list n A) → cmp (meta ℕ)
+  length : val (list A) → cmp (meta ℕ)
   length l = list/ind l (λ _ → meta ℕ) zero λ _ _ → suc
 
 cost = meta ℕ
 
-module InsertionSort where
-  open List hiding (list)
-  list = List.list 1 nat
+module InsertionSort (A : tp pos) where
+  open List
 
-  insert : cmp (Π nat λ _ → Π list λ _ → F list)
-  insert x l = list/ind l (λ _ → F list) (ret (cons x nil)) inductive-step
+  insert : cmp (Π A λ _ → Π (list A) λ _ → F (list A))
+  insert x l = list/ind l (λ _ → F (list A)) (ret (cons x nil)) inductive-step
     where
       inductive-step : val nat → val list → cmp (F list) → cmp (F list)
       inductive-step y ys ys' with Nat.toℕ y ≤ᵇ Nat.toℕ x
