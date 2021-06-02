@@ -2,7 +2,9 @@
 open import Prelude
 open import Metalanguage
 
+open import Data.Unit public renaming (tt to triv)
+
 postulate
   unit : tp pos
-  triv : val unit
-  unit/eta : ∀ {u v : val unit} → u ≡ v
+  unit/decode : val unit ≡ ⊤
+  {-# REWRITE unit/decode #-}
