@@ -62,21 +62,8 @@ module List where
 module Bool where
   postulate
     bool : tp pos
-
-    ff tt : val bool
-
-    bool/if : (X : val bool → tp neg) (b : val bool) → cmp (X tt) → cmp (X ff) → cmp (X b)
-
-    if/tt : ∀ {X} → (e1 : cmp (X tt)) → (e2 : cmp (X ff)) → bool/if X tt e1 e2 ≡ e1
-    if/ff : ∀ {X} → (e1 : cmp (X tt)) → (e2 : cmp (X ff)) → bool/if X ff e1 e2 ≡ e2
-    {-# REWRITE if/tt if/ff #-}
-
     bool/decode : val bool ≡ Data.Bool.Bool
     {-# REWRITE bool/decode #-}
-
-    bool/decode/ff : ff ≡ false
-    bool/decode/tt : tt ≡ true
-    {-# REWRITE bool/decode/ff bool/decode/tt #-}
 
 cost = meta ℕ
 
