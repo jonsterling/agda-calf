@@ -285,8 +285,30 @@ module MergeSort
               λ { false → bind (F (list A)) (merge/clocked k (cons x xs , ys)) (ret ∘ cons y)
                 ; true  → bind (F (list A)) (merge/clocked k (xs , cons y ys)) (ret ∘ cons x) }
 
+  merge/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → cost)
+  merge/clocked/cost n _ = n
+
+  merge/clocked≤merge/clocked/cost : ∀ n p → ub (list A) (merge/clocked n p) (merge/clocked/cost n p)
+  merge/clocked≤merge/clocked/cost zero _ = ub/ret _
+  merge/clocked≤merge/clocked/cost (suc n) (l₁ , l₂) =
+    list/match l₁ (λ l₁ → meta (ub (list A) (merge/clocked (suc n) (l₁ , l₂)) (merge/clocked/cost (suc n) (l₁ , l₂))))
+      (ub/ret _)
+      λ x xs →
+        list/match l₂ (λ l₂ → meta (ub (list A) (merge/clocked (suc n) (cons x xs , l₂)) (merge/clocked/cost (suc n) (cons x xs , l₂))))
+          (ub/ret _)
+          λ y ys →
+            ub/bind/const 1 n h-cost 
+              λ { false → ub/bind/const' n zero (+-identityʳ n) (merge/clocked≤merge/clocked/cost n _) λ _ → ub/ret _
+                ; true  → ub/bind/const' n zero (+-identityʳ n) (merge/clocked≤merge/clocked/cost n _) λ _ → ub/ret _ }
+
   merge : cmp (Π pair λ _ → F (list A))
   merge (l₁ , l₂) = merge/clocked (length l₁ + length l₂) (l₁ , l₂)
+
+  merge/cost : cmp (Π pair λ _ → cost)
+  merge/cost (l₁ , l₂) = length l₁ + length l₂
+
+  merge≤merge/cost : ∀ p → ub (list A) (merge p) (merge/cost p)
+  merge≤merge/cost (l₁ , l₂) = merge/clocked≤merge/clocked/cost (length l₁ + length l₂) (l₁ , l₂)
 
   sort/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → F (list A))
   sort/clocked zero    l = ret l

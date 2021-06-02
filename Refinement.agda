@@ -59,16 +59,20 @@ ub/bind/const {f = f} p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
 ... | _ | refl =
   ub/intro {q = q1 + q2} b (+-mono-≤ h1 h4) (ret {eq _ _ _} (eq/intro refl))
 
+ub/bind/const' : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
+  (p q : ℕ) → {r : ℕ} →
+  p + q ≡ r →
+  ub A e p →
+  ((a : val A) → ub B (f a) q) →
+  ub B (bind {A} (F B) e f) r
+ub/bind/const' p q refl h₁ h₂ = ub/bind/const p q h₁ h₂
+
 ub/bind/suc : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
   (p : ℕ) →
   ub A e 1 →
   ((a : val A) → ub B (f a) p) →
   ub B (bind {A} (F B) e f) (suc p)
-ub/bind/suc {f = f} p (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
-... | refl with h3 a
-... | ub/intro {q = q2} b h4 h5 with (f a) | eq/ref h5
-... | _ | refl =
-  ub/intro {q = q1 + q2} b (P.subst (λ n → q1 + q2 ≤ n) refl (+-mono-≤ h1 h4)) (ret {eq _ _ _} (eq/intro refl))
+ub/bind/suc p h1 h2 = ub/bind/const' 1 p refl h1 h2
 
 if : ∀ {A : ℕ → Set} → (n : ℕ) → (A 0) → ((n : ℕ) → A (suc n)) → A n
 if zero n f = n
