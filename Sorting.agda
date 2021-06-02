@@ -212,23 +212,65 @@ module MergeSort
     none : ∀ {A} → val (option A)
     none = inj₂ triv
 
+    option/case : ∀ A (X : val (option A) → tp neg) → (s : val (option A)) → ((a : val A) → cmp (X (some {A} a))) → (cmp (X (none {A}))) → cmp (X s)
+    option/case A X s b₁ b₂ = sum/case A unit X s b₁ (λ { triv → b₂ })
+
+    ub/option/case/const/const : ∀ A (C : val (option A) → tp pos) →
+      (s : val (option A)) →
+      (e0 : (a : val A) → cmp (F (C (some {A} a)))) →
+      (e1 : cmp (F (C (none {A})))) →
+      (p : ℕ) →
+      ((a : val A) → ub (C (some {A} a)) (e0 a) p) →
+      (ub (C (none {A})) e1 p) →
+      ub (C s) (option/case A (λ s → F (C s)) s e0 e1) p
+    ub/option/case/const/const A C s e0 e1 p h1 h2 = ub/sum/case/const/const A unit C s e0 (λ { triv → e1 }) p h1 (λ { triv → h2 })
+
+  option = Option.option A
+  none = Option.none {A}
+  some = Option.some {A}
+  option/case = Option.option/case A
+  ub/option/case = Option.ub/option/case/const/const A
+
+  split/aux/o = Σ++ option λ _ → pair
+
+  split/aux : cmp (Π (list A) λ _ → F split/aux/o)
+  split/aux l =
+    list/ind l (λ _ → F split/aux/o)
+      (ret (none , nil , nil))
+      λ x _ acc → bind (F _) acc λ { (opt , xs , ys) →
+        option/case (λ _ → F _) opt
+          (λ y → ret (none , cons x xs , cons y ys))
+          (ret (some x , xs , ys))
+      }
+
+  split/aux/cost : cmp (Π (list A) λ _ → cost)
+  split/aux/cost _ = zero
+
+  split/aux≤split/aux/cost : ∀ l → ub split/aux/o (split/aux l) (split/aux/cost l)
+  split/aux≤split/aux/cost l =
+    list/ind l (λ l → meta (ub split/aux/o (split/aux l) (split/aux/cost l)))
+      (ub/ret _)
+      λ _ _ h → ub/bind/const zero _ h λ { (opt , _) → ub/option/case
+        (λ _ → _) opt _ _ _ (λ _ → ub/ret _) (ub/ret _)
+      }
+
   split : cmp (Π (list A) λ _ → F pair)
   split l =
-    bind (F pair) (aux l)
-      λ { (inj₁ x    , xs , ys) → ret (cons x xs , ys)
-        ; (inj₂ triv , xs , ys) → ret (xs , ys) }
-    where
-      aux-tp = Σ++ (Option.option A) λ _ → pair
-      none = Option.none {A}
-      some = Option.some {A}
+    bind (F pair) (split/aux l)
+      λ { (opt , xs , ys) →
+        option/case (λ _ → F pair) opt
+          (λ x → ret (cons x xs , ys))
+          (ret (xs , ys))
+      }
 
-      aux : cmp (Π (list A) λ _ → F aux-tp)
-      aux l =
-        list/ind l (λ _ → F aux-tp)
-          (ret (none , nil , nil))
-          λ x _ acc → bind (F aux-tp) acc
-            λ { (inj₁ y    , xs , ys) → ret (none , cons x xs , cons y ys)
-              ; (inj₂ triv , xs , ys) → ret (some x , xs , ys) }
+  split/cost : cmp (Π (list A) λ _ → cost)
+  split/cost _ = zero
+
+  split≤split/cost : ∀ l → ub pair (split l) (split/cost l)
+  split≤split/cost l =
+    ub/bind/const zero _ (split/aux≤split/aux/cost l) λ { (opt , _) →
+      ub/option/case _ opt _ _ _ (λ _ → ub/ret _) (ub/ret _)
+    }
 
   merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F (list A))
   merge/clocked zero    _         = ret nil
