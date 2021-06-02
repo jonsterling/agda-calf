@@ -220,31 +220,28 @@ module MergeSort
     option A = sum A unit
 
     some : ∀ {A} → val A → val (option A)
-    some = inl
+    some = inj₁
 
     none : ∀ {A} → val (option A)
-    none = inr triv
+    none = inj₂ triv
 
   split : cmp (Π (list A) λ _ → F pair)
   split l =
-    bind (F pair) (aux l) (λ { (opt , xs , ys) →
-      sum/case _ _ (λ _ → F pair) opt
-        (λ x → ret ((cons x xs) , ys))
-        (λ _ → ret (xs , ys))
-    })
+    bind (F pair) (aux l)
+      λ { (inj₁ x    , xs , ys) → ret (cons x xs , ys)
+        ; (inj₂ triv , xs , ys) → ret (xs , ys) }
     where
-      open Option
-      aux-tp = Σ++ (option A) λ _ → pair
+      aux-tp = Σ++ (Option.option A) λ _ → pair
+      none = Option.none {A}
+      some = Option.some {A}
 
       aux : cmp (Π (list A) λ _ → F aux-tp)
       aux l =
         list/ind l (λ _ → F aux-tp)
           (ret (none , nil , nil))
-          λ x _ acc → bind (F aux-tp) acc (λ { (opt , xs , ys) →
-            sum/case _ _ (λ _ → F aux-tp) opt
-              (λ y → ret (none , cons x xs , cons y ys))
-              (λ _ → ret (some x , xs , ys))
-          })
+          λ x _ acc → bind (F aux-tp) acc
+            λ { (inj₁ y    , xs , ys) → ret (none , cons x xs , cons y ys)
+              ; (inj₂ triv , xs , ys) → ret (some x , xs , ys) }
 
   merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F (list A))
   merge/clocked zero    _         = ret nil
