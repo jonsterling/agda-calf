@@ -268,8 +268,26 @@ module MergeSort
           merge (l₁' , l₂')
     }
 
+  sort/depth : cmp (Π (list A) λ _ → meta ℕ)
+  sort/depth l = let n = length l in aux n n ≤-refl
+    where
+      aux : (n : ℕ) → (m : ℕ) → m ≤ n → ℕ
+      aux _ zero _ = zero
+      aux _ (suc zero) _ = zero
+      aux (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
+        suc (aux (suc n) (suc ⌈ m /2⌉) (s≤s (
+          begin
+            ⌈ m /2⌉
+          ≤⟨ ⌈n/2⌉≤n m ⟩
+            m
+          ≤⟨ h ⟩
+            n
+          ∎
+        )))
+       where open ≤-Reasoning
+
   sort : cmp (Π (list A) λ _ → F (list A))
-  sort l = sort/clocked (length l) l  -- TODO: log2 clock
+  sort l = sort/clocked (sort/depth l) l
 
 module Ex/MergeSort where
   module Sort =
