@@ -92,13 +92,11 @@ ub/rec B x e0 e1 p1 p2 h1 h2 = Nat.rec x (λ x → meta (ub (B x) (Nat.rec x (λ
 
 ub/sum/case/const/const : ∀ A B (C : val (sum A B) → tp pos) →
   (s : val (sum A B)) →
-  (e0 : (a : val A) → cmp (F (C (inl a)))) →
-  (e1 : (b : val B) → cmp (F (C (inr b)))) →
+  (e0 : (a : val A) → cmp (F (C (inj₁ a)))) →
+  (e1 : (b : val B) → cmp (F (C (inj₂ b)))) →
   (p : ℕ) →
-  ((a : val A) → ub (C (inl a)) (e0 a) p) →
-  ((b : val B) → ub (C (inr b)) (e1 b) p) →
+  ((a : val A) → ub (C (inj₁ a)) (e0 a) p) →
+  ((b : val B) → ub (C (inj₂ b)) (e1 b) p) →
   ub (C s) (sum/case A B (λ s → F (C s)) s e0 e1) p
 ub/sum/case/const/const A B C s e0 e1 p h1 h2 = sum/case A B
   (λ s → meta (ub (C s) (sum/case A B (λ s₁ → F (C s₁)) s e0 e1) p)) s h1 h2
-
-

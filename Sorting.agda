@@ -13,7 +13,7 @@ open import Eq
 open import Refinement
 open import Relation.Binary.PropositionalEquality as Eq
 open import Function
-open import Data.Nat
+open import Data.Nat hiding (_≤ᵇ_)
 open import Data.Nat.Properties
 open import Data.Bool using (true; false; if_then_else_)
 open import Data.List using ([]; _∷_)
@@ -62,29 +62,31 @@ module List where
 module Bool where
   postulate
     bool : tp pos
-
-    ff tt : val bool
-
-    bool/if : (X : val bool → tp neg) (b : val bool) → cmp (X tt) → cmp (X ff) → cmp (X b)
-
-    if/tt : ∀ {X} → (e1 : cmp (X tt)) → (e2 : cmp (X ff)) → bool/if X tt e1 e2 ≡ e1
-    if/ff : ∀ {X} → (e1 : cmp (X tt)) → (e2 : cmp (X ff)) → bool/if X ff e1 e2 ≡ e2
-    {-# REWRITE if/tt if/ff #-}
-
     bool/decode : val bool ≡ Data.Bool.Bool
     {-# REWRITE bool/decode #-}
 
-    bool/decode/ff : ff ≡ false
-    bool/decode/tt : tt ≡ true
-    {-# REWRITE bool/decode/ff bool/decode/tt #-}
+record Comparable : Set where
+  field
+    A : tp pos
+    _≤ᵇ_ : val A → val A → cmp (F Bool.bool)
+    h-cost : {x y : val A} → ub Bool.bool (x ≤ᵇ y) 1
+
+NatComparable : Comparable
+NatComparable = record
+  { A = Nat.nat
+  ; _≤ᵇ_ = λ m n → step' (F Bool.bool) 1 (ret (Nat.toℕ m ≤ᵇ Nat.toℕ n))
+  ; h-cost = ub/step/suc 0 (ub/ret 0)
+  }
+  where open Data.Nat
 
 cost = meta ℕ
 
-module InsertionSort
-  (A : tp pos)
-  (_≤ᵇ_ : val A → val A → cmp (F Bool.bool))
-  (h-cost : {x y : val A} → ub Bool.bool (x ≤ᵇ y) 1)
-  where
+test/forward  = 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ 6 ∷ 7 ∷ 8 ∷ 9 ∷ 10 ∷ 11 ∷ 12 ∷ 13 ∷ 14 ∷ 15 ∷ 16 ∷ []
+test/backward = 16 ∷ 15 ∷ 14 ∷ 13 ∷ 12 ∷ 11 ∷ 10 ∷ 9 ∷ 8 ∷ 7 ∷ 6 ∷ 5 ∷ 4 ∷ 3 ∷ 2 ∷ 1 ∷ []
+test/shuffled = 4 ∷ 8 ∷ 12 ∷ 16 ∷ 13 ∷ 3 ∷ 5 ∷ 14 ∷ 9 ∷ 6 ∷ 7 ∷ 10 ∷ 11 ∷ 1 ∷ 2 ∷ 15 ∷ []
+
+module InsertionSort (M : Comparable) where
+  open Comparable M
   open List
   open Bool
 
@@ -177,11 +179,7 @@ module InsertionSort
       ... | h-bind rewrite sort/length xs (_+_ (sort/cost xs)) = h-bind
 
 module Ex/InsertionSort where
-  module Sort =
-    InsertionSort
-      Nat.nat
-      (λ m n → step' (F Bool.bool) 1 (ret (Nat.toℕ m ≤ᵇ Nat.toℕ n)))
-      (ub/step/suc 0 (ub/ret 0))
+  module Sort = InsertionSort NatComparable
 
   list = List.list nat
   of-list = List.of-list {A = Nat.nat} Nat.tonat
@@ -191,3 +189,117 @@ module Ex/InsertionSort where
 
   ex/sort : cmp (F list)
   ex/sort = Sort.sort (of-list (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ []))
+
+  ex/sort/forward : cmp (F list)
+  ex/sort/forward = Sort.sort (of-list test/forward)  -- cost: 15
+
+  ex/sort/backward : cmp (F list)
+  ex/sort/backward = Sort.sort (of-list test/backward)  -- cost: 120
+
+  ex/sort/shuffled : cmp (F list)
+  ex/sort/shuffled = Sort.sort (of-list test/shuffled)  -- cost: 76
+
+module MergeSort (M : Comparable) where
+  open Comparable M
+  open List
+  open Bool
+
+  pair = Σ++ (list A) λ _ → (list A)
+
+  module Option where
+    option : tp pos → tp pos
+    option A = sum A unit
+
+    some : ∀ {A} → val A → val (option A)
+    some = inj₁
+
+    none : ∀ {A} → val (option A)
+    none = inj₂ triv
+
+  split : cmp (Π (list A) λ _ → F pair)
+  split l =
+    bind (F pair) (aux l)
+      λ { (inj₁ x    , xs , ys) → ret (cons x xs , ys)
+        ; (inj₂ triv , xs , ys) → ret (xs , ys) }
+    where
+      aux-tp = Σ++ (Option.option A) λ _ → pair
+      none = Option.none {A}
+      some = Option.some {A}
+
+      aux : cmp (Π (list A) λ _ → F aux-tp)
+      aux l =
+        list/ind l (λ _ → F aux-tp)
+          (ret (none , nil , nil))
+          λ x _ acc → bind (F aux-tp) acc
+            λ { (inj₁ y    , xs , ys) → ret (none , cons x xs , cons y ys)
+              ; (inj₂ triv , xs , ys) → ret (some x , xs , ys) }
+
+  merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F (list A))
+  merge/clocked zero    _         = ret nil
+  merge/clocked (suc k) (l₁ , l₂) =
+    list/match l₁ (λ _ → F (list A))
+      (ret l₂)
+      λ x xs →
+        list/match l₂ (λ _ → F (list A))
+          (ret l₁)
+          λ y ys →
+            bind (F (list A)) (x ≤ᵇ y)
+              λ { false → bind (F (list A)) (merge/clocked k (cons x xs , ys)) (ret ∘ cons y)
+                ; true  → bind (F (list A)) (merge/clocked k (xs , cons y ys)) (ret ∘ cons x) }
+
+  merge : cmp (Π pair λ _ → F (list A))
+  merge (l₁ , l₂) = merge/clocked (length l₁ + length l₂) (l₁ , l₂)
+
+  sort/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → F (list A))
+  sort/clocked zero    l = ret l
+  sort/clocked (suc k) l =
+    bind (F (list A)) (split l) λ { (l₁ , l₂) →
+      bind (F (list A)) (sort/clocked k l₁) λ l₁' →
+        bind (F (list A)) (sort/clocked k l₂) λ l₂' →
+          merge (l₁' , l₂')
+    }
+
+  sort/depth : cmp (Π (list A) λ _ → meta ℕ)
+  sort/depth l = let n = length l in aux n n ≤-refl
+    where
+      aux : (n : ℕ) → (m : ℕ) → m ≤ n → ℕ
+      aux _ zero _ = zero
+      aux _ (suc zero) _ = zero
+      aux (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
+        suc (aux (suc n) (suc ⌈ m /2⌉) (s≤s (
+          begin
+            ⌈ m /2⌉
+          ≤⟨ ⌈n/2⌉≤n m ⟩
+            m
+          ≤⟨ h ⟩
+            n
+          ∎
+        )))
+       where open ≤-Reasoning
+
+  sort : cmp (Π (list A) λ _ → F (list A))
+  sort l = sort/clocked (sort/depth l) l
+
+module Ex/MergeSort where
+  module Sort = MergeSort NatComparable
+
+  list = List.list nat
+  of-list = List.of-list {A = Nat.nat} Nat.tonat
+
+  ex/split : cmp (F Sort.pair)
+  ex/split = Sort.split (of-list (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ []))
+
+  ex/merge : cmp (F list)
+  ex/merge = Sort.merge (of-list (2 ∷ 3 ∷ 6 ∷ 8 ∷ []) , of-list (1 ∷ 5 ∷ 8 ∷ []))
+
+  ex/sort : cmp (F list)
+  ex/sort = Sort.sort (of-list (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ []))
+
+  ex/sort/forward : cmp (F list)
+  ex/sort/forward = Sort.sort (of-list test/forward)
+
+  ex/sort/backward : cmp (F list)
+  ex/sort/backward = Sort.sort (of-list test/backward)
+
+  ex/sort/shuffled : cmp (F list)
+  ex/sort/shuffled = Sort.sort (of-list test/shuffled)
