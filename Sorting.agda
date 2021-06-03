@@ -13,7 +13,7 @@ open import Eq
 open import Refinement
 open import Relation.Binary.PropositionalEquality as Eq
 open import Function
-open import Data.Nat
+open import Data.Nat hiding (_≤ᵇ_)
 open import Data.Nat.Properties
 open import Data.Bool using (true; false; if_then_else_)
 open import Data.List using ([]; _∷_)
@@ -65,17 +65,28 @@ module Bool where
     bool/decode : val bool ≡ Data.Bool.Bool
     {-# REWRITE bool/decode #-}
 
+record Comparable : Set where
+  field
+    A : tp pos
+    _≤ᵇ_ : val A → val A → cmp (F Bool.bool)
+    h-cost : {x y : val A} → ub Bool.bool (x ≤ᵇ y) 1
+
+NatComparable : Comparable
+NatComparable = record
+  { A = Nat.nat
+  ; _≤ᵇ_ = λ m n → step' (F Bool.bool) 1 (ret (Nat.toℕ m ≤ᵇ Nat.toℕ n))
+  ; h-cost = ub/step/suc 0 (ub/ret 0)
+  }
+  where open Data.Nat
+
 cost = meta ℕ
 
 test/forward  = 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ 6 ∷ 7 ∷ 8 ∷ 9 ∷ 10 ∷ 11 ∷ 12 ∷ 13 ∷ 14 ∷ 15 ∷ 16 ∷ []
 test/backward = 16 ∷ 15 ∷ 14 ∷ 13 ∷ 12 ∷ 11 ∷ 10 ∷ 9 ∷ 8 ∷ 7 ∷ 6 ∷ 5 ∷ 4 ∷ 3 ∷ 2 ∷ 1 ∷ []
 test/shuffled = 4 ∷ 8 ∷ 12 ∷ 16 ∷ 13 ∷ 3 ∷ 5 ∷ 14 ∷ 9 ∷ 6 ∷ 7 ∷ 10 ∷ 11 ∷ 1 ∷ 2 ∷ 15 ∷ []
 
-module InsertionSort
-  (A : tp pos)
-  (_≤ᵇ_ : val A → val A → cmp (F Bool.bool))
-  (h-cost : {x y : val A} → ub Bool.bool (x ≤ᵇ y) 1)
-  where
+module InsertionSort (M : Comparable) where
+  open Comparable M
   open List
   open Bool
 
@@ -168,11 +179,7 @@ module InsertionSort
       ... | h-bind rewrite sort/length xs (_+_ (sort/cost xs)) = h-bind
 
 module Ex/InsertionSort where
-  module Sort =
-    InsertionSort
-      Nat.nat
-      (λ m n → step' (F Bool.bool) 1 (ret (Nat.toℕ m ≤ᵇ Nat.toℕ n)))
-      (ub/step/suc 0 (ub/ret 0))
+  module Sort = InsertionSort NatComparable
 
   list = List.list nat
   of-list = List.of-list {A = Nat.nat} Nat.tonat
@@ -192,11 +199,8 @@ module Ex/InsertionSort where
   ex/sort/shuffled : cmp (F list)
   ex/sort/shuffled = Sort.sort (of-list test/shuffled)  -- cost: 76
 
-module MergeSort
-  (A : tp pos)
-  (_≤ᵇ_ : val A → val A → cmp (F Bool.bool))
-  (h-cost : {x y : val A} → ub Bool.bool (x ≤ᵇ y) 1)
-  where
+module MergeSort (M : Comparable) where
+  open Comparable M
   open List
   open Bool
 
@@ -277,11 +281,7 @@ module MergeSort
   sort l = sort/clocked (sort/depth l) l
 
 module Ex/MergeSort where
-  module Sort =
-    MergeSort
-      Nat.nat
-      (λ m n → step' (F Bool.bool) 1 (ret (Nat.toℕ m ≤ᵇ Nat.toℕ n)))
-      (ub/step/suc 0 (ub/ret 0))
+  module Sort = MergeSort NatComparable
 
   list = List.list nat
   of-list = List.of-list {A = Nat.nat} Nat.tonat
