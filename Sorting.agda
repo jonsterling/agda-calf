@@ -87,22 +87,22 @@ module InsertionSort
         λ { false → bind (F (list A)) ys' (ret ∘ cons y)
           ; true  → ret (cons x (cons y ys)) }
 
-  insert/length : ∀ {α} x l (k : ℕ → α) → bind (meta α) (insert x l) (k ∘ length) ≡ k (suc (length l))
+  insert/length : ∀ {α} x l (κ : ℕ → α) → bind (meta α) (insert x l) (κ ∘ length) ≡ κ (suc (length l))
   insert/length {α} x l = list/ind l (λ _ → meta _) (λ _ → refl) inductive-step
     where
       inductive-step : (y : val A) (ys : val (list A)) →
-        (∀ k → bind (meta α) (insert x         ys ) (k ∘ length) ≡ k (suc (length         ys ))) →
-        (∀ k → bind (meta α) (insert x (cons y ys)) (k ∘ length) ≡ k (suc (length (cons y ys))))
-      inductive-step y ys h k with h-cost {x} {y}
+        (∀ κ → bind (meta α) (insert x         ys ) (κ ∘ length) ≡ κ (suc (length         ys ))) →
+        (∀ κ → bind (meta α) (insert x (cons y ys)) (κ ∘ length) ≡ κ (suc (length (cons y ys))))
+      inductive-step y ys h κ with h-cost {x} {y}
       ... | ub/intro false _ h-eq rewrite eq/ref h-eq =
         begin
-          bind _ (bind (F (list A)) (insert x ys) (ret ∘ cons y)) (k ∘ length)
-        ≡⟨ bind/assoc {B = (list A)} {C = meta α} {e = insert x ys} {f1 = ret ∘ cons y} {f2 = k ∘ length} ⟩
-          bind _ (insert x ys) (λ ys' → bind {A = (list A)} (meta α) (ret (cons y ys')) (k ∘ length))
-        ≡⟨ Eq.cong (bind {A = (list A)} _ (insert x ys)) (funext λ ys' → sym (bind/ret {A = (list A)} {X = meta α} {v = cons y ys'} {f = k ∘ length})) ⟩
-          bind _ (insert x ys) (k ∘ length ∘ cons y)
-        ≡⟨ h (k ∘ suc) ⟩
-          k (suc (length (cons y ys)))
+          bind _ (bind (F (list A)) (insert x ys) (ret ∘ cons y)) (κ ∘ length)
+        ≡⟨ bind/assoc {B = (list A)} {C = meta α} {e = insert x ys} {f1 = ret ∘ cons y} {f2 = κ ∘ length} ⟩
+          bind _ (insert x ys) (λ ys' → bind {A = (list A)} (meta α) (ret (cons y ys')) (κ ∘ length))
+        ≡⟨ Eq.cong (bind {A = (list A)} _ (insert x ys)) (funext λ ys' → sym (bind/ret {A = (list A)} {X = meta α} {v = cons y ys'} {f = κ ∘ length})) ⟩
+          bind _ (insert x ys) (κ ∘ length ∘ cons y)
+        ≡⟨ h (κ ∘ suc) ⟩
+          κ (suc (length (cons y ys)))
         ∎
           where open ≡-Reasoning
       ... | ub/intro true  _ h-eq rewrite eq/ref h-eq = refl
@@ -135,23 +135,23 @@ module InsertionSort
   sort : cmp (Π (list A) λ _ → F (list A))
   sort l = list/ind l (λ _ → F (list A)) (ret nil) λ x _ ys → bind (F (list A)) ys (insert x)
 
-  sort/length : ∀ {α} l (k : ℕ → α) → bind (meta α) (sort l) (k ∘ length) ≡ k (length l)
-  sort/length {α} l = list/ind l (λ l → meta (∀ k → bind (meta α) (sort l) (k ∘ length) ≡ k (length l))) (λ _ → refl) inductive-step
+  sort/length : ∀ {α} l (κ : ℕ → α) → bind (meta α) (sort l) (κ ∘ length) ≡ κ (length l)
+  sort/length {α} l = list/ind l (λ l → meta (∀ κ → bind (meta α) (sort l) (κ ∘ length) ≡ κ (length l))) (λ _ → refl) inductive-step
     where
       inductive-step : (x : val A) (xs : val (list A)) →
-        (∀ k → bind (meta α) (sort         xs ) (k ∘ length) ≡ k (length         xs )) →
-        (∀ k → bind (meta α) (sort (cons x xs)) (k ∘ length) ≡ k (length (cons x xs)))
-      inductive-step x xs h k =
+        (∀ κ → bind (meta α) (sort         xs ) (κ ∘ length) ≡ κ (length         xs )) →
+        (∀ κ → bind (meta α) (sort (cons x xs)) (κ ∘ length) ≡ κ (length (cons x xs)))
+      inductive-step x xs h κ =
         begin
-          bind (meta α) (sort (cons x xs)) (k ∘ length)
+          bind (meta α) (sort (cons x xs)) (κ ∘ length)
         ≡⟨⟩
-          bind (meta α) (bind (F (list A)) (sort xs) (insert x)) (k ∘ length)
+          bind (meta α) (bind (F (list A)) (sort xs) (insert x)) (κ ∘ length)
         ≡⟨ bind/assoc {B = (list A)} {C = meta α} {e = sort xs} {f1 = insert x} ⟩
-          bind (meta α) (sort xs) (λ xs' → bind (meta α) (insert x xs') (k ∘ length))
-        ≡⟨ Eq.cong (bind (meta α) (sort xs)) (funext λ xs' → insert/length x xs' k)  ⟩
-          bind (meta α) (sort xs) (λ xs' → k (suc (length xs')))
-        ≡⟨ h (k ∘ suc) ⟩
-          k (length (cons x xs))
+          bind (meta α) (sort xs) (λ xs' → bind (meta α) (insert x xs') (κ ∘ length))
+        ≡⟨ Eq.cong (bind (meta α) (sort xs)) (funext λ xs' → insert/length x xs' κ)  ⟩
+          bind (meta α) (sort xs) (λ xs' → κ (suc (length xs')))
+        ≡⟨ h (κ ∘ suc) ⟩
+          κ (length (cons x xs))
         ∎
           where open ≡-Reasoning
 
@@ -164,7 +164,7 @@ module InsertionSort
       inductive-step : (x : val A) (xs : val (list A)) →
         cmp (meta (ub (list A) (sort         xs ) (sort/cost         xs ))) →
         cmp (meta (ub (list A) (sort (cons x xs)) (sort/cost (cons x xs))))
-      inductive-step x xs h with ub/bind {e = sort xs} (sort/cost xs) length h (insert≤insert/cost x)
+      inductive-step x xs h with ub/bind (sort/cost xs) length h (insert≤insert/cost x)
       ... | h-bind rewrite sort/length xs (_+_ (sort/cost xs)) = h-bind
 
 module Ex/InsertionSort where
@@ -237,11 +237,10 @@ module MergeSort
   split/aux l =
     list/ind l (λ _ → F split/aux/o)
       (ret (none , nil , nil))
-      λ x _ acc → bind (F _) acc λ { (opt , xs , ys) →
+      λ x _ acc → bind (F _) acc λ (opt , xs , ys) →
         option/case (λ _ → F _) opt
           (λ y → ret (none , cons x xs , cons y ys))
           (ret (some x , xs , ys))
-      }
 
   split/aux/cost : cmp (Π (list A) λ _ → cost)
   split/aux/cost _ = zero
@@ -250,27 +249,23 @@ module MergeSort
   split/aux≤split/aux/cost l =
     list/ind l (λ l → meta (ub split/aux/o (split/aux l) (split/aux/cost l)))
       (ub/ret _)
-      λ _ _ h → ub/bind/const zero _ h λ { (opt , _) → ub/option/case
-        (λ _ → _) opt _ _ _ (λ _ → ub/ret _) (ub/ret _)
-      }
+      λ _ _ h → ub/bind/const zero _ h λ (opt , _) →
+        ub/option/case (λ _ → _) opt _ _ _ (λ _ → ub/ret _) (ub/ret _)
 
   split : cmp (Π (list A) λ _ → F pair)
   split l =
-    bind (F pair) (split/aux l)
-      λ { (opt , xs , ys) →
-        option/case (λ _ → F pair) opt
-          (λ x → ret (cons x xs , ys))
-          (ret (xs , ys))
-      }
+    bind (F pair) (split/aux l) λ (opt , xs , ys) →
+      option/case (λ _ → F pair) opt
+        (λ x → ret (cons x xs , ys))
+        (ret (xs , ys))
 
   split/cost : cmp (Π (list A) λ _ → cost)
   split/cost _ = zero
 
   split≤split/cost : ∀ l → ub pair (split l) (split/cost l)
   split≤split/cost l =
-    ub/bind/const zero _ (split/aux≤split/aux/cost l) λ { (opt , _) →
+    ub/bind/const zero _ (split/aux≤split/aux/cost l) λ (opt , _) →
       ub/option/case _ opt _ _ _ (λ _ → ub/ret _) (ub/ret _)
-    }
 
   merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F (list A))
   merge/clocked zero    _         = ret nil
@@ -288,18 +283,18 @@ module MergeSort
   merge/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → cost)
   merge/clocked/cost n _ = n
 
-  merge/clocked≤merge/clocked/cost : ∀ n p → ub (list A) (merge/clocked n p) (merge/clocked/cost n p)
+  merge/clocked≤merge/clocked/cost : ∀ k p → ub (list A) (merge/clocked k p) (merge/clocked/cost k p)
   merge/clocked≤merge/clocked/cost zero _ = ub/ret _
-  merge/clocked≤merge/clocked/cost (suc n) (l₁ , l₂) =
-    list/match l₁ (λ l₁ → meta (ub (list A) (merge/clocked (suc n) (l₁ , l₂)) (merge/clocked/cost (suc n) (l₁ , l₂))))
+  merge/clocked≤merge/clocked/cost (suc k) (l₁ , l₂) =
+    list/match l₁ (λ l₁ → meta (ub (list A) (merge/clocked (suc k) (l₁ , l₂)) (merge/clocked/cost (suc k) (l₁ , l₂))))
       (ub/ret _)
       λ x xs →
-        list/match l₂ (λ l₂ → meta (ub (list A) (merge/clocked (suc n) (cons x xs , l₂)) (merge/clocked/cost (suc n) (cons x xs , l₂))))
+        list/match l₂ (λ l₂ → meta (ub (list A) (merge/clocked (suc k) (cons x xs , l₂)) (merge/clocked/cost (suc k) (cons x xs , l₂))))
           (ub/ret _)
           λ y ys →
-            ub/bind/const 1 n h-cost 
-              λ { false → ub/bind/const' n zero (+-identityʳ n) (merge/clocked≤merge/clocked/cost n _) λ _ → ub/ret _
-                ; true  → ub/bind/const' n zero (+-identityʳ n) (merge/clocked≤merge/clocked/cost n _) λ _ → ub/ret _ }
+            ub/bind/const 1 k h-cost 
+              λ { false → ub/bind/const' k zero (+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _
+                ; true  → ub/bind/const' k zero (+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _ }
 
   merge : cmp (Π pair λ _ → F (list A))
   merge (l₁ , l₂) = merge/clocked (length l₁ + length l₂) (l₁ , l₂)
@@ -313,11 +308,10 @@ module MergeSort
   sort/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → F (list A))
   sort/clocked zero    l = ret l
   sort/clocked (suc k) l =
-    bind (F (list A)) (split l) λ { (l₁ , l₂) →
+    bind (F (list A)) (split l) λ (l₁ , l₂) →
       bind (F (list A)) (sort/clocked k l₁) λ l₁' →
         bind (F (list A)) (sort/clocked k l₂) λ l₂' →
           merge (l₁' , l₂')
-    }
 
   sort/depth : cmp (Π (list A) λ _ → meta ℕ)
   sort/depth l = let n = length l in aux n n ≤-refl
