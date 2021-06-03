@@ -259,6 +259,10 @@ module MergeSort
         (λ x → ret (cons x xs , ys))
         (ret (xs , ys))
 
+  split/length : ∀ {α} l (κ : ℕ → ℕ → α) →
+    bind (meta α) (split l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ ⌈ length l /2⌉ ⌊ length l /2⌋
+  split/length = {!   !}
+
   split/cost : cmp (Π (list A) λ _ → cost)
   split/cost _ = zero
 
@@ -312,6 +316,50 @@ module MergeSort
       bind (F (list A)) (sort/clocked k l₁) λ l₁' →
         bind (F (list A)) (sort/clocked k l₂) λ l₂' →
           merge (l₁' , l₂')
+
+  sort/length : ∀ k l (κ : val (list A) → ℕ → α) →
+    bind (meta α) (sort/clocked k l) (λ l' → κ l' (length l')) ≡ bind (meta α) (sort/clocked k l) (λ l' → κ l' (length l))
+  sort/length zero    l = λ _ → refl
+  sort/length (suc k) l = {!   !}
+
+  sort/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
+  sort/clocked/cost zero    l = zero
+  sort/clocked/cost (suc k) l =
+    bind cost (split l) λ (l₁ , l₂) →
+      split/cost l + (sort/clocked/cost k l₁ + (sort/clocked/cost k l₂ + (length l₁ + length l₂)))
+
+  sort/clocked≤sort/clocked/cost : ∀ k l → ub (list A) (sort/clocked k l) (sort/clocked/cost k l)
+  sort/clocked≤sort/clocked/cost zero l = ub/ret _
+  sort/clocked≤sort/clocked/cost (suc k) l =
+    ub/bind (split/cost l) (λ _ → _) (split≤split/cost l) λ (l₁ , l₂) →
+      ub/bind/const (sort/clocked/cost k l₁) _ (sort/clocked≤sort/clocked/cost k l₁) λ l₁' →
+        ub/bind/const (sort/clocked/cost k l₂) _ (sort/clocked≤sort/clocked/cost k l₂) λ l₂' →
+          {!   !} -- merge≤merge/cost (l₁' , l₂')
+
+
+  -- sort/clocked/cost/aux : cmp (Π (U (meta ℕ)) λ _ → Π (U (meta ℕ)) λ _ → cost)
+  -- sort/clocked/cost/aux zero    n = zero
+  -- sort/clocked/cost/aux (suc k) n =
+  --   sort/clocked/cost/aux k ⌈ n /2⌉ + (sort/clocked/cost/aux k ⌊ n /2⌋ + n)
+ 
+  -- sort/clocked/aux≤sort/clocked/cost/aux : ∀ k l {n} → length l ≡ n → 
+  --   ub (list A) (sort/clocked k l) (sort/clocked/cost/aux k n)
+  -- sort/clocked/aux≤sort/clocked/cost/aux zero    l refl = ub/ret _
+  -- sort/clocked/aux≤sort/clocked/cost/aux (suc k) l refl =
+  --   ub/bind/const (split/cost l) (sort/clocked/cost/aux (suc k) (length l)) (split≤split/cost l) λ (l₁ , l₂) →
+  --     ub/bind/const (sort/clocked/cost/aux k ⌈ length l /2⌉) _ (sort/clocked/aux≤sort/clocked/cost/aux k l₁ {!   !}) λ l₁' →
+  --       ub/bind/const (sort/clocked/cost/aux k ⌊ length l /2⌋) _ (sort/clocked/aux≤sort/clocked/cost/aux k l₂ {!   !}) λ l₂' →
+  --         subst
+  --           (ub _ _)
+  --           (begin
+  --             merge/cost (l₁' , l₂')
+  --           ≡⟨ {!   !} ⟩
+  --             merge/cost (l₁ , l₂)
+  --           ≡⟨ {!   !} ⟩
+  --             length l
+  --           ∎)
+  --           (merge≤merge/cost (l₁' , l₂'))
+  --   where open ≡-Reasoning
 
   sort/depth : cmp (Π (list A) λ _ → meta ℕ)
   sort/depth l = let n = length l in aux n n ≤-refl
