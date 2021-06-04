@@ -15,7 +15,6 @@ open import Relation.Binary.PropositionalEquality as Eq
 open import Function
 open import Data.Nat hiding (_≤ᵇ_)
 open import Data.Nat.Properties
-open import Data.Bool using (true; false; if_then_else_)
 open import Data.List using ([]; _∷_)
 
 private
@@ -60,9 +59,11 @@ module List where
   length l = list/ind l (λ _ → meta ℕ) zero λ _ _ → suc
 
 module Bool where
+  open import Data.Bool public using (Bool; true; false)
+
   postulate
     bool : tp pos
-    bool/decode : val bool ≡ Data.Bool.Bool
+    bool/decode : val bool ≡ Bool
     {-# REWRITE bool/decode #-}
 
 record Comparable : Set where
@@ -244,74 +245,43 @@ module MergeSort (M : Comparable) where
 
   pair = Σ++ (list A) λ _ → (list A)
 
-  module Option where
-    option : tp pos → tp pos
-    option A = sum A unit
+  split/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → F pair)
+  split/clocked zero    l = ret (nil , l)
+  split/clocked (suc k) l =
+    list/match l (λ _ → F pair) (ret (nil , nil)) λ x xs →
+      bind (F pair) (split/clocked k xs) λ (l₁ , l₂) →
+        ret (cons x l₁ , l₂)
 
-    some : ∀ {A} → val A → val (option A)
-    some = inj₁
+  split/clocked/length : ∀ {α} k k' l → k + k' ≡ length l → (κ : ℕ → ℕ → α) →
+    bind (meta α) (split/clocked k l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ k k'
+  split/clocked/length {α} zero    _  l = λ { refl _ → refl }
+  split/clocked/length {α} (suc k) k' l =
+    list/match l (λ l → meta (suc k + k' ≡ length l → ∀ κ → bind (meta α) (split/clocked (suc k) l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ (suc k) k'))
+      (λ ())
+      λ x xs h κ → split/clocked/length k k' xs (suc-injective h) (κ ∘ suc)
 
-    none : ∀ {A} → val (option A)
-    none = inj₂ triv
+  split/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
+  split/clocked/cost _ _ = zero
 
-    option/case : ∀ A (X : val (option A) → tp neg) → (s : val (option A)) → ((a : val A) → cmp (X (some {A} a))) → (cmp (X (none {A}))) → cmp (X s)
-    option/case A X s b₁ b₂ = sum/case A unit X s b₁ (λ { triv → b₂ })
-
-    ub/option/case/const/const : ∀ A (C : val (option A) → tp pos) →
-      (s : val (option A)) →
-      (e0 : (a : val A) → cmp (F (C (some {A} a)))) →
-      (e1 : cmp (F (C (none {A})))) →
-      (p : ℕ) →
-      ((a : val A) → ub (C (some {A} a)) (e0 a) p) →
-      (ub (C (none {A})) e1 p) →
-      ub (C s) (option/case A (λ s → F (C s)) s e0 e1) p
-    ub/option/case/const/const A C s e0 e1 p h1 h2 = ub/sum/case/const/const A unit C s e0 (λ { triv → e1 }) p h1 (λ { triv → h2 })
-
-  option = Option.option A
-  none = Option.none {A}
-  some = Option.some {A}
-  option/case = Option.option/case A
-  ub/option/case = Option.ub/option/case/const/const A
-
-  split/aux/o = Σ++ option λ _ → pair
-
-  split/aux : cmp (Π (list A) λ _ → F split/aux/o)
-  split/aux l =
-    list/ind l (λ _ → F split/aux/o)
-      (ret (none , nil , nil))
-      λ x _ acc → bind (F _) acc λ (opt , xs , ys) →
-        option/case (λ _ → F _) opt
-          (λ y → ret (none , cons x xs , cons y ys))
-          (ret (some x , xs , ys))
-
-  split/aux/cost : cmp (Π (list A) λ _ → cost)
-  split/aux/cost _ = zero
-
-  split/aux≤split/aux/cost : ∀ l → ub split/aux/o (split/aux l) (split/aux/cost l)
-  split/aux≤split/aux/cost l =
-    list/ind l (λ l → meta (ub split/aux/o (split/aux l) (split/aux/cost l)))
+  split/clocked≤split/clocked/cost : ∀ k l → ub pair (split/clocked k l) (split/clocked/cost k l)
+  split/clocked≤split/clocked/cost zero    l = ub/ret _
+  split/clocked≤split/clocked/cost (suc k) l =
+    list/match l (λ l → meta (ub pair (split/clocked (suc k) l) (split/clocked/cost (suc k) l)))
       (ub/ret _)
-      λ _ _ h → ub/bind/const zero _ h λ (opt , _) →
-        ub/option/case (λ _ → _) opt _ _ _ (λ _ → ub/ret _) (ub/ret _)
+      λ x xs → ub/bind/const zero zero (split/clocked≤split/clocked/cost k xs) λ _ → ub/ret _
 
   split : cmp (Π (list A) λ _ → F pair)
-  split l =
-    bind (F pair) (split/aux l) λ (opt , xs , ys) →
-      option/case (λ _ → F pair) opt
-        (λ x → ret (cons x xs , ys))
-        (ret (xs , ys))
+  split l = split/clocked ⌊ length l /2⌋ l
 
   split/length : ∀ {α} l (κ : ℕ → ℕ → α) →
-    bind (meta α) (split l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ ⌈ length l /2⌉ ⌊ length l /2⌋
-  split/length = {!   !}
+    bind (meta α) (split l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ ⌊ length l /2⌋ ⌈ length l /2⌉
+  split/length {α} l = split/clocked/length ⌊ length l /2⌋ ⌈ length l /2⌉ l (⌊n/2⌋+⌈n/2⌉≡n (length l))
 
   split/cost : cmp (Π (list A) λ _ → cost)
-  split/cost _ = zero
+  split/cost l = split/clocked/cost ⌊ length l /2⌋ l
 
   split≤split/cost : ∀ l → ub pair (split l) (split/cost l)
-  split≤split/cost l =
-    ub/bind/const zero _ (split/aux≤split/aux/cost l) λ (opt , _) →
-      ub/option/case _ opt _ _ _ (λ _ → ub/ret _) (ub/ret _)
+  split≤split/cost l = split/clocked≤split/clocked/cost ⌊ length l /2⌋ l
 
   merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F (list A))
   merge/clocked zero    (l₁ , l₂) = Append.append l₁ l₂
@@ -418,8 +388,6 @@ module MergeSort (M : Comparable) where
     ≡⟨ Eq.cong (bnd (split l)) (funext λ (l₁ , l₂) → sort/clocked/length k l₁ (λ n₁ → κ (n₁ + length l₂))) ⟩
       bnd (split l) (λ (l₁ , l₂) → κ (length l₁ + length l₂))
     ≡⟨ split/length l (λ n₁ n₂ → κ (n₁ + n₂)) ⟩
-      κ (⌈ length l /2⌉ + ⌊ length l /2⌋)
-    ≡⟨ Eq.cong κ (+-comm ⌈ length l /2⌉ ⌊ length l /2⌋) ⟩
       κ (⌊ length l /2⌋ + ⌈ length l /2⌉ )
     ≡⟨ Eq.cong κ (⌊n/2⌋+⌈n/2⌉≡n (length l)) ⟩
       κ (length l)
