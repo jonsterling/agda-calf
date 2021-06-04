@@ -199,6 +199,25 @@ module Ex/InsertionSort where
   ex/sort/shuffled : cmp (F list)
   ex/sort/shuffled = Sort.sort (of-list test/shuffled)  -- cost: 76
 
+module Append where
+  private
+    variable
+      A : tp pos
+
+  open List
+
+  append : cmp (Π (list A) λ _ → Π (list A) λ _ → F (list A))
+  append l₁ l₂ = {!   !}
+
+  append/length : ∀ {α} (l₁ l₂ : val (list A)) (κ : ℕ → α) → bind (meta α) (append l₁ l₂) (κ ∘ length) ≡ κ (length l₁ + length l₂)
+  append/length = {!   !}
+
+  append/cost : cmp (Π (list A) λ _ → Π (list A) λ _ → cost)
+  append/cost _ _ = zero
+
+  append≤append/cost : ∀ l₁ l₂ → ub (list A) (append l₁ l₂) (append/cost l₁ l₂)
+  append≤append/cost = {!   !}
+
 module MergeSort (M : Comparable) where
   open Comparable M
   open List
@@ -276,7 +295,7 @@ module MergeSort (M : Comparable) where
       ub/option/case _ opt _ _ _ (λ _ → ub/ret _) (ub/ret _)
 
   merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F (list A))
-  merge/clocked zero    _         = ret nil
+  merge/clocked zero    (l₁ , l₂) = Append.append l₁ l₂
   merge/clocked (suc k) (l₁ , l₂) =
     list/match l₁ (λ _ → F (list A))
       (ret l₂)
@@ -288,11 +307,53 @@ module MergeSort (M : Comparable) where
               λ { false → bind (F (list A)) (merge/clocked k (cons x xs , ys)) (ret ∘ cons y)
                 ; true  → bind (F (list A)) (merge/clocked k (xs , cons y ys)) (ret ∘ cons x) }
 
+  merge/clocked/length : ∀ {α} k (l₁ l₂ : val (list A)) (κ : ℕ → α) →
+    bind (meta α) (merge/clocked k (l₁ , l₂)) (κ ∘ length) ≡ κ (length l₁ + length l₂)
+  merge/clocked/length {_} zero    l₁ l₂ κ = Append.append/length l₁ l₂ κ
+  merge/clocked/length {α} (suc k) l₁ l₂ κ =
+    list/match l₁ (λ l₁ → meta (bind (meta α) (merge/clocked (suc k) (l₁ , l₂)) (κ ∘ length) ≡ κ (length l₁ + length l₂)))
+      refl
+      λ x xs →
+        list/match l₂ (λ l₂ → meta (bind (meta α) (merge/clocked (suc k) (cons x xs , l₂)) (κ ∘ length) ≡ κ (length (cons x xs) + length l₂)))
+          (Eq.cong (κ ∘ suc) (sym (+-identityʳ (length xs))))
+          λ y ys →
+            h x xs y ys
+    where
+      open ≡-Reasoning
+
+      h : (x : val A) (xs : val (list A)) (y : val A) (ys : val (list A)) →
+        bind (meta α) (merge/clocked (suc k) (cons x xs , cons y ys)) (κ ∘ length) ≡ κ (length (cons x xs) + length (cons y ys))
+      h x xs y ys with h-cost {x} {y}
+      ... | ub/intro false _ h-eq rewrite eq/ref h-eq =
+        begin
+          bind (meta α) (merge/clocked k (cons x xs , ys)) (λ l → bind (meta α) (ret {list A} (cons y l)) (κ ∘ length))
+        ≡⟨ Eq.cong (bind (meta α) (merge/clocked k (cons x xs , ys))) (funext λ l → bind/ret {A = list A} {X = meta α} {v = cons y l} {f = κ ∘ length}) ⟩
+          bind (meta α) (merge/clocked k (cons x xs , ys)) (λ l → (κ ∘ length) (cons y l))
+        ≡⟨⟩
+          bind (meta α) (merge/clocked k (cons x xs , ys)) (λ l → (κ ∘ suc) (length l))
+        ≡⟨ merge/clocked/length k (cons x xs) ys (κ ∘ suc) ⟩
+          κ (suc (length (cons x xs) + length ys))
+        ≡⟨ Eq.cong κ (sym (+-suc (length (cons x xs)) (length ys))) ⟩
+          κ (length (cons x xs) + length (cons y ys))
+        ∎
+      ... | ub/intro true  _ h-eq rewrite eq/ref h-eq =
+        begin
+          bind (meta α) (merge/clocked k (xs , cons y ys)) (λ l → bind (meta α) (ret {list A} (cons x l)) (κ ∘ length))
+        ≡⟨ Eq.cong (bind (meta α) (merge/clocked k (xs , cons y ys))) (funext λ l → bind/ret {A = list A} {X = meta α} {v = cons x l} {f = κ ∘ length}) ⟩
+          bind (meta α) (merge/clocked k (xs , cons y ys)) (λ l → (κ ∘ length) (cons x l))
+        ≡⟨⟩
+          bind (meta α) (merge/clocked k (xs , cons y ys)) (λ l → (κ ∘ suc) (length l))
+        ≡⟨ merge/clocked/length k xs (cons y ys) (κ ∘ suc) ⟩
+          κ (suc (length xs + length (cons y ys)))
+        ≡⟨⟩
+          κ (length (cons x xs) + length (cons y ys))
+        ∎
+
   merge/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → cost)
-  merge/clocked/cost n _ = n
+  merge/clocked/cost k _ = k
 
   merge/clocked≤merge/clocked/cost : ∀ k p → ub (list A) (merge/clocked k p) (merge/clocked/cost k p)
-  merge/clocked≤merge/clocked/cost zero _ = ub/ret _
+  merge/clocked≤merge/clocked/cost zero    (l₁ , l₂) = Append.append≤append/cost l₁ l₂
   merge/clocked≤merge/clocked/cost (suc k) (l₁ , l₂) =
     list/match l₁ (λ l₁ → meta (ub (list A) (merge/clocked (suc k) (l₁ , l₂)) (merge/clocked/cost (suc k) (l₁ , l₂))))
       (ub/ret _)
@@ -308,7 +369,7 @@ module MergeSort (M : Comparable) where
   merge (l₁ , l₂) = merge/clocked (length l₁ + length l₂) (l₁ , l₂)
 
   merge/length : ∀ {α} l₁ l₂ (κ : ℕ → α) → bind (meta α) (merge (l₁ , l₂)) (κ ∘ length) ≡ κ (length l₁ + length l₂)
-  merge/length l = {!   !}
+  merge/length l₁ l₂ = merge/clocked/length (length l₁ + length l₂) l₁ l₂
 
   merge/cost : cmp (Π pair λ _ → cost)
   merge/cost (l₁ , l₂) = length l₁ + length l₂
@@ -367,30 +428,6 @@ module MergeSort (M : Comparable) where
               merge≤merge/cost (l₁' , l₂')
           )
       )
-
-  -- sort/clocked/cost/aux : cmp (Π (U (meta ℕ)) λ _ → Π (U (meta ℕ)) λ _ → cost)
-  -- sort/clocked/cost/aux zero    n = zero
-  -- sort/clocked/cost/aux (suc k) n =
-  --   sort/clocked/cost/aux k ⌈ n /2⌉ + (sort/clocked/cost/aux k ⌊ n /2⌋ + n)
- 
-  -- sort/clocked/aux≤sort/clocked/cost/aux : ∀ k l {n} → length l ≡ n → 
-  --   ub (list A) (sort/clocked k l) (sort/clocked/cost/aux k n)
-  -- sort/clocked/aux≤sort/clocked/cost/aux zero    l refl = ub/ret _
-  -- sort/clocked/aux≤sort/clocked/cost/aux (suc k) l refl =
-  --   ub/bind/const (split/cost l) (sort/clocked/cost/aux (suc k) (length l)) (split≤split/cost l) λ (l₁ , l₂) →
-  --     ub/bind/const (sort/clocked/cost/aux k ⌈ length l /2⌉) _ (sort/clocked/aux≤sort/clocked/cost/aux k l₁ {!   !}) λ l₁' →
-  --       ub/bind/const (sort/clocked/cost/aux k ⌊ length l /2⌋) _ (sort/clocked/aux≤sort/clocked/cost/aux k l₂ {!   !}) λ l₂' →
-  --         subst
-  --           (ub _ _)
-  --           (begin
-  --             merge/cost (l₁' , l₂')
-  --           ≡⟨ {!   !} ⟩
-  --             merge/cost (l₁ , l₂)
-  --           ≡⟨ {!   !} ⟩
-  --             length l
-  --           ∎)
-  --           (merge≤merge/cost (l₁' , l₂'))
-  --   where open ≡-Reasoning
 
   sort/depth : cmp (Π (list A) λ _ → meta ℕ)
   sort/depth l = let n = length l in aux n n ≤-refl
