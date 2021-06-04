@@ -106,17 +106,7 @@ module InsertionSort (M : Comparable) where
         (∀ κ → bind (meta α) (insert x         ys ) (κ ∘ length) ≡ κ (suc (length         ys ))) →
         (∀ κ → bind (meta α) (insert x (cons y ys)) (κ ∘ length) ≡ κ (suc (length (cons y ys))))
       inductive-step y ys h κ with h-cost {x} {y}
-      ... | ub/intro false _ h-eq rewrite eq/ref h-eq =
-        begin
-          bind _ (bind (F (list A)) (insert x ys) (ret ∘ cons y)) (κ ∘ length)
-        ≡⟨⟩
-          bind _ (insert x ys) (λ ys' → bind {A = (list A)} (meta α) (ret (cons y ys')) (κ ∘ length))
-        ≡⟨⟩
-          bind _ (insert x ys) (κ ∘ length ∘ cons y)
-        ≡⟨ h (κ ∘ suc) ⟩
-          κ (suc (length (cons y ys)))
-        ∎
-          where open ≡-Reasoning
+      ... | ub/intro false _ h-eq rewrite eq/ref h-eq = h (κ ∘ suc)
       ... | ub/intro true  _ h-eq rewrite eq/ref h-eq = refl
 
   insert/cost : cmp (Π A λ _ → Π (list A) λ _ → cost)
@@ -217,17 +207,9 @@ module Append where
     bind (meta α) (append l₁ l₂) (κ ∘ length) ≡ κ (length l₁ + length l₂)
   append/length {A} {α} l₁ l₂ =
     list/ind l₁
-      (λ l₁ → meta (∀ κ → bind (meta α) (append l₁ l₂) (κ ∘ length) ≡ κ (length l₁ + length l₂)))
+      (λ l₁ → meta (∀ κ → bind _ (append l₁ l₂) (κ ∘ length) ≡ κ (length l₁ + length l₂)))
       (λ κ → refl)
-      λ x xs h κ →
-        begin
-          bind (meta α) (append (cons x xs) l₂) (κ ∘ length)
-        ≡⟨⟩
-          bind (meta α) (append xs l₂) (λ l₁' → κ (suc (length l₁')))
-        ≡⟨ h (κ ∘ suc) ⟩
-          κ (length (cons x xs) + length l₂)
-        ∎
-    where open ≡-Reasoning
+      λ _ _ h κ → h (κ ∘ suc)
 
   append/cost : cmp (Π (list A) λ _ → Π (list A) λ _ → cost)
   append/cost _ _ = zero
@@ -453,10 +435,10 @@ module Ex/MergeSort where
   ex/sort = Sort.sort (of-list (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ []))
 
   ex/sort/forward : cmp (F list)
-  ex/sort/forward = Sort.sort (of-list test/forward)
+  ex/sort/forward = Sort.sort (of-list test/forward)  -- cost: 32
 
   ex/sort/backward : cmp (F list)
-  ex/sort/backward = Sort.sort (of-list test/backward)
+  ex/sort/backward = Sort.sort (of-list test/backward)  -- cost: 32
 
   ex/sort/shuffled : cmp (F list)
-  ex/sort/shuffled = Sort.sort (of-list test/shuffled)
+  ex/sort/shuffled = Sort.sort (of-list test/shuffled)  -- cost: 47
