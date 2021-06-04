@@ -343,7 +343,7 @@ module MergeSort (M : Comparable) where
   merge/length l₁ l₂ = merge/clocked/length (length l₁ + length l₂) l₁ l₂
 
   merge/cost : cmp (Π pair λ _ → cost)
-  merge/cost (l₁ , l₂) = length l₁ + length l₂
+  merge/cost (l₁ , l₂) = merge/clocked/cost (length l₁ + length l₂) (l₁ , l₂)
 
   merge≤merge/cost : ∀ p → ub (list A) (merge p) (merge/cost p)
   merge≤merge/cost (l₁ , l₂) = merge/clocked≤merge/clocked/cost (length l₁ + length l₂) (l₁ , l₂)
@@ -380,23 +380,25 @@ module MergeSort (M : Comparable) where
       bnd : ∀ {A} → cmp (F A) → (val A → α) → α
       bnd = bind (meta α)
 
-  sort/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
-  sort/clocked/cost zero    l = zero
-  sort/clocked/cost (suc k) l =
-    bind cost (split l) λ (l₁ , l₂) →
-      split/cost l + (sort/clocked/cost k l₁ + (sort/clocked/cost k l₂ + (length l₁ + length l₂)))
+  sort/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (U (meta ℕ)) λ _ → cost)
+  sort/clocked/cost zero    n = zero
+  sort/clocked/cost (suc k) n = sort/clocked/cost k ⌊ n /2⌋ + (sort/clocked/cost k ⌈ n /2⌉ + n)
 
-  sort/clocked≤sort/clocked/cost : ∀ k l → ub (list A) (sort/clocked k l) (sort/clocked/cost k l)
+  sort/clocked≤sort/clocked/cost : ∀ k l → ub (list A) (sort/clocked k l) (sort/clocked/cost k (length l))
   sort/clocked≤sort/clocked/cost zero l = ub/ret _
   sort/clocked≤sort/clocked/cost (suc k) l =
-    ub/bind (split/cost l) (λ _ → _) (split≤split/cost l) λ (l₁ , l₂) →
-      subst (ub _ _) (sort/clocked/length k l₁ (λ n₁ → sort/clocked/cost k l₁ + (sort/clocked/cost k l₂ + (n₁ + length l₂)))) (
-        ub/bind (sort/clocked/cost k l₁) (λ l₁' → sort/clocked/cost k l₂ + (length l₁' + length l₂)) (sort/clocked≤sort/clocked/cost k l₁) λ l₁' →
-          subst (ub _ _) (sort/clocked/length k l₂ λ n₂ → sort/clocked/cost k l₂ + (length l₁' + n₂)) (
-            ub/bind (sort/clocked/cost k l₂) (λ l₂' → length l₁' + length l₂') (sort/clocked≤sort/clocked/cost k l₂) λ l₂' →
-              merge≤merge/cost (l₁' , l₂')
+    subst (ub _ _) (Eq.cong (λ n → sort/clocked/cost k ⌊ length l /2⌋ + (sort/clocked/cost k ⌈ length l /2⌉ + n)) (⌊n/2⌋+⌈n/2⌉≡n (length l))) (
+      subst (ub _ _) (split/length l (λ n₁ n₂ → sort/clocked/cost k n₁ + (sort/clocked/cost k n₂ + (n₁ + n₂)))) (
+        ub/bind (split/cost l) (λ _ →  _) (split≤split/cost l) λ (l₁ , l₂) →
+          subst (ub _ _) (sort/clocked/length k l₁ (λ n₁ → sort/clocked/cost k (length l₁) + (sort/clocked/cost k (length l₂) + (n₁ + _)))) (
+            ub/bind (sort/clocked/cost k (length l₁)) (λ n₁ → _) (sort/clocked≤sort/clocked/cost k l₁) λ l₁' →
+              subst (ub _ _) (sort/clocked/length k l₂ λ n₂ → sort/clocked/cost k (length l₂) + (_ + n₂)) (
+                ub/bind (sort/clocked/cost k (length l₂)) (λ n₂ → _) (sort/clocked≤sort/clocked/cost k l₂) λ l₂' →
+                  merge≤merge/cost (l₁' , l₂')
+              )
           )
       )
+    )
 
   sort/depth : cmp (Π (list A) λ _ → meta ℕ)
   sort/depth l = let n = length l in aux n n ≤-refl
@@ -418,6 +420,12 @@ module MergeSort (M : Comparable) where
 
   sort : cmp (Π (list A) λ _ → F (list A))
   sort l = sort/clocked (sort/depth l) l
+
+  sort/cost : cmp (Π (list A) λ _ → cost)
+  sort/cost l = sort/clocked/cost (sort/depth l) (length l)
+
+  sort≤sort/cost : ∀ l → ub (list A) (sort l) (sort/cost l)
+  sort≤sort/cost l = sort/clocked≤sort/clocked/cost (sort/depth l) l
 
 module Ex/MergeSort where
   module Sort = MergeSort NatComparable
