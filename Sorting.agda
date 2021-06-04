@@ -382,21 +382,23 @@ module MergeSort (M : Comparable) where
 
   sort/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (U (meta ℕ)) λ _ → cost)
   sort/clocked/cost zero    n = zero
-  sort/clocked/cost (suc k) n = sort/clocked/cost k ⌊ n /2⌋ + (sort/clocked/cost k ⌈ n /2⌉ + n)
+  sort/clocked/cost (suc k) n = sort/clocked/cost k ⌊ n /2⌋ + sort/clocked/cost k ⌈ n /2⌉ + n
 
   sort/clocked≤sort/clocked/cost : ∀ k l → ub (list A) (sort/clocked k l) (sort/clocked/cost k (length l))
   sort/clocked≤sort/clocked/cost zero l = ub/ret _
   sort/clocked≤sort/clocked/cost (suc k) l =
-    subst (ub _ _) (Eq.cong (λ n → sort/clocked/cost k ⌊ length l /2⌋ + (sort/clocked/cost k ⌈ length l /2⌉ + n)) (⌊n/2⌋+⌈n/2⌉≡n (length l))) (
-      subst (ub _ _) (split/length l (λ n₁ n₂ → sort/clocked/cost k n₁ + (sort/clocked/cost k n₂ + (n₁ + n₂)))) (
-        ub/bind (split/cost l) (λ _ →  _) (split≤split/cost l) λ (l₁ , l₂) →
-          subst (ub _ _) (sort/clocked/length k l₁ (λ n₁ → sort/clocked/cost k (length l₁) + (sort/clocked/cost k (length l₂) + (n₁ + _)))) (
-            ub/bind (sort/clocked/cost k (length l₁)) (λ n₁ → _) (sort/clocked≤sort/clocked/cost k l₁) λ l₁' →
-              subst (ub _ _) (sort/clocked/length k l₂ λ n₂ → sort/clocked/cost k (length l₂) + (_ + n₂)) (
-                ub/bind (sort/clocked/cost k (length l₂)) (λ n₂ → _) (sort/clocked≤sort/clocked/cost k l₂) λ l₂' →
-                  merge≤merge/cost (l₁' , l₂')
-              )
-          )
+    subst (ub _ _) (sym (+-assoc (sort/clocked/cost k ⌊ length l /2⌋) _ _)) (
+      subst (ub _ _) (Eq.cong (λ n → sort/clocked/cost k ⌊ length l /2⌋ + (sort/clocked/cost k ⌈ length l /2⌉ + n)) (⌊n/2⌋+⌈n/2⌉≡n (length l))) (
+        subst (ub _ _) (split/length l (λ n₁ n₂ → sort/clocked/cost k n₁ + (sort/clocked/cost k n₂ + (n₁ + n₂)))) (
+          ub/bind (split/cost l) (λ _ →  _) (split≤split/cost l) λ (l₁ , l₂) →
+            subst (ub _ _) (sort/clocked/length k l₁ (λ n₁ → sort/clocked/cost k (length l₁) + (sort/clocked/cost k (length l₂) + (n₁ + _)))) (
+              ub/bind (sort/clocked/cost k (length l₁)) (λ n₁ → _) (sort/clocked≤sort/clocked/cost k l₁) λ l₁' →
+                subst (ub _ _) (sort/clocked/length k l₂ λ n₂ → sort/clocked/cost k (length l₂) + (_ + n₂)) (
+                  ub/bind (sort/clocked/cost k (length l₂)) (λ n₂ → _) (sort/clocked≤sort/clocked/cost k l₂) λ l₂' →
+                    merge≤merge/cost (l₁' , l₂')
+                )
+            )
+        )
       )
     )
 
