@@ -207,16 +207,35 @@ module Append where
   open List
 
   append : cmp (Π (list A) λ _ → Π (list A) λ _ → F (list A))
-  append l₁ l₂ = {!   !}
+  append {A} l₁ l₂ =
+    list/ind l₁ (λ _ → F (list A))
+      (ret l₂)
+      λ hd _ tl → bind (F (list A)) tl (λ tl → ret (cons hd tl))
 
-  append/length : ∀ {α} (l₁ l₂ : val (list A)) (κ : ℕ → α) → bind (meta α) (append l₁ l₂) (κ ∘ length) ≡ κ (length l₁ + length l₂)
-  append/length = {!   !}
+  append/length : ∀ {α : Set} (l₁ l₂ : val (list A)) (κ : ℕ → α) →
+    bind (meta α) (append l₁ l₂) (κ ∘ length) ≡ κ (length l₁ + length l₂)
+  append/length {A} {α} l₁ l₂ =
+    list/ind l₁
+      (λ l₁ → meta (∀ κ → bind (meta α) (append l₁ l₂) (κ ∘ length) ≡ κ (length l₁ + length l₂)))
+      (λ κ → refl)
+      λ x xs h κ →
+        begin
+          bind (meta α) (append (cons x xs) l₂) (κ ∘ length)
+        ≡⟨⟩
+          bind (meta α) (append xs l₂) (λ l₁' → κ (suc (length l₁')))
+        ≡⟨ h (κ ∘ suc) ⟩
+          κ (length (cons x xs) + length l₂)
+        ∎
+    where open ≡-Reasoning
 
   append/cost : cmp (Π (list A) λ _ → Π (list A) λ _ → cost)
   append/cost _ _ = zero
 
   append≤append/cost : ∀ l₁ l₂ → ub (list A) (append l₁ l₂) (append/cost l₁ l₂)
-  append≤append/cost = {!   !}
+  append≤append/cost {A} l₁ l₂ =
+    list/ind l₁ (λ l₁ → meta (ub (list A) (append l₁ l₂) (append/cost l₁ l₂)))
+      (ub/ret _)
+      λ x xs h → ub/bind/const zero zero h λ _ → ub/ret _
 
 module MergeSort (M : Comparable) where
   open Comparable M
