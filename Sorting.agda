@@ -108,9 +108,9 @@ module InsertionSort (M : Comparable) where
       ... | ub/intro false _ h-eq rewrite eq/ref h-eq =
         begin
           bind _ (bind (F (list A)) (insert x ys) (ret ∘ cons y)) (κ ∘ length)
-        ≡⟨ bind/assoc {B = (list A)} {C = meta α} {e = insert x ys} {f1 = ret ∘ cons y} {f2 = κ ∘ length} ⟩
+        ≡⟨⟩
           bind _ (insert x ys) (λ ys' → bind {A = (list A)} (meta α) (ret (cons y ys')) (κ ∘ length))
-        ≡⟨ Eq.cong (bind {A = (list A)} _ (insert x ys)) (funext λ ys' → sym (bind/ret {A = (list A)} {X = meta α} {v = cons y ys'} {f = κ ∘ length})) ⟩
+        ≡⟨⟩
           bind _ (insert x ys) (κ ∘ length ∘ cons y)
         ≡⟨ h (κ ∘ suc) ⟩
           κ (suc (length (cons y ys)))
@@ -157,7 +157,7 @@ module InsertionSort (M : Comparable) where
           bind (meta α) (sort (cons x xs)) (κ ∘ length)
         ≡⟨⟩
           bind (meta α) (bind (F (list A)) (sort xs) (insert x)) (κ ∘ length)
-        ≡⟨ bind/assoc {B = (list A)} {C = meta α} {e = sort xs} {f1 = insert x} ⟩
+        ≡⟨⟩
           bind (meta α) (sort xs) (λ xs' → bind (meta α) (insert x xs') (κ ∘ length))
         ≡⟨ Eq.cong (bind (meta α) (sort xs)) (funext λ xs' → insert/length x xs' κ)  ⟩
           bind (meta α) (sort xs) (λ xs' → κ (suc (length xs')))
@@ -346,7 +346,7 @@ module MergeSort (M : Comparable) where
       ... | ub/intro false _ h-eq rewrite eq/ref h-eq =
         begin
           bind (meta α) (merge/clocked k (cons x xs , ys)) (λ l → bind (meta α) (ret {list A} (cons y l)) (κ ∘ length))
-        ≡⟨ Eq.cong (bind (meta α) (merge/clocked k (cons x xs , ys))) (funext λ l → bind/ret {A = list A} {X = meta α} {v = cons y l} {f = κ ∘ length}) ⟩
+        ≡⟨⟩
           bind (meta α) (merge/clocked k (cons x xs , ys)) (λ l → (κ ∘ length) (cons y l))
         ≡⟨⟩
           bind (meta α) (merge/clocked k (cons x xs , ys)) (λ l → (κ ∘ suc) (length l))
@@ -358,7 +358,7 @@ module MergeSort (M : Comparable) where
       ... | ub/intro true  _ h-eq rewrite eq/ref h-eq =
         begin
           bind (meta α) (merge/clocked k (xs , cons y ys)) (λ l → bind (meta α) (ret {list A} (cons x l)) (κ ∘ length))
-        ≡⟨ Eq.cong (bind (meta α) (merge/clocked k (xs , cons y ys))) (funext λ l → bind/ret {A = list A} {X = meta α} {v = cons x l} {f = κ ∘ length}) ⟩
+        ≡⟨⟩
           bind (meta α) (merge/clocked k (xs , cons y ys)) (λ l → (κ ∘ length) (cons x l))
         ≡⟨⟩
           bind (meta α) (merge/clocked k (xs , cons y ys)) (λ l → (κ ∘ suc) (length l))
