@@ -11,9 +11,11 @@ open import Nat using (nat)
 open import Upper
 open import Eq
 open import Refinement
+open import Relation.Nullary
+open import Relation.Binary.Definitions
 open import Relation.Binary.PropositionalEquality as Eq
 open import Function
-open import Data.Nat hiding (_≤ᵇ_)
+open import Data.Nat hiding (_≤_; _≤ᵇ_)
 open import Data.Nat.Properties
 open import Data.List using ([]; _∷_)
 
@@ -66,16 +68,24 @@ module Bool where
     bool/decode : val bool ≡ Bool
     {-# REWRITE bool/decode #-}
 
-record Comparable : Set where
+open Bool
+
+record Comparable : Set₁ where
   field
     A : tp pos
-    _≤ᵇ_ : val A → val A → cmp (F Bool.bool)
-    h-cost : {x y : val A} → ub Bool.bool (x ≤ᵇ y) 1
+    _≤_ : val A → val A → Set
+    _≤ᵇ_ : val A → val A → cmp (F bool)
+    reflects : ∀ m n {q} b → m ≤ᵇ n ≡ step' (F bool) q (ret b) → Reflects (m ≤ n) b
+    antisym : Antisymmetric _≡_ _≤_
+    h-cost : {x y : val A} → ub bool (x ≤ᵇ y) 1
 
 NatComparable : Comparable
 NatComparable = record
-  { A = Nat.nat
-  ; _≤ᵇ_ = λ m n → step' (F Bool.bool) 1 (ret (Nat.toℕ m ≤ᵇ Nat.toℕ n))
+  { A = nat
+  ; _≤_ = λ m n → {!   !} ≤ {!   !}
+  ; _≤ᵇ_ = λ m n → step' (F bool) 1 (ret (Nat.toℕ m ≤ᵇ Nat.toℕ n))
+  ; reflects = {!   !}
+  ; antisym = {!   !}
   ; h-cost = ub/step/suc 0 (ub/ret 0)
   }
   where open Data.Nat
@@ -89,7 +99,6 @@ test/shuffled = 4 ∷ 8 ∷ 12 ∷ 16 ∷ 13 ∷ 3 ∷ 5 ∷ 14 ∷ 9 ∷ 6 ∷ 
 module InsertionSort (M : Comparable) where
   open Comparable M
   open List
-  open Bool
 
   insert : cmp (Π A λ _ → Π (list A) λ _ → F (list A))
   insert x l = list/ind l (λ _ → F (list A)) (ret (cons x nil)) inductive-step
@@ -223,7 +232,6 @@ module Append where
 module MergeSort (M : Comparable) where
   open Comparable M
   open List
-  open Bool
 
   pair = Σ++ (list A) λ _ → (list A)
 
@@ -408,7 +416,7 @@ module MergeSort (M : Comparable) where
   sort/depth : cmp (Π (list A) λ _ → meta ℕ)
   sort/depth l = let n = length l in aux n n ≤-refl
     where
-      aux : (n : ℕ) → (m : ℕ) → m ≤ n → ℕ
+      aux : (n : ℕ) → (m : ℕ) → Data.Nat._≤_ m n → ℕ
       aux _ zero _ = zero
       aux _ (suc zero) _ = zero
       aux (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
@@ -421,7 +429,8 @@ module MergeSort (M : Comparable) where
             n
           ∎
         )))
-       where open ≤-Reasoning
+        where
+          open ≤-Reasoning
 
   sort : cmp (Π (list A) λ _ → F (list A))
   sort l = sort/clocked (sort/depth l) l
@@ -455,3 +464,58 @@ module Ex/MergeSort where
 
   ex/sort/shuffled : cmp (F list)
   ex/sort/shuffled = Sort.sort (of-list test/shuffled)  -- cost: 47
+
+module SortEquivalence (M : Comparable) where
+  open Comparable M
+  open List
+
+  module ISort = InsertionSort M
+  module MSort = MergeSort M
+
+  open import Data.Product
+
+  data _≤*_ (x : val A) : val (list A) → Set where
+    ≤*-nil  : x ≤* nil
+    ≤*-cons : ∀ {y ys} → x ≤ y → x ≤* ys → x ≤* (cons y ys)
+
+  data Sorted : val (list A) → Set where
+    sorted-nil : Sorted nil
+    sorted-cons : ∀ {y ys} → y ≤* ys → Sorted (cons y ys)
+
+  data _~_ : val (list A) → val (list A) → Set where
+    nil~ : nil ~ nil
+    cons~ : ∀ {l l' x} → l ~ l' → cons x l ~ cons x l'
+    swap~ : ∀ {x₁ x₂ l} → cons x₂ (cons x₁ l) ~ cons x₁ (cons x₂ l)
+    trans~ : ∀ {l l' l''} → l ~ l' → l' ~ l'' → l ~ l''
+
+  SortedOf : val (list A) → val (list A) → Set
+  SortedOf l l' = l ~ l' × Sorted l'
+
+  unique-sorted : ∀ {l l'₁ l'₂} → SortedOf l l'₁ → SortedOf l l'₂ → l'₁ ≡ l'₂
+  unique-sorted (~₁ , sorted₁) (~₂ , sorted₂) = {!   !}
+
+  isort-correct : ∀ l → ∃ λ l' → ∃ λ q → ISort.sort l ≡ step' (F (list A)) q (ret l') × SortedOf l l'
+  isort-correct = {!   !}
+
+  msort-correct : ∀ l → ∃ λ l' → ∃ λ q → MSort.sort l ≡ step' (F (list A)) q (ret l') × SortedOf l l'
+  msort-correct = {!   !}
+
+  isort≡msort : ◯ (ISort.sort ≡ MSort.sort)
+  isort≡msort h =
+    funext λ l →
+      let (l'ᵢ , qᵢ , ≡ᵢ , hᵢ) = isort-correct l in
+      let (l'ₘ , qₘ , ≡ₘ , hₘ) = msort-correct l in
+      begin
+        ISort.sort l
+      ≡⟨ ≡ᵢ ⟩
+        step' (F (list A)) qᵢ (ret l'ᵢ)
+      ≡⟨ step'/ext (F (list A)) (ret l'ᵢ) qᵢ h ⟩
+        ret l'ᵢ
+      ≡⟨ Eq.cong ret (unique-sorted hᵢ hₘ) ⟩
+        ret l'ₘ
+      ≡⟨ sym (step'/ext (F (list A)) (ret l'ₘ) qₘ h) ⟩
+        step' (F (list A)) qₘ (ret l'ₘ)
+      ≡⟨ sym ≡ₘ ⟩
+        MSort.sort l
+      ∎
+      where open ≡-Reasoning
