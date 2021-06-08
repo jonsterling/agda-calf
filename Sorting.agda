@@ -91,6 +91,32 @@ NatComparable = record
   }
   where open Data.Nat
 
+module Sorting (M : Comparable) where
+  open Comparable M
+  open List
+
+  open import Data.Product
+
+  data _≤*_ (x : val A) : val (list A) → Set where
+    ≤*-nil  : x ≤* nil
+    ≤*-cons : ∀ {y ys} → x ≤ y → x ≤* ys → x ≤* (cons y ys)
+
+  data Sorted : val (list A) → Set where
+    sorted-nil : Sorted nil
+    sorted-cons : ∀ {y ys} → y ≤* ys → Sorted (cons y ys)
+
+  data _~_ : val (list A) → val (list A) → Set where
+    nil~ : nil ~ nil
+    cons~ : ∀ {l l' x} → l ~ l' → cons x l ~ cons x l'
+    swap~ : ∀ {x₁ x₂ l} → cons x₂ (cons x₁ l) ~ cons x₁ (cons x₂ l)
+    trans~ : ∀ {l l' l''} → l ~ l' → l' ~ l'' → l ~ l''
+
+  SortedOf : val (list A) → val (list A) → Set
+  SortedOf l l' = l ~ l' × Sorted l'
+
+  IsSort : cmp (Π (list A) λ _ → F (list A)) → Set
+  IsSort sort = ∀ l → ∃ λ l' → ∃ λ q → sort l ≡ step' (F (list A)) q (ret l') × SortedOf l l'
+
 cost = meta ℕ
 
 test/forward  = 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ 6 ∷ 7 ∷ 8 ∷ 9 ∷ 10 ∷ 11 ∷ 12 ∷ 13 ∷ 14 ∷ 15 ∷ 16 ∷ []
@@ -100,6 +126,7 @@ test/shuffled = 4 ∷ 8 ∷ 12 ∷ 16 ∷ 13 ∷ 3 ∷ 5 ∷ 14 ∷ 9 ∷ 6 ∷ 
 module InsertionSort (M : Comparable) where
   open Comparable M
   open List
+  open Sorting M
 
   insert : cmp (Π A λ _ → Π (list A) λ _ → F (list A))
   insert x l = list/ind l (λ _ → F (list A)) (ret (cons x nil)) inductive-step
@@ -146,6 +173,9 @@ module InsertionSort (M : Comparable) where
 
   sort : cmp (Π (list A) λ _ → F (list A))
   sort l = list/ind l (λ _ → F (list A)) (ret nil) λ x _ ys → bind (F (list A)) ys (insert x)
+
+  sort/correct : IsSort sort
+  sort/correct = {!   !}
 
   sort/length : ∀ {α} l (κ : ℕ → α) → bind (meta α) (sort l) (κ ∘ length) ≡ κ (length l)
   sort/length {α} l = list/ind l (λ l → meta (∀ κ → bind (meta α) (sort l) (κ ∘ length) ≡ κ (length l))) (λ _ → refl) inductive-step
@@ -233,6 +263,7 @@ module Append where
 module MergeSort (M : Comparable) where
   open Comparable M
   open List
+  open Sorting M
 
   pair = Σ++ (list A) λ _ → (list A)
 
@@ -436,6 +467,9 @@ module MergeSort (M : Comparable) where
   sort : cmp (Π (list A) λ _ → F (list A))
   sort l = sort/clocked (sort/depth l) l
 
+  sort/correct : IsSort sort
+  sort/correct = {!   !}
+
   sort/cost : cmp (Π (list A) λ _ → cost)
   sort/cost l = sort/clocked/cost (sort/depth l) l
 
@@ -469,43 +503,19 @@ module Ex/MergeSort where
 module SortEquivalence (M : Comparable) where
   open Comparable M
   open List
+  open Sorting M
 
   module ISort = InsertionSort M
   module MSort = MergeSort M
 
-  open import Data.Product
-
-  data _≤*_ (x : val A) : val (list A) → Set where
-    ≤*-nil  : x ≤* nil
-    ≤*-cons : ∀ {y ys} → x ≤ y → x ≤* ys → x ≤* (cons y ys)
-
-  data Sorted : val (list A) → Set where
-    sorted-nil : Sorted nil
-    sorted-cons : ∀ {y ys} → y ≤* ys → Sorted (cons y ys)
-
-  data _~_ : val (list A) → val (list A) → Set where
-    nil~ : nil ~ nil
-    cons~ : ∀ {l l' x} → l ~ l' → cons x l ~ cons x l'
-    swap~ : ∀ {x₁ x₂ l} → cons x₂ (cons x₁ l) ~ cons x₁ (cons x₂ l)
-    trans~ : ∀ {l l' l''} → l ~ l' → l' ~ l'' → l ~ l''
-
-  SortedOf : val (list A) → val (list A) → Set
-  SortedOf l l' = l ~ l' × Sorted l'
-
   unique-sorted : ∀ {l l'₁ l'₂} → SortedOf l l'₁ → SortedOf l l'₂ → l'₁ ≡ l'₂
   unique-sorted (~₁ , sorted₁) (~₂ , sorted₂) = {!   !}
-
-  isort-correct : ∀ l → ∃ λ l' → ∃ λ q → ISort.sort l ≡ step' (F (list A)) q (ret l') × SortedOf l l'
-  isort-correct = {!   !}
-
-  msort-correct : ∀ l → ∃ λ l' → ∃ λ q → MSort.sort l ≡ step' (F (list A)) q (ret l') × SortedOf l l'
-  msort-correct = {!   !}
 
   isort≡msort : ◯ (ISort.sort ≡ MSort.sort)
   isort≡msort h =
     funext λ l →
-      let (l'ᵢ , qᵢ , ≡ᵢ , hᵢ) = isort-correct l in
-      let (l'ₘ , qₘ , ≡ₘ , hₘ) = msort-correct l in
+      let (l'ᵢ , qᵢ , ≡ᵢ , hᵢ) = ISort.sort/correct l in
+      let (l'ₘ , qₘ , ≡ₘ , hₘ) = MSort.sort/correct l in
       begin
         ISort.sort l
       ≡⟨ ≡ᵢ ⟩
