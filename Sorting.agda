@@ -11,6 +11,7 @@ open import Nat using (nat)
 open import Upper
 open import Eq
 open import Refinement
+open import PhaseDistinction
 open import Relation.Nullary
 open import Relation.Binary.Definitions
 open import Relation.Binary.PropositionalEquality as Eq
