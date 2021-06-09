@@ -28,24 +28,10 @@ module List where
   open import Data.List public using (List; []; _∷_; length; _++_)
   open import Data.List.Properties public
 
-  private
-    variable
-      A : tp pos
-
   postulate
     list : tp pos → tp pos
-    list/decode : val (list A) ≡ List (val A)
+    list/decode : ∀ {A} → val (list A) ≡ List (val A)
     {-# REWRITE list/decode #-}
-
-  nil : val (list A)
-  nil = []
-
-  cons : val A → val (list A) → val (list A)
-  cons = _∷_
-
-  of-list : {α : Set} → (α → val A) → Data.List.List α → val (list A)
-  of-list {A} f []       = nil {A}
-  of-list {A} f (x ∷ xs) = cons {A} (f x) (of-list {A} f xs)
 
 open List
 
