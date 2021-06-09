@@ -19,7 +19,7 @@ open import Data.Product using (_×_; _,_; ∃)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Empty
 open import Function
-open import Data.Nat hiding (_≤_; _≤ᵇ_)
+open import Data.Nat as Nat hiding (_≤_; _≤ᵇ_)
 open import Data.Nat.Properties as N using (module ≤-Reasoning)
 
 private
@@ -111,6 +111,11 @@ module Core (M : Comparable) where
   data Sorted : val (list A) → Set where
     [] : Sorted []
     _∷_ : ∀ {y ys} → y ≤* ys → Sorted ys → Sorted (y ∷ ys)
+
+  short-sorted : {l : val (list A)} → length l Nat.≤ 1 → Sorted l
+  short-sorted {[]} _ = []
+  short-sorted {x ∷ []} _ = [] ∷ []
+  short-sorted {x ∷ x₁ ∷ l} (s≤s ())
 
   unique-sorted : ∀ {l'₁ l'₂} → Sorted l'₁ → Sorted l'₂ → l'₁ ↭ l'₂ → l'₁ ≡ l'₂
   unique-sorted [] [] ↭ = refl
@@ -270,12 +275,36 @@ module MergeSort (M : Comparable) where
   open Comparable M
   open Core M
 
+  module Linearithmic where
+
+    nlogn/aux : (n : ℕ) → (m : ℕ) → m Nat.≤ n → ℕ
+    nlogn/aux _ zero _ = zero
+    nlogn/aux _ (suc zero) _ = zero
+    nlogn/aux (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
+      suc (nlogn/aux (suc n) (suc ⌈ m /2⌉) (s≤s (N.≤-trans (N.⌈n/2⌉≤n m) h)))
+
+    nlogn : ℕ → ℕ
+    nlogn n = nlogn/aux n n N.≤-refl
+
+    nlogn≡0⇒short : {n : ℕ} → nlogn n ≡ 0 → n Nat.≤ 1
+    nlogn≡0⇒short {zero} refl = z≤n
+    nlogn≡0⇒short {suc zero} refl = s≤s z≤n
+
+  open Linearithmic
+
   pair = Σ++ (list A) λ _ → (list A)
 
   split/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → F pair)
   split/clocked zero    l        = ret ([] , l)
   split/clocked (suc k) []       = ret ([] , [])
   split/clocked (suc k) (x ∷ xs) = bind (F pair) (split/clocked k xs) λ (l₁ , l₂) → ret (x ∷ l₁ , l₂)
+
+  split/clocked/correct : ∀ k k' l → k + k' ≡ length l →
+    ◯ (∃ λ l₁ → ∃ λ l₂ → split/clocked k l ≡ ret (l₁ , l₂) × length l₁ ≡ k × length l₂ ≡ k' × l ↭ (l₁ ++ l₂))
+  split/clocked/correct zero    k' l        refl u = [] , l , refl , refl , refl , refl
+  split/clocked/correct (suc k) k' (x ∷ xs) h    u =
+    let (l₁ , l₂ , h , h₁ , h₂ , ↭) = split/clocked/correct k k' xs (N.suc-injective h) u in
+    x ∷ l₁ , l₂ , {!   !} , Eq.cong suc h₁ , h₂ , prep x ↭
 
   split/clocked/length : ∀ k k' l → k + k' ≡ length l → (κ : ℕ → ℕ → α) →
     bind (meta α) (split/clocked k l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ k k'
@@ -292,6 +321,10 @@ module MergeSort (M : Comparable) where
 
   split : cmp (Π (list A) λ _ → F pair)
   split l = split/clocked ⌊ length l /2⌋ l
+
+  split/correct : ∀ l →
+    ◯ (∃ λ l₁ → ∃ λ l₂ → split l ≡ ret (l₁ , l₂) × length l₁ ≡ ⌊ length l /2⌋ × length l₂ ≡ ⌈ length l /2⌉ × l ↭ (l₁ ++ l₂))
+  split/correct l = split/clocked/correct ⌊ length l /2⌋ ⌈ length l /2⌉ l (N.⌊n/2⌋+⌈n/2⌉≡n (length l))
 
   split/length : ∀ l (κ : ℕ → ℕ → α) →
     bind (meta α) (split l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ ⌊ length l /2⌋ ⌈ length l /2⌉
@@ -373,6 +406,14 @@ module MergeSort (M : Comparable) where
         bind (F (list A)) (sort/clocked k l₂) λ l₂' →
           merge (l₁' , l₂')
 
+  sort/clocked/correct : ∀ k l → nlogn (length l) Nat.≤ k → SortResult (sort/clocked k) l
+  sort/clocked/correct zero    l h-clock u = l , refl , refl , short-sorted (nlogn≡0⇒short (N.n≤0⇒n≡0 h-clock))
+  sort/clocked/correct (suc k) l h-clock u =
+    let (l₁ , l₂ , ≡ , length₁ , length₂ , ↭) = split/correct l u in
+    let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ {!   !} u in
+    let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ {!   !} u in
+    {!   !} , {!   !} , {!   !} , {!   !}
+
   sort/clocked/length : ∀ k l (κ : ℕ → α) → bind (meta α) (sort/clocked k l) (κ ∘ length) ≡ κ (length l)
   sort/clocked/length {_} zero    l κ = refl
   sort/clocked/length {α} (suc k) l κ =
@@ -423,29 +464,13 @@ module MergeSort (M : Comparable) where
     )
 
   sort/depth : cmp (Π (list A) λ _ → meta ℕ)
-  sort/depth l = let n = length l in aux n n N.≤-refl
-    where
-      aux : (n : ℕ) → (m : ℕ) → Data.Nat._≤_ m n → ℕ
-      aux _ zero _ = zero
-      aux _ (suc zero) _ = zero
-      aux (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
-        suc (aux (suc n) (suc ⌈ m /2⌉) (s≤s (
-          begin
-            ⌈ m /2⌉
-          ≤⟨ N.⌈n/2⌉≤n m ⟩
-            m
-          ≤⟨ h ⟩
-            n
-          ∎
-        )))
-        where
-          open ≤-Reasoning
+  sort/depth l = nlogn (length l)
 
   sort : cmp (Π (list A) λ _ → F (list A))
   sort l = sort/clocked (sort/depth l) l
 
   sort/correct : IsSort sort
-  sort/correct = {!   !}
+  sort/correct l = sort/clocked/correct (sort/depth l) l N.≤-refl
 
   sort/cost : cmp (Π (list A) λ _ → cost)
   sort/cost l = sort/clocked/cost (sort/depth l) l
