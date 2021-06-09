@@ -65,20 +65,24 @@ record Comparable : Set₁ where
     A : tp pos
     _≤_ : val A → val A → Set
     _≤ᵇ_ : val A → val A → cmp (F bool)
-    reflects : ∀ m n {q} b → m ≤ᵇ n ≡ step' (F bool) q (ret b) → Reflects (m ≤ n) b
+    reflects : ∀ {m n b} → ◯ ((m ≤ᵇ n) ≡ ret b → Reflects (m ≤ n) b)
     antisym : Antisymmetric _≡_ _≤_
     h-cost : {x y : val A} → ub bool (x ≤ᵇ y) 1
 
 NatComparable : Comparable
 NatComparable = record
-  { A = nat
-  ; _≤_ = λ m n → {!   !} ≤ {!   !}
-  ; _≤ᵇ_ = λ m n → step' (F bool) 1 (ret (Nat.toℕ m ≤ᵇ Nat.toℕ n))
-  ; reflects = {!   !}
-  ; antisym = {!   !}
+  { A = U (meta ℕ)
+  ; _≤_ = _≤_
+  ; _≤ᵇ_ = λ m n → step' (F bool) 1 (ret (m ≤ᵇ n))
+  ; reflects = reflects
+  ; antisym = ≤-antisym
   ; h-cost = ub/step/suc 0 (ub/ret 0)
   }
-  where open Data.Nat
+  where
+    open Data.Nat
+
+    reflects : ∀ {m n b} → ◯ (step' (F bool) 1 (ret (m ≤ᵇ n)) ≡ ret {bool} b → Reflects (m ≤ n) b)
+    reflects {m} {n} {b} h h' rewrite step'/ext (F bool) (ret (m ≤ᵇ n)) 1 h = {! ≤ᵇ-reflects-≤ m n  !}
 
 module Sorting (M : Comparable) where
   open Comparable M
@@ -86,12 +90,12 @@ module Sorting (M : Comparable) where
   open import Data.List.Relation.Binary.Permutation.Propositional as Perm public
 
   data _≤*_ (x : val A) : val (list A) → Set where
-    ≤*-nil  : x ≤* []
-    ≤*-cons : ∀ {y ys} → x ≤ y → x ≤* ys → x ≤* (y ∷ ys)
+    []  : x ≤* []
+    _∷_ : ∀ {y ys} → x ≤ y → x ≤* ys → x ≤* (y ∷ ys)
 
   data Sorted : val (list A) → Set where
-    sorted-nil : Sorted []
-    sorted-cons : ∀ {y ys} → y ≤* ys → Sorted ys → Sorted (y ∷ ys)
+    [] : Sorted []
+    _∷_ : ∀ {y ys} → y ≤* ys → Sorted ys → Sorted (y ∷ ys)
 
   SortedOf : val (list A) → val (list A) → Set
   SortedOf l l' = l ↭ l' × Sorted l'
@@ -181,23 +185,22 @@ module InsertionSort (M : Comparable) where
 module Ex/InsertionSort where
   module Sort = InsertionSort NatComparable
 
-  list' = list nat
-  of-list' = of-list {A = nat} Nat.tonat
+  list' = list (U (meta ℕ))
 
   ex/insert : cmp (F list')
-  ex/insert = Sort.insert (Nat.tonat 3) (of-list' (1 ∷ 2 ∷ 4 ∷ []))
+  ex/insert = Sort.insert 3 (1 ∷ 2 ∷ 4 ∷ [])
 
   ex/sort : cmp (F list')
-  ex/sort = Sort.sort (of-list' (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ []))
+  ex/sort = Sort.sort (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ [])
 
   ex/sort/forward : cmp (F list')
-  ex/sort/forward = Sort.sort (of-list' test/forward)  -- cost: 15
+  ex/sort/forward = Sort.sort test/forward  -- cost: 15
 
   ex/sort/backward : cmp (F list')
-  ex/sort/backward = Sort.sort (of-list' test/backward)  -- cost: 120
+  ex/sort/backward = Sort.sort test/backward  -- cost: 120
 
   ex/sort/shuffled : cmp (F list')
-  ex/sort/shuffled = Sort.sort (of-list' test/shuffled)  -- cost: 76
+  ex/sort/shuffled = Sort.sort test/shuffled  -- cost: 76
 
 module MergeSort (M : Comparable) where
   open Comparable M
@@ -389,26 +392,25 @@ module MergeSort (M : Comparable) where
 module Ex/MergeSort where
   module Sort = MergeSort NatComparable
 
-  list' = list nat
-  of-list' = of-list {A = Nat.nat} Nat.tonat
+  list' = list (U (meta ℕ))
 
   ex/split : cmp (F Sort.pair)
-  ex/split = Sort.split (of-list' (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ []))
+  ex/split = Sort.split (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ [])
 
   ex/merge : cmp (F list')
-  ex/merge = Sort.merge (of-list' (2 ∷ 3 ∷ 6 ∷ 8 ∷ []) , of-list' (1 ∷ 5 ∷ 8 ∷ []))
+  ex/merge = Sort.merge (2 ∷ 3 ∷ 6 ∷ 8 ∷ [] , 1 ∷ 5 ∷ 8 ∷ [])
 
   ex/sort : cmp (F list')
-  ex/sort = Sort.sort (of-list' (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ []))
+  ex/sort = Sort.sort (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ [])
 
   ex/sort/forward : cmp (F list')
-  ex/sort/forward = Sort.sort (of-list' test/forward)  -- cost: 32
+  ex/sort/forward = Sort.sort test/forward  -- cost: 32
 
   ex/sort/backward : cmp (F list')
-  ex/sort/backward = Sort.sort (of-list' test/backward)  -- cost: 32
+  ex/sort/backward = Sort.sort test/backward  -- cost: 32
 
   ex/sort/shuffled : cmp (F list')
-  ex/sort/shuffled = Sort.sort (of-list' test/shuffled)  -- cost: 47
+  ex/sort/shuffled = Sort.sort test/shuffled  -- cost: 47
 
 module SortEquivalence (M : Comparable) where
   open Comparable M
@@ -418,7 +420,23 @@ module SortEquivalence (M : Comparable) where
   module MSort = MergeSort M
 
   unique-sorted : ∀ {l l'} → Sorted l → Sorted l' → l ↭ l' → l ≡ l'
-  unique-sorted = {!   !}
+  unique-sorted sorted sorted' refl = refl
+  unique-sorted (_ ∷ sorted) (_ ∷ sorted') (prep x p) = Eq.cong (_∷_ x) (unique-sorted sorted sorted' p)
+  unique-sorted ((h₁ ∷ _) ∷ (_ ∷ sorted)) ((h₂ ∷ _) ∷ (_ ∷ sorted')) (swap _ _ p) rewrite antisym h₁ h₂ =
+    Eq.cong (λ l → _ ∷ _ ∷ l) (unique-sorted sorted sorted' p)
+  unique-sorted sorted sorted' (trans {l} {l'} {l''} p₁ p₂) =
+    begin
+      l
+    ≡⟨ unique-sorted sorted {!   !} p₁ ⟩
+      l'
+    ≡⟨ unique-sorted {!   !} sorted' p₂ ⟩
+      l''
+    ∎
+      where open ≡-Reasoning
+  -- unique-sorted sorted sorted' refl = refl
+  -- unique-sorted (sorted-cons h sorted) (sorted-cons h' sorted') (prep x p) = Eq.cong (_∷_ x) (unique-sorted sorted sorted' p)
+  -- unique-sorted (sorted-cons x (Sorting.sorted-cons x₅ sorted)) (Sorting.sorted-cons x₃ (Sorting.sorted-cons x₄ sorted')) (Sorting.swap x₁ x₂ p) = {!   !}
+  -- unique-sorted sorted sorted' (trans p₁ p₂) = {!   !}
   -- unique-sorted {.[]} {.[]} sorted sorted' nil~ = refl
   -- unique-sorted {x ∷ l} {x ∷ l'} (sorted-cons _ sorted) (sorted-cons _ sorted') (cons~ p) = cong (_∷_ x) (unique-sorted sorted sorted' p)
   -- unique-sorted {x₂ ∷ x₁ ∷ l} {x₁ ∷ x₂ ∷ l} (sorted-cons (≤*-cons h _) _) (sorted-cons (≤*-cons h' _) _) swap~ =
