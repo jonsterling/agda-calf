@@ -27,7 +27,7 @@ private
     α : Set
 
 module List where
-  open import Data.List public using (List; []; _∷_; length; _++_)
+  open import Data.List public using (List; []; _∷_; [_]; length; _++_)
   open import Data.List.Properties public
 
   postulate
@@ -39,12 +39,7 @@ open List
 
 module Bool where
   open import Data.Bool public using (Bool; true; false)
-
   bool = U (meta Bool)
-  -- postulate
-    -- bool : tp pos
-    -- bool/decode : val bool ≡ Bool
-    -- {-# REWRITE bool/decode #-}
 
 open Bool
 
@@ -54,6 +49,7 @@ record Comparable : Set₁ where
     _≤_ : val A → val A → Set
     _≤ᵇ_ : val A → val A → cmp (F bool)
     ≤ᵇ-reflects-≤ : ∀ {m n b} → ◯ ((m ≤ᵇ n) ≡ ret b → Reflects (m ≤ n) b)
+    ≤-refl : Reflexive _≤_
     ≤-trans : Transitive _≤_
     ≤-total : Total _≤_
     ≤-antisym : Antisymmetric _≡_ _≤_
@@ -93,7 +89,7 @@ module Core (M : Comparable) where
   _≤*_ x = All (x ≤_)
 
   ≤-≤* : ∀ {x₁ x₂ l} → x₁ ≤ x₂ → x₂ ≤* l → x₁ ≤* l
-  ≤-≤* x₁≤x₂ []         = []
+  ≤-≤* x₁≤x₂ []              = []
   ≤-≤* x₁≤x₂ (x₂≤y ∷ x₂≤*ys) = ≤-trans x₁≤x₂ x₂≤y ∷ ≤-≤* x₁≤x₂ x₂≤*ys
 
   ↭-≤* : ∀ {x l l'} → l ↭ l' → x ≤* l → x ≤* l'
@@ -102,9 +98,23 @@ module Core (M : Comparable) where
   ↭-≤* (swap x₁ x₂ p) (x≤x₁ ∷ x≤x₂ ∷ x≤*ys) = x≤x₂ ∷ x≤x₁ ∷ ↭-≤* p x≤*ys
   ↭-≤* (trans p₁ p₂) x≤*l = ↭-≤* p₂ (↭-≤* p₁ x≤*l)
 
+
+  ≤*∧↭⇒≤ : ∀ {y ys y' ys'} → y ≤* ys → y ∷ ys ↭ y' ∷ ys' → y ≤ y'
+  ≤*∧↭⇒≤ hs refl = ≤-refl
+  ≤*∧↭⇒≤ hs (prep _ ↭) = ≤-refl
+  ≤*∧↭⇒≤ (h ∷ hs) (swap y₁ y₂ ↭) = h
+  ≤*∧↭⇒≤ hs (trans ↭₁ ↭₂) = {!   !}
+
   data Sorted : val (list A) → Set where
     [] : Sorted []
     _∷_ : ∀ {y ys} → y ≤* ys → Sorted ys → Sorted (y ∷ ys)
+
+  unique-sorted : ∀ {l'₁ l'₂} → Sorted l'₁ → Sorted l'₂ → l'₁ ↭ l'₂ → l'₁ ≡ l'₂
+  unique-sorted [] [] ↭ = refl
+  unique-sorted [] (h₂ ∷ sorted₂) ↭ = ⊥-elim (¬x∷xs↭[] (↭-sym ↭))
+  unique-sorted (h₁ ∷ sorted₁) [] ↭ = ⊥-elim (¬x∷xs↭[] ↭)
+  unique-sorted (h₁ ∷ sorted₁) (h₂ ∷ sorted₂) ↭ with ≤-antisym (≤*∧↭⇒≤ h₁ ↭) (≤*∧↭⇒≤ h₂ (↭-sym ↭))
+  ... | refl = Eq.cong (_ ∷_) (unique-sorted sorted₁ sorted₂ (drop-∷ ↭))
 
   SortedOf : val (list A) → val (list A) → Set
   SortedOf l l' = l ↭ l' × Sorted l'
@@ -126,14 +136,14 @@ module InsertionSort (M : Comparable) where
   open Core M
 
   insert : cmp (Π A λ _ → Π (list A) λ _ → F (list A))
-  insert x []       = ret (x ∷ [])
+  insert x []       = ret [ x ]
   insert x (y ∷ ys) =
     bind (F (list A)) (x ≤ᵇ y)
       λ { false → bind (F (list A)) (insert x ys) (ret ∘ _∷_ y)
         ; true  → ret (x ∷ (y ∷ ys)) }
 
   insert/correct : ∀ x l → Sorted l → ◯ (∃ λ l' → insert x l ≡ ret l' × SortedOf (x ∷ l) l')
-  insert/correct x []       []       u = x ∷ [] , refl , refl , [] ∷ []
+  insert/correct x []       []       u = [ x ] , refl , refl , [] ∷ []
   insert/correct x (y ∷ ys) (h ∷ hs) u with h-cost {x} {y}
   insert/correct x (y ∷ ys) (h ∷ hs) u | ub/intro {q = q} b _ h-eq rewrite eq/ref h-eq
     with ≤ᵇ-reflects-≤ u (Eq.trans (eq/ref h-eq) (step'/ext (F bool) (ret b) q u)) | ≤-total x y
@@ -466,13 +476,6 @@ module SortEquivalence (M : Comparable) where
 
   module ISort = InsertionSort M
   module MSort = MergeSort M
-
-  unique-sorted : ∀ {l l'} → Sorted l → Sorted l' → l ↭ l' → l ≡ l'
-  unique-sorted sorted sorted' refl = refl
-  unique-sorted (_ ∷ sorted) (_ ∷ sorted') (prep x p) = Eq.cong (_∷_ x) (unique-sorted sorted sorted' p)
-  unique-sorted ((h₁ ∷ _) ∷ (_ ∷ sorted)) ((h₂ ∷ _) ∷ (_ ∷ sorted')) (swap _ _ p) rewrite ≤-antisym h₁ h₂ =
-    Eq.cong (λ l → _ ∷ _ ∷ l) (unique-sorted sorted sorted' p)
-  unique-sorted sorted sorted' (trans {l} {l'} {l''} p₁ p₂) = {!   !}
 
   isort≡msort : ◯ (ISort.sort ≡ MSort.sort)
   isort≡msort u =
