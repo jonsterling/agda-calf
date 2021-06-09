@@ -80,14 +80,15 @@ NatComparable = record
     reflects {m} {n} {b} u h with ret-injective (Eq.subst (_≡ ret b) (step'/ext (F bool) (ret (m ≤ᵇ n)) 1 u) h)
     ... | refl = ≤ᵇ-reflects-≤ m n
 
-module Sorting (M : Comparable) where
+module Core (M : Comparable) where
   open Comparable M
 
-  open import Data.List.Relation.Binary.Permutation.Propositional as Perm public
+  open import Data.List.Relation.Binary.Permutation.Propositional public
+  open import Data.List.Relation.Binary.Permutation.Propositional.Properties public
+  open import Data.List.Relation.Unary.All public
 
-  data _≤*_ (x : val A) : val (list A) → Set where
-    []  : x ≤* []
-    _∷_ : ∀ {y ys} → x ≤ y → x ≤* ys → x ≤* (y ∷ ys)
+  _≤*_ : val A → val (list A) → Set
+  _≤*_ x = All (x ≤_)
 
   ≤-≤* : ∀ {x₁ x₂ l} → x₁ ≤ x₂ → x₂ ≤* l → x₁ ≤* l
   ≤-≤* x₁≤x₂ []         = []
@@ -120,7 +121,7 @@ test/shuffled = 4 ∷ 8 ∷ 12 ∷ 16 ∷ 13 ∷ 3 ∷ 5 ∷ 14 ∷ 9 ∷ 6 ∷ 
 
 module InsertionSort (M : Comparable) where
   open Comparable M
-  open Sorting M
+  open Core M
 
   insert : cmp (Π A λ _ → Π (list A) λ _ → F (list A))
   insert x []       = ret (x ∷ [])
@@ -249,7 +250,7 @@ module Ex/InsertionSort where
 
 module MergeSort (M : Comparable) where
   open Comparable M
-  open Sorting M
+  open Core M
 
   pair = Σ++ (list A) λ _ → (list A)
 
@@ -459,7 +460,7 @@ module Ex/MergeSort where
 
 module SortEquivalence (M : Comparable) where
   open Comparable M
-  open Sorting M
+  open Core M
 
   module ISort = InsertionSort M
   module MSort = MergeSort M
