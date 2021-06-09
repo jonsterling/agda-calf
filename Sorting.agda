@@ -61,6 +61,7 @@ NatComparable = record
   ; _≤_ = _≤_
   ; _≤ᵇ_ = λ m n → step' (F bool) 1 (ret (m ≤ᵇ n))
   ; ≤ᵇ-reflects-≤ = reflects
+  ; ≤-refl = ≤-refl
   ; ≤-trans = ≤-trans
   ; ≤-total = ≤-total
   ; ≤-antisym = ≤-antisym
