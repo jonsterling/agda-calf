@@ -421,25 +421,43 @@ module SortEquivalence (M : Comparable) where
   module ISort = InsertionSort M
   module MSort = MergeSort M
 
-  unique-sorted : ∀ {l l'₁ l'₂} → SortedOf l l'₁ → SortedOf l l'₂ → l'₁ ≡ l'₂
-  unique-sorted (~₁ , sorted₁) (~₂ , sorted₂) = {!   !}
+  ~-sym : ∀ {l l'} → l ~ l' → l' ~ l
+  ~-sym = {!   !}
+
+  unique-sorted : ∀ {l l'} → Sorted l → Sorted l' → l ~ l' → l ≡ l'
+  unique-sorted {.[]} {.[]} sorted sorted' nil~ = refl
+  unique-sorted {x ∷ l} {x ∷ l'} (sorted-cons _ sorted) (sorted-cons _ sorted') (cons~ p) = cong (_∷_ x) (unique-sorted sorted sorted' p)
+  unique-sorted {x₂ ∷ x₁ ∷ l} {x₁ ∷ x₂ ∷ l} (sorted-cons (≤*-cons h _) _) (sorted-cons (≤*-cons h' _) _) swap~ =
+    begin
+      x₂ ∷ x₁ ∷ l
+    ≡⟨ cong (_∷_ x₂) (cong (_∷ l) (antisym h' h)) ⟩
+      x₂ ∷ x₂ ∷ l
+    ≡⟨ cong (_∷ (x₂ ∷ l)) (antisym h h') ⟩
+      x₁ ∷ x₂ ∷ l
+    ∎
+    where open ≡-Reasoning
+  unique-sorted {l} {l''} sorted sorted'' (trans~ {l' = l'} p₁ p₂) =
+    begin
+      l
+    ≡⟨ unique-sorted sorted {!   !} p₁ ⟩
+      l'
+    ≡⟨ unique-sorted {! sorted'  !} sorted'' p₂ ⟩
+      l''
+    ∎
+    where open ≡-Reasoning
 
   isort≡msort : ◯ (ISort.sort ≡ MSort.sort)
   isort≡msort h =
     funext λ l →
-      let (l'ᵢ , qᵢ , ≡ᵢ , hᵢ) = ISort.sort/correct l in
-      let (l'ₘ , qₘ , ≡ₘ , hₘ) = MSort.sort/correct l in
+      let (l'ᵢ , ≡ᵢ , ~ᵢ , sortedᵢ) = ISort.sort/correct l in
+      let (l'ₘ , ≡ₘ , ~ₘ , sortedₘ) = MSort.sort/correct l in
       begin
         ISort.sort l
-      ≡⟨ ≡ᵢ ⟩
-        step' (F (list A)) qᵢ (ret l'ᵢ)
-      ≡⟨ step'/ext (F (list A)) (ret l'ᵢ) qᵢ h ⟩
+      ≡⟨ ≡ᵢ h ⟩
         ret l'ᵢ
-      ≡⟨ Eq.cong ret (unique-sorted hᵢ hₘ) ⟩
+      ≡⟨ cong ret (unique-sorted sortedᵢ sortedₘ {!   !}) ⟩
         ret l'ₘ
-      ≡⟨ sym (step'/ext (F (list A)) (ret l'ₘ) qₘ h) ⟩
-        step' (F (list A)) qₘ (ret l'ₘ)
-      ≡⟨ sym ≡ₘ ⟩
+      ≡⟨ sym (≡ₘ h) ⟩
         MSort.sort l
       ∎
       where open ≡-Reasoning
