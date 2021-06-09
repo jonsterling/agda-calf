@@ -2,7 +2,7 @@
 
 module Sorting where
 
-open import Prelude hiding (cong)
+open import Prelude using (funext)
 open import Metalanguage
 open import Sum
 open import Unit
@@ -14,7 +14,9 @@ open import Refinement
 open import PhaseDistinction
 open import Relation.Nullary
 open import Relation.Binary.Definitions
-open import Relation.Binary.PropositionalEquality as Eq
+import Relation.Binary.PropositionalEquality as Eq
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; module ≡-Reasoning)
+open import Data.Product
 open import Function
 open import Data.Nat hiding (_≤_; _≤ᵇ_)
 open import Data.Nat.Properties
@@ -81,7 +83,7 @@ NatComparable = record
 module Sorting (M : Comparable) where
   open Comparable M
 
-  open import Data.Product
+  open import Data.List.Relation.Binary.Permutation.Propositional as Perm public
 
   data _≤*_ (x : val A) : val (list A) → Set where
     ≤*-nil  : x ≤* []
@@ -91,14 +93,8 @@ module Sorting (M : Comparable) where
     sorted-nil : Sorted []
     sorted-cons : ∀ {y ys} → y ≤* ys → Sorted ys → Sorted (y ∷ ys)
 
-  data _~_ : val (list A) → val (list A) → Set where
-    nil~ : [] ~ []
-    cons~ : ∀ {l l' x} → l ~ l' → (x ∷ l) ~ (x ∷ l')
-    swap~ : ∀ {x₁ x₂ l} → (x₂ ∷ (x₁ ∷ l)) ~ (x₁ ∷ (x₂ ∷ l))
-    trans~ : ∀ {l l' l''} → l ~ l' → l' ~ l'' → l ~ l''
-
   SortedOf : val (list A) → val (list A) → Set
-  SortedOf l l' = l ~ l' × Sorted l'
+  SortedOf l l' = l ↭ l' × Sorted l'
 
   SortResult : cmp (Π (list A) λ _ → F (list A)) → val (list A) → Set
   SortResult sort l = ∃ λ l' → ◯ (sort l ≡ ret l') × SortedOf l l'
@@ -251,9 +247,9 @@ module MergeSort (M : Comparable) where
 
   merge/clocked/length : ∀ k (l₁ l₂ : val (list A)) (κ : ℕ → α) →
     bind (meta α) (merge/clocked k (l₁ , l₂)) (κ ∘ length) ≡ κ (length l₁ + length l₂)
-  merge/clocked/length zero    l₁       l₂       κ = cong κ (length-++ l₁)
+  merge/clocked/length zero    l₁       l₂       κ = Eq.cong κ (length-++ l₁)
   merge/clocked/length (suc k) []       l₂       κ = refl
-  merge/clocked/length (suc k) (x ∷ xs) []       κ = cong (κ ∘ suc) (sym (+-identityʳ (length xs)))
+  merge/clocked/length (suc k) (x ∷ xs) []       κ = Eq.cong (κ ∘ suc) (Eq.sym (+-identityʳ (length xs)))
   merge/clocked/length (suc k) (x ∷ xs) (y ∷ ys) κ with h-cost {x} {y}
   ... | ub/intro false _ h-eq rewrite eq/ref h-eq =
     begin
@@ -262,7 +258,7 @@ module MergeSort (M : Comparable) where
       bind _ (merge/clocked k (x ∷ xs , ys)) (λ l → (κ ∘ suc) (length l))
     ≡⟨ merge/clocked/length k (x ∷ xs) ys (κ ∘ suc) ⟩
       κ (suc (length (x ∷ xs) + length ys))
-    ≡⟨ Eq.cong κ (sym (+-suc (length (x ∷ xs)) (length ys))) ⟩
+    ≡⟨ Eq.cong κ (Eq.sym (+-suc (length (x ∷ xs)) (length ys))) ⟩
       κ (length (x ∷ xs) + length (y ∷ ys))
     ∎
       where open ≡-Reasoning
@@ -344,13 +340,13 @@ module MergeSort (M : Comparable) where
   sort/clocked≤sort/clocked/cost : ∀ k l → ub (list A) (sort/clocked k l) (sort/clocked/cost k l)
   sort/clocked≤sort/clocked/cost zero l = ub/ret _
   sort/clocked≤sort/clocked/cost (suc k) l =
-    subst (ub _ _) (sym (+-assoc (sort/recurrence k ⌊ length l /2⌋) _ _)) (
-      subst (ub _ _) (Eq.cong (λ n → sort/recurrence k ⌊ length l /2⌋ + (sort/recurrence k ⌈ length l /2⌉ + n)) (⌊n/2⌋+⌈n/2⌉≡n _)) (
-        subst (ub _ _) (split/length l (λ n₁ n₂ → sort/recurrence k n₁ + (sort/recurrence k n₂ + (n₁ + n₂)))) (
+    Eq.subst (ub _ _) (Eq.sym (+-assoc (sort/recurrence k ⌊ length l /2⌋) _ _)) (
+      Eq.subst (ub _ _) (Eq.cong (λ n → sort/recurrence k ⌊ length l /2⌋ + (sort/recurrence k ⌈ length l /2⌉ + n)) (⌊n/2⌋+⌈n/2⌉≡n _)) (
+        Eq.subst (ub _ _) (split/length l (λ n₁ n₂ → sort/recurrence k n₁ + (sort/recurrence k n₂ + (n₁ + n₂)))) (
           ub/bind _ _ (split≤split/cost l) λ (l₁ , l₂) →
-            subst (ub _ _) (sort/clocked/length k l₁ (λ n₁ → sort/recurrence k _ + (sort/recurrence k _ + (n₁ + _)))) (
+            Eq.subst (ub _ _) (sort/clocked/length k l₁ (λ n₁ → sort/recurrence k _ + (sort/recurrence k _ + (n₁ + _)))) (
               ub/bind _ _ (sort/clocked≤sort/clocked/cost k l₁) λ l₁' →
-                subst (ub _ _) (sort/clocked/length k l₂ λ n₂ → sort/recurrence k _ + (_ + n₂)) (
+                Eq.subst (ub _ _) (sort/clocked/length k l₂ λ n₂ → sort/recurrence k _ + (_ + n₂)) (
                   ub/bind (sort/recurrence k _) _ (sort/clocked≤sort/clocked/cost k l₂) λ l₂' →
                     merge≤merge/cost (l₁' , l₂')
                 )
@@ -421,43 +417,41 @@ module SortEquivalence (M : Comparable) where
   module ISort = InsertionSort M
   module MSort = MergeSort M
 
-  ~-sym : ∀ {l l'} → l ~ l' → l' ~ l
-  ~-sym = {!   !}
-
-  unique-sorted : ∀ {l l'} → Sorted l → Sorted l' → l ~ l' → l ≡ l'
-  unique-sorted {.[]} {.[]} sorted sorted' nil~ = refl
-  unique-sorted {x ∷ l} {x ∷ l'} (sorted-cons _ sorted) (sorted-cons _ sorted') (cons~ p) = cong (_∷_ x) (unique-sorted sorted sorted' p)
-  unique-sorted {x₂ ∷ x₁ ∷ l} {x₁ ∷ x₂ ∷ l} (sorted-cons (≤*-cons h _) _) (sorted-cons (≤*-cons h' _) _) swap~ =
-    begin
-      x₂ ∷ x₁ ∷ l
-    ≡⟨ cong (_∷_ x₂) (cong (_∷ l) (antisym h' h)) ⟩
-      x₂ ∷ x₂ ∷ l
-    ≡⟨ cong (_∷ (x₂ ∷ l)) (antisym h h') ⟩
-      x₁ ∷ x₂ ∷ l
-    ∎
-    where open ≡-Reasoning
-  unique-sorted {l} {l''} sorted sorted'' (trans~ {l' = l'} p₁ p₂) =
-    begin
-      l
-    ≡⟨ unique-sorted sorted {!   !} p₁ ⟩
-      l'
-    ≡⟨ unique-sorted {! sorted'  !} sorted'' p₂ ⟩
-      l''
-    ∎
-    where open ≡-Reasoning
+  unique-sorted : ∀ {l l'} → Sorted l → Sorted l' → l ↭ l' → l ≡ l'
+  unique-sorted = {!   !}
+  -- unique-sorted {.[]} {.[]} sorted sorted' nil~ = refl
+  -- unique-sorted {x ∷ l} {x ∷ l'} (sorted-cons _ sorted) (sorted-cons _ sorted') (cons~ p) = cong (_∷_ x) (unique-sorted sorted sorted' p)
+  -- unique-sorted {x₂ ∷ x₁ ∷ l} {x₁ ∷ x₂ ∷ l} (sorted-cons (≤*-cons h _) _) (sorted-cons (≤*-cons h' _) _) swap~ =
+  --   begin
+  --     x₂ ∷ x₁ ∷ l
+  --   ≡⟨ cong (_∷_ x₂) (cong (_∷ l) (antisym h' h)) ⟩
+  --     x₂ ∷ x₂ ∷ l
+  --   ≡⟨ cong (_∷ (x₂ ∷ l)) (antisym h h') ⟩
+  --     x₁ ∷ x₂ ∷ l
+  --   ∎
+  --   where open ≡-Reasoning
+  -- unique-sorted {l} {l''} sorted sorted'' (trans~ {l' = l'} p₁ p₂) =
+  --   begin
+  --     l
+  --   ≡⟨ unique-sorted sorted {!   !} p₁ ⟩
+  --     l'
+  --   ≡⟨ unique-sorted {! sorted'  !} sorted'' p₂ ⟩
+  --     l''
+  --   ∎
+  --   where open ≡-Reasoning
 
   isort≡msort : ◯ (ISort.sort ≡ MSort.sort)
   isort≡msort h =
     funext λ l →
-      let (l'ᵢ , ≡ᵢ , ~ᵢ , sortedᵢ) = ISort.sort/correct l in
-      let (l'ₘ , ≡ₘ , ~ₘ , sortedₘ) = MSort.sort/correct l in
+      let (l'ᵢ , ≡ᵢ , ↭ᵢ , sortedᵢ) = ISort.sort/correct l in
+      let (l'ₘ , ≡ₘ , ↭ₘ , sortedₘ) = MSort.sort/correct l in
       begin
         ISort.sort l
       ≡⟨ ≡ᵢ h ⟩
         ret l'ᵢ
-      ≡⟨ cong ret (unique-sorted sortedᵢ sortedₘ {!   !}) ⟩
+      ≡⟨ Eq.cong ret (unique-sorted sortedᵢ sortedₘ (trans {ys = l} (↭-sym ↭ᵢ) ↭ₘ)) ⟩
         ret l'ₘ
-      ≡⟨ sym (≡ₘ h) ⟩
+      ≡⟨ Eq.sym (≡ₘ h) ⟩
         MSort.sort l
       ∎
-      where open ≡-Reasoning
+        where open ≡-Reasoning
