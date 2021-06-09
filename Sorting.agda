@@ -48,24 +48,24 @@ record Comparable : Set₁ where
     A : tp pos
     _≤_ : val A → val A → Set
     _≤ᵇ_ : val A → val A → cmp (F bool)
-    ≤ᵇ-reflects-≤ : ∀ {m n b} → ◯ ((m ≤ᵇ n) ≡ ret b → Reflects (m ≤ n) b)
+    ≤ᵇ-reflects-≤ : ∀ {x y b} → ◯ ((x ≤ᵇ y) ≡ ret b → Reflects (x ≤ y) b)
     ≤-refl : Reflexive _≤_
     ≤-trans : Transitive _≤_
     ≤-total : Total _≤_
     ≤-antisym : Antisymmetric _≡_ _≤_
-    h-cost : {x y : val A} → ub bool (x ≤ᵇ y) 1
+    h-cost : (x y : val A) → ub bool (x ≤ᵇ y) 1
 
 NatComparable : Comparable
 NatComparable = record
   { A = U (meta ℕ)
   ; _≤_ = _≤_
-  ; _≤ᵇ_ = λ m n → step' (F bool) 1 (ret (m ≤ᵇ n))
+  ; _≤ᵇ_ = λ x y → step' (F bool) 1 (ret (x ≤ᵇ y))
   ; ≤ᵇ-reflects-≤ = reflects
   ; ≤-refl = ≤-refl
   ; ≤-trans = ≤-trans
   ; ≤-total = ≤-total
   ; ≤-antisym = ≤-antisym
-  ; h-cost = ub/step/suc 0 (ub/ret 0)
+  ; h-cost = λ _ _ → ub/step/suc 0 (ub/ret 0)
   }
   where
     open import Data.Nat
@@ -160,7 +160,7 @@ module InsertionSort (M : Comparable) where
 
   insert/correct : ∀ x l → Sorted l → ◯ (∃ λ l' → insert x l ≡ ret l' × SortedOf (x ∷ l) l')
   insert/correct x []       []       u = [ x ] , refl , refl , [] ∷ []
-  insert/correct x (y ∷ ys) (h ∷ hs) u with h-cost {x} {y}
+  insert/correct x (y ∷ ys) (h ∷ hs) u with h-cost x y
   insert/correct x (y ∷ ys) (h ∷ hs) u | ub/intro {q = q} b _ h-eq rewrite eq/ref h-eq
     with ≤ᵇ-reflects-≤ u (Eq.trans (eq/ref h-eq) (step'/ext (F bool) (ret b) q u)) | ≤-total x y
   insert/correct x (y ∷ ys) (h ∷ hs) u | ub/intro {q = q} false _ _ | ofⁿ ¬x≤y | inj₁ x≤y = ⊥-elim (¬x≤y x≤y)
@@ -181,7 +181,7 @@ module InsertionSort (M : Comparable) where
 
   insert/length : ∀ x l (κ : ℕ → α) → bind (meta α) (insert x l) (κ ∘ length) ≡ κ (suc (length l))
   insert/length x []       κ = refl
-  insert/length x (y ∷ ys) κ with h-cost {x} {y}
+  insert/length x (y ∷ ys) κ with h-cost x y
   ... | ub/intro false _ h-eq rewrite eq/ref h-eq = insert/length x ys (κ ∘ suc)
   ... | ub/intro true  _ h-eq rewrite eq/ref h-eq = refl
 
@@ -190,7 +190,7 @@ module InsertionSort (M : Comparable) where
 
   insert≤insert/cost : ∀ x l → ub (list A) (insert x l) (insert/cost x l)
   insert≤insert/cost x []       = ub/ret zero
-  insert≤insert/cost x (y ∷ ys) with h-cost {x} {y}
+  insert≤insert/cost x (y ∷ ys) with h-cost x y
   ... | ub/intro true  q≤1 h-eq rewrite eq/ref h-eq =
     ub/intro _ (N.≤-trans q≤1 (s≤s z≤n)) (ret (eq/intro refl))
   ... | ub/intro {q = q} false q≤1 h-eq rewrite eq/ref h-eq =
@@ -327,7 +327,7 @@ module MergeSort (M : Comparable) where
   merge/clocked/length zero    l₁       l₂       κ = Eq.cong κ (length-++ l₁)
   merge/clocked/length (suc k) []       l₂       κ = refl
   merge/clocked/length (suc k) (x ∷ xs) []       κ = Eq.cong (κ ∘ suc) (Eq.sym (N.+-identityʳ (length xs)))
-  merge/clocked/length (suc k) (x ∷ xs) (y ∷ ys) κ with h-cost {x} {y}
+  merge/clocked/length (suc k) (x ∷ xs) (y ∷ ys) κ with h-cost x y
   ... | ub/intro false _ h-eq rewrite eq/ref h-eq =
     begin
       bind _ (merge/clocked k (x ∷ xs , ys)) (λ l → (κ ∘ length) (y ∷ l))
@@ -359,7 +359,7 @@ module MergeSort (M : Comparable) where
   merge/clocked≤merge/clocked/cost (suc k) ([]     , l₂    ) = ub/ret _
   merge/clocked≤merge/clocked/cost (suc k) (x ∷ xs , []    ) = ub/ret _
   merge/clocked≤merge/clocked/cost (suc k) (x ∷ xs , y ∷ ys) =
-    ub/bind/const 1 k h-cost
+    ub/bind/const 1 k (h-cost x y)
       λ { false → ub/bind/const' k zero (N.+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _
         ; true  → ub/bind/const' k zero (N.+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _ }
 
