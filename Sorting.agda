@@ -84,9 +84,7 @@ module Core (M : Comparable) where
   open import Data.List.Relation.Binary.Permutation.Propositional public
   open import Data.List.Relation.Binary.Permutation.Propositional.Properties public
   open import Data.List.Relation.Unary.All public
-
-  open import Data.List.Relation.Unary.Any using (here; there)
-  open import Data.List.Membership.Propositional using (_∈_)
+  open import Data.List.Relation.Unary.Any using (Any; here; there)
 
   _≤*_ : val A → val (list A) → Set
   _≤*_ x = All (x ≤_)
@@ -95,31 +93,20 @@ module Core (M : Comparable) where
   ≤-≤* x₁≤x₂ []              = []
   ≤-≤* x₁≤x₂ (x₂≤y ∷ x₂≤*ys) = ≤-trans x₁≤x₂ x₂≤y ∷ ≤-≤* x₁≤x₂ x₂≤*ys
 
-  ↭-≤* : ∀ {x l l'} → l ↭ l' → x ≤* l → x ≤* l'
-  ↭-≤* refl x≤*l = x≤*l
-  ↭-≤* (prep x p) (x≤y ∷ x≤*ys) = x≤y ∷ ↭-≤* p x≤*ys
-  ↭-≤* (swap x₁ x₂ p) (x≤x₁ ∷ x≤x₂ ∷ x≤*ys) = x≤x₂ ∷ x≤x₁ ∷ ↭-≤* p x≤*ys
-  ↭-≤* (trans p₁ p₂) x≤*l = ↭-≤* p₂ (↭-≤* p₁ x≤*l)
+  ↭-All : {P : val A → Set} {l l' : val (list A)} → l ↭ l' → All P l → All P l'
+  ↭-All refl h = h
+  ↭-All (prep x p) (x≤y ∷ x≤*ys) = x≤y ∷ ↭-All p x≤*ys
+  ↭-All (swap x₁ x₂ p) (x≤x₁ ∷ x≤x₂ ∷ x≤*ys) = x≤x₂ ∷ x≤x₁ ∷ ↭-All p x≤*ys
+  ↭-All (trans p₁ p₂) x≤*l = ↭-All p₂ (↭-All p₁ x≤*l)
 
-  ↭-∈ : {x : val A} {l l' : val (list A)} → l ↭ l' → x ∈ l → x ∈ l'
-  ↭-∈ refl ∈ = ∈
-  ↭-∈ (prep x ↭) (here refl) = here refl
-  ↭-∈ (prep x ↭) (there ∈) = there (↭-∈ (↭) ∈)
-  ↭-∈ (swap x y ↭) (here refl) = there (here refl)
-  ↭-∈ (swap x y ↭) (there (here refl)) = here refl
-  ↭-∈ (swap x y ↭) (there (there ∈)) = there (there (↭-∈ (↭) ∈))
-  ↭-∈ (trans ↭₁ ↭₂) ∈ = ↭-∈ ↭₂ (↭-∈ ↭₁ ∈)
-
-  ≤*∧↭⇒≤ : {x : val A} {xs : val (list A)} {y : val A} → {l : val (list A)} →
-    x ≤* xs → x ∷ xs ↭ l → y ∈ l → x ≤ y
-  ≤*∧↭⇒≤ hs refl (here refl) = ≤-refl
-  ≤*∧↭⇒≤ hs refl (there ∈) = lookup hs ∈
-  ≤*∧↭⇒≤ hs (prep _ ↭) (here refl) = ≤-refl
-  ≤*∧↭⇒≤ hs (prep _ ↭) (there ∈) = lookup (↭-≤* (↭) hs) ∈
-  ≤*∧↭⇒≤ (h ∷ hs) (swap _ y ↭) (here refl) = h
-  ≤*∧↭⇒≤ (h ∷ hs) (swap _ y ↭) (there (here refl)) = ≤-refl
-  ≤*∧↭⇒≤ (h ∷ hs) (swap _ y ↭) (there (there ∈)) = lookup (↭-≤* (↭) hs) ∈
-  ≤*∧↭⇒≤ hs (trans ↭₁ ↭₂) ∈ = ≤*∧↭⇒≤ hs ↭₁ (↭-∈ (↭-sym ↭₂) ∈)
+  ↭-Any : {P : val A → Set} {l l' : val (list A)} → l ↭ l' → Any P l → Any P l'
+  ↭-Any refl h = h
+  ↭-Any (prep x ↭) (here px) = here px
+  ↭-Any (prep x ↭) (there h) = there (↭-Any (↭) h)
+  ↭-Any (swap x y ↭) (here px) = there (here px)
+  ↭-Any (swap x y ↭) (there (here py)) = here py
+  ↭-Any (swap x y ↭) (there (there h)) = there (there (↭-Any (↭) h))
+  ↭-Any (trans ↭₁ ↭₂) h = ↭-Any ↭₂ (↭-Any ↭₁ h)
 
   data Sorted : val (list A) → Set where
     [] : Sorted []
@@ -129,7 +116,10 @@ module Core (M : Comparable) where
   unique-sorted [] [] ↭ = refl
   unique-sorted [] (h₂ ∷ sorted₂) ↭ = ⊥-elim (¬x∷xs↭[] (↭-sym ↭))
   unique-sorted (h₁ ∷ sorted₁) [] ↭ = ⊥-elim (¬x∷xs↭[] ↭)
-  unique-sorted (h₁ ∷ sorted₁) (h₂ ∷ sorted₂) ↭ with ≤-antisym (≤*∧↭⇒≤ h₁ (↭) (here refl)) (≤*∧↭⇒≤ h₂ (↭-sym ↭) (here refl))
+  unique-sorted (h₁ ∷ sorted₁) (h₂ ∷ sorted₂) ↭ with
+    ≤-antisym
+      (lookup (≤-refl ∷ h₁) (↭-Any (↭-sym ↭) (here refl)))
+      (lookup (≤-refl ∷ h₂) (↭-Any (↭) (here refl)))
   ... | refl = Eq.cong (_ ∷_) (unique-sorted sorted₁ sorted₂ (drop-∷ ↭))
 
   SortedOf : val (list A) → val (list A) → Set
@@ -174,7 +164,7 @@ module InsertionSort (M : Comparable) where
       ≡⟨ Eq.cong (λ e → bind (F (list A)) e (ret ∘ _∷_ y)) h-ys' ⟩
         ret (y ∷ ys')
       ∎
-    ) , trans (swap x y refl) (prep y x∷ys↭ys') , ↭-≤* x∷ys↭ys' (x≤y ∷ h) ∷ sorted-ys'
+    ) , trans (swap x y refl) (prep y x∷ys↭ys') , ↭-All x∷ys↭ys' (x≤y ∷ h) ∷ sorted-ys'
         where open ≡-Reasoning
   insert/correct x (y ∷ ys) (h ∷ hs) u | ub/intro {q = q} true _ _ | ofʸ x≤y | _ =
     x ∷ (y ∷ ys) , step'/ext (F (list A)) (ret _) q u , refl , (x≤y ∷ ≤-≤* x≤y h) ∷ (h ∷ hs)
