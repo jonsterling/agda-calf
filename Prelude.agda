@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --rewriting #-}
+{-# OPTIONS --prop --without-K --rewriting #-}
 
 module Prelude where
 
@@ -23,10 +23,10 @@ open sub public
 symm : ∀ {ℓ} {A : Set ℓ} {a b : A} → a ≡ b → b ≡ a
 symm refl = refl
 
-trans : {A : □} {a b c : A} → a ≡ b → b ≡ c → a ≡ c
+trans : ∀ {ℓ} {A : Set ℓ} {a b c : A} → a ≡ b → b ≡ c → a ≡ c
 trans refl refl = refl
 
-cong : {A B : □} {a b : A} (f : A → B) → a ≡ b → f a ≡ f b
+cong : ∀ {ℓ ℓ′} {A : Set ℓ} {B : Set ℓ′} {a b : A} (f : A → B) → a ≡ b → f a ≡ f b
 cong f refl = refl
 
 postulate

@@ -332,7 +332,7 @@ module MergeSort (M : Comparable) where
         list/match l₂ (λ l₂ → meta (ub (list A) (merge/clocked (suc k) (cons x xs , l₂)) (merge/clocked/cost (suc k) (cons x xs , l₂))))
           (ub/ret _)
           λ y ys →
-            ub/bind/const 1 k h-cost 
+            ub/bind/const 1 k h-cost
               λ { false → ub/bind/const' k zero (+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _
                 ; true  → ub/bind/const' k zero (+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _ }
 

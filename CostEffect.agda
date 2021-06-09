@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --rewriting #-}
+{-# OPTIONS --prop --without-K --rewriting #-}
 
 -- This module extends the CBPV metalanguage with effects corresponding to computational steps.
 
