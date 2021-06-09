@@ -40,10 +40,11 @@ open List
 module Bool where
   open import Data.Bool public using (Bool; true; false)
 
-  postulate
-    bool : tp pos
-    bool/decode : val bool ≡ Bool
-    {-# REWRITE bool/decode #-}
+  bool = U (meta Bool)
+  -- postulate
+    -- bool : tp pos
+    -- bool/decode : val bool ≡ Bool
+    -- {-# REWRITE bool/decode #-}
 
 open Bool
 
@@ -73,8 +74,9 @@ NatComparable = record
     open import Data.Nat
     open import Data.Nat.Properties
 
-    postulate
-      ret-injective : ∀ {A v₁ v₂} → ret {A} v₁ ≡ ret {A} v₂ → v₁ ≡ v₂
+    ret-injective : ∀ {𝕊 v₁ v₂} → ret {U (meta 𝕊)} v₁ ≡ ret {U (meta 𝕊)} v₂ → v₁ ≡ v₂
+    ret-injective {𝕊} {v1} {v2} h =
+        Eq.cong (λ e → bind {U (meta 𝕊)} (meta 𝕊) e (λ x → x)) h
 
     reflects : ∀ {m n b} → ◯ (step' (F bool) 1 (ret (m ≤ᵇ n)) ≡ ret {bool} b → Reflects (m ≤ n) b)
     reflects {m} {n} {b} u h with ret-injective (Eq.subst (_≡ ret b) (step'/ext (F bool) (ret (m ≤ᵇ n)) 1 u) h)
@@ -330,7 +332,7 @@ module MergeSort (M : Comparable) where
   merge/clocked≤merge/clocked/cost (suc k) ([]     , l₂    ) = ub/ret _
   merge/clocked≤merge/clocked/cost (suc k) (x ∷ xs , []    ) = ub/ret _
   merge/clocked≤merge/clocked/cost (suc k) (x ∷ xs , y ∷ ys) =
-    ub/bind/const 1 k h-cost 
+    ub/bind/const 1 k h-cost
       λ { false → ub/bind/const' k zero (N.+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _
         ; true  → ub/bind/const' k zero (N.+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _ }
 
