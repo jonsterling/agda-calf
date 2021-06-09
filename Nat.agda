@@ -46,7 +46,3 @@ e/nat = record
 -- tonat : ℕ → val nat
 -- tonat 0 = zero
 -- tonat (Nat.suc n) = succ (tonat n)
-
-
-
-

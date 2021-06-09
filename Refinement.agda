@@ -10,10 +10,6 @@ open import Data.Nat.Properties
 open import Connectives
 open import Nat
 open import Relation.Binary.PropositionalEquality as P
-open import Data.Nat.Induction
-open import Induction
-open import Axiom.UniquenessOfIdentityProofs.WithK
-open import Relation.Binary.Definitions
 open import Function using (const)
 open import Sum
 
@@ -77,9 +73,6 @@ ub/bind/suc p h1 h2 = ub/bind/const' 1 p refl h1 h2
 if : ∀ {A : ℕ → Set} → (n : ℕ) → (A 0) → ((n : ℕ) → A (suc n)) → A n
 if zero n f = n
 if (suc m) n f = f m
-
-trans' : ∀ {a} {A : Set a} → Transitive {A = A} _≡_
-trans' eq refl = eq
 
 ub/rec :
   (B : val nat → tp pos)

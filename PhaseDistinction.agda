@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --rewriting #-}
+{-# OPTIONS --prop --without-K --rewriting #-}
 
 -- This file adds the phase distinction for extension.
 
