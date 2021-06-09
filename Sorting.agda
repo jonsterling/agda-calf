@@ -72,8 +72,7 @@ NatComparable = record
     open import Data.Nat.Properties
 
     ret-injective : ∀ {𝕊 v₁ v₂} → ret {U (meta 𝕊)} v₁ ≡ ret {U (meta 𝕊)} v₂ → v₁ ≡ v₂
-    ret-injective {𝕊} {v1} {v2} h =
-        Eq.cong (λ e → bind {U (meta 𝕊)} (meta 𝕊) e (λ x → x)) h
+    ret-injective {𝕊} = Eq.cong (λ e → bind {U (meta 𝕊)} (meta 𝕊) e id)
 
     reflects : ∀ {m n b} → ◯ (step' (F bool) 1 (ret (m ≤ᵇ n)) ≡ ret {bool} b → Reflects (m ≤ n) b)
     reflects {m} {n} {b} u h with ret-injective (Eq.subst (_≡ ret b) (step'/ext (F bool) (ret (m ≤ᵇ n)) 1 u) h)
