@@ -4,7 +4,6 @@ module Sorting where
 
 open import Prelude using (funext)
 open import Metalanguage
-open import Sum
 open import Unit
 import Nat
 open import Nat using (nat)
@@ -16,7 +15,7 @@ open import Relation.Nullary
 open import Relation.Binary.Definitions
 import Relation.Binary.PropositionalEquality as Eq
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; module ≡-Reasoning)
-open import Data.Product
+open import Data.Product using (_×_; _,_; ∃)
 open import Function
 open import Data.Nat hiding (_≤_; _≤ᵇ_)
 open import Data.Nat.Properties
@@ -82,7 +81,7 @@ NatComparable = record
     open Data.Nat
 
     reflects : ∀ {m n b} → ◯ (step' (F bool) 1 (ret (m ≤ᵇ n)) ≡ ret {bool} b → Reflects (m ≤ n) b)
-    reflects {m} {n} {b} h h' rewrite step'/ext (F bool) (ret (m ≤ᵇ n)) 1 h = {! ≤ᵇ-reflects-≤ m n  !}
+    reflects {m} {n} {b} u h rewrite step'/ext (F bool) (ret (m ≤ᵇ n)) 1 u = {! ≤ᵇ-reflects-≤ m n  !}
 
 module Sorting (M : Comparable) where
   open Comparable M
@@ -101,7 +100,7 @@ module Sorting (M : Comparable) where
   SortedOf l l' = l ↭ l' × Sorted l'
 
   SortResult : cmp (Π (list A) λ _ → F (list A)) → val (list A) → Set
-  SortResult sort l = ∃ λ l' → ◯ (sort l ≡ ret l') × SortedOf l l'
+  SortResult sort l = ∃ λ l' → SortedOf l l' × ◯ (sort l ≡ ret l')
 
   IsSort : cmp (Π (list A) λ _ → F (list A)) → Set
   IsSort sort = ∀ l → SortResult sort l
@@ -122,6 +121,23 @@ module InsertionSort (M : Comparable) where
     bind (F (list A)) (x ≤ᵇ y)
       λ { false → bind (F (list A)) (insert x ys) (ret ∘ _∷_ y)
         ; true  → ret (x ∷ (y ∷ ys)) }
+
+  insert/correct : ∀ x l → Sorted l → ∃ λ l' → SortedOf (x ∷ l) l' × ◯ (insert x l ≡ ret l')
+  insert/correct x []       []       = (x ∷ []) , (refl , [] ∷ []) , λ _ → refl
+  insert/correct x (y ∷ ys) (h ∷ hs) with h-cost {x} {y}
+  ... | ub/intro {q = q} false _ h-eq rewrite eq/ref h-eq =
+    let (ys' , (x∷ys↭ys' , sorted-ys') , h-ys') = insert/correct x ys hs in
+    (y ∷ ys') , (trans (swap x y refl) (prep y x∷ys↭ys') , ({!   !} ∷ sorted-ys')) , λ u →
+      begin
+        step' (F (list A)) q (bind (F (list A)) (insert x ys) (ret ∘ _∷_ y))
+      ≡⟨ step'/ext (F (list A)) (bind (F (list A)) (insert x ys) (ret ∘ _∷_ y)) q u ⟩
+        bind (F (list A)) (insert x ys) (ret ∘ _∷_ y)
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e (ret ∘ _∷_ y)) (h-ys' u) ⟩
+        ret (y ∷ ys')
+      ∎
+        where open ≡-Reasoning
+  ... | ub/intro {q = q} true  _ h-eq rewrite eq/ref h-eq =
+    x ∷ (y ∷ ys) , (refl , ({!   !} ∷ (h ∷ hs))) , step'/ext (F (list A)) (ret _) q
 
   insert/length : ∀ x l (κ : ℕ → α) → bind (meta α) (insert x l) (κ ∘ length) ≡ κ (suc (length l))
   insert/length x []       κ = refl
@@ -155,7 +171,23 @@ module InsertionSort (M : Comparable) where
   sort (x ∷ xs) = bind (F (list A)) (sort xs) (insert x)
 
   sort/correct : IsSort sort
-  sort/correct l = {!   !}
+  sort/correct []       = [] , (refl , []) , λ _ → refl
+  sort/correct (x ∷ xs) =
+    let (xs'   , (xs↭xs'     , sorted-xs'  ) , h-xs'  ) = sort/correct xs in
+    let (x∷xs' , (x∷xs↭x∷xs' , sorted-x∷xs') , h-x∷xs') = insert/correct x xs' sorted-xs' in
+    x∷xs' , (trans (prep x xs↭xs') x∷xs↭x∷xs' , sorted-x∷xs') , λ u →
+      begin
+        sort (x ∷ xs)
+      ≡⟨⟩
+        bind (F (list A)) (sort xs) (insert x)
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e (insert x)) (h-xs' u) ⟩
+        bind (F (list A)) (ret {list A} xs') (insert x)
+      ≡⟨⟩
+        insert x xs'
+      ≡⟨ h-x∷xs' u ⟩
+        ret x∷xs'
+      ∎
+        where open ≡-Reasoning
 
   sort/length : ∀ l (κ : ℕ → α) → bind (meta α) (sort l) (κ ∘ length) ≡ κ (length l)
   sort/length []       κ = refl
@@ -424,52 +456,20 @@ module SortEquivalence (M : Comparable) where
   unique-sorted (_ ∷ sorted) (_ ∷ sorted') (prep x p) = Eq.cong (_∷_ x) (unique-sorted sorted sorted' p)
   unique-sorted ((h₁ ∷ _) ∷ (_ ∷ sorted)) ((h₂ ∷ _) ∷ (_ ∷ sorted')) (swap _ _ p) rewrite antisym h₁ h₂ =
     Eq.cong (λ l → _ ∷ _ ∷ l) (unique-sorted sorted sorted' p)
-  unique-sorted sorted sorted' (trans {l} {l'} {l''} p₁ p₂) =
-    begin
-      l
-    ≡⟨ unique-sorted sorted {!   !} p₁ ⟩
-      l'
-    ≡⟨ unique-sorted {!   !} sorted' p₂ ⟩
-      l''
-    ∎
-      where open ≡-Reasoning
-  -- unique-sorted sorted sorted' refl = refl
-  -- unique-sorted (sorted-cons h sorted) (sorted-cons h' sorted') (prep x p) = Eq.cong (_∷_ x) (unique-sorted sorted sorted' p)
-  -- unique-sorted (sorted-cons x (Sorting.sorted-cons x₅ sorted)) (Sorting.sorted-cons x₃ (Sorting.sorted-cons x₄ sorted')) (Sorting.swap x₁ x₂ p) = {!   !}
-  -- unique-sorted sorted sorted' (trans p₁ p₂) = {!   !}
-  -- unique-sorted {.[]} {.[]} sorted sorted' nil~ = refl
-  -- unique-sorted {x ∷ l} {x ∷ l'} (sorted-cons _ sorted) (sorted-cons _ sorted') (cons~ p) = cong (_∷_ x) (unique-sorted sorted sorted' p)
-  -- unique-sorted {x₂ ∷ x₁ ∷ l} {x₁ ∷ x₂ ∷ l} (sorted-cons (≤*-cons h _) _) (sorted-cons (≤*-cons h' _) _) swap~ =
-  --   begin
-  --     x₂ ∷ x₁ ∷ l
-  --   ≡⟨ cong (_∷_ x₂) (cong (_∷ l) (antisym h' h)) ⟩
-  --     x₂ ∷ x₂ ∷ l
-  --   ≡⟨ cong (_∷ (x₂ ∷ l)) (antisym h h') ⟩
-  --     x₁ ∷ x₂ ∷ l
-  --   ∎
-  --   where open ≡-Reasoning
-  -- unique-sorted {l} {l''} sorted sorted'' (trans~ {l' = l'} p₁ p₂) =
-  --   begin
-  --     l
-  --   ≡⟨ unique-sorted sorted {!   !} p₁ ⟩
-  --     l'
-  --   ≡⟨ unique-sorted {! sorted'  !} sorted'' p₂ ⟩
-  --     l''
-  --   ∎
-  --   where open ≡-Reasoning
+  unique-sorted sorted sorted' (trans {l} {l'} {l''} p₁ p₂) = {!   !}
 
   isort≡msort : ◯ (ISort.sort ≡ MSort.sort)
-  isort≡msort h =
+  isort≡msort u =
     funext λ l →
-      let (l'ᵢ , ≡ᵢ , ↭ᵢ , sortedᵢ) = ISort.sort/correct l in
-      let (l'ₘ , ≡ₘ , ↭ₘ , sortedₘ) = MSort.sort/correct l in
+      let (l'ᵢ , (↭ᵢ , sortedᵢ) , ≡ᵢ) = ISort.sort/correct l in
+      let (l'ₘ , (↭ₘ , sortedₘ) , ≡ₘ) = MSort.sort/correct l in
       begin
         ISort.sort l
-      ≡⟨ ≡ᵢ h ⟩
+      ≡⟨ ≡ᵢ u ⟩
         ret l'ᵢ
-      ≡⟨ Eq.cong ret (unique-sorted sortedᵢ sortedₘ (trans {ys = l} (↭-sym ↭ᵢ) ↭ₘ)) ⟩
+      ≡⟨ Eq.cong ret (unique-sorted sortedᵢ sortedₘ (trans (↭-sym ↭ᵢ) ↭ₘ)) ⟩
         ret l'ₘ
-      ≡⟨ Eq.sym (≡ₘ h) ⟩
+      ≡⟨ Eq.sym (≡ₘ u) ⟩
         MSort.sort l
       ∎
         where open ≡-Reasoning
