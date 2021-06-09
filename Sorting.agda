@@ -16,9 +16,11 @@ open import Relation.Binary.Definitions
 import Relation.Binary.PropositionalEquality as Eq
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; module ≡-Reasoning)
 open import Data.Product using (_×_; _,_; ∃)
+open import Data.Sum using (inj₁; inj₂)
+open import Data.Empty
 open import Function
 open import Data.Nat hiding (_≤_; _≤ᵇ_)
-open import Data.Nat.Properties
+open import Data.Nat.Properties as N using (module ≤-Reasoning)
 
 private
   variable
@@ -50,8 +52,10 @@ record Comparable : Set₁ where
     A : tp pos
     _≤_ : val A → val A → Set
     _≤ᵇ_ : val A → val A → cmp (F bool)
-    reflects : ∀ {m n b} → ◯ ((m ≤ᵇ n) ≡ ret b → Reflects (m ≤ n) b)
-    antisym : Antisymmetric _≡_ _≤_
+    reflects : ∀ {m n b} → ◯ ((m ≤ᵇ n) ≡ ret b) → Reflects (m ≤ n) b
+    ≤-trans : Transitive _≤_
+    ≤-total : Total _≤_
+    ≤-antisym : Antisymmetric _≡_ _≤_
     h-cost : {x y : val A} → ub bool (x ≤ᵇ y) 1
 
 NatComparable : Comparable
@@ -60,14 +64,17 @@ NatComparable = record
   ; _≤_ = _≤_
   ; _≤ᵇ_ = λ m n → step' (F bool) 1 (ret (m ≤ᵇ n))
   ; reflects = reflects
-  ; antisym = ≤-antisym
+  ; ≤-trans = ≤-trans
+  ; ≤-total = ≤-total
+  ; ≤-antisym = ≤-antisym
   ; h-cost = ub/step/suc 0 (ub/ret 0)
   }
   where
-    open Data.Nat
+    open import Data.Nat
+    open import Data.Nat.Properties
 
-    reflects : ∀ {m n b} → ◯ (step' (F bool) 1 (ret (m ≤ᵇ n)) ≡ ret {bool} b → Reflects (m ≤ n) b)
-    reflects {m} {n} {b} u h rewrite step'/ext (F bool) (ret (m ≤ᵇ n)) 1 u = {! ≤ᵇ-reflects-≤ m n  !}
+    reflects : ∀ {m n b} → ◯ (step' (F bool) 1 (ret (m ≤ᵇ n)) ≡ ret {bool} b) → Reflects (m ≤ n) b
+    reflects {m} {n} {b} h = {! ≤ᵇ-reflects-≤ m n  !}
 
 module Sorting (M : Comparable) where
   open Comparable M
@@ -77,6 +84,16 @@ module Sorting (M : Comparable) where
   data _≤*_ (x : val A) : val (list A) → Set where
     []  : x ≤* []
     _∷_ : ∀ {y ys} → x ≤ y → x ≤* ys → x ≤* (y ∷ ys)
+
+  ≤-≤* : ∀ {x₁ x₂ l} → x₁ ≤ x₂ → x₂ ≤* l → x₁ ≤* l
+  ≤-≤* x₁≤x₂ []         = []
+  ≤-≤* x₁≤x₂ (x₂≤y ∷ x₂≤*ys) = ≤-trans x₁≤x₂ x₂≤y ∷ ≤-≤* x₁≤x₂ x₂≤*ys
+
+  ↭-≤* : ∀ {x l l'} → l ↭ l' → x ≤* l → x ≤* l'
+  ↭-≤* refl x≤*l = x≤*l
+  ↭-≤* (prep x p) (x≤y ∷ x≤*ys) = x≤y ∷ ↭-≤* p x≤*ys
+  ↭-≤* (swap x₁ x₂ p) (x≤x₁ ∷ x≤x₂ ∷ x≤*ys) = x≤x₂ ∷ x≤x₁ ∷ ↭-≤* p x≤*ys
+  ↭-≤* (trans p₁ p₂) x≤*l = ↭-≤* p₂ (↭-≤* p₁ x≤*l)
 
   data Sorted : val (list A) → Set where
     [] : Sorted []
@@ -111,9 +128,12 @@ module InsertionSort (M : Comparable) where
   insert/correct : ∀ x l → Sorted l → ∃ λ l' → SortedOf (x ∷ l) l' × ◯ (insert x l ≡ ret l')
   insert/correct x []       []       = (x ∷ []) , (refl , [] ∷ []) , λ _ → refl
   insert/correct x (y ∷ ys) (h ∷ hs) with h-cost {x} {y}
-  ... | ub/intro {q = q} false _ h-eq rewrite eq/ref h-eq =
+  insert/correct x (y ∷ ys) (h ∷ hs) | ub/intro {q = q} b _ h-eq rewrite eq/ref h-eq
+    with reflects (λ u → Eq.trans (eq/ref h-eq) (step'/ext (F bool) (ret b) q u)) | ≤-total x y
+  insert/correct x (y ∷ ys) (h ∷ hs) | ub/intro {q = q} false _ _ | ofⁿ ¬x≤y | inj₁ x≤y = ⊥-elim (¬x≤y x≤y)
+  insert/correct x (y ∷ ys) (h ∷ hs) | ub/intro {q = q} false _ _ | ofⁿ ¬x≤y | inj₂ x≤y =
     let (ys' , (x∷ys↭ys' , sorted-ys') , h-ys') = insert/correct x ys hs in
-    (y ∷ ys') , (trans (swap x y refl) (prep y x∷ys↭ys') , ({!   !} ∷ sorted-ys')) , λ u →
+    y ∷ ys' , (trans (swap x y refl) (prep y x∷ys↭ys') , (↭-≤* x∷ys↭ys' (x≤y ∷ h) ∷ sorted-ys')) , λ u →
       begin
         step' (F (list A)) q (bind (F (list A)) (insert x ys) (ret ∘ _∷_ y))
       ≡⟨ step'/ext (F (list A)) (bind (F (list A)) (insert x ys) (ret ∘ _∷_ y)) q u ⟩
@@ -122,8 +142,8 @@ module InsertionSort (M : Comparable) where
         ret (y ∷ ys')
       ∎
         where open ≡-Reasoning
-  ... | ub/intro {q = q} true  _ h-eq rewrite eq/ref h-eq =
-    x ∷ (y ∷ ys) , (refl , ({!   !} ∷ (h ∷ hs))) , step'/ext (F (list A)) (ret _) q
+  insert/correct x (y ∷ ys) (h ∷ hs) | ub/intro {q = q} true _ _ | ofʸ x≤y | _ =
+    x ∷ (y ∷ ys) , (refl , ((x≤y ∷ ≤-≤* x≤y h) ∷ (h ∷ hs))) , step'/ext (F (list A)) (ret _) q
 
   insert/length : ∀ x l (κ : ℕ → α) → bind (meta α) (insert x l) (κ ∘ length) ≡ κ (suc (length l))
   insert/length x []       κ = refl
@@ -137,20 +157,21 @@ module InsertionSort (M : Comparable) where
   insert≤insert/cost : ∀ x l → ub (list A) (insert x l) (insert/cost x l)
   insert≤insert/cost x []       = ub/ret zero
   insert≤insert/cost x (y ∷ ys) with h-cost {x} {y}
-  ... | ub/intro true  q≤1 h-eq rewrite eq/ref h-eq = ub/intro _ (≤-trans q≤1 (s≤s z≤n)) (ret (eq/intro refl))
+  ... | ub/intro true  q≤1 h-eq rewrite eq/ref h-eq =
+    ub/intro _ (N.≤-trans q≤1 (s≤s z≤n)) (ret (eq/intro refl))
   ... | ub/intro {q = q} false q≤1 h-eq rewrite eq/ref h-eq =
-          ub/relax
-            (begin
-              length ys + q + 0
-            ≡⟨ +-identityʳ _ ⟩
-              length ys + q
-            ≡⟨ +-comm (length ys) q ⟩
-              q + length ys
-            ≤⟨ +-monoˡ-≤ _ q≤1 ⟩
-              suc (length ys)
-            ∎)
-            (ub/bind/const _ _ (ub/step (length ys) q (insert≤insert/cost x ys)) λ _ → ub/ret zero)
-            where open ≤-Reasoning
+    ub/relax
+      (begin
+        length ys + q + 0
+      ≡⟨ N.+-identityʳ _ ⟩
+        length ys + q
+      ≡⟨ N.+-comm (length ys) q ⟩
+        q + length ys
+      ≤⟨ N.+-monoˡ-≤ _ q≤1 ⟩
+        suc (length ys)
+      ∎)
+      (ub/bind/const _ _ (ub/step (length ys) q (insert≤insert/cost x ys)) λ _ → ub/ret zero)
+      where open ≤-Reasoning
 
   sort : cmp (Π (list A) λ _ → F (list A))
   sort []       = ret []
@@ -234,7 +255,7 @@ module MergeSort (M : Comparable) where
   split/clocked/length : ∀ k k' l → k + k' ≡ length l → (κ : ℕ → ℕ → α) →
     bind (meta α) (split/clocked k l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ k k'
   split/clocked/length zero    _  l        refl _ = refl
-  split/clocked/length (suc k) k' (x ∷ xs) h    κ = split/clocked/length k k' xs (suc-injective h) (κ ∘ suc)
+  split/clocked/length (suc k) k' (x ∷ xs) h    κ = split/clocked/length k k' xs (N.suc-injective h) (κ ∘ suc)
 
   split/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
   split/clocked/cost _ _ = zero
@@ -249,7 +270,7 @@ module MergeSort (M : Comparable) where
 
   split/length : ∀ l (κ : ℕ → ℕ → α) →
     bind (meta α) (split l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ ⌊ length l /2⌋ ⌈ length l /2⌉
-  split/length l = split/clocked/length ⌊ length l /2⌋ ⌈ length l /2⌉ l (⌊n/2⌋+⌈n/2⌉≡n (length l))
+  split/length l = split/clocked/length ⌊ length l /2⌋ ⌈ length l /2⌉ l (N.⌊n/2⌋+⌈n/2⌉≡n (length l))
 
   split/cost : cmp (Π (list A) λ _ → cost)
   split/cost l = split/clocked/cost ⌊ length l /2⌋ l
@@ -270,7 +291,7 @@ module MergeSort (M : Comparable) where
     bind (meta α) (merge/clocked k (l₁ , l₂)) (κ ∘ length) ≡ κ (length l₁ + length l₂)
   merge/clocked/length zero    l₁       l₂       κ = Eq.cong κ (length-++ l₁)
   merge/clocked/length (suc k) []       l₂       κ = refl
-  merge/clocked/length (suc k) (x ∷ xs) []       κ = Eq.cong (κ ∘ suc) (Eq.sym (+-identityʳ (length xs)))
+  merge/clocked/length (suc k) (x ∷ xs) []       κ = Eq.cong (κ ∘ suc) (Eq.sym (N.+-identityʳ (length xs)))
   merge/clocked/length (suc k) (x ∷ xs) (y ∷ ys) κ with h-cost {x} {y}
   ... | ub/intro false _ h-eq rewrite eq/ref h-eq =
     begin
@@ -279,7 +300,7 @@ module MergeSort (M : Comparable) where
       bind _ (merge/clocked k (x ∷ xs , ys)) (λ l → (κ ∘ suc) (length l))
     ≡⟨ merge/clocked/length k (x ∷ xs) ys (κ ∘ suc) ⟩
       κ (suc (length (x ∷ xs) + length ys))
-    ≡⟨ Eq.cong κ (Eq.sym (+-suc (length (x ∷ xs)) (length ys))) ⟩
+    ≡⟨ Eq.cong κ (Eq.sym (N.+-suc (length (x ∷ xs)) (length ys))) ⟩
       κ (length (x ∷ xs) + length (y ∷ ys))
     ∎
       where open ≡-Reasoning
@@ -304,8 +325,8 @@ module MergeSort (M : Comparable) where
   merge/clocked≤merge/clocked/cost (suc k) (x ∷ xs , []    ) = ub/ret _
   merge/clocked≤merge/clocked/cost (suc k) (x ∷ xs , y ∷ ys) =
     ub/bind/const 1 k h-cost 
-      λ { false → ub/bind/const' k zero (+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _
-        ; true  → ub/bind/const' k zero (+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _ }
+      λ { false → ub/bind/const' k zero (N.+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _
+        ; true  → ub/bind/const' k zero (N.+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _ }
 
   merge : cmp (Π pair λ _ → F (list A))
   merge (l₁ , l₂) = merge/clocked (length l₁ + length l₂) (l₁ , l₂)
@@ -342,7 +363,7 @@ module MergeSort (M : Comparable) where
       bnd (split l) (λ (l₁ , l₂) → κ (length l₁ + length l₂))
     ≡⟨ split/length l (λ n₁ n₂ → κ (n₁ + n₂)) ⟩
       κ (⌊ length l /2⌋ + ⌈ length l /2⌉ )
-    ≡⟨ Eq.cong κ (⌊n/2⌋+⌈n/2⌉≡n (length l)) ⟩
+    ≡⟨ Eq.cong κ (N.⌊n/2⌋+⌈n/2⌉≡n (length l)) ⟩
       κ (length l)
     ∎
     where
@@ -361,8 +382,8 @@ module MergeSort (M : Comparable) where
   sort/clocked≤sort/clocked/cost : ∀ k l → ub (list A) (sort/clocked k l) (sort/clocked/cost k l)
   sort/clocked≤sort/clocked/cost zero l = ub/ret _
   sort/clocked≤sort/clocked/cost (suc k) l =
-    Eq.subst (ub _ _) (Eq.sym (+-assoc (sort/recurrence k ⌊ length l /2⌋) _ _)) (
-      Eq.subst (ub _ _) (Eq.cong (λ n → sort/recurrence k ⌊ length l /2⌋ + (sort/recurrence k ⌈ length l /2⌉ + n)) (⌊n/2⌋+⌈n/2⌉≡n _)) (
+    Eq.subst (ub _ _) (Eq.sym (N.+-assoc (sort/recurrence k ⌊ length l /2⌋) _ _)) (
+      Eq.subst (ub _ _) (Eq.cong (λ n → sort/recurrence k ⌊ length l /2⌋ + (sort/recurrence k ⌈ length l /2⌉ + n)) (N.⌊n/2⌋+⌈n/2⌉≡n _)) (
         Eq.subst (ub _ _) (split/length l (λ n₁ n₂ → sort/recurrence k n₁ + (sort/recurrence k n₂ + (n₁ + n₂)))) (
           ub/bind _ _ (split≤split/cost l) λ (l₁ , l₂) →
             Eq.subst (ub _ _) (sort/clocked/length k l₁ (λ n₁ → sort/recurrence k _ + (sort/recurrence k _ + (n₁ + _)))) (
@@ -377,7 +398,7 @@ module MergeSort (M : Comparable) where
     )
 
   sort/depth : cmp (Π (list A) λ _ → meta ℕ)
-  sort/depth l = let n = length l in aux n n ≤-refl
+  sort/depth l = let n = length l in aux n n N.≤-refl
     where
       aux : (n : ℕ) → (m : ℕ) → Data.Nat._≤_ m n → ℕ
       aux _ zero _ = zero
@@ -386,7 +407,7 @@ module MergeSort (M : Comparable) where
         suc (aux (suc n) (suc ⌈ m /2⌉) (s≤s (
           begin
             ⌈ m /2⌉
-          ≤⟨ ⌈n/2⌉≤n m ⟩
+          ≤⟨ N.⌈n/2⌉≤n m ⟩
             m
           ≤⟨ h ⟩
             n
@@ -440,7 +461,7 @@ module SortEquivalence (M : Comparable) where
   unique-sorted : ∀ {l l'} → Sorted l → Sorted l' → l ↭ l' → l ≡ l'
   unique-sorted sorted sorted' refl = refl
   unique-sorted (_ ∷ sorted) (_ ∷ sorted') (prep x p) = Eq.cong (_∷_ x) (unique-sorted sorted sorted' p)
-  unique-sorted ((h₁ ∷ _) ∷ (_ ∷ sorted)) ((h₂ ∷ _) ∷ (_ ∷ sorted')) (swap _ _ p) rewrite antisym h₁ h₂ =
+  unique-sorted ((h₁ ∷ _) ∷ (_ ∷ sorted)) ((h₂ ∷ _) ∷ (_ ∷ sorted')) (swap _ _ p) rewrite ≤-antisym h₁ h₂ =
     Eq.cong (λ l → _ ∷ _ ∷ l) (unique-sorted sorted sorted' p)
   unique-sorted sorted sorted' (trans {l} {l'} {l''} p₁ p₂) = {!   !}
 
