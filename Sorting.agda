@@ -301,6 +301,12 @@ module MergeSort (M : Comparable) where
     ⌈log₂_⌉ : ℕ → ℕ
     ⌈log₂ n ⌉ = ⌈log₂⌉/aux n n N.≤-refl
 
+    log₂-mono : ⌈log₂_⌉ Preserves Nat._≤_ ⟶ Nat._≤_
+    log₂-mono = {!   !}
+
+    log₂-suc : ∀ {n k} → ⌈log₂ n ⌉ Nat.≤ suc k → ⌈log₂ ⌈ n /2⌉ ⌉ Nat.≤ k
+    log₂-suc = {!   !}
+
     ⌈log₂n⌉≡0⇒n≤1 : {n : ℕ} → ⌈log₂ n ⌉ ≡ 0 → n Nat.≤ 1
     ⌈log₂n⌉≡0⇒n≤1 {zero} refl = z≤n
     ⌈log₂n⌉≡0⇒n≤1 {suc zero} refl = s≤s z≤n
@@ -316,8 +322,8 @@ module MergeSort (M : Comparable) where
     ◯ (∃ λ l₁ → ∃ λ l₂ → split/clocked k l ≡ ret (l₁ , l₂) × length l₁ ≡ k × length l₂ ≡ k' × l ↭ (l₁ ++ l₂))
   split/clocked/correct zero    k' l        refl u = [] , l , refl , refl , refl , refl
   split/clocked/correct (suc k) k' (x ∷ xs) h    u =
-    let (l₁ , l₂ , h , h₁ , h₂ , ↭) = split/clocked/correct k k' xs (N.suc-injective h) u in
-    x ∷ l₁ , l₂ , {!   !} , Eq.cong suc h₁ , h₂ , prep x ↭
+    let (l₁ , l₂ , ≡ , h₁ , h₂ , ↭) = split/clocked/correct k k' xs (N.suc-injective h) u in
+    x ∷ l₁ , l₂ , Eq.cong (λ e → bind (F pair) e _) ≡ , Eq.cong suc h₁ , h₂ , prep x ↭
 
   split/clocked/length : ∀ k k' l → k + k' ≡ length l → (κ : ℕ → ℕ → α) →
     bind (meta α) (split/clocked k l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ k k'
@@ -471,11 +477,11 @@ module MergeSort (M : Comparable) where
           merge (l₁' , l₂')
 
   sort/clocked/correct : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → SortResult (sort/clocked k) l
-  sort/clocked/correct zero    l h-clock u = l , refl , refl , short-sorted (⌈log₂n⌉≡0⇒n≤1 (N.n≤0⇒n≡0 h-clock))
-  sort/clocked/correct (suc k) l h-clock u =
+  sort/clocked/correct zero    l h u = l , refl , refl , short-sorted (⌈log₂n⌉≡0⇒n≤1 (N.n≤0⇒n≡0 h))
+  sort/clocked/correct (suc k) l h u =
     let (l₁ , l₂ , ≡ , length₁ , length₂ , ↭) = split/correct l u in
-    let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ {! length₁  !} u in
-    let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ {!   !} u in
+    let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ (Eq.subst (λ n → ⌈log₂ n ⌉ Nat.≤ k) (Eq.sym length₁) (N.≤-trans (log₂-mono (N.⌊n/2⌋≤⌈n/2⌉ _)) (log₂-suc h))) u in
+    let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ (Eq.subst (λ n → ⌈log₂ n ⌉ Nat.≤ k) (Eq.sym length₂) (log₂-suc h)) u in
     let (l' , ≡' , ↭' , sorted) = merge/correct l₁' l₂' sorted₁ sorted₂ u in
     l' , (
       let open ≡-Reasoning in
