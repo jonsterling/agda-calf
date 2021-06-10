@@ -295,17 +295,49 @@ module MergeSort (M : Comparable) where
     ⌈log₂⌉/aux : (n : ℕ) → (m : ℕ) → m Nat.≤ n → ℕ
     ⌈log₂⌉/aux _ zero _ = zero
     ⌈log₂⌉/aux _ (suc zero) _ = zero
-    ⌈log₂⌉/aux (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
-      suc (⌈log₂⌉/aux (suc n) (suc ⌈ m /2⌉) (s≤s (N.≤-trans (N.⌈n/2⌉≤n m) h)))
+    ⌈log₂⌉/aux (suc (suc n)) (suc (suc m)) (s≤s (s≤s h-strong)) =
+      suc (⌈log₂⌉/aux (suc n) (⌈ suc (suc m) /2⌉) (s≤s (N.≤-trans (N.⌈n/2⌉≤n m) h-strong)))
+
+    ⌈log₂⌉/aux-unique : {m n₁ n₂ : ℕ} → {h₁ : m Nat.≤ n₁} → {h₂ : m Nat.≤ n₂} →
+      ⌈log₂⌉/aux n₁ m h₁ ≡ ⌈log₂⌉/aux n₂ m h₂
+    ⌈log₂⌉/aux-unique {zero} = refl
+    ⌈log₂⌉/aux-unique {suc zero} = refl
+    ⌈log₂⌉/aux-unique {suc (suc m)} {h₁ = s≤s (s≤s _)} {h₂ = s≤s (s≤s _)} = Eq.cong suc ⌈log₂⌉/aux-unique
 
     ⌈log₂_⌉ : ℕ → ℕ
     ⌈log₂ n ⌉ = ⌈log₂⌉/aux n n N.≤-refl
 
     log₂-mono : ⌈log₂_⌉ Preserves Nat._≤_ ⟶ Nat._≤_
-    log₂-mono = {!   !}
+    log₂-mono {m₁} {m₂} h =
+      begin
+        ⌈log₂ m₁ ⌉
+      ≡⟨ ⌈log₂⌉/aux-unique ⟩
+        ⌈log₂⌉/aux m₂ m₁ h
+      ≤⟨ ⌈log₂⌉/aux-mono h ⟩
+        ⌈log₂ m₂ ⌉
+      ∎
+        where
+          open ≤-Reasoning
+
+          ⌈log₂⌉/aux-mono : {m₁ m₂ n : ℕ} → {h₁ : m₁ Nat.≤ n} → {h₂ : m₂ Nat.≤ n} →
+            m₁ Nat.≤ m₂ → ⌈log₂⌉/aux n m₁ h₁ Nat.≤ ⌈log₂⌉/aux n m₂ h₂
+          ⌈log₂⌉/aux-mono {zero} _ = z≤n
+          ⌈log₂⌉/aux-mono {suc zero} _ = z≤n
+          ⌈log₂⌉/aux-mono {suc (suc _)} {h₁ = s≤s (s≤s _)} {h₂ = s≤s (s≤s _)} (s≤s (s≤s h)) =
+            s≤s (⌈log₂⌉/aux-mono (N.⌈n/2⌉-mono (s≤s (s≤s h))))
 
     log₂-suc : ∀ {n k} → ⌈log₂ n ⌉ Nat.≤ suc k → ⌈log₂ ⌈ n /2⌉ ⌉ Nat.≤ k
-    log₂-suc = {!   !}
+    log₂-suc {zero} h = z≤n
+    log₂-suc {suc zero} h = z≤n
+    log₂-suc {suc (suc n)} {k} (s≤s h) =
+      begin
+        ⌈log₂ ⌈ suc (suc n) /2⌉ ⌉
+      ≡⟨ ⌈log₂⌉/aux-unique ⟩
+        ⌈log₂⌉/aux (suc n) ⌈ suc (suc n) /2⌉ _
+      ≤⟨ h ⟩
+        k
+      ∎
+        where open ≤-Reasoning
 
     ⌈log₂n⌉≡0⇒n≤1 : {n : ℕ} → ⌈log₂ n ⌉ ≡ 0 → n Nat.≤ 1
     ⌈log₂n⌉≡0⇒n≤1 {zero} refl = z≤n
@@ -480,8 +512,28 @@ module MergeSort (M : Comparable) where
   sort/clocked/correct zero    l h u = l , refl , refl , short-sorted (⌈log₂n⌉≡0⇒n≤1 (N.n≤0⇒n≡0 h))
   sort/clocked/correct (suc k) l h u =
     let (l₁ , l₂ , ≡ , length₁ , length₂ , ↭) = split/correct l u in
-    let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ (Eq.subst (λ n → ⌈log₂ n ⌉ Nat.≤ k) (Eq.sym length₁) (N.≤-trans (log₂-mono (N.⌊n/2⌋≤⌈n/2⌉ _)) (log₂-suc h))) u in
-    let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ (Eq.subst (λ n → ⌈log₂ n ⌉ Nat.≤ k) (Eq.sym length₂) (log₂-suc h)) u in
+    let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ (
+                                      let open ≤-Reasoning in
+                                      begin
+                                        ⌈log₂ length l₁ ⌉
+                                      ≡⟨ Eq.cong ⌈log₂_⌉ length₁ ⟩
+                                        ⌈log₂ ⌊ length l /2⌋ ⌉
+                                      ≤⟨ log₂-mono (N.⌊n/2⌋≤⌈n/2⌉ (length l)) ⟩
+                                        ⌈log₂ ⌈ length l /2⌉ ⌉
+                                      ≤⟨ log₂-suc h ⟩
+                                        k
+                                      ∎
+                                    ) u in
+    let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ (
+                                      let open ≤-Reasoning in
+                                      begin
+                                        ⌈log₂ length l₂ ⌉
+                                      ≡⟨ Eq.cong ⌈log₂_⌉ length₂ ⟩
+                                        ⌈log₂ ⌈ length l /2⌉ ⌉
+                                      ≤⟨ log₂-suc h ⟩
+                                        k
+                                      ∎
+                                    ) u in
     let (l' , ≡' , ↭' , sorted) = merge/correct l₁' l₂' sorted₁ sorted₂ u in
     l' , (
       let open ≡-Reasoning in
