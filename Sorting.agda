@@ -290,22 +290,20 @@ module MergeSort (M : Comparable) where
   ... | inj₁ h₁ = ⊥-elim (h h₁)
   ... | inj₂ h₂ = h₂
 
-  module Linearithmic where
+  module _ where
 
-    nlogn/aux : (n : ℕ) → (m : ℕ) → m Nat.≤ n → ℕ
-    nlogn/aux _ zero _ = zero
-    nlogn/aux _ (suc zero) _ = zero
-    nlogn/aux (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
-      suc (nlogn/aux (suc n) (suc ⌈ m /2⌉) (s≤s (N.≤-trans (N.⌈n/2⌉≤n m) h)))
+    ⌈log₂⌉/aux : (n : ℕ) → (m : ℕ) → m Nat.≤ n → ℕ
+    ⌈log₂⌉/aux _ zero _ = zero
+    ⌈log₂⌉/aux _ (suc zero) _ = zero
+    ⌈log₂⌉/aux (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
+      suc (⌈log₂⌉/aux (suc n) (suc ⌈ m /2⌉) (s≤s (N.≤-trans (N.⌈n/2⌉≤n m) h)))
 
-    nlogn : ℕ → ℕ
-    nlogn n = nlogn/aux n n N.≤-refl
+    ⌈log₂_⌉ : ℕ → ℕ
+    ⌈log₂ n ⌉ = ⌈log₂⌉/aux n n N.≤-refl
 
-    nlogn≡0⇒short : {n : ℕ} → nlogn n ≡ 0 → n Nat.≤ 1
-    nlogn≡0⇒short {zero} refl = z≤n
-    nlogn≡0⇒short {suc zero} refl = s≤s z≤n
-
-  open Linearithmic
+    ⌈log₂n⌉≡0⇒n≤1 : {n : ℕ} → ⌈log₂ n ⌉ ≡ 0 → n Nat.≤ 1
+    ⌈log₂n⌉≡0⇒n≤1 {zero} refl = z≤n
+    ⌈log₂n⌉≡0⇒n≤1 {suc zero} refl = s≤s z≤n
 
   pair = Σ++ (list A) λ _ → (list A)
 
@@ -472,11 +470,11 @@ module MergeSort (M : Comparable) where
         bind (F (list A)) (sort/clocked k l₂) λ l₂' →
           merge (l₁' , l₂')
 
-  sort/clocked/correct : ∀ k l → nlogn (length l) Nat.≤ k → SortResult (sort/clocked k) l
-  sort/clocked/correct zero    l h-clock u = l , refl , refl , short-sorted (nlogn≡0⇒short (N.n≤0⇒n≡0 h-clock))
+  sort/clocked/correct : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → SortResult (sort/clocked k) l
+  sort/clocked/correct zero    l h-clock u = l , refl , refl , short-sorted (⌈log₂n⌉≡0⇒n≤1 (N.n≤0⇒n≡0 h-clock))
   sort/clocked/correct (suc k) l h-clock u =
     let (l₁ , l₂ , ≡ , length₁ , length₂ , ↭) = split/correct l u in
-    let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ {!   !} u in
+    let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ {! length₁  !} u in
     let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ {!   !} u in
     let (l' , ≡' , ↭' , sorted) = merge/correct l₁' l₂' sorted₁ sorted₂ u in
     l' , (
@@ -563,7 +561,7 @@ module MergeSort (M : Comparable) where
     )
 
   sort/depth : cmp (Π (list A) λ _ → meta ℕ)
-  sort/depth l = nlogn (length l)
+  sort/depth l = ⌈log₂ length l ⌉
 
   sort : cmp (Π (list A) λ _ → F (list A))
   sort l = sort/clocked (sort/depth l) l
