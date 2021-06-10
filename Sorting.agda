@@ -4,17 +4,13 @@ module Sorting where
 
 open import Prelude using (funext)
 open import Metalanguage
-open import Unit
-import Nat
-open import Nat using (nat)
 open import Upper
-open import Eq
 open import Refinement
+open import Eq
 open import PhaseDistinction
 open import Relation.Nullary
 open import Relation.Binary
-import Relation.Binary.PropositionalEquality as Eq
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; module ≡-Reasoning)
+open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
 open import Data.Product using (_×_; _,_; ∃)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Empty
