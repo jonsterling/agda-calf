@@ -478,7 +478,40 @@ module MergeSort (M : Comparable) where
     let (l₁ , l₂ , ≡ , length₁ , length₂ , ↭) = split/correct l u in
     let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ {!   !} u in
     let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ {!   !} u in
-    {!   !} , {!   !} , {!   !} , {!   !}
+    let (l' , ≡' , ↭' , sorted) = merge/correct l₁' l₂' sorted₁ sorted₂ u in
+    l' , (
+      let open ≡-Reasoning in
+      begin
+        sort/clocked (suc k) l
+      ≡⟨⟩
+        (bind (F (list A)) (split l) λ (l₁ , l₂) →
+          bind (F (list A)) (sort/clocked k l₁) λ l₁' →
+            bind (F (list A)) (sort/clocked k l₂) λ l₂' →
+              merge (l₁' , l₂'))
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) ≡ ⟩
+        (bind (F (list A)) (sort/clocked k l₁) λ l₁' →
+          bind (F (list A)) (sort/clocked k l₂) λ l₂' →
+            merge (l₁' , l₂'))
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e λ l₁' → bind (F (list A)) (sort/clocked k l₂) _) ≡₁ ⟩
+        (bind (F (list A)) (sort/clocked k l₂) λ l₂' →
+          merge (l₁' , l₂'))
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e λ l₂' → merge (l₁' , l₂')) ≡₂ ⟩
+        merge (l₁' , l₂')
+      ≡⟨ ≡' ⟩
+        ret l'
+      ∎
+    ) , (
+      let open PermutationReasoning in
+      begin
+        l
+      ↭⟨ ↭ ⟩
+        l₁ ++ l₂
+      ↭⟨ ++⁺ ↭₁ ↭₂ ⟩
+        l₁' ++ l₂'
+      ↭⟨ ↭' ⟩
+        l'
+      ∎
+    ) , sorted
 
   sort/clocked/length : ∀ k l (κ : ℕ → α) → bind (meta α) (sort/clocked k l) (κ ∘ length) ≡ κ (length l)
   sort/clocked/length {_} zero    l κ = refl
