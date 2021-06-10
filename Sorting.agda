@@ -162,6 +162,7 @@ module InsertionSort (M : Comparable) where
   insert/correct x (y ∷ ys) (h ∷ hs) u | ub/intro {q = q} false _ _ | ofⁿ ¬x≤y | inj₂ x≤y =
     let (ys' , h-ys' , x∷ys↭ys' , sorted-ys') = insert/correct x ys hs u in
     y ∷ ys' , (
+      let open ≡-Reasoning in
       begin
         step' (F (list A)) q (bind (F (list A)) (insert x ys) (ret ∘ (y ∷_)))
       ≡⟨ step'/ext (F (list A)) (bind (F (list A)) (insert x ys) (ret ∘ (y ∷_))) q u ⟩
@@ -169,8 +170,16 @@ module InsertionSort (M : Comparable) where
       ≡⟨ Eq.cong (λ e → bind (F (list A)) e (ret ∘ (y ∷_))) h-ys' ⟩
         ret (y ∷ ys')
       ∎
-    ) , trans (swap x y refl) (prep y x∷ys↭ys') , ↭-All x∷ys↭ys' (x≤y ∷ h) ∷ sorted-ys'
-        where open ≡-Reasoning
+    ) , (
+      let open PermutationReasoning in
+      begin
+        x ∷ y ∷ ys
+      <<⟨ refl ⟩
+        y ∷ (x ∷ ys)
+      <⟨ x∷ys↭ys' ⟩
+        y ∷ ys'
+      ∎
+    ) , ↭-All x∷ys↭ys' (x≤y ∷ h) ∷ sorted-ys'
   insert/correct x (y ∷ ys) (h ∷ hs) u | ub/intro {q = q} true _ _ | ofʸ x≤y | _ =
     x ∷ (y ∷ ys) , step'/ext (F (list A)) (ret _) q u , refl , (x≤y ∷ ≤-≤* x≤y h) ∷ (h ∷ hs)
 
@@ -212,6 +221,7 @@ module InsertionSort (M : Comparable) where
     let (xs'   , h-xs'   , xs↭xs'     , sorted-xs'  ) = sort/correct xs u in
     let (x∷xs' , h-x∷xs' , x∷xs↭x∷xs' , sorted-x∷xs') = insert/correct x xs' sorted-xs' u in
     x∷xs' , (
+      let open ≡-Reasoning in
       begin
         sort (x ∷ xs)
       ≡⟨⟩
@@ -223,8 +233,16 @@ module InsertionSort (M : Comparable) where
       ≡⟨ h-x∷xs' ⟩
         ret x∷xs'
       ∎
-    ) , trans (prep x xs↭xs') x∷xs↭x∷xs' , sorted-x∷xs'
-        where open ≡-Reasoning
+    ) , (
+      let open PermutationReasoning in
+      begin
+        x ∷ xs
+      <⟨ xs↭xs' ⟩
+        x ∷ xs'
+      ↭⟨ x∷xs↭x∷xs' ⟩
+        x∷xs'
+      ∎
+    ) , sorted-x∷xs'
 
   sort/length : ∀ l (κ : ℕ → α) → bind (meta α) (sort l) (κ ∘ length) ≡ κ (length l)
   sort/length []       κ = refl
@@ -419,10 +437,14 @@ module MergeSort (M : Comparable) where
     ) , (
       let open PermutationReasoning in
       begin
-        x ∷ xs ++ y ∷ ys
+        (x ∷ xs ++ y ∷ ys)
       ↭⟨ ++-comm (x ∷ xs) (y ∷ ys) ⟩
-        y ∷ ys ++ x ∷ xs
-      ↭⟨ prep y (trans (++-comm ys (x ∷ xs)) ↭) ⟩
+        (y ∷ ys ++ x ∷ xs)
+      ≡⟨⟩
+        y ∷ (ys ++ x ∷ xs)
+      <⟨ ++-comm ys (x ∷ xs) ⟩
+        y ∷ (x ∷ xs ++ ys)
+      <⟨ ↭ ⟩
         y ∷ l
       ∎
      ) , ↭-All (↭) (All-++ (p ∷ ≤-≤* p h₁) h₂) ∷ sorted
@@ -452,7 +474,7 @@ module MergeSort (M : Comparable) where
       bind _ (merge/clocked k (x ∷ xs , ys)) (λ l → (κ ∘ suc) (length l))
     ≡⟨ merge/clocked/length k (x ∷ xs) ys (κ ∘ suc) ⟩
       κ (suc (length (x ∷ xs) + length ys))
-    ≡⟨ Eq.cong κ (Eq.sym (N.+-suc (length (x ∷ xs)) (length ys))) ⟩
+    ≡˘⟨ Eq.cong κ (N.+-suc (length (x ∷ xs)) (length ys)) ⟩
       κ (length (x ∷ xs) + length (y ∷ ys))
     ∎
       where open ≡-Reasoning
@@ -670,7 +692,7 @@ module SortEquivalence (M : Comparable) where
         ret l'ᵢ
       ≡⟨ Eq.cong ret (unique-sorted sortedᵢ sortedₘ (trans (↭-sym ↭ᵢ) ↭ₘ)) ⟩
         ret l'ₘ
-      ≡⟨ Eq.sym ≡ₘ ⟩
+      ≡˘⟨ ≡ₘ ⟩
         MSort.sort l
       ∎
         where open ≡-Reasoning
