@@ -26,15 +26,15 @@ module List where
   open import Data.List public using (List; []; _∷_; [_]; length; _++_)
   open import Data.List.Properties public
 
-  postulate
-    list : tp pos → tp pos
-    list/decode : ∀ {A} → val (list A) ≡ List (val A)
-    {-# REWRITE list/decode #-}
+  list : tp pos → tp pos
+  list A = U (meta (List (val A)))
 
 open List
 
 module Bool where
   open import Data.Bool public using (Bool; true; false)
+
+  bool : tp pos
   bool = U (meta Bool)
 
 open Bool
