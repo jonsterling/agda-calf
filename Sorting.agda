@@ -669,52 +669,52 @@ module MergeSort (M : Comparable) where
   sort/depth l = ⌈log₂ length l ⌉
 
   sort/clocked≤nlog₂n : ∀ l → ub (list A) (sort/clocked (sort/depth l) l) (length l * ⌈log₂ length l ⌉)
-  sort/clocked≤nlog₂n l = ub/relax (sort/recurrence≤nlog₂n _ (length l)) (sort/clocked≤sort/clocked/cost _ l)
+  sort/clocked≤nlog₂n l = Eq.subst (ub (list A) _) (sort/recurrence≡* _ (length l)) (sort/clocked≤sort/clocked/cost _ l)
     where
-      open ≤-Reasoning
+      open ≡-Reasoning
 
-      lemma0 : ∀ k → sort/recurrence k zero Nat.≤ zero
-      lemma0 zero    = z≤n
-      lemma0 (suc k) = N.+-monoˡ-≤ zero (N.+-mono-≤ (lemma0 k) (lemma0 k))
+      lemma0 : ∀ k → sort/recurrence k zero ≡ zero
+      lemma0 zero    = refl
+      lemma0 (suc k) = Eq.cong (_+ zero) (Eq.cong₂ _+_ (lemma0 k) (lemma0 k))
 
-      lemma1 : ∀ k → sort/recurrence k 1 Nat.≤ k
-      lemma1 zero    = z≤n
+      lemma1 : ∀ k → sort/recurrence k 1 ≡ k
+      lemma1 zero    = refl
       lemma1 (suc k) =
         begin
           sort/recurrence (suc k) 1
         ≡⟨⟩
           sort/recurrence k zero + sort/recurrence k ⌈ 1 /2⌉ + 1
-        ≤⟨ N.+-monoˡ-≤ _ (N.+-monoˡ-≤ _ (lemma0 k)) ⟩
+        ≡⟨ Eq.cong (_+ 1) (Eq.cong (_+ sort/recurrence k ⌈ 1 /2⌉) (lemma0 k)) ⟩
           sort/recurrence k ⌈ 1 /2⌉ + 1
         ≡⟨⟩
           sort/recurrence k 1 + 1
         ≡⟨ N.+-comm _ 1 ⟩
           suc (sort/recurrence k 1)
-        ≤⟨ s≤s (lemma1 k) ⟩
+        ≡⟨ Eq.cong suc (lemma1 k) ⟩
           suc k
         ∎
 
-      sort/recurrence≤nlog₂n : ∀ k n → sort/recurrence k n Nat.≤ n * k
-      sort/recurrence≤nlog₂n k zero = lemma0 k
-      sort/recurrence≤nlog₂n k (suc zero) =
+      sort/recurrence≡* : ∀ k n → sort/recurrence k n ≡ n * k
+      sort/recurrence≡* k zero = lemma0 k
+      sort/recurrence≡* k (suc zero) =
         begin
           sort/recurrence k (suc zero)
-        ≤⟨ lemma1 k ⟩
+        ≡⟨ lemma1 k ⟩
           k
         ≡˘⟨ N.*-identityˡ k ⟩
           1 * k
         ∎
-      sort/recurrence≤nlog₂n zero (suc (suc n)) = z≤n
-      sort/recurrence≤nlog₂n (suc k) (suc (suc n)) =
+      sort/recurrence≡* zero (suc (suc n)) = Eq.sym (N.*-zeroʳ n)
+      sort/recurrence≡* (suc k) (suc (suc n)) =
         begin
           sort/recurrence (suc k) (suc (suc n))
         ≡⟨⟩
           sort/recurrence k ⌊ suc (suc n) /2⌋ + sort/recurrence k ⌈ suc (suc n) /2⌉ + suc (suc n)
-        ≤⟨
-          N.+-monoˡ-≤ (suc (suc n)) (
-            N.+-mono-≤
-              (sort/recurrence≤nlog₂n k ⌊ suc (suc n) /2⌋)
-              (sort/recurrence≤nlog₂n k ⌈ suc (suc n) /2⌉)
+        ≡⟨
+          Eq.cong (_+ suc (suc n)) (
+            Eq.cong₂ _+_
+              (sort/recurrence≡* k ⌊ suc (suc n) /2⌋)
+              (sort/recurrence≡* k ⌈ suc (suc n) /2⌉)
           )
         ⟩
           ⌊ suc (suc n) /2⌋ * k + ⌈ suc (suc n) /2⌉ * k + suc (suc n)
