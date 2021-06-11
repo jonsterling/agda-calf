@@ -672,63 +672,33 @@ module MergeSort (M : Comparable) where
     where
       open ≡-Reasoning
 
-      lemma0 : ∀ k → sort/recurrence k zero ≡ zero
-      lemma0 zero    = refl
-      lemma0 (suc k) = Eq.cong (_+ zero) (Eq.cong₂ _+_ (lemma0 k) (lemma0 k))
-
-      lemma1 : ∀ k → sort/recurrence k 1 ≡ k
-      lemma1 zero    = refl
-      lemma1 (suc k) =
-        begin
-          sort/recurrence (suc k) 1
-        ≡⟨⟩
-          sort/recurrence k zero + sort/recurrence k ⌈ 1 /2⌉ + 1
-        ≡⟨ Eq.cong (_+ 1) (Eq.cong (_+ sort/recurrence k ⌈ 1 /2⌉) (lemma0 k)) ⟩
-          sort/recurrence k ⌈ 1 /2⌉ + 1
-        ≡⟨⟩
-          sort/recurrence k 1 + 1
-        ≡⟨ N.+-comm _ 1 ⟩
-          suc (sort/recurrence k 1)
-        ≡⟨ Eq.cong suc (lemma1 k) ⟩
-          suc k
-        ∎
-
       sort/recurrence≡* : ∀ k n → sort/recurrence k n ≡ n * k
-      sort/recurrence≡* k zero = lemma0 k
-      sort/recurrence≡* k (suc zero) =
+      sort/recurrence≡* zero    n = Eq.sym (N.*-zeroʳ n)
+      sort/recurrence≡* (suc k) n =
         begin
-          sort/recurrence k (suc zero)
-        ≡⟨ lemma1 k ⟩
-          k
-        ≡˘⟨ N.*-identityˡ k ⟩
-          1 * k
-        ∎
-      sort/recurrence≡* zero (suc (suc n)) = Eq.sym (N.*-zeroʳ n)
-      sort/recurrence≡* (suc k) (suc (suc n)) =
-        begin
-          sort/recurrence (suc k) (suc (suc n))
+          sort/recurrence (suc k) n
         ≡⟨⟩
-          sort/recurrence k ⌊ suc (suc n) /2⌋ + sort/recurrence k ⌈ suc (suc n) /2⌉ + suc (suc n)
+          sort/recurrence k ⌊ n /2⌋ + sort/recurrence k ⌈ n /2⌉ + n
         ≡⟨
-          Eq.cong (_+ suc (suc n)) (
+          Eq.cong (_+ n) (
             Eq.cong₂ _+_
-              (sort/recurrence≡* k ⌊ suc (suc n) /2⌋)
-              (sort/recurrence≡* k ⌈ suc (suc n) /2⌉)
+              (sort/recurrence≡* k ⌊ n /2⌋)
+              (sort/recurrence≡* k ⌈ n /2⌉)
           )
         ⟩
-          ⌊ suc (suc n) /2⌋ * k + ⌈ suc (suc n) /2⌉ * k + suc (suc n)
-        ≡˘⟨ Eq.cong (_+ suc (suc n)) (N.*-distribʳ-+ k ⌊ suc (suc n) /2⌋ ⌈ suc (suc n) /2⌉) ⟩
-          (⌊ suc (suc n) /2⌋ + ⌈ suc (suc n) /2⌉) * k + suc (suc n)
-        ≡⟨ Eq.cong (λ ssn → ssn * k + suc (suc n)) (N.⌊n/2⌋+⌈n/2⌉≡n (suc (suc n))) ⟩
-          suc (suc n) * k + suc (suc n)
-        ≡⟨ N.+-comm (suc (suc n) * k) (suc (suc n)) ⟩
-          suc (suc n) + suc (suc n) * k
-        ≡˘⟨ Eq.cong (_+ suc (suc n) * k) (N.*-identityʳ (suc (suc n))) ⟩
-          suc (suc n) * 1 + suc (suc n) * k
-        ≡˘⟨ N.*-distribˡ-+ (suc (suc n)) 1 k ⟩
-          suc (suc n) * (1 + k)
+          ⌊ n /2⌋ * k + ⌈ n /2⌉ * k + n
+        ≡˘⟨ Eq.cong (_+ n) (N.*-distribʳ-+ k ⌊ n /2⌋ ⌈ n /2⌉) ⟩
+          (⌊ n /2⌋ + ⌈ n /2⌉) * k + n
+        ≡⟨ Eq.cong (λ ssn → ssn * k + n) (N.⌊n/2⌋+⌈n/2⌉≡n n) ⟩
+          n * k + n
+        ≡⟨ N.+-comm (n * k) n ⟩
+          n + n * k
+        ≡˘⟨ Eq.cong (_+ n * k) (N.*-identityʳ n) ⟩
+          n * 1 + n * k
+        ≡˘⟨ N.*-distribˡ-+ n 1 k ⟩
+          n * (1 + k)
         ≡⟨⟩
-          suc (suc n) * suc k
+          n * suc k
         ∎
 
   sort : cmp (Π (list A) λ _ → F (list A))
