@@ -15,7 +15,7 @@ open import Data.Product using (_×_; _,_; ∃)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Empty
 open import Function
-open import Data.Nat as Nat using (ℕ; zero; suc; z≤n; s≤s; _+_; ⌊_/2⌋; ⌈_/2⌉)
+open import Data.Nat as Nat using (ℕ; zero; suc; z≤n; s≤s; _+_; _*_; _^_; ⌊_/2⌋; ⌈_/2⌉)
 open import Data.Nat.Properties as N using (module ≤-Reasoning)
 
 private
@@ -268,6 +268,35 @@ module InsertionSort (M : Comparable) where
   sort≤sort/cost []       = ub/ret zero
   sort≤sort/cost (x ∷ xs) with ub/bind (sort/cost xs) length (sort≤sort/cost xs) (insert≤insert/cost x)
   ... | h-bind rewrite sort/length xs (_+_ (sort/cost xs)) = h-bind
+
+  sort≤n² : ∀ l → ub (list A) (sort l) (length l ^ 2)
+  sort≤n² l = ub/relax (sort/cost≤n² l) (sort≤sort/cost l)
+    where
+      sort/cost≤n² : ∀ l → sort/cost l Nat.≤ (length l ^ 2)
+      sort/cost≤n² []       = z≤n
+      sort/cost≤n² (x ∷ xs) =
+        begin
+          sort/cost (x ∷ xs)
+        ≡⟨⟩
+          sort/cost xs + length xs
+        ≤⟨ N.+-monoˡ-≤ (length xs) (sort/cost≤n² xs) ⟩
+          length xs ^ 2 + length xs
+        ≡⟨ N.+-comm (length xs ^ 2) (length xs) ⟩
+          length xs + length xs ^ 2
+        ≡⟨ Eq.cong (λ n → length xs + length xs * n) (N.*-identityʳ (length xs)) ⟩
+          length xs + length xs * length xs
+        ≤⟨ N.m≤n+m (length xs + length xs * length xs) (suc (length xs)) ⟩
+          suc (length xs) + (length xs + length xs * length xs)
+        ≡⟨⟩
+          suc (length xs + (length xs + length xs * length xs))
+        ≡˘⟨ Eq.cong (λ n → suc (length xs + n)) (N.*-suc (length xs) (length xs)) ⟩
+          suc (length xs + length xs * suc (length xs))
+        ≡˘⟨ Eq.cong (λ n → suc (n + length xs * suc n)) (N.*-identityʳ (length xs)) ⟩
+          suc (length xs * 1 + length xs * suc (length xs * 1))
+        ≡⟨⟩
+          length (x ∷ xs) ^ 2
+        ∎
+          where open ≤-Reasoning
 
 module Ex/InsertionSort where
   module Sort = InsertionSort NatComparable
