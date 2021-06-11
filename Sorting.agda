@@ -668,6 +668,59 @@ module MergeSort (M : Comparable) where
   sort/depth : cmp (Π (list A) λ _ → meta ℕ)
   sort/depth l = ⌈log₂ length l ⌉
 
+  sort/clocked≤nlog₂n : ∀ l → ub (list A) (sort/clocked (sort/depth l) l) (length l * ⌈log₂ length l ⌉)
+  sort/clocked≤nlog₂n l = ub/relax (sort/recurrence≤nlog₂n _ (length l) N.≤-refl) (sort/clocked≤sort/clocked/cost (sort/depth l) l)
+    where
+      sort/recurrence≤nlog₂n : ∀ k n → k Nat.≤ ⌈log₂ n ⌉ → sort/recurrence k n Nat.≤ n * k
+      sort/recurrence≤nlog₂n .zero zero z≤n = z≤n
+      sort/recurrence≤nlog₂n .zero (suc zero) z≤n = z≤n
+      sort/recurrence≤nlog₂n zero (suc (suc n)) h = z≤n
+      sort/recurrence≤nlog₂n (suc k) (suc (suc n)) (s≤s h) =
+        begin
+          sort/recurrence (suc k) (suc (suc n))
+        ≡⟨⟩
+          sort/recurrence k ⌊ suc (suc n) /2⌋ + sort/recurrence k ⌈ suc (suc n) /2⌉ + suc (suc n)
+        ≤⟨
+          N.+-monoˡ-≤ (suc (suc n)) (
+            N.+-mono-≤
+              (sort/recurrence≤nlog₂n k ⌊ suc (suc n) /2⌋ (
+                begin
+                  k
+                ≤⟨ h ⟩
+                  ⌈log₂⌉/aux _ (suc ⌊ suc n /2⌋) _
+                ≡⟨ ⌈log₂⌉/aux-unique ⟩
+                  ⌈log₂ suc ⌊ suc n /2⌋ ⌉
+                ≤⟨ {!   !} ⟩
+                  ⌈log₂ ⌊ suc (suc n) /2⌋ ⌉
+                ∎
+              ))
+              (sort/recurrence≤nlog₂n k ⌈ suc (suc n) /2⌉ (
+                begin
+                  k
+                ≤⟨ h ⟩
+                  ⌈log₂⌉/aux _ ⌈ suc (suc n) /2⌉ _
+                ≡⟨ ⌈log₂⌉/aux-unique ⟩
+                  ⌈log₂ ⌈ suc (suc n) /2⌉ ⌉
+                ∎
+              ))
+          )
+        ⟩
+          ⌊ suc (suc n) /2⌋ * k + ⌈ suc (suc n) /2⌉ * k + suc (suc n)
+        ≡˘⟨ Eq.cong (_+ suc (suc n)) (N.*-distribʳ-+ k ⌊ suc (suc n) /2⌋ ⌈ suc (suc n) /2⌉) ⟩
+          (⌊ suc (suc n) /2⌋ + ⌈ suc (suc n) /2⌉) * k + suc (suc n)
+        ≡⟨ Eq.cong (λ ssn → ssn * k + suc (suc n)) (N.⌊n/2⌋+⌈n/2⌉≡n (suc (suc n))) ⟩
+          suc (suc n) * k + suc (suc n)
+        ≡⟨ N.+-comm (suc (suc n) * k) (suc (suc n)) ⟩
+          suc (suc n) + suc (suc n) * k
+        ≡˘⟨ Eq.cong (_+ suc (suc n) * k) (N.*-identityʳ (suc (suc n))) ⟩
+          suc (suc n) * 1 + suc (suc n) * k
+        ≡˘⟨ N.*-distribˡ-+ (suc (suc n)) 1 k ⟩
+          suc (suc n) * (1 + k)
+        ≡⟨⟩
+          suc (suc n) * suc k
+        ∎
+          where open ≤-Reasoning
+
   sort : cmp (Π (list A) λ _ → F (list A))
   sort l = sort/clocked (sort/depth l) l
 
@@ -679,6 +732,9 @@ module MergeSort (M : Comparable) where
 
   sort≤sort/cost : ∀ l → ub (list A) (sort l) (sort/cost l)
   sort≤sort/cost l = sort/clocked≤sort/clocked/cost (sort/depth l) l
+
+  sort≤nlog₂n : ∀ l → ub (list A) (sort l) (length l * ⌈log₂ length l ⌉)
+  sort≤nlog₂n l = sort/clocked≤nlog₂n l
 
 module Ex/MergeSort where
   module Sort = MergeSort NatComparable
