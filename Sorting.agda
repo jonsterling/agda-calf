@@ -86,8 +86,7 @@ module Core (M : Comparable) where
   _≤*_ x = All (x ≤_)
 
   ≤-≤* : ∀ {x₁ x₂ l} → x₁ ≤ x₂ → x₂ ≤* l → x₁ ≤* l
-  ≤-≤* x₁≤x₂ []              = []
-  ≤-≤* x₁≤x₂ (x₂≤y ∷ x₂≤*ys) = ≤-trans x₁≤x₂ x₂≤y ∷ ≤-≤* x₁≤x₂ x₂≤*ys
+  ≤-≤* x₁≤x₂ = map (≤-trans x₁≤x₂)
 
   All-++ : {P : val A → Set} {l₁ l₂ : val (list A)} → All P l₁ → All P l₂ → All P (l₁ ++ l₂)
   All-++ []        a₂ = a₂
@@ -95,9 +94,9 @@ module Core (M : Comparable) where
 
   ↭-All : {P : val A → Set} {l l' : val (list A)} → l ↭ l' → All P l → All P l'
   ↭-All refl h = h
-  ↭-All (prep x p) (x≤y ∷ x≤*ys) = x≤y ∷ ↭-All p x≤*ys
-  ↭-All (swap x₁ x₂ p) (x≤x₁ ∷ x≤x₂ ∷ x≤*ys) = x≤x₂ ∷ x≤x₁ ∷ ↭-All p x≤*ys
-  ↭-All (trans p₁ p₂) x≤*l = ↭-All p₂ (↭-All p₁ x≤*l)
+  ↭-All (prep x p) (px ∷ h) = px ∷ ↭-All p h
+  ↭-All (swap x₁ x₂ p) (px₁ ∷ px₂ ∷ h) = px₂ ∷ px₁ ∷ ↭-All p h
+  ↭-All (trans p₁ p₂) h = ↭-All p₂ (↭-All p₁ h)
 
   ↭-Any : {P : val A → Set} {l l' : val (list A)} → l ↭ l' → Any P l → Any P l'
   ↭-Any refl h = h
@@ -114,13 +113,13 @@ module Core (M : Comparable) where
 
   short-sorted : {l : val (list A)} → length l Nat.≤ 1 → Sorted l
   short-sorted {[]} _ = []
-  short-sorted {x ∷ []} _ = [] ∷ []
-  short-sorted {x ∷ x₁ ∷ l} (s≤s ())
+  short-sorted {_ ∷ []} _ = [] ∷ []
+  short-sorted {_ ∷ _ ∷ _} (s≤s ())
 
   unique-sorted : ∀ {l'₁ l'₂} → Sorted l'₁ → Sorted l'₂ → l'₁ ↭ l'₂ → l'₁ ≡ l'₂
-  unique-sorted [] [] ↭ = refl
-  unique-sorted [] (h₂ ∷ sorted₂) ↭ = ⊥-elim (¬x∷xs↭[] (↭-sym ↭))
-  unique-sorted (h₁ ∷ sorted₁) [] ↭ = ⊥-elim (¬x∷xs↭[] ↭)
+  unique-sorted []             []             ↭ = refl
+  unique-sorted []             (h₂ ∷ sorted₂) ↭ = ⊥-elim (¬x∷xs↭[] (↭-sym ↭))
+  unique-sorted (h₁ ∷ sorted₁) []             ↭ = ⊥-elim (¬x∷xs↭[] ↭)
   unique-sorted (h₁ ∷ sorted₁) (h₂ ∷ sorted₂) ↭ with
     ≤-antisym
       (lookup (≤-refl ∷ h₁) (↭-Any (↭-sym ↭) (here refl)))
