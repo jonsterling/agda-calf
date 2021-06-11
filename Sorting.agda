@@ -669,13 +669,43 @@ module MergeSort (M : Comparable) where
   sort/depth l = ⌈log₂ length l ⌉
 
   sort/clocked≤nlog₂n : ∀ l → ub (list A) (sort/clocked (sort/depth l) l) (length l * ⌈log₂ length l ⌉)
-  sort/clocked≤nlog₂n l = ub/relax (sort/recurrence≤nlog₂n _ (length l) N.≤-refl) (sort/clocked≤sort/clocked/cost (sort/depth l) l)
+  sort/clocked≤nlog₂n l = ub/relax (sort/recurrence≤nlog₂n _ (length l)) (sort/clocked≤sort/clocked/cost _ l)
     where
-      sort/recurrence≤nlog₂n : ∀ k n → k Nat.≤ ⌈log₂ n ⌉ → sort/recurrence k n Nat.≤ n * k
-      sort/recurrence≤nlog₂n .zero zero z≤n = z≤n
-      sort/recurrence≤nlog₂n .zero (suc zero) z≤n = z≤n
-      sort/recurrence≤nlog₂n zero (suc (suc n)) h = z≤n
-      sort/recurrence≤nlog₂n (suc k) (suc (suc n)) (s≤s h) =
+      open ≤-Reasoning
+
+      lemma0 : ∀ k → sort/recurrence k zero Nat.≤ zero
+      lemma0 zero    = z≤n
+      lemma0 (suc k) = N.+-monoˡ-≤ zero (N.+-mono-≤ (lemma0 k) (lemma0 k))
+
+      lemma1 : ∀ k → sort/recurrence k 1 Nat.≤ k
+      lemma1 zero    = z≤n
+      lemma1 (suc k) =
+        begin
+          sort/recurrence (suc k) 1
+        ≡⟨⟩
+          sort/recurrence k zero + sort/recurrence k ⌈ 1 /2⌉ + 1
+        ≤⟨ N.+-monoˡ-≤ _ (N.+-monoˡ-≤ _ (lemma0 k)) ⟩
+          sort/recurrence k ⌈ 1 /2⌉ + 1
+        ≡⟨⟩
+          sort/recurrence k 1 + 1
+        ≡⟨ N.+-comm _ 1 ⟩
+          suc (sort/recurrence k 1)
+        ≤⟨ s≤s (lemma1 k) ⟩
+          suc k
+        ∎
+
+      sort/recurrence≤nlog₂n : ∀ k n → sort/recurrence k n Nat.≤ n * k
+      sort/recurrence≤nlog₂n k zero = lemma0 k
+      sort/recurrence≤nlog₂n k (suc zero) =
+        begin
+          sort/recurrence k (suc zero)
+        ≤⟨ lemma1 k ⟩
+          k
+        ≡˘⟨ N.*-identityˡ k ⟩
+          1 * k
+        ∎
+      sort/recurrence≤nlog₂n zero (suc (suc n)) = z≤n
+      sort/recurrence≤nlog₂n (suc k) (suc (suc n)) =
         begin
           sort/recurrence (suc k) (suc (suc n))
         ≡⟨⟩
@@ -683,26 +713,8 @@ module MergeSort (M : Comparable) where
         ≤⟨
           N.+-monoˡ-≤ (suc (suc n)) (
             N.+-mono-≤
-              (sort/recurrence≤nlog₂n k ⌊ suc (suc n) /2⌋ (
-                begin
-                  k
-                ≤⟨ h ⟩
-                  ⌈log₂⌉/aux _ (suc ⌊ suc n /2⌋) _
-                ≡⟨ ⌈log₂⌉/aux-unique ⟩
-                  ⌈log₂ suc ⌊ suc n /2⌋ ⌉
-                ≤⟨ {!   !} ⟩
-                  ⌈log₂ ⌊ suc (suc n) /2⌋ ⌉
-                ∎
-              ))
-              (sort/recurrence≤nlog₂n k ⌈ suc (suc n) /2⌉ (
-                begin
-                  k
-                ≤⟨ h ⟩
-                  ⌈log₂⌉/aux _ ⌈ suc (suc n) /2⌉ _
-                ≡⟨ ⌈log₂⌉/aux-unique ⟩
-                  ⌈log₂ ⌈ suc (suc n) /2⌉ ⌉
-                ∎
-              ))
+              (sort/recurrence≤nlog₂n k ⌊ suc (suc n) /2⌋)
+              (sort/recurrence≤nlog₂n k ⌈ suc (suc n) /2⌉)
           )
         ⟩
           ⌊ suc (suc n) /2⌋ * k + ⌈ suc (suc n) /2⌉ * k + suc (suc n)
@@ -719,7 +731,6 @@ module MergeSort (M : Comparable) where
         ≡⟨⟩
           suc (suc n) * suc k
         ∎
-          where open ≤-Reasoning
 
   sort : cmp (Π (list A) λ _ → F (list A))
   sort l = sort/clocked (sort/depth l) l
