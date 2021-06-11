@@ -664,11 +664,11 @@ module MergeSort (M : Comparable) where
       )
     )
 
-  sort/clocked≤nk : ∀ k l → ub (list A) (sort/clocked k l) (length l * k)
-  sort/clocked≤nk k l = Eq.subst (ub _ _) (sort/recurrence≡* k _) (sort/clocked≤sort/clocked/cost k l)
+  sort/clocked≤kn : ∀ k l → ub (list A) (sort/clocked k l) (k * length l)
+  sort/clocked≤kn k l = Eq.subst (ub _ _) (sort/recurrence≡* k _) (sort/clocked≤sort/clocked/cost k l)
     where
-      sort/recurrence≡* : ∀ k n → sort/recurrence k n ≡ n * k
-      sort/recurrence≡* zero    n = Eq.sym (N.*-zeroʳ n)
+      sort/recurrence≡* : ∀ k n → sort/recurrence k n ≡ k * n
+      sort/recurrence≡* zero    n = refl
       sort/recurrence≡* (suc k) n =
         begin
           sort/recurrence (suc k) n
@@ -681,19 +681,15 @@ module MergeSort (M : Comparable) where
               (sort/recurrence≡* k ⌈ n /2⌉)
           )
         ⟩
-          ⌊ n /2⌋ * k + ⌈ n /2⌉ * k + n
-        ≡˘⟨ Eq.cong (_+ n) (N.*-distribʳ-+ k ⌊ n /2⌋ ⌈ n /2⌉) ⟩
-          (⌊ n /2⌋ + ⌈ n /2⌉) * k + n
-        ≡⟨ Eq.cong (λ n' → n' * k + n) (N.⌊n/2⌋+⌈n/2⌉≡n n) ⟩
-          n * k + n
-        ≡⟨ N.+-comm (n * k) n ⟩
-          n + n * k
-        ≡˘⟨ Eq.cong (_+ n * k) (N.*-identityʳ n) ⟩
-          n * 1 + n * k
-        ≡˘⟨ N.*-distribˡ-+ n 1 k ⟩
-          n * (1 + k)
+          k * ⌊ n /2⌋ + k * ⌈ n /2⌉ + n
+        ≡˘⟨ Eq.cong (_+ n) (N.*-distribˡ-+ k ⌊ n /2⌋ ⌈ n /2⌉) ⟩
+          k * (⌊ n /2⌋ + ⌈ n /2⌉) + n
+        ≡⟨ Eq.cong (λ n' → k * n' + n) (N.⌊n/2⌋+⌈n/2⌉≡n n) ⟩
+          k * n + n
+        ≡⟨ N.+-comm (k * n) n ⟩
+          n + k * n
         ≡⟨⟩
-          n * suc k
+          suc k * n
         ∎
           where open ≡-Reasoning
 
@@ -713,7 +709,7 @@ module MergeSort (M : Comparable) where
   sort≤sort/cost l = sort/clocked≤sort/clocked/cost (sort/depth l) l
 
   sort≤nlog₂n : ∀ l → ub (list A) (sort l) (length l * ⌈log₂ length l ⌉)
-  sort≤nlog₂n l = sort/clocked≤nk (sort/depth l) l
+  sort≤nlog₂n l = Eq.subst (ub _ _) (N.*-comm _ (length l)) (sort/clocked≤kn (sort/depth l) l)
 
 module Ex/MergeSort where
   module Sort = MergeSort NatComparable
