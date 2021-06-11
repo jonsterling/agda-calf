@@ -2,83 +2,139 @@
 
 module Sorting where
 
-open import Prelude
+open import Prelude using (funext)
 open import Metalanguage
-open import Sum
-open import Unit
-import Nat
-open import Nat using (nat)
 open import Upper
-open import Eq
 open import Refinement
-open import Relation.Binary.PropositionalEquality as Eq
+open import Eq
+open import PhaseDistinction
+open import Relation.Nullary
+open import Relation.Binary
+open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
+open import Data.Product using (_×_; _,_; ∃)
+open import Data.Sum using (inj₁; inj₂)
+open import Data.Empty
 open import Function
-open import Data.Nat hiding (_≤ᵇ_)
-open import Data.Nat.Properties
-open import Data.List using ([]; _∷_)
+open import Data.Nat as Nat using (ℕ; zero; suc; z≤n; s≤s; _+_; ⌊_/2⌋; ⌈_/2⌉)
+open import Data.Nat.Properties as N using (module ≤-Reasoning)
 
 private
   variable
     α : Set
 
 module List where
-  private
-    variable
-      A : tp pos
+  open import Data.List public using (List; []; _∷_; [_]; length; _++_)
+  open import Data.List.Properties public
 
-  postulate
-    list : tp pos → tp pos
-    nil : val (list A)
-    cons : val A → val (list A) → val (list A)
+  list : tp pos → tp pos
+  list A = U (meta (List (val A)))
 
-    list/ind : (l : val (list A)) → (X : val (list A) → tp neg) → cmp (X nil) →
-      ((a : val A) → (l : val (list A)) → (r : val (U (X l))) →
-        cmp (X (cons a l))) →
-      cmp (X l)
-    list/ind/nil : ∀ {X} → (e0 : cmp (X nil)) →
-        (e1 : (a : val A) → (l : val ((list A))) → (r : val (U (X l))) →
-        cmp (X (cons a l))) →
-      list/ind nil X e0 e1 ≡ e0
-    {-# REWRITE list/ind/nil #-}
-    list/ind/cons : ∀ {X} → (a : val A) → (l : val ((list A))) → (e0 : cmp (X nil)) →
-        (e1 : (a : val A) → (l : val ((list A))) → (r : val (U (X l))) →
-        cmp (X (cons a l))) →
-      list/ind (cons a l) X e0 e1 ≡ e1 a l (list/ind l X e0 e1)
-    {-# REWRITE list/ind/cons #-}
-
-  list/match : (l : val (list A)) → (X : val (list A) → tp neg) → cmp (X nil) →
-    ((a : val A) → (l : val (list A)) → cmp (X (cons a l))) →
-    cmp (X l)
-  list/match l X e0 e1 = list/ind l X e0 (λ a l _ → e1 a l)
-
-  of-list : {α : Set} → (α → val A) → Data.List.List α → val (list A)
-  of-list f []       = nil
-  of-list f (x ∷ xs) = cons (f x) (of-list f xs)
-
-  length : val (list A) → cmp (meta ℕ)
-  length l = list/ind l (λ _ → meta ℕ) zero λ _ _ → suc
+open List
 
 module Bool where
   open import Data.Bool public using (Bool; true; false)
 
-  postulate
-    bool : tp pos
-    bool/decode : val bool ≡ Bool
-    {-# REWRITE bool/decode #-}
+  bool : tp pos
+  bool = U (meta Bool)
 
-record Comparable : Set where
+open Bool
+
+record Comparable : Set₁ where
   field
     A : tp pos
-    _≤ᵇ_ : val A → val A → cmp (F Bool.bool)
-    h-cost : {x y : val A} → ub Bool.bool (x ≤ᵇ y) 1
+    _≤_ : val A → val A → Set
+    _≤ᵇ_ : val A → val A → cmp (F bool)
+    ≤ᵇ-reflects-≤ : ∀ {x y b} → ◯ ((x ≤ᵇ y) ≡ ret b → Reflects (x ≤ y) b)
+    ≤-refl : Reflexive _≤_
+    ≤-trans : Transitive _≤_
+    ≤-total : Total _≤_
+    ≤-antisym : Antisymmetric _≡_ _≤_
+    h-cost : (x y : val A) → ub bool (x ≤ᵇ y) 1
 
 NatComparable : Comparable
 NatComparable = record
-  { A = Nat.nat
-  ; _≤ᵇ_ = λ m n → step' (F Bool.bool) 1 (ret (Nat.toℕ m ≤ᵇ Nat.toℕ n))
-  ; h-cost = ub/step/suc 0 (ub/ret 0)
+  { A = U (meta ℕ)
+  ; _≤_ = _≤_
+  ; _≤ᵇ_ = λ x y → step' (F bool) 1 (ret (x ≤ᵇ y))
+  ; ≤ᵇ-reflects-≤ = reflects
+  ; ≤-refl = ≤-refl
+  ; ≤-trans = ≤-trans
+  ; ≤-total = ≤-total
+  ; ≤-antisym = ≤-antisym
+  ; h-cost = λ _ _ → ub/step/suc 0 (ub/ret 0)
   }
-  where open Data.Nat
+  where
+    open import Data.Nat
+    open import Data.Nat.Properties
+
+    ret-injective : ∀ {𝕊 v₁ v₂} → ret {U (meta 𝕊)} v₁ ≡ ret {U (meta 𝕊)} v₂ → v₁ ≡ v₂
+    ret-injective {𝕊} = Eq.cong (λ e → bind {U (meta 𝕊)} (meta 𝕊) e id)
+
+    reflects : ∀ {m n b} → ◯ (step' (F bool) 1 (ret (m ≤ᵇ n)) ≡ ret {bool} b → Reflects (m ≤ n) b)
+    reflects {m} {n} {b} u h with ret-injective (Eq.subst (_≡ ret b) (step'/ext (F bool) (ret (m ≤ᵇ n)) 1 u) h)
+    ... | refl = ≤ᵇ-reflects-≤ m n
+
+module Core (M : Comparable) where
+  open Comparable M
+
+  open import Data.List.Relation.Binary.Permutation.Propositional public
+  open import Data.List.Relation.Binary.Permutation.Propositional.Properties public
+  open import Data.List.Relation.Unary.All public
+  open import Data.List.Relation.Unary.Any using (Any; here; there)
+
+  _≤*_ : val A → val (list A) → Set
+  _≤*_ x = All (x ≤_)
+
+  ≤-≤* : ∀ {x₁ x₂ l} → x₁ ≤ x₂ → x₂ ≤* l → x₁ ≤* l
+  ≤-≤* x₁≤x₂ []              = []
+  ≤-≤* x₁≤x₂ (x₂≤y ∷ x₂≤*ys) = ≤-trans x₁≤x₂ x₂≤y ∷ ≤-≤* x₁≤x₂ x₂≤*ys
+
+  All-++ : {P : val A → Set} {l₁ l₂ : val (list A)} → All P l₁ → All P l₂ → All P (l₁ ++ l₂)
+  All-++ []        a₂ = a₂
+  All-++ (px ∷ a₁) a₂ = px ∷ All-++ a₁ a₂
+
+  ↭-All : {P : val A → Set} {l l' : val (list A)} → l ↭ l' → All P l → All P l'
+  ↭-All refl h = h
+  ↭-All (prep x p) (x≤y ∷ x≤*ys) = x≤y ∷ ↭-All p x≤*ys
+  ↭-All (swap x₁ x₂ p) (x≤x₁ ∷ x≤x₂ ∷ x≤*ys) = x≤x₂ ∷ x≤x₁ ∷ ↭-All p x≤*ys
+  ↭-All (trans p₁ p₂) x≤*l = ↭-All p₂ (↭-All p₁ x≤*l)
+
+  ↭-Any : {P : val A → Set} {l l' : val (list A)} → l ↭ l' → Any P l → Any P l'
+  ↭-Any refl h = h
+  ↭-Any (prep x ↭) (here px) = here px
+  ↭-Any (prep x ↭) (there h) = there (↭-Any (↭) h)
+  ↭-Any (swap x y ↭) (here px) = there (here px)
+  ↭-Any (swap x y ↭) (there (here py)) = here py
+  ↭-Any (swap x y ↭) (there (there h)) = there (there (↭-Any (↭) h))
+  ↭-Any (trans ↭₁ ↭₂) h = ↭-Any ↭₂ (↭-Any ↭₁ h)
+
+  data Sorted : val (list A) → Set where
+    [] : Sorted []
+    _∷_ : ∀ {y ys} → y ≤* ys → Sorted ys → Sorted (y ∷ ys)
+
+  short-sorted : {l : val (list A)} → length l Nat.≤ 1 → Sorted l
+  short-sorted {[]} _ = []
+  short-sorted {x ∷ []} _ = [] ∷ []
+  short-sorted {x ∷ x₁ ∷ l} (s≤s ())
+
+  unique-sorted : ∀ {l'₁ l'₂} → Sorted l'₁ → Sorted l'₂ → l'₁ ↭ l'₂ → l'₁ ≡ l'₂
+  unique-sorted [] [] ↭ = refl
+  unique-sorted [] (h₂ ∷ sorted₂) ↭ = ⊥-elim (¬x∷xs↭[] (↭-sym ↭))
+  unique-sorted (h₁ ∷ sorted₁) [] ↭ = ⊥-elim (¬x∷xs↭[] ↭)
+  unique-sorted (h₁ ∷ sorted₁) (h₂ ∷ sorted₂) ↭ with
+    ≤-antisym
+      (lookup (≤-refl ∷ h₁) (↭-Any (↭-sym ↭) (here refl)))
+      (lookup (≤-refl ∷ h₂) (↭-Any (↭) (here refl)))
+  ... | refl = Eq.cong (_ ∷_) (unique-sorted sorted₁ sorted₂ (drop-∷ ↭))
+
+  SortedOf : val (list A) → val (list A) → Set
+  SortedOf l l' = l ↭ l' × Sorted l'
+
+  SortResult : cmp (Π (list A) λ _ → F (list A)) → val (list A) → Set
+  SortResult sort l = ◯ (∃ λ l' → sort l ≡ ret l' × SortedOf l l')
+
+  IsSort : cmp (Π (list A) λ _ → F (list A)) → Set
+  IsSort sort = ∀ l → SortResult sort l
 
 cost = meta ℕ
 
@@ -88,176 +144,256 @@ test/shuffled = 4 ∷ 8 ∷ 12 ∷ 16 ∷ 13 ∷ 3 ∷ 5 ∷ 14 ∷ 9 ∷ 6 ∷ 
 
 module InsertionSort (M : Comparable) where
   open Comparable M
-  open List
-  open Bool
+  open Core M
 
   insert : cmp (Π A λ _ → Π (list A) λ _ → F (list A))
-  insert x l = list/ind l (λ _ → F (list A)) (ret (cons x nil)) inductive-step
-    where
-      inductive-step : val A → val (list A) → cmp (F (list A)) → cmp (F (list A))
-      inductive-step y ys ys' = bind (F (list A)) (x ≤ᵇ y)
-        λ { false → bind (F (list A)) ys' (ret ∘ cons y)
-          ; true  → ret (cons x (cons y ys)) }
+  insert x []       = ret [ x ]
+  insert x (y ∷ ys) =
+    bind (F (list A)) (x ≤ᵇ y)
+      λ { false → bind (F (list A)) (insert x ys) (ret ∘ (y ∷_))
+        ; true  → ret (x ∷ (y ∷ ys)) }
 
-  insert/length : ∀ {α} x l (κ : ℕ → α) → bind (meta α) (insert x l) (κ ∘ length) ≡ κ (suc (length l))
-  insert/length {α} x l = list/ind l (λ _ → meta _) (λ _ → refl) inductive-step
-    where
-      inductive-step : (y : val A) (ys : val (list A)) →
-        (∀ κ → bind (meta α) (insert x         ys ) (κ ∘ length) ≡ κ (suc (length         ys ))) →
-        (∀ κ → bind (meta α) (insert x (cons y ys)) (κ ∘ length) ≡ κ (suc (length (cons y ys))))
-      inductive-step y ys h κ with h-cost {x} {y}
-      ... | ub/intro false _ h-eq rewrite eq/ref h-eq = h (κ ∘ suc)
-      ... | ub/intro true  _ h-eq rewrite eq/ref h-eq = refl
+  insert/correct : ∀ x l → Sorted l → ◯ (∃ λ l' → insert x l ≡ ret l' × SortedOf (x ∷ l) l')
+  insert/correct x []       []       u = [ x ] , refl , refl , [] ∷ []
+  insert/correct x (y ∷ ys) (h ∷ hs) u with h-cost x y
+  insert/correct x (y ∷ ys) (h ∷ hs) u | ub/intro {q = q} b _ h-eq rewrite eq/ref h-eq
+    with ≤ᵇ-reflects-≤ u (Eq.trans (eq/ref h-eq) (step'/ext (F bool) (ret b) q u)) | ≤-total x y
+  insert/correct x (y ∷ ys) (h ∷ hs) u | ub/intro {q = q} false _ _ | ofⁿ ¬x≤y | inj₁ x≤y = ⊥-elim (¬x≤y x≤y)
+  insert/correct x (y ∷ ys) (h ∷ hs) u | ub/intro {q = q} false _ _ | ofⁿ ¬x≤y | inj₂ x≤y =
+    let (ys' , h-ys' , x∷ys↭ys' , sorted-ys') = insert/correct x ys hs u in
+    y ∷ ys' , (
+      let open ≡-Reasoning in
+      begin
+        step' (F (list A)) q (bind (F (list A)) (insert x ys) (ret ∘ (y ∷_)))
+      ≡⟨ step'/ext (F (list A)) (bind (F (list A)) (insert x ys) (ret ∘ (y ∷_))) q u ⟩
+        bind (F (list A)) (insert x ys) (ret ∘ (y ∷_))
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e (ret ∘ (y ∷_))) h-ys' ⟩
+        ret (y ∷ ys')
+      ∎
+    ) , (
+      let open PermutationReasoning in
+      begin
+        x ∷ y ∷ ys
+      <<⟨ refl ⟩
+        y ∷ (x ∷ ys)
+      <⟨ x∷ys↭ys' ⟩
+        y ∷ ys'
+      ∎
+    ) , ↭-All x∷ys↭ys' (x≤y ∷ h) ∷ sorted-ys'
+  insert/correct x (y ∷ ys) (h ∷ hs) u | ub/intro {q = q} true _ _ | ofʸ x≤y | _ =
+    x ∷ (y ∷ ys) , step'/ext (F (list A)) (ret _) q u , refl , (x≤y ∷ ≤-≤* x≤y h) ∷ (h ∷ hs)
+
+  insert/length : ∀ x l (κ : ℕ → α) → bind (meta α) (insert x l) (κ ∘ length) ≡ κ (suc (length l))
+  insert/length x []       κ = refl
+  insert/length x (y ∷ ys) κ with h-cost x y
+  ... | ub/intro false _ h-eq rewrite eq/ref h-eq = insert/length x ys (κ ∘ suc)
+  ... | ub/intro true  _ h-eq rewrite eq/ref h-eq = refl
 
   insert/cost : cmp (Π A λ _ → Π (list A) λ _ → cost)
   insert/cost _ = length
 
   insert≤insert/cost : ∀ x l → ub (list A) (insert x l) (insert/cost x l)
-  insert≤insert/cost x l = list/ind l (λ _ → meta _) (ub/ret zero) inductive-step
-    where
-      inductive-step : (y : val A) (ys : val (list A)) →
-        ub (list A) (insert x         ys ) (length         ys ) →
-        ub (list A) (insert x (cons y ys)) (length (cons y ys))
-      inductive-step y ys h with h-cost {x} {y}
-      ... | ub/intro true  q≤1 h-eq rewrite eq/ref h-eq = ub/intro _ (≤-trans q≤1 (s≤s z≤n)) (ret (eq/intro refl))
-      ... | ub/intro {q = q} false q≤1 h-eq rewrite eq/ref h-eq =
-              ub/relax
-                (begin
-                  length ys + q + 0
-                ≡⟨ +-identityʳ _ ⟩
-                  length ys + q
-                ≡⟨ +-comm (length ys) q ⟩
-                  q + length ys
-                ≤⟨ +-monoˡ-≤ _ q≤1 ⟩
-                  suc (length ys)
-                ∎)
-                (ub/bind/const _ _ (ub/step (length ys) q h) λ _ → ub/ret zero)
-                where open ≤-Reasoning
+  insert≤insert/cost x []       = ub/ret zero
+  insert≤insert/cost x (y ∷ ys) with h-cost x y
+  ... | ub/intro true  q≤1 h-eq rewrite eq/ref h-eq =
+    ub/intro _ (N.≤-trans q≤1 (s≤s z≤n)) (ret (eq/intro refl))
+  ... | ub/intro {q = q} false q≤1 h-eq rewrite eq/ref h-eq =
+    ub/relax
+      (begin
+        length ys + q + 0
+      ≡⟨ N.+-identityʳ _ ⟩
+        length ys + q
+      ≡⟨ N.+-comm (length ys) q ⟩
+        q + length ys
+      ≤⟨ N.+-monoˡ-≤ _ q≤1 ⟩
+        suc (length ys)
+      ∎)
+      (ub/bind/const _ _ (ub/step (length ys) q (insert≤insert/cost x ys)) λ _ → ub/ret zero)
+      where open ≤-Reasoning
 
   sort : cmp (Π (list A) λ _ → F (list A))
-  sort l = list/ind l (λ _ → F (list A)) (ret nil) λ x _ ys → bind (F (list A)) ys (insert x)
+  sort []       = ret []
+  sort (x ∷ xs) = bind (F (list A)) (sort xs) (insert x)
 
-  sort/length : ∀ {α} l (κ : ℕ → α) → bind (meta α) (sort l) (κ ∘ length) ≡ κ (length l)
-  sort/length {α} l = list/ind l (λ l → meta (∀ κ → bind (meta α) (sort l) (κ ∘ length) ≡ κ (length l))) (λ _ → refl) inductive-step
-    where
-      inductive-step : (x : val A) (xs : val (list A)) →
-        (∀ κ → bind (meta α) (sort         xs ) (κ ∘ length) ≡ κ (length         xs )) →
-        (∀ κ → bind (meta α) (sort (cons x xs)) (κ ∘ length) ≡ κ (length (cons x xs)))
-      inductive-step x xs h κ =
-        begin
-          bind (meta α) (sort (cons x xs)) (κ ∘ length)
-        ≡⟨⟩
-          bind (meta α) (bind (F (list A)) (sort xs) (insert x)) (κ ∘ length)
-        ≡⟨⟩
-          bind (meta α) (sort xs) (λ xs' → bind (meta α) (insert x xs') (κ ∘ length))
-        ≡⟨ Eq.cong (bind (meta α) (sort xs)) (funext λ xs' → insert/length x xs' κ)  ⟩
-          bind (meta α) (sort xs) (λ xs' → κ (suc (length xs')))
-        ≡⟨ h (κ ∘ suc) ⟩
-          κ (length (cons x xs))
-        ∎
-          where open ≡-Reasoning
+  sort/correct : IsSort sort
+  sort/correct []       u = [] , refl , refl , []
+  sort/correct (x ∷ xs) u =
+    let (xs'   , h-xs'   , xs↭xs'     , sorted-xs'  ) = sort/correct xs u in
+    let (x∷xs' , h-x∷xs' , x∷xs↭x∷xs' , sorted-x∷xs') = insert/correct x xs' sorted-xs' u in
+    x∷xs' , (
+      let open ≡-Reasoning in
+      begin
+        sort (x ∷ xs)
+      ≡⟨⟩
+        bind (F (list A)) (sort xs) (insert x)
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e (insert x)) h-xs' ⟩
+        bind (F (list A)) (ret {list A} xs') (insert x)
+      ≡⟨⟩
+        insert x xs'
+      ≡⟨ h-x∷xs' ⟩
+        ret x∷xs'
+      ∎
+    ) , (
+      let open PermutationReasoning in
+      begin
+        x ∷ xs
+      <⟨ xs↭xs' ⟩
+        x ∷ xs'
+      ↭⟨ x∷xs↭x∷xs' ⟩
+        x∷xs'
+      ∎
+    ) , sorted-x∷xs'
+
+  sort/length : ∀ l (κ : ℕ → α) → bind (meta α) (sort l) (κ ∘ length) ≡ κ (length l)
+  sort/length []       κ = refl
+  sort/length (x ∷ xs) κ =
+    begin
+      bind _ (sort (x ∷ xs)) (κ ∘ length)
+    ≡⟨⟩
+      bind _ (bind (F (list A)) (sort xs) (insert x)) (κ ∘ length)
+    ≡⟨⟩
+      bind _ (sort xs) (λ xs' → bind (meta _) (insert x xs') (κ ∘ length))
+    ≡⟨ Eq.cong (bind _ (sort xs)) (funext λ xs' → insert/length x xs' κ)  ⟩
+      bind _ (sort xs) (λ xs' → κ (suc (length xs')))
+    ≡⟨ sort/length xs (κ ∘ suc) ⟩
+      κ (length (x ∷ xs))
+    ∎
+      where open ≡-Reasoning
 
   sort/cost : cmp (Π (list A) λ _ → cost)
-  sort/cost l = list/ind l (λ _ → meta ℕ) zero (λ x xs c → c + insert/cost x xs)
+  sort/cost []       = zero
+  sort/cost (x ∷ xs) = sort/cost xs + insert/cost x xs
 
   sort≤sort/cost : ∀ l → ub (list A) (sort l) (sort/cost l)
-  sort≤sort/cost l = list/ind l (λ _ → meta _) (ub/ret zero) inductive-step
-    where
-      inductive-step : (x : val A) (xs : val (list A)) →
-        cmp (meta (ub (list A) (sort         xs ) (sort/cost         xs ))) →
-        cmp (meta (ub (list A) (sort (cons x xs)) (sort/cost (cons x xs))))
-      inductive-step x xs h with ub/bind (sort/cost xs) length h (insert≤insert/cost x)
-      ... | h-bind rewrite sort/length xs (_+_ (sort/cost xs)) = h-bind
+  sort≤sort/cost []       = ub/ret zero
+  sort≤sort/cost (x ∷ xs) with ub/bind (sort/cost xs) length (sort≤sort/cost xs) (insert≤insert/cost x)
+  ... | h-bind rewrite sort/length xs (_+_ (sort/cost xs)) = h-bind
 
 module Ex/InsertionSort where
   module Sort = InsertionSort NatComparable
 
-  list = List.list nat
-  of-list = List.of-list {A = Nat.nat} Nat.tonat
+  list' = list (U (meta ℕ))
 
-  ex/insert : cmp (F list)
-  ex/insert = Sort.insert (Nat.tonat 3) (of-list (1 ∷ 2 ∷ 4 ∷ []))
+  ex/insert : cmp (F list')
+  ex/insert = Sort.insert 3 (1 ∷ 2 ∷ 4 ∷ [])
 
-  ex/sort : cmp (F list)
-  ex/sort = Sort.sort (of-list (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ []))
+  ex/sort : cmp (F list')
+  ex/sort = Sort.sort (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ [])
 
-  ex/sort/forward : cmp (F list)
-  ex/sort/forward = Sort.sort (of-list test/forward)  -- cost: 15
+  ex/sort/forward : cmp (F list')
+  ex/sort/forward = Sort.sort test/forward  -- cost: 15
 
-  ex/sort/backward : cmp (F list)
-  ex/sort/backward = Sort.sort (of-list test/backward)  -- cost: 120
+  ex/sort/backward : cmp (F list')
+  ex/sort/backward = Sort.sort test/backward  -- cost: 120
 
-  ex/sort/shuffled : cmp (F list)
-  ex/sort/shuffled = Sort.sort (of-list test/shuffled)  -- cost: 76
-
-module Append where
-  private
-    variable
-      A : tp pos
-
-  open List
-
-  append : cmp (Π (list A) λ _ → Π (list A) λ _ → F (list A))
-  append {A} l₁ l₂ =
-    list/ind l₁ (λ _ → F (list A))
-      (ret l₂)
-      λ hd _ tl → bind (F (list A)) tl (λ tl → ret (cons hd tl))
-
-  append/length : ∀ {α : Set} (l₁ l₂ : val (list A)) (κ : ℕ → α) →
-    bind (meta α) (append l₁ l₂) (κ ∘ length) ≡ κ (length l₁ + length l₂)
-  append/length {A} {α} l₁ l₂ =
-    list/ind l₁
-      (λ l₁ → meta (∀ κ → bind _ (append l₁ l₂) (κ ∘ length) ≡ κ (length l₁ + length l₂)))
-      (λ κ → refl)
-      λ _ _ h κ → h (κ ∘ suc)
-
-  append/cost : cmp (Π (list A) λ _ → Π (list A) λ _ → cost)
-  append/cost _ _ = zero
-
-  append≤append/cost : ∀ l₁ l₂ → ub (list A) (append l₁ l₂) (append/cost l₁ l₂)
-  append≤append/cost {A} l₁ l₂ =
-    list/ind l₁ (λ l₁ → meta (ub (list A) (append l₁ l₂) (append/cost l₁ l₂)))
-      (ub/ret _)
-      λ x xs h → ub/bind/const zero zero h λ _ → ub/ret _
+  ex/sort/shuffled : cmp (F list')
+  ex/sort/shuffled = Sort.sort test/shuffled  -- cost: 76
 
 module MergeSort (M : Comparable) where
   open Comparable M
-  open List
-  open Bool
+  open Core M
+
+  _≥_ : val A → val A → Set
+  x ≥ y = y ≤ x
+
+  _≰_ : val A → val A → Set
+  x ≰ y = ¬ x ≤ y
+
+  ≰⇒≥ : _≰_ ⇒ _≥_
+  ≰⇒≥ {x} {y} h with ≤-total x y
+  ... | inj₁ h₁ = ⊥-elim (h h₁)
+  ... | inj₂ h₂ = h₂
+
+  module _ where
+
+    ⌈log₂⌉/aux : (n : ℕ) → (m : ℕ) → m Nat.≤ n → ℕ
+    ⌈log₂⌉/aux _ zero _ = zero
+    ⌈log₂⌉/aux _ (suc zero) _ = zero
+    ⌈log₂⌉/aux (suc (suc n)) (suc (suc m)) (s≤s (s≤s h-strong)) =
+      suc (⌈log₂⌉/aux (suc n) (⌈ suc (suc m) /2⌉) (s≤s (N.≤-trans (N.⌈n/2⌉≤n m) h-strong)))
+
+    ⌈log₂⌉/aux-unique : {m n₁ n₂ : ℕ} → {h₁ : m Nat.≤ n₁} → {h₂ : m Nat.≤ n₂} →
+      ⌈log₂⌉/aux n₁ m h₁ ≡ ⌈log₂⌉/aux n₂ m h₂
+    ⌈log₂⌉/aux-unique {zero} = refl
+    ⌈log₂⌉/aux-unique {suc zero} = refl
+    ⌈log₂⌉/aux-unique {suc (suc m)} {h₁ = s≤s (s≤s _)} {h₂ = s≤s (s≤s _)} = Eq.cong suc ⌈log₂⌉/aux-unique
+
+    ⌈log₂_⌉ : ℕ → ℕ
+    ⌈log₂ n ⌉ = ⌈log₂⌉/aux n n N.≤-refl
+
+    log₂-mono : ⌈log₂_⌉ Preserves Nat._≤_ ⟶ Nat._≤_
+    log₂-mono {m₁} {m₂} h =
+      begin
+        ⌈log₂ m₁ ⌉
+      ≡⟨ ⌈log₂⌉/aux-unique ⟩
+        ⌈log₂⌉/aux m₂ m₁ h
+      ≤⟨ ⌈log₂⌉/aux-mono h ⟩
+        ⌈log₂ m₂ ⌉
+      ∎
+        where
+          open ≤-Reasoning
+
+          ⌈log₂⌉/aux-mono : {m₁ m₂ n : ℕ} → {h₁ : m₁ Nat.≤ n} → {h₂ : m₂ Nat.≤ n} →
+            m₁ Nat.≤ m₂ → ⌈log₂⌉/aux n m₁ h₁ Nat.≤ ⌈log₂⌉/aux n m₂ h₂
+          ⌈log₂⌉/aux-mono {zero} _ = z≤n
+          ⌈log₂⌉/aux-mono {suc zero} _ = z≤n
+          ⌈log₂⌉/aux-mono {suc (suc _)} {h₁ = s≤s (s≤s _)} {h₂ = s≤s (s≤s _)} (s≤s (s≤s h)) =
+            s≤s (⌈log₂⌉/aux-mono (N.⌈n/2⌉-mono (s≤s (s≤s h))))
+
+    log₂-suc : ∀ {n k} → ⌈log₂ n ⌉ Nat.≤ suc k → ⌈log₂ ⌈ n /2⌉ ⌉ Nat.≤ k
+    log₂-suc {zero} h = z≤n
+    log₂-suc {suc zero} h = z≤n
+    log₂-suc {suc (suc n)} {k} (s≤s h) =
+      begin
+        ⌈log₂ ⌈ suc (suc n) /2⌉ ⌉
+      ≡⟨ ⌈log₂⌉/aux-unique ⟩
+        ⌈log₂⌉/aux (suc n) ⌈ suc (suc n) /2⌉ _
+      ≤⟨ h ⟩
+        k
+      ∎
+        where open ≤-Reasoning
+
+    ⌈log₂n⌉≡0⇒n≤1 : {n : ℕ} → ⌈log₂ n ⌉ ≡ 0 → n Nat.≤ 1
+    ⌈log₂n⌉≡0⇒n≤1 {zero} refl = z≤n
+    ⌈log₂n⌉≡0⇒n≤1 {suc zero} refl = s≤s z≤n
 
   pair = Σ++ (list A) λ _ → (list A)
 
   split/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → F pair)
-  split/clocked zero    l = ret (nil , l)
-  split/clocked (suc k) l =
-    list/match l (λ _ → F pair) (ret (nil , nil)) λ x xs →
-      bind (F pair) (split/clocked k xs) λ (l₁ , l₂) →
-        ret (cons x l₁ , l₂)
+  split/clocked zero    l        = ret ([] , l)
+  split/clocked (suc k) []       = ret ([] , [])
+  split/clocked (suc k) (x ∷ xs) = bind (F pair) (split/clocked k xs) λ (l₁ , l₂) → ret (x ∷ l₁ , l₂)
 
-  split/clocked/length : ∀ {α} k k' l → k + k' ≡ length l → (κ : ℕ → ℕ → α) →
+  split/clocked/correct : ∀ k k' l → k + k' ≡ length l →
+    ◯ (∃ λ l₁ → ∃ λ l₂ → split/clocked k l ≡ ret (l₁ , l₂) × length l₁ ≡ k × length l₂ ≡ k' × l ↭ (l₁ ++ l₂))
+  split/clocked/correct zero    k' l        refl u = [] , l , refl , refl , refl , refl
+  split/clocked/correct (suc k) k' (x ∷ xs) h    u =
+    let (l₁ , l₂ , ≡ , h₁ , h₂ , ↭) = split/clocked/correct k k' xs (N.suc-injective h) u in
+    x ∷ l₁ , l₂ , Eq.cong (λ e → bind (F pair) e _) ≡ , Eq.cong suc h₁ , h₂ , prep x ↭
+
+  split/clocked/length : ∀ k k' l → k + k' ≡ length l → (κ : ℕ → ℕ → α) →
     bind (meta α) (split/clocked k l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ k k'
-  split/clocked/length {α} zero    _  l = λ { refl _ → refl }
-  split/clocked/length {α} (suc k) k' l =
-    list/match l (λ l → meta (suc k + k' ≡ length l → ∀ κ → bind _ (split/clocked (suc k) l) _ ≡ _))
-      (λ ())
-      λ x xs h κ → split/clocked/length k k' xs (suc-injective h) (κ ∘ suc)
+  split/clocked/length zero    _  l        refl _ = refl
+  split/clocked/length (suc k) k' (x ∷ xs) h    κ = split/clocked/length k k' xs (N.suc-injective h) (κ ∘ suc)
 
   split/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
   split/clocked/cost _ _ = zero
 
   split/clocked≤split/clocked/cost : ∀ k l → ub pair (split/clocked k l) (split/clocked/cost k l)
-  split/clocked≤split/clocked/cost zero    l = ub/ret _
-  split/clocked≤split/clocked/cost (suc k) l =
-    list/match l (λ l → meta (ub pair (split/clocked (suc k) l) (split/clocked/cost (suc k) l)))
-      (ub/ret _)
-      λ x xs → ub/bind/const zero zero (split/clocked≤split/clocked/cost k xs) λ _ → ub/ret _
+  split/clocked≤split/clocked/cost zero    l        = ub/ret _
+  split/clocked≤split/clocked/cost (suc k) []       = ub/ret _
+  split/clocked≤split/clocked/cost (suc k) (x ∷ xs) = ub/bind/const zero zero (split/clocked≤split/clocked/cost k xs) λ _ → ub/ret _
 
   split : cmp (Π (list A) λ _ → F pair)
   split l = split/clocked ⌊ length l /2⌋ l
 
-  split/length : ∀ {α} l (κ : ℕ → ℕ → α) →
+  split/correct : ∀ l →
+    ◯ (∃ λ l₁ → ∃ λ l₂ → split l ≡ ret (l₁ , l₂) × length l₁ ≡ ⌊ length l /2⌋ × length l₂ ≡ ⌈ length l /2⌉ × l ↭ (l₁ ++ l₂))
+  split/correct l = split/clocked/correct ⌊ length l /2⌋ ⌈ length l /2⌉ l (N.⌊n/2⌋+⌈n/2⌉≡n (length l))
+
+  split/length : ∀ l (κ : ℕ → ℕ → α) →
     bind (meta α) (split l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ ⌊ length l /2⌋ ⌈ length l /2⌉
-  split/length {α} l = split/clocked/length ⌊ length l /2⌋ ⌈ length l /2⌉ l (⌊n/2⌋+⌈n/2⌉≡n (length l))
+  split/length l = split/clocked/length ⌊ length l /2⌋ ⌈ length l /2⌉ l (N.⌊n/2⌋+⌈n/2⌉≡n (length l))
 
   split/cost : cmp (Π (list A) λ _ → cost)
   split/cost l = split/clocked/cost ⌊ length l /2⌋ l
@@ -266,80 +402,114 @@ module MergeSort (M : Comparable) where
   split≤split/cost l = split/clocked≤split/clocked/cost ⌊ length l /2⌋ l
 
   merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F (list A))
-  merge/clocked zero    (l₁ , l₂) = Append.append l₁ l₂
-  merge/clocked (suc k) (l₁ , l₂) =
-    list/match l₁ (λ _ → F (list A))
-      (ret l₂)
-      λ x xs →
-        list/match l₂ (λ _ → F (list A))
-          (ret l₁)
-          λ y ys →
-            bind (F (list A)) (x ≤ᵇ y)
-              λ { false → bind (F (list A)) (merge/clocked k (cons x xs , ys)) (ret ∘ cons y)
-                ; true  → bind (F (list A)) (merge/clocked k (xs , cons y ys)) (ret ∘ cons x) }
+  merge/clocked zero    (l₁     , l₂    ) = ret (l₁ ++ l₂)
+  merge/clocked (suc k) ([]     , l₂    ) = ret l₂
+  merge/clocked (suc k) (x ∷ xs , []    ) = ret (x ∷ xs)
+  merge/clocked (suc k) (x ∷ xs , y ∷ ys) =
+    bind (F (list A)) (x ≤ᵇ y)
+      λ { false → bind (F (list A)) (merge/clocked k (x ∷ xs , ys)) (ret ∘ (y ∷_))
+        ; true  → bind (F (list A)) (merge/clocked k (xs , y ∷ ys)) (ret ∘ (x ∷_)) }
 
-  merge/clocked/length : ∀ {α} k (l₁ l₂ : val (list A)) (κ : ℕ → α) →
+  merge/clocked/correct : ∀ k l₁ l₂ → length l₁ + length l₂ Nat.≤ k → Sorted l₁ → Sorted l₂ →
+    ◯ (∃ λ l → merge/clocked k (l₁ , l₂) ≡ ret l × SortedOf (l₁ ++ l₂) l)
+  merge/clocked/correct zero    []       []       h       sorted₁        sorted₂        u =
+    [] , refl , refl , []
+  merge/clocked/correct (suc k) []       l₂       h       sorted₁        sorted₂        u =
+    l₂ , refl , refl , sorted₂
+  merge/clocked/correct (suc k) (x ∷ xs) []       h       sorted₁        sorted₂        u
+    rewrite List.++-identityʳ (x ∷ xs) = x ∷ xs , refl , refl , sorted₁
+  merge/clocked/correct (suc k) (x ∷ xs) (y ∷ ys) (s≤s h) (h₁ ∷ sorted₁) (h₂ ∷ sorted₂) u with h-cost x y
+  merge/clocked/correct (suc k) (x ∷ xs) (y ∷ ys) (s≤s h) (h₁ ∷ sorted₁) (h₂ ∷ sorted₂) u | ub/intro {q = q} b _ h-eq rewrite eq/ref h-eq
+    with ≤ᵇ-reflects-≤ u (Eq.trans (eq/ref h-eq) (step'/ext (F bool) (ret b) q u))
+  merge/clocked/correct (suc k) (x ∷ xs) (y ∷ ys) (s≤s h) (h₁ ∷ sorted₁) (h₂ ∷ sorted₂) u | ub/intro {q = q} false _ h-eq | ofⁿ ¬p =
+    let h = Eq.subst (Nat._≤ k) (N.+-suc (length xs) (length ys)) h in
+    let (l , ≡ , ↭ , sorted) = merge/clocked/correct k (x ∷ xs) ys h (h₁ ∷ sorted₁) sorted₂ u in
+    let p = ≰⇒≥ ¬p in
+    y ∷ l , (
+      let open ≡-Reasoning in
+      begin
+        step' (F (list A)) q (bind (F (list A)) (merge/clocked k (x ∷ xs , ys)) (ret ∘ (y ∷_)))
+      ≡⟨ step'/ext (F (list A)) (bind (F (list A)) (merge/clocked k _) _) q u ⟩
+        bind (F (list A)) (merge/clocked k (x ∷ xs , ys)) (ret ∘ (y ∷_))
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) ≡ ⟩
+        ret (y ∷ l)
+      ∎
+    ) , (
+      let open PermutationReasoning in
+      begin
+        (x ∷ xs ++ y ∷ ys)
+      ↭⟨ ++-comm (x ∷ xs) (y ∷ ys) ⟩
+        (y ∷ ys ++ x ∷ xs)
+      ≡⟨⟩
+        y ∷ (ys ++ x ∷ xs)
+      <⟨ ++-comm ys (x ∷ xs) ⟩
+        y ∷ (x ∷ xs ++ ys)
+      <⟨ ↭ ⟩
+        y ∷ l
+      ∎
+     ) , ↭-All (↭) (All-++ (p ∷ ≤-≤* p h₁) h₂) ∷ sorted
+  merge/clocked/correct (suc k) (x ∷ xs) (y ∷ ys) (s≤s h) (h₁ ∷ sorted₁) (h₂ ∷ sorted₂) u | ub/intro {q = q} true  _ h-eq | ofʸ p =
+    let (l , ≡ , ↭ , sorted) = merge/clocked/correct k xs (y ∷ ys) h sorted₁ (h₂ ∷ sorted₂) u in
+    x ∷ l , (
+      let open ≡-Reasoning in
+      begin
+        step' (F (list A)) q (bind (F (list A)) (merge/clocked k (xs , y ∷ ys)) (ret ∘ (x ∷_)))
+      ≡⟨ step'/ext (F (list A)) (bind (F (list A)) (merge/clocked k _) _) q u ⟩
+        bind (F (list A)) (merge/clocked k (xs , y ∷ ys)) (ret ∘ (x ∷_))
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) ≡ ⟩
+        ret (x ∷ l)
+      ∎
+    ) , prep x ↭ , ↭-All (↭) (All-++ h₁ (p ∷ ≤-≤* p h₂)) ∷ sorted
+
+  merge/clocked/length : ∀ k (l₁ l₂ : val (list A)) (κ : ℕ → α) →
     bind (meta α) (merge/clocked k (l₁ , l₂)) (κ ∘ length) ≡ κ (length l₁ + length l₂)
-  merge/clocked/length {_} zero    l₁ l₂ κ = Append.append/length l₁ l₂ κ
-  merge/clocked/length {α} (suc k) l₁ l₂ κ =
-    list/match l₁ (λ l₁ → meta (bind _ (merge/clocked (suc k) (l₁ , l₂)) (κ ∘ length) ≡ κ (length l₁ + length l₂)))
-      refl
-      λ x xs →
-        list/match l₂ (λ l₂ → meta (bind _ (merge/clocked (suc k) (cons x xs , l₂)) _ ≡ κ (length (cons x xs) + length l₂)))
-          (Eq.cong (κ ∘ suc) (sym (+-identityʳ (length xs))))
-          λ y ys →
-            inductive-step x xs y ys
-    where
-      open ≡-Reasoning
-
-      inductive-step : (x : val A) (xs : val (list A)) (y : val A) (ys : val (list A)) →
-        bind (meta α) (merge/clocked (suc k) (cons x xs , cons y ys)) (κ ∘ length) ≡ κ (length (cons x xs) + length (cons y ys))
-      inductive-step x xs y ys with h-cost {x} {y}
-      ... | ub/intro false _ h-eq rewrite eq/ref h-eq =
-        begin
-          bind (meta α) (merge/clocked k (cons x xs , ys)) (λ l → bind (meta α) (ret {list A} (cons y l)) (κ ∘ length))
-        ≡⟨⟩
-          bind (meta α) (merge/clocked k (cons x xs , ys)) (λ l → (κ ∘ length) (cons y l))
-        ≡⟨⟩
-          bind (meta α) (merge/clocked k (cons x xs , ys)) (λ l → (κ ∘ suc) (length l))
-        ≡⟨ merge/clocked/length k (cons x xs) ys (κ ∘ suc) ⟩
-          κ (suc (length (cons x xs) + length ys))
-        ≡⟨ Eq.cong κ (sym (+-suc (length (cons x xs)) (length ys))) ⟩
-          κ (length (cons x xs) + length (cons y ys))
-        ∎
-      ... | ub/intro true  _ h-eq rewrite eq/ref h-eq =
-        begin
-          bind (meta α) (merge/clocked k (xs , cons y ys)) (λ l → bind (meta α) (ret {list A} (cons x l)) (κ ∘ length))
-        ≡⟨⟩
-          bind (meta α) (merge/clocked k (xs , cons y ys)) (λ l → (κ ∘ length) (cons x l))
-        ≡⟨⟩
-          bind (meta α) (merge/clocked k (xs , cons y ys)) (λ l → (κ ∘ suc) (length l))
-        ≡⟨ merge/clocked/length k xs (cons y ys) (κ ∘ suc) ⟩
-          κ (suc (length xs + length (cons y ys)))
-        ≡⟨⟩
-          κ (length (cons x xs) + length (cons y ys))
-        ∎
+  merge/clocked/length zero    l₁       l₂       κ = Eq.cong κ (length-++ l₁)
+  merge/clocked/length (suc k) []       l₂       κ = refl
+  merge/clocked/length (suc k) (x ∷ xs) []       κ = Eq.cong (κ ∘ suc) (Eq.sym (N.+-identityʳ (length xs)))
+  merge/clocked/length (suc k) (x ∷ xs) (y ∷ ys) κ with h-cost x y
+  ... | ub/intro false _ h-eq rewrite eq/ref h-eq =
+    begin
+      bind _ (merge/clocked k (x ∷ xs , ys)) (λ l → (κ ∘ length) (y ∷ l))
+    ≡⟨⟩
+      bind _ (merge/clocked k (x ∷ xs , ys)) (λ l → (κ ∘ suc) (length l))
+    ≡⟨ merge/clocked/length k (x ∷ xs) ys (κ ∘ suc) ⟩
+      κ (suc (length (x ∷ xs) + length ys))
+    ≡˘⟨ Eq.cong κ (N.+-suc (length (x ∷ xs)) (length ys)) ⟩
+      κ (length (x ∷ xs) + length (y ∷ ys))
+    ∎
+      where open ≡-Reasoning
+  ... | ub/intro true  _ h-eq rewrite eq/ref h-eq =
+    begin
+      bind _ (merge/clocked k (xs , y ∷ ys)) (λ l → (κ ∘ length) (x ∷ l))
+    ≡⟨⟩
+      bind _ (merge/clocked k (xs , y ∷ ys)) (λ l → (κ ∘ suc) (length l))
+    ≡⟨ merge/clocked/length k xs (y ∷ ys) (κ ∘ suc) ⟩
+      κ (suc (length xs + length (y ∷ ys)))
+    ≡⟨⟩
+      κ (length (x ∷ xs) + length (y ∷ ys))
+    ∎
+      where open ≡-Reasoning
 
   merge/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → cost)
   merge/clocked/cost k _ = k
 
   merge/clocked≤merge/clocked/cost : ∀ k p → ub (list A) (merge/clocked k p) (merge/clocked/cost k p)
-  merge/clocked≤merge/clocked/cost zero    (l₁ , l₂) = Append.append≤append/cost l₁ l₂
-  merge/clocked≤merge/clocked/cost (suc k) (l₁ , l₂) =
-    list/match l₁ (λ l₁ → meta (ub (list A) (merge/clocked (suc k) (l₁ , l₂)) (merge/clocked/cost (suc k) (l₁ , l₂))))
-      (ub/ret _)
-      λ x xs →
-        list/match l₂ (λ l₂ → meta (ub (list A) (merge/clocked (suc k) (cons x xs , l₂)) (merge/clocked/cost (suc k) (cons x xs , l₂))))
-          (ub/ret _)
-          λ y ys →
-            ub/bind/const 1 k h-cost
-              λ { false → ub/bind/const' k zero (+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _
-                ; true  → ub/bind/const' k zero (+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _ }
+  merge/clocked≤merge/clocked/cost zero    (l₁     , l₂    ) = ub/ret _
+  merge/clocked≤merge/clocked/cost (suc k) ([]     , l₂    ) = ub/ret _
+  merge/clocked≤merge/clocked/cost (suc k) (x ∷ xs , []    ) = ub/ret _
+  merge/clocked≤merge/clocked/cost (suc k) (x ∷ xs , y ∷ ys) =
+    ub/bind/const 1 k (h-cost x y)
+      λ { false → ub/bind/const' k zero (N.+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _
+        ; true  → ub/bind/const' k zero (N.+-identityʳ k) (merge/clocked≤merge/clocked/cost k _) λ _ → ub/ret _ }
 
   merge : cmp (Π pair λ _ → F (list A))
   merge (l₁ , l₂) = merge/clocked (length l₁ + length l₂) (l₁ , l₂)
 
-  merge/length : ∀ {α} l₁ l₂ (κ : ℕ → α) → bind (meta α) (merge (l₁ , l₂)) (κ ∘ length) ≡ κ (length l₁ + length l₂)
+  merge/correct : ∀ l₁ l₂ → Sorted l₁ → Sorted l₂ →
+    ◯ (∃ λ l → merge (l₁ , l₂) ≡ ret l × SortedOf (l₁ ++ l₂) l)
+  merge/correct l₁ l₂ = merge/clocked/correct (length l₁ + length l₂) l₁ l₂ N.≤-refl
+
+  merge/length : ∀ l₁ l₂ (κ : ℕ → α) → bind (meta α) (merge (l₁ , l₂)) (κ ∘ length) ≡ κ (length l₁ + length l₂)
   merge/length l₁ l₂ = merge/clocked/length (length l₁ + length l₂) l₁ l₂
 
   merge/cost : cmp (Π pair λ _ → cost)
@@ -356,7 +526,68 @@ module MergeSort (M : Comparable) where
         bind (F (list A)) (sort/clocked k l₂) λ l₂' →
           merge (l₁' , l₂')
 
-  sort/clocked/length : ∀ {α} k l (κ : ℕ → α) → bind (meta α) (sort/clocked k l) (κ ∘ length) ≡ κ (length l)
+  sort/clocked/correct : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → SortResult (sort/clocked k) l
+  sort/clocked/correct zero    l h u = l , refl , refl , short-sorted (⌈log₂n⌉≡0⇒n≤1 (N.n≤0⇒n≡0 h))
+  sort/clocked/correct (suc k) l h u =
+    let (l₁ , l₂ , ≡ , length₁ , length₂ , ↭) = split/correct l u in
+    let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ (
+                                      let open ≤-Reasoning in
+                                      begin
+                                        ⌈log₂ length l₁ ⌉
+                                      ≡⟨ Eq.cong ⌈log₂_⌉ length₁ ⟩
+                                        ⌈log₂ ⌊ length l /2⌋ ⌉
+                                      ≤⟨ log₂-mono (N.⌊n/2⌋≤⌈n/2⌉ (length l)) ⟩
+                                        ⌈log₂ ⌈ length l /2⌉ ⌉
+                                      ≤⟨ log₂-suc h ⟩
+                                        k
+                                      ∎
+                                    ) u in
+    let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ (
+                                      let open ≤-Reasoning in
+                                      begin
+                                        ⌈log₂ length l₂ ⌉
+                                      ≡⟨ Eq.cong ⌈log₂_⌉ length₂ ⟩
+                                        ⌈log₂ ⌈ length l /2⌉ ⌉
+                                      ≤⟨ log₂-suc h ⟩
+                                        k
+                                      ∎
+                                    ) u in
+    let (l' , ≡' , ↭' , sorted) = merge/correct l₁' l₂' sorted₁ sorted₂ u in
+    l' , (
+      let open ≡-Reasoning in
+      begin
+        sort/clocked (suc k) l
+      ≡⟨⟩
+        (bind (F (list A)) (split l) λ (l₁ , l₂) →
+          bind (F (list A)) (sort/clocked k l₁) λ l₁' →
+            bind (F (list A)) (sort/clocked k l₂) λ l₂' →
+              merge (l₁' , l₂'))
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) ≡ ⟩
+        (bind (F (list A)) (sort/clocked k l₁) λ l₁' →
+          bind (F (list A)) (sort/clocked k l₂) λ l₂' →
+            merge (l₁' , l₂'))
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e λ l₁' → bind (F (list A)) (sort/clocked k l₂) _) ≡₁ ⟩
+        (bind (F (list A)) (sort/clocked k l₂) λ l₂' →
+          merge (l₁' , l₂'))
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e λ l₂' → merge (l₁' , l₂')) ≡₂ ⟩
+        merge (l₁' , l₂')
+      ≡⟨ ≡' ⟩
+        ret l'
+      ∎
+    ) , (
+      let open PermutationReasoning in
+      begin
+        l
+      ↭⟨ ↭ ⟩
+        l₁ ++ l₂
+      ↭⟨ ++⁺ ↭₁ ↭₂ ⟩
+        l₁' ++ l₂'
+      ↭⟨ ↭' ⟩
+        l'
+      ∎
+    ) , sorted
+
+  sort/clocked/length : ∀ k l (κ : ℕ → α) → bind (meta α) (sort/clocked k l) (κ ∘ length) ≡ κ (length l)
   sort/clocked/length {_} zero    l κ = refl
   sort/clocked/length {α} (suc k) l κ =
     begin
@@ -371,7 +602,7 @@ module MergeSort (M : Comparable) where
       bnd (split l) (λ (l₁ , l₂) → κ (length l₁ + length l₂))
     ≡⟨ split/length l (λ n₁ n₂ → κ (n₁ + n₂)) ⟩
       κ (⌊ length l /2⌋ + ⌈ length l /2⌉ )
-    ≡⟨ Eq.cong κ (⌊n/2⌋+⌈n/2⌉≡n (length l)) ⟩
+    ≡⟨ Eq.cong κ (N.⌊n/2⌋+⌈n/2⌉≡n (length l)) ⟩
       κ (length l)
     ∎
     where
@@ -390,13 +621,13 @@ module MergeSort (M : Comparable) where
   sort/clocked≤sort/clocked/cost : ∀ k l → ub (list A) (sort/clocked k l) (sort/clocked/cost k l)
   sort/clocked≤sort/clocked/cost zero l = ub/ret _
   sort/clocked≤sort/clocked/cost (suc k) l =
-    subst (ub _ _) (sym (+-assoc (sort/recurrence k ⌊ length l /2⌋) _ _)) (
-      subst (ub _ _) (Eq.cong (λ n → sort/recurrence k ⌊ length l /2⌋ + (sort/recurrence k ⌈ length l /2⌉ + n)) (⌊n/2⌋+⌈n/2⌉≡n _)) (
-        subst (ub _ _) (split/length l (λ n₁ n₂ → sort/recurrence k n₁ + (sort/recurrence k n₂ + (n₁ + n₂)))) (
+    Eq.subst (ub _ _) (Eq.sym (N.+-assoc (sort/recurrence k ⌊ length l /2⌋) _ _)) (
+      Eq.subst (ub _ _) (Eq.cong (λ n → sort/recurrence k ⌊ length l /2⌋ + (sort/recurrence k ⌈ length l /2⌉ + n)) (N.⌊n/2⌋+⌈n/2⌉≡n _)) (
+        Eq.subst (ub _ _) (split/length l (λ n₁ n₂ → sort/recurrence k n₁ + (sort/recurrence k n₂ + (n₁ + n₂)))) (
           ub/bind _ _ (split≤split/cost l) λ (l₁ , l₂) →
-            subst (ub _ _) (sort/clocked/length k l₁ (λ n₁ → sort/recurrence k _ + (sort/recurrence k _ + (n₁ + _)))) (
+            Eq.subst (ub _ _) (sort/clocked/length k l₁ (λ n₁ → sort/recurrence k _ + (sort/recurrence k _ + (n₁ + _)))) (
               ub/bind _ _ (sort/clocked≤sort/clocked/cost k l₁) λ l₁' →
-                subst (ub _ _) (sort/clocked/length k l₂ λ n₂ → sort/recurrence k _ + (_ + n₂)) (
+                Eq.subst (ub _ _) (sort/clocked/length k l₂ λ n₂ → sort/recurrence k _ + (_ + n₂)) (
                   ub/bind (sort/recurrence k _) _ (sort/clocked≤sort/clocked/cost k l₂) λ l₂' →
                     merge≤merge/cost (l₁' , l₂')
                 )
@@ -406,25 +637,13 @@ module MergeSort (M : Comparable) where
     )
 
   sort/depth : cmp (Π (list A) λ _ → meta ℕ)
-  sort/depth l = let n = length l in aux n n ≤-refl
-    where
-      aux : (n : ℕ) → (m : ℕ) → m ≤ n → ℕ
-      aux _ zero _ = zero
-      aux _ (suc zero) _ = zero
-      aux (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
-        suc (aux (suc n) (suc ⌈ m /2⌉) (s≤s (
-          begin
-            ⌈ m /2⌉
-          ≤⟨ ⌈n/2⌉≤n m ⟩
-            m
-          ≤⟨ h ⟩
-            n
-          ∎
-        )))
-       where open ≤-Reasoning
+  sort/depth l = ⌈log₂ length l ⌉
 
   sort : cmp (Π (list A) λ _ → F (list A))
   sort l = sort/clocked (sort/depth l) l
+
+  sort/correct : IsSort sort
+  sort/correct l = sort/clocked/correct (sort/depth l) l N.≤-refl
 
   sort/cost : cmp (Π (list A) λ _ → cost)
   sort/cost l = sort/clocked/cost (sort/depth l) l
@@ -435,23 +654,45 @@ module MergeSort (M : Comparable) where
 module Ex/MergeSort where
   module Sort = MergeSort NatComparable
 
-  list = List.list nat
-  of-list = List.of-list {A = Nat.nat} Nat.tonat
+  list' = list (U (meta ℕ))
 
   ex/split : cmp (F Sort.pair)
-  ex/split = Sort.split (of-list (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ []))
+  ex/split = Sort.split (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ [])
 
-  ex/merge : cmp (F list)
-  ex/merge = Sort.merge (of-list (2 ∷ 3 ∷ 6 ∷ 8 ∷ []) , of-list (1 ∷ 5 ∷ 8 ∷ []))
+  ex/merge : cmp (F list')
+  ex/merge = Sort.merge (2 ∷ 3 ∷ 6 ∷ 8 ∷ [] , 1 ∷ 5 ∷ 8 ∷ [])
 
-  ex/sort : cmp (F list)
-  ex/sort = Sort.sort (of-list (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ []))
+  ex/sort : cmp (F list')
+  ex/sort = Sort.sort (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ [])
 
-  ex/sort/forward : cmp (F list)
-  ex/sort/forward = Sort.sort (of-list test/forward)  -- cost: 32
+  ex/sort/forward : cmp (F list')
+  ex/sort/forward = Sort.sort test/forward  -- cost: 32
 
-  ex/sort/backward : cmp (F list)
-  ex/sort/backward = Sort.sort (of-list test/backward)  -- cost: 32
+  ex/sort/backward : cmp (F list')
+  ex/sort/backward = Sort.sort test/backward  -- cost: 32
 
-  ex/sort/shuffled : cmp (F list)
-  ex/sort/shuffled = Sort.sort (of-list test/shuffled)  -- cost: 47
+  ex/sort/shuffled : cmp (F list')
+  ex/sort/shuffled = Sort.sort test/shuffled  -- cost: 47
+
+module SortEquivalence (M : Comparable) where
+  open Comparable M
+  open Core M
+
+  module ISort = InsertionSort M
+  module MSort = MergeSort M
+
+  isort≡msort : ◯ (ISort.sort ≡ MSort.sort)
+  isort≡msort u =
+    funext λ l →
+      let (l'ᵢ , ≡ᵢ , ↭ᵢ , sortedᵢ) = ISort.sort/correct l u in
+      let (l'ₘ , ≡ₘ , ↭ₘ , sortedₘ) = MSort.sort/correct l u in
+      begin
+        ISort.sort l
+      ≡⟨ ≡ᵢ ⟩
+        ret l'ᵢ
+      ≡⟨ Eq.cong ret (unique-sorted sortedᵢ sortedₘ (trans (↭-sym ↭ᵢ) ↭ₘ)) ⟩
+        ret l'ₘ
+      ≡˘⟨ ≡ₘ ⟩
+        MSort.sort l
+      ∎
+        where open ≡-Reasoning
