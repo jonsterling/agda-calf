@@ -263,6 +263,32 @@ module InsertionSort (M : Comparable) where
   sort/cost []       = zero
   sort/cost (x ∷ xs) = sort/cost xs + insert/cost x xs
 
+  sort/cost≤n² : ∀ l → sort/cost l Nat.≤ (length l ^ 2)
+  sort/cost≤n² []       = z≤n
+  sort/cost≤n² (x ∷ xs) =
+    begin
+      sort/cost (x ∷ xs)
+    ≡⟨⟩
+      sort/cost xs + length xs
+    ≤⟨ N.+-monoˡ-≤ (length xs) (sort/cost≤n² xs) ⟩
+      length xs ^ 2 + length xs
+    ≡⟨ N.+-comm (length xs ^ 2) (length xs) ⟩
+      length xs + length xs ^ 2
+    ≡⟨ Eq.cong (λ n → length xs + length xs * n) (N.*-identityʳ (length xs)) ⟩
+      length xs + length xs * length xs
+    ≤⟨ N.m≤n+m (length xs + length xs * length xs) (suc (length xs)) ⟩
+      suc (length xs) + (length xs + length xs * length xs)
+    ≡⟨⟩
+      suc (length xs + (length xs + length xs * length xs))
+    ≡˘⟨ Eq.cong (λ n → suc (length xs + n)) (N.*-suc (length xs) (length xs)) ⟩
+      suc (length xs + length xs * suc (length xs))
+    ≡˘⟨ Eq.cong (λ n → suc (n + length xs * suc n)) (N.*-identityʳ (length xs)) ⟩
+      suc (length xs * 1 + length xs * suc (length xs * 1))
+    ≡⟨⟩
+      length (x ∷ xs) ^ 2
+    ∎
+      where open ≤-Reasoning
+
   sort≤sort/cost : ∀ l → ub (list A) (sort l) (sort/cost l)
   sort≤sort/cost []       = ub/ret zero
   sort≤sort/cost (x ∷ xs) with ub/bind (sort/cost xs) length (sort≤sort/cost xs) (insert≤insert/cost x)
@@ -270,32 +296,6 @@ module InsertionSort (M : Comparable) where
 
   sort≤n² : ∀ l → ub (list A) (sort l) (length l ^ 2)
   sort≤n² l = ub/relax (sort/cost≤n² l) (sort≤sort/cost l)
-    where
-      sort/cost≤n² : ∀ l → sort/cost l Nat.≤ (length l ^ 2)
-      sort/cost≤n² []       = z≤n
-      sort/cost≤n² (x ∷ xs) =
-        begin
-          sort/cost (x ∷ xs)
-        ≡⟨⟩
-          sort/cost xs + length xs
-        ≤⟨ N.+-monoˡ-≤ (length xs) (sort/cost≤n² xs) ⟩
-          length xs ^ 2 + length xs
-        ≡⟨ N.+-comm (length xs ^ 2) (length xs) ⟩
-          length xs + length xs ^ 2
-        ≡⟨ Eq.cong (λ n → length xs + length xs * n) (N.*-identityʳ (length xs)) ⟩
-          length xs + length xs * length xs
-        ≤⟨ N.m≤n+m (length xs + length xs * length xs) (suc (length xs)) ⟩
-          suc (length xs) + (length xs + length xs * length xs)
-        ≡⟨⟩
-          suc (length xs + (length xs + length xs * length xs))
-        ≡˘⟨ Eq.cong (λ n → suc (length xs + n)) (N.*-suc (length xs) (length xs)) ⟩
-          suc (length xs + length xs * suc (length xs))
-        ≡˘⟨ Eq.cong (λ n → suc (n + length xs * suc n)) (N.*-identityʳ (length xs)) ⟩
-          suc (length xs * 1 + length xs * suc (length xs * 1))
-        ≡⟨⟩
-          length (x ∷ xs) ^ 2
-        ∎
-          where open ≤-Reasoning
 
 module Ex/InsertionSort where
   module Sort = InsertionSort NatComparable
@@ -643,8 +643,37 @@ module MergeSort (M : Comparable) where
   sort/recurrence zero    n = zero
   sort/recurrence (suc k) n = sort/recurrence k ⌊ n /2⌋ + sort/recurrence k ⌈ n /2⌉ + n
 
+  sort/recurrence≡* : ∀ k n → sort/recurrence k n ≡ k * n
+  sort/recurrence≡* zero    n = refl
+  sort/recurrence≡* (suc k) n =
+    begin
+      sort/recurrence (suc k) n
+    ≡⟨⟩
+      sort/recurrence k ⌊ n /2⌋ + sort/recurrence k ⌈ n /2⌉ + n
+    ≡⟨
+      Eq.cong (_+ n) (
+        Eq.cong₂ _+_
+          (sort/recurrence≡* k ⌊ n /2⌋)
+          (sort/recurrence≡* k ⌈ n /2⌉)
+      )
+    ⟩
+      k * ⌊ n /2⌋ + k * ⌈ n /2⌉ + n
+    ≡˘⟨ Eq.cong (_+ n) (N.*-distribˡ-+ k ⌊ n /2⌋ ⌈ n /2⌉) ⟩
+      k * (⌊ n /2⌋ + ⌈ n /2⌉) + n
+    ≡⟨ Eq.cong (λ n' → k * n' + n) (N.⌊n/2⌋+⌈n/2⌉≡n n) ⟩
+      k * n + n
+    ≡⟨ N.+-comm (k * n) n ⟩
+      n + k * n
+    ≡⟨⟩
+      suc k * n
+    ∎
+      where open ≡-Reasoning
+
   sort/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
   sort/clocked/cost k l = sort/recurrence k (length l)
+
+  sort/clocked/cost=kn : ∀ k l → sort/clocked/cost k l ≡ k * length l
+  sort/clocked/cost=kn k l = sort/recurrence≡* k (length l)
 
   sort/clocked≤sort/clocked/cost : ∀ k l → ub (list A) (sort/clocked k l) (sort/clocked/cost k l)
   sort/clocked≤sort/clocked/cost zero l = ub/ret _
@@ -665,33 +694,7 @@ module MergeSort (M : Comparable) where
     )
 
   sort/clocked≤kn : ∀ k l → ub (list A) (sort/clocked k l) (k * length l)
-  sort/clocked≤kn k l = Eq.subst (ub _ _) (sort/recurrence≡* k _) (sort/clocked≤sort/clocked/cost k l)
-    where
-      sort/recurrence≡* : ∀ k n → sort/recurrence k n ≡ k * n
-      sort/recurrence≡* zero    n = refl
-      sort/recurrence≡* (suc k) n =
-        begin
-          sort/recurrence (suc k) n
-        ≡⟨⟩
-          sort/recurrence k ⌊ n /2⌋ + sort/recurrence k ⌈ n /2⌉ + n
-        ≡⟨
-          Eq.cong (_+ n) (
-            Eq.cong₂ _+_
-              (sort/recurrence≡* k ⌊ n /2⌋)
-              (sort/recurrence≡* k ⌈ n /2⌉)
-          )
-        ⟩
-          k * ⌊ n /2⌋ + k * ⌈ n /2⌉ + n
-        ≡˘⟨ Eq.cong (_+ n) (N.*-distribˡ-+ k ⌊ n /2⌋ ⌈ n /2⌉) ⟩
-          k * (⌊ n /2⌋ + ⌈ n /2⌉) + n
-        ≡⟨ Eq.cong (λ n' → k * n' + n) (N.⌊n/2⌋+⌈n/2⌉≡n n) ⟩
-          k * n + n
-        ≡⟨ N.+-comm (k * n) n ⟩
-          n + k * n
-        ≡⟨⟩
-          suc k * n
-        ∎
-          where open ≡-Reasoning
+  sort/clocked≤kn k l = Eq.subst (ub _ _) (sort/clocked/cost=kn k l) (sort/clocked≤sort/clocked/cost k l)
 
   sort/depth : cmp (Π (list A) λ _ → meta ℕ)
   sort/depth l = ⌈log₂ length l ⌉
