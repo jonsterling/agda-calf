@@ -643,9 +643,9 @@ module MergeSort (M : Comparable) where
   sort/recurrence zero    n = zero
   sort/recurrence (suc k) n = sort/recurrence k ⌊ n /2⌋ + sort/recurrence k ⌈ n /2⌉ + n
 
-  sort/recurrence≡* : ∀ k n → sort/recurrence k n ≡ k * n
-  sort/recurrence≡* zero    n = refl
-  sort/recurrence≡* (suc k) n =
+  sort/recurrence≡kn : ∀ k n → sort/recurrence k n ≡ k * n
+  sort/recurrence≡kn zero    n = refl
+  sort/recurrence≡kn (suc k) n =
     begin
       sort/recurrence (suc k) n
     ≡⟨⟩
@@ -653,8 +653,8 @@ module MergeSort (M : Comparable) where
     ≡⟨
       Eq.cong (_+ n) (
         Eq.cong₂ _+_
-          (sort/recurrence≡* k ⌊ n /2⌋)
-          (sort/recurrence≡* k ⌈ n /2⌉)
+          (sort/recurrence≡kn k ⌊ n /2⌋)
+          (sort/recurrence≡kn k ⌈ n /2⌉)
       )
     ⟩
       k * ⌊ n /2⌋ + k * ⌈ n /2⌉ + n
@@ -673,7 +673,7 @@ module MergeSort (M : Comparable) where
   sort/clocked/cost k l = sort/recurrence k (length l)
 
   sort/clocked/cost=kn : ∀ k l → sort/clocked/cost k l ≡ k * length l
-  sort/clocked/cost=kn k l = sort/recurrence≡* k (length l)
+  sort/clocked/cost=kn k l = sort/recurrence≡kn k (length l)
 
   sort/clocked≤sort/clocked/cost : ∀ k l → ub (list A) (sort/clocked k l) (sort/clocked/cost k l)
   sort/clocked≤sort/clocked/cost zero l = ub/ret _
