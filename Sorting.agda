@@ -78,8 +78,9 @@ module Core (M : Comparable) where
   open Comparable M
 
   open import Data.List.Relation.Binary.Permutation.Propositional public
-  open import Data.List.Relation.Binary.Permutation.Propositional.Properties public
+  open import Data.List.Relation.Binary.Permutation.Propositional.Properties renaming (++⁺ to ++⁺-↭) public
   open import Data.List.Relation.Unary.All public
+  open import Data.List.Relation.Unary.All.Properties using () renaming (++⁺ to ++⁺-All) public
   open import Data.List.Relation.Unary.Any using (Any; here; there)
 
   _≤*_ : val A → val (list A) → Set
@@ -87,25 +88,6 @@ module Core (M : Comparable) where
 
   ≤-≤* : ∀ {x₁ x₂ l} → x₁ ≤ x₂ → x₂ ≤* l → x₁ ≤* l
   ≤-≤* x₁≤x₂ = map (≤-trans x₁≤x₂)
-
-  All-++ : {P : val A → Set} {l₁ l₂ : val (list A)} → All P l₁ → All P l₂ → All P (l₁ ++ l₂)
-  All-++ []        a₂ = a₂
-  All-++ (px ∷ a₁) a₂ = px ∷ All-++ a₁ a₂
-
-  ↭-All : {P : val A → Set} {l l' : val (list A)} → l ↭ l' → All P l → All P l'
-  ↭-All refl h = h
-  ↭-All (prep x p) (px ∷ h) = px ∷ ↭-All p h
-  ↭-All (swap x₁ x₂ p) (px₁ ∷ px₂ ∷ h) = px₂ ∷ px₁ ∷ ↭-All p h
-  ↭-All (trans p₁ p₂) h = ↭-All p₂ (↭-All p₁ h)
-
-  ↭-Any : {P : val A → Set} {l l' : val (list A)} → l ↭ l' → Any P l → Any P l'
-  ↭-Any refl h = h
-  ↭-Any (prep x ↭) (here px) = here px
-  ↭-Any (prep x ↭) (there h) = there (↭-Any (↭) h)
-  ↭-Any (swap x y ↭) (here px) = there (here px)
-  ↭-Any (swap x y ↭) (there (here py)) = here py
-  ↭-Any (swap x y ↭) (there (there h)) = there (there (↭-Any (↭) h))
-  ↭-Any (trans ↭₁ ↭₂) h = ↭-Any ↭₂ (↭-Any ↭₁ h)
 
   data Sorted : val (list A) → Set where
     [] : Sorted []
@@ -122,8 +104,8 @@ module Core (M : Comparable) where
   unique-sorted (h₁ ∷ sorted₁) []             ↭ = ⊥-elim (¬x∷xs↭[] ↭)
   unique-sorted (h₁ ∷ sorted₁) (h₂ ∷ sorted₂) ↭ with
     ≤-antisym
-      (lookup (≤-refl ∷ h₁) (↭-Any (↭-sym ↭) (here refl)))
-      (lookup (≤-refl ∷ h₂) (↭-Any (↭) (here refl)))
+      (lookup (≤-refl ∷ h₁) (Any-resp-↭ (↭-sym ↭) (here refl)))
+      (lookup (≤-refl ∷ h₂) (Any-resp-↭ (↭) (here refl)))
   ... | refl = Eq.cong (_ ∷_) (unique-sorted sorted₁ sorted₂ (drop-∷ ↭))
 
   SortedOf : val (list A) → val (list A) → Set
@@ -178,7 +160,7 @@ module InsertionSort (M : Comparable) where
       <⟨ x∷ys↭ys' ⟩
         y ∷ ys'
       ∎
-    ) , ↭-All x∷ys↭ys' (x≤y ∷ h) ∷ sorted-ys'
+    ) , All-resp-↭ x∷ys↭ys' (x≤y ∷ h) ∷ sorted-ys'
   insert/correct x (y ∷ ys) (h ∷ hs) u | ub/intro {q = q} true _ _ | ofʸ x≤y | _ =
     x ∷ (y ∷ ys) , step'/ext (F (list A)) (ret _) q u , refl , (x≤y ∷ ≤-≤* x≤y h) ∷ (h ∷ hs)
 
@@ -475,7 +457,7 @@ module MergeSort (M : Comparable) where
       <⟨ ↭ ⟩
         y ∷ l
       ∎
-     ) , ↭-All (↭) (All-++ (p ∷ ≤-≤* p h₁) h₂) ∷ sorted
+     ) , All-resp-↭ (↭) (++⁺-All (p ∷ ≤-≤* p h₁) h₂) ∷ sorted
   merge/clocked/correct (suc k) (x ∷ xs) (y ∷ ys) (s≤s h) (h₁ ∷ sorted₁) (h₂ ∷ sorted₂) u | ub/intro {q = q} true  _ h-eq | ofʸ p =
     let (l , ≡ , ↭ , sorted) = merge/clocked/correct k xs (y ∷ ys) h sorted₁ (h₂ ∷ sorted₂) u in
     x ∷ l , (
@@ -487,7 +469,7 @@ module MergeSort (M : Comparable) where
       ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) ≡ ⟩
         ret (x ∷ l)
       ∎
-    ) , prep x ↭ , ↭-All (↭) (All-++ h₁ (p ∷ ≤-≤* p h₂)) ∷ sorted
+    ) , prep x ↭ , All-resp-↭ (↭) (++⁺-All h₁ (p ∷ ≤-≤* p h₂)) ∷ sorted
 
   merge/clocked/length : ∀ k (l₁ l₂ : val (list A)) (κ : ℕ → α) →
     bind (meta α) (merge/clocked k (l₁ , l₂)) (κ ∘ length) ≡ κ (length l₁ + length l₂)
@@ -608,7 +590,7 @@ module MergeSort (M : Comparable) where
         l
       ↭⟨ ↭ ⟩
         l₁ ++ l₂
-      ↭⟨ ++⁺ ↭₁ ↭₂ ⟩
+      ↭⟨ ++⁺-↭ ↭₁ ↭₂ ⟩
         l₁' ++ l₂'
       ↭⟨ ↭' ⟩
         l'
