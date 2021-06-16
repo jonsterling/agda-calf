@@ -273,8 +273,10 @@ module InsertionSort (M : Comparable) where
 
   sort≤sort/cost : ∀ l → ub (list A) (sort l) (sort/cost l)
   sort≤sort/cost []       = ub/ret zero
-  sort≤sort/cost (x ∷ xs) with ub/bind (sort/cost xs) length (sort≤sort/cost xs) (insert≤insert/cost x)
-  ... | h-bind rewrite sort/length xs (_+_ (sort/cost xs)) = h-bind
+  sort≤sort/cost (x ∷ xs) =
+    Eq.subst (ub _ _) (sort/length xs (_+_ (sort/cost xs))) (
+      ub/bind (sort/cost xs) length (sort≤sort/cost xs) (insert≤insert/cost x)
+    )
 
   sort≤n² : ∀ l → ub (list A) (sort l) (length l ^ 2)
   sort≤n² l = ub/relax (sort/cost≤n² l) (sort≤sort/cost l)
