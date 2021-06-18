@@ -2,38 +2,22 @@
 
 open import Prelude
 open import Metalanguage
-open import PhaseDistinction
-open import CostEffect
-open import Upper
 open import Eq
-open import Data.Nat as Nat
-open import Connectives
-open import Function
-open import Relation.Binary.PropositionalEquality as P
+open import Upper
+
 open import Nat
-open import Induction.WellFounded
-open import Induction
-open import Data.Nat.Properties
-open import Refinement
-open import Data.Nat.DivMod
-open import Relation.Nullary.Decidable using (False; toWitnessFalse)
-open import Data.Nat.Induction using (<-wellFounded)
-open import Data.Unit using (tt)
-open import Function.Base using (_on_)
-open import Data.Product.Properties
-open import Relation.Binary.HeterogeneousEquality as H
-open import Agda.Builtin.Nat using (div-helper; mod-helper)
-import Level as L
-open import Relation.Binary using (Rel)
-open import Relation.Unary using (Pred; _⊆′_)
-open import Data.Nat.DivMod.Core
-open import Axiom.UniquenessOfIdentityProofs.WithK using (uip)
 open import Unit
 open import Sum
+
+open import Refinement
+
+open import Data.Nat
+open import Data.Nat.Properties
 import Data.Integer as Int
 import Data.Integer.Properties as IntP
-open import Data.List using (List; _∷_; []; length; tabulate) renaming (sum to lsum)
 open import Data.Product
+open import Data.List using (List; _∷_; []; length; tabulate) renaming (sum to lsum)
+open import Relation.Binary.PropositionalEquality as P
 
 record Queue : Set where
   field
@@ -182,12 +166,12 @@ module FrontBack where
   deq-tp = sum unit (Σ++ Q λ _ → nat)
 
   deq/emp : val L → cmp (F deq-tp)
-  deq/emp = (λ l → list/match l (λ _ → F deq-tp) (ret (inl triv)) λ a l' → ret (inr ((l' , nil) , a)))
+  deq/emp = (λ l → list/match l (λ _ → F deq-tp) (ret (inj₁ triv)) λ a l' → ret (inj₂ ((l' , nil) , a)))
 
   deq : cmp (Π Q λ _ → F deq-tp)
   deq (f , b) = list/match f (λ _ → F deq-tp)
     (bind (F deq-tp) (rev b) deq/emp)
-    λ a l → ret (inr ((l , b) , a))
+    λ a l → ret (inj₂ ((l , b) , a))
 
   deq/cost : val Q → ℕ
   deq/cost (f , b) = list/match f (λ _ → meta ℕ) (list/match b (λ _ → meta ℕ) 0 (λ _ b' → 1 + len b)) (λ _ _ → 1)
@@ -213,8 +197,8 @@ module FrontBack where
             g l = list/ind l
                   (λ l → meta (n ≤ len l → ub deq-tp (bind (F deq-tp) (step' (F L) n (ret l)) deq/emp) (1 + len l)))
                   (λ h → let h1 = n≤0⇒n≡0 h in
-                   P.subst (λ n → ub deq-tp (step' (F deq-tp) n (ret (inl triv))) 1) (P.sym h1) (ub/ret 1))
-                  (λ a l ih → λ h → ub/intro {q = n + 1} (inr ((l , nil) , a))
+                   P.subst (λ n → ub deq-tp (step' (F deq-tp) n (ret (inj₁ triv))) 1) (P.sym h1) (ub/ret 1))
+                  (λ a l ih → λ h → ub/intro {q = n + 1} (inj₂ ((l , nil) , a))
                     (begin
                     n + 1 ≤⟨ +-monoˡ-≤ 1 h  ⟩
                     len (cons a l) + 1 ≡⟨ +-comm (len (cons a l)) 1 ⟩
@@ -228,7 +212,7 @@ module FrontBack where
       where open ≤-Reasoning
 
     cons/back : ∀ a l b → ub deq-tp (deq (cons a l , b)) (deq/cost (cons a l , b))
-    cons/back a l b = ub/intro {q = 1} (inr ((l , b) , a)) ≤-refl (ret (eq/intro refl))
+    cons/back a l b = ub/intro {q = 1} (inj₂ ((l , b) , a)) ≤-refl (ret (eq/intro refl))
 
   -- Amortized analysis for front-back queue.
   -- The goal is to bound the cost of a single-thread sequence of queue operations staring with an initial queue q0,
