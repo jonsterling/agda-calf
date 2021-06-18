@@ -1,17 +1,18 @@
-
 {-# OPTIONS --prop --rewriting #-}
 
-open import Prelude
-open import Metalanguage
-open import Nat
-open import PhaseDistinction
-open import Connectives
-open import Refinement
-open import Upper
-open import Eq
+module Examples.Gcd-Ext where
 
-open import Gcd
-open import Gcd-new
+open import Calf.Prelude
+open import Calf.Metalanguage
+open import Calf.Nat as Nat
+open import Calf.PhaseDistinction
+open import Calf.Connectives
+open import Calf.Refinement
+open import Calf.Upper
+open import Calf.Eq
+
+open import Examples.Gcd
+open import Examples.Gcd-new
 open import Data.Nat.GCD
 open import Data.Nat.DivMod
 open import Data.Nat

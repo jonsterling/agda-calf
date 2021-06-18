@@ -1,8 +1,11 @@
 {-# OPTIONS --prop --without-K --rewriting #-}
-open import Prelude
-open import Metalanguage
 
-open import Data.Sum public
+module Calf.Sum where
+
+open import Calf.Prelude
+open import Calf.Metalanguage
+
+open import Data.Sum using (_⊎_; inj₁; inj₂) public
 
 postulate
   sum : tp pos → tp pos → tp pos

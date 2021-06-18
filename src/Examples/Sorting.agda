@@ -1,13 +1,8 @@
 {-# OPTIONS --prop --rewriting #-}
 
-module Sorting where
+module Examples.Sorting where
 
-open import Prelude using (funext)
-open import Metalanguage
-open import Upper
-open import Refinement
-open import Eq
-open import PhaseDistinction
+open import Calf
 open import Relation.Nullary
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)

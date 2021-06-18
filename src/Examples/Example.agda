@@ -1,11 +1,8 @@
 {-# OPTIONS --prop --rewriting #-}
 
-module Example where
+module Examples.Example where
 
-open import Prelude
-open import Metalanguage
-open import CostEffect
-open import PhaseDistinction
+open import Calf
 import Relation.Binary.PropositionalEquality as P
 
 module Bool where

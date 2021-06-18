@@ -1,20 +1,22 @@
 {-# OPTIONS --prop --rewriting #-}
 
-open import Prelude
-open import Metalanguage
-open import PhaseDistinction
-open import Upper
-open import Eq
+module Examples.Gcd-new where
+
+open import Calf.Prelude
+open import Calf.Metalanguage
+open import Calf.PhaseDistinction
+open import Calf.Upper
+open import Calf.Eq
 open import Data.Nat as Nat
-open import Connectives
+open import Calf.Connectives
 open import Function
 open import Relation.Binary.PropositionalEquality as P
-open import Nat
-open import Gcd
+open import Calf.Nat
+open import Examples.Gcd
 open import Induction.WellFounded
 open import Induction
 open import Data.Nat.Properties
-open import Refinement
+open import Calf.Refinement
 open import Data.Nat.DivMod
 open import Relation.Nullary.Decidable using (False; toWitnessFalse)
 open import Data.Nat.Induction using (<-wellFounded)

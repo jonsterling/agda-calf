@@ -10,13 +10,11 @@
 - Connectives.agda
 
 ### Extra Types
-
 - Nat.agda
 - Unit.agda
 - Sum.agda
 
 ### Lemmas
-
 - Refinement.agda
 
 ## Examples

@@ -1,15 +1,11 @@
 {-# OPTIONS --prop --rewriting #-}
 
-open import Prelude
-open import Metalanguage
-open import Eq
-open import Upper
+module Examples.Queue where
 
-open import Nat
-open import Unit
-open import Sum
-
-open import Refinement
+open import Calf
+open import Calf.Nat
+open import Calf.Unit
+open import Calf.Sum
 
 open import Data.Nat
 open import Data.Nat.Properties

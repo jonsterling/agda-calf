@@ -1,14 +1,15 @@
-
 {-# OPTIONS --prop --rewriting #-}
 
-open import Prelude
-open import Metalanguage
-open import Nat
-open import PhaseDistinction
-open import Connectives
-open import Refinement
-open import Upper
-open import Eq
+module Examples.Gcd-Rec where
+
+open import Calf.Prelude
+open import Calf.Metalanguage
+open import Calf.Nat
+open import Calf.PhaseDistinction
+open import Calf.Connectives
+open import Calf.Refinement
+open import Calf.Upper
+open import Calf.Eq
 
 open import Gcd
 open import Gcd-new

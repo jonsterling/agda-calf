@@ -1,9 +1,11 @@
 {-# OPTIONS --prop --rewriting #-}
 
-open import Prelude
-open import Metalanguage
-open import PhaseDistinction
-open import Upper
+module Calf.Connectives where
+
+open import Calf.Prelude
+open import Calf.Metalanguage
+open import Calf.PhaseDistinction
+open import Calf.Upper
 open import Data.Nat
 open import Relation.Binary
 open import Level using (Level; _⊔_)

@@ -2,9 +2,9 @@
 
 -- The is the basic CBPV metalanguage.
 
-module Metalanguage where
+module Calf.Metalanguage where
 
-open import Prelude
+open import Calf.Prelude
 open import Data.Nat
 
 postulate

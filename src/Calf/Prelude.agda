@@ -1,6 +1,6 @@
 {-# OPTIONS --prop --without-K --rewriting #-}
 
-module Prelude where
+module Calf.Prelude where
 
 open import Agda.Builtin.Equality public
 open import Agda.Builtin.Equality.Rewrite public

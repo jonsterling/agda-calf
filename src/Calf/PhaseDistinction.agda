@@ -2,11 +2,11 @@
 
 -- This file adds the phase distinction for extension.
 
-module PhaseDistinction where
+module Calf.PhaseDistinction where
 
-open import Prelude
-open import Metalanguage
-open import CostEffect
+open import Calf.Prelude
+open import Calf.Metalanguage
+open import Calf.CostEffect
 open import Data.Nat using (ℕ)
 import Relation.Binary.PropositionalEquality as P
 
