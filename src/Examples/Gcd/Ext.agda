@@ -1,6 +1,6 @@
 {-# OPTIONS --prop --rewriting #-}
 
-module Examples.Gcd-Ext where
+module Examples.Gcd.Ext where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
@@ -11,8 +11,9 @@ open import Calf.Refinement
 open import Calf.Upper
 open import Calf.Eq
 
-open import Examples.Gcd
-open import Examples.Gcd-new
+open import Examples.Gcd.Euclid
+open import Examples.Gcd.Clocked
+
 open import Data.Nat.GCD
 open import Data.Nat.DivMod
 open import Data.Nat

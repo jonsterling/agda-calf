@@ -1,25 +1,27 @@
 # Cost Refinement Lab
 
 ## Core
-- Prelude.agda
-- Metalanguage.agda
-- CostEffect.agda
-- PhaseDistinction.agda
-- Eq.agda
-- Upper.agda
-- Connectives.agda
+- Prelude
+- Metalanguage
+- CostEffect
+- PhaseDistinction
+- Eq
+- Upper
+- Connectives
 
-### Extra Types
-- Nat.agda
-- Unit.agda
-- Sum.agda
+### Types
+- Nat
+- Unit
+- Sum
+- Bool
+- List
 
 ### Lemmas
-- Refinement.agda
+- Refinement
 
 ## Examples
-- Example.agda
-- Gcd*.agda
-- Id.agda
-- Queue.agda
-- Sorting.agda
+- Example
+- Gcd
+- Id (broken)
+- Queue
+- Sorting

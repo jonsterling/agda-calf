@@ -1,6 +1,6 @@
 {-# OPTIONS --prop --rewriting #-}
 
-module Examples.Gcd-Rec where
+module Examples.Gcd.Rec where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
@@ -11,8 +11,8 @@ open import Calf.Refinement
 open import Calf.Upper
 open import Calf.Eq
 
-open import Examples.Gcd
-open import Examples.Gcd-new as Gcd-new
+open import Examples.Gcd.Euclid
+open import Examples.Gcd.Clocked as Clocked
 
 open import Data.Nat.GCD
 open import Data.Nat.DivMod
@@ -141,4 +141,4 @@ gcd/cost/closed/ub i@(x , y , h) =
   (<⇒≤ (gcd/cost/bound _ i (<-transˡ g g1) (<-trans h g)))
 
 gcd/closed : cmp (Ψ gcd/i (λ { _ → nat }) e/gcd gcd/cost/closed)
-gcd/closed = pitime/relax gcd/i (const nat) e/gcd gcd/cost/closed/ub Gcd-new.gcd
+gcd/closed = pitime/relax gcd/i (const nat) e/gcd gcd/cost/closed/ub Clocked.gcd

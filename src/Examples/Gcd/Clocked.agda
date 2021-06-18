@@ -1,6 +1,6 @@
 {-# OPTIONS --prop --rewriting #-}
 
-module Examples.Gcd-new where
+module Examples.Gcd.Clocked where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
@@ -12,7 +12,7 @@ open import Calf.Connectives
 open import Function
 open import Relation.Binary.PropositionalEquality as P
 open import Calf.Types.Nat
-open import Examples.Gcd
+open import Examples.Gcd.Euclid
 open import Induction.WellFounded
 open import Induction
 open import Data.Nat.Properties
