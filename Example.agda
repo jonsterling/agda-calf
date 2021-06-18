@@ -6,6 +6,7 @@ open import Prelude
 open import Metalanguage
 open import CostEffect
 open import PhaseDistinction
+import Relation.Binary.PropositionalEquality as P
 
 module Bool where
   data Bool : □ where tt ff : Bool
@@ -70,11 +71,11 @@ notnot = lam 𝔹 𝔹 (λ x → app 𝔹 𝔹 not (app 𝔹 𝔹 not (ret x)))
 foo : ◯ (notnot ≡ lam 𝔹 𝔹 (λ x → ret x))
 foo z =
   let unstep = λ x → step/ext (F boolc) x z in
-  cong ret
+  P.cong ret
    (funext
     (►/ind z λ where
-     Bool.tt → cong (▷/ret _) (trans (unstep _) (trans (unstep _) (trans (unstep _) (unstep _))))
-     Bool.ff → cong (▷/ret _) (trans (unstep _) (trans (unstep _) (trans (unstep _) (unstep _))))))
+     Bool.tt → P.cong (▷/ret _) (P.trans (unstep _) (P.trans (unstep _) (P.trans (unstep _) (unstep _))))
+     Bool.ff → P.cong (▷/ret _) (P.trans (unstep _) (P.trans (unstep _) (P.trans (unstep _) (unstep _))))))
 
 _ : ∀ {α β f u} → app α β (lam α β f) (ret u) ≡ step (F [ β ]) (f u)
 _ = refl

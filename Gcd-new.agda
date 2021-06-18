@@ -47,7 +47,7 @@ gcd/clocked (suc k) (x , y , h) = rec y (const (F nat)) (ret {nat} x)
   (λ y' _ →
     bind {mod-tp x (succ y') tt} (F nat) (mod x (succ y') tt)
     λ { (z , eqn2) →
-    let h2 = P.subst (λ k → suc k ≤ toℕ (succ y')) (symm eqn2) (m%n<n' (toℕ x) _ tt) in
+    let h2 = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2) (m%n<n' (toℕ x) _ tt) in
     gcd/clocked k (succ y' , z , h2) })
 
 gcd/code : cmp (Π gcd/i λ _ → F nat)
@@ -72,7 +72,7 @@ gcd/clocked≤gcd/cost (suc k) i@(x , y , z) rewrite gcd/cost-unfold' i =
     bind {mod-tp x (succ y') tt} (F nat) (mod x (succ y') tt)
     λ { (z , eqn2)
           → let h2
-                  = P.subst (λ k → suc k ≤ toℕ (succ y')) (symm eqn2)
+                  = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2)
                     (m%n<n' (toℕ x) _ tt)
             in gcd/clocked k (succ y' , z , h2)
       })
@@ -81,13 +81,13 @@ gcd/clocked≤gcd/cost (suc k) i@(x , y , z) rewrite gcd/cost-unfold' i =
   (ub/ret 0)
   λ y' → ub/bind/suc {e = mod x (succ y') tt} {f = λ { (z , eqn2)
           → let h2
-                  = P.subst (λ k → suc k ≤ toℕ (succ y')) (symm eqn2)
+                  = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2)
                     (m%n<n' (toℕ x) _ tt)
             in gcd/clocked k (succ y' , z , h2)
       }} (gcd/cost (suc (toℕ y') , toℕ x % suc (toℕ y') , m%n<n (toℕ x) (toℕ y')))
   (ub/step/suc 0 (ub/ret 0))
   λ {(z , eqn2) →
-  let h2 = P.subst (λ k → suc k ≤ toℕ (succ y')) (symm eqn2) (m%n<n' (toℕ x) (toℕ (succ y')) tt) in
+  let h2 = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2) (m%n<n' (toℕ x) (toℕ (succ y')) tt) in
   let g = gcd/clocked≤gcd/cost k (succ y' , z , h2) in
   let h3 = to-ext-unfold (succ y' , z , h2) in
   let h4 = P.subst (λ cost → ub nat (gcd/clocked k (succ y' , z , h2)) (gcd/cost cost)) h3 g in

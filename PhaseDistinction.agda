@@ -8,6 +8,7 @@ open import Prelude
 open import Metalanguage
 open import CostEffect
 open import Data.Nat using (ℕ)
+import Relation.Binary.PropositionalEquality as P
 
 postulate
   ext : Ω
@@ -48,7 +49,7 @@ postulate
   ►/ext/η : ∀ {A} (z : ext) (u : val (► A)) → ►/ret A (►/ext A z u) ≡ u
 
 ►/ext/match : ∀ {A X} {u : val (► A)} {f : val A → cmp X} {z : ext} → ►/match X u f ≡ f (►/ext A z u)
-►/ext/match {A} {X} {u} {f} {z} rewrite (symm (►/ext/η z u)) = step/ext X (f (►/ext A z u)) z
+►/ext/match {A} {X} {u} {f} {z} rewrite (P.sym (►/ext/η z u)) = step/ext X (f (►/ext A z u)) z
 
 postulate
   ▷/ext : ∀ X → ◯ (cmp (▷ X) → cmp X)
@@ -58,7 +59,7 @@ postulate
   ▷/ext/η : ∀ {X} (z : ext) (u : cmp (▷ X)) → ▷/ret X (▷/ext X z u) ≡ u
 
 ▷/ext/match : ∀ {Y X} {u : cmp (▷ Y)} {f : cmp Y → cmp X} {z : ext} → ▷/match X u f ≡ f (▷/ext Y z u)
-▷/ext/match {Y} {X} {u} {f} {z} rewrite (symm (▷/ext/η z u)) = step/ext X (f (▷/ext Y z u)) z
+▷/ext/match {Y} {X} {u} {f} {z} rewrite (P.sym (▷/ext/η z u)) = step/ext X (f (▷/ext Y z u)) z
 
 ►/ind : ∀ {A} {P : val (► A) → □} → ◯ ((∀ x → P (►/ret _ x)) → ∀ x → P x)
-►/ind {A} z f x rewrite (symm (►/ext/η z x)) = f (►/ext A z x)
+►/ind {A} z f x rewrite (P.sym (►/ext/η z x)) = f (►/ext A z x)

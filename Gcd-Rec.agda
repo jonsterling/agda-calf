@@ -85,9 +85,6 @@ fib-mono-< {suc (suc x)} {suc (suc y)} (s≤s (s≤s h)) =
   let g1 = fib-mono-< (s≤s h) in
   +-mono-≤ g1 g
 
-n<1⇒n≡0 : ∀ {n} → n < 1 → n ≡ 0
-n<1⇒n≡0 (s≤s n≤0) = n≤0⇒n≡0 n≤0
-
 -- test : ℕ
 -- test = gcd/cost (7 , 4 , s≤s (s≤s (s≤s (s≤s (s≤s z≤n)))))
 
@@ -119,8 +116,8 @@ gcd/rec (suc n) (x , y , h) h1 with y
   let e4 : 1 * (suc y') ≤ x / suc y' * suc y'
       e4 = *-monoˡ-≤ (suc y') e3 in
   let e5 = P.subst (λ n → n ≤ x / suc y' * suc y') (*-identityˡ (suc y')) e4 in
-  P.subst (λ n → x ≥ n) (symm (+-assoc (fib (1 + n)) (fib n) (fib (1 + n)))) (
-  P.subst (λ x → x ≥ _) (symm e1)
+  P.subst (λ n → x ≥ n) (P.sym (+-assoc (fib (1 + n)) (fib n) (fib (1 + n)))) (
+  P.subst (λ x → x ≥ _) (P.sym e1)
     (+-mono-≤ {x = fib (1 + n)} {y = x % (suc y')}
     r2 (≤-trans r1' e5))
   )), r1
