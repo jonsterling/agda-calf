@@ -3,18 +3,11 @@
 module Examples.Example where
 
 open import Calf
+open import Calf.Types.Bool
 import Relation.Binary.PropositionalEquality as P
 
-module Bool where
-  data Bool : □ where tt ff : Bool
-  postulate
-    bool : tp pos
-    bool/decode : val bool ≡ Bool
-    {-# REWRITE bool/decode #-}
-
 boolc : tp pos
-boolc = ► Bool.bool
-
+boolc = ► bool
 
 -- This version of the dependent product costs a step to apply.
 -- One thing I noticed is that this version may not quite capture what I had in mind trying to force
@@ -50,17 +43,17 @@ app α β M N =
   ▷/match (F [ β ]) (f x) (λ z → z)
 
 tt : ⊢ 𝔹
-tt = ret (►/ret _ Bool.tt)
+tt = ret (►/ret _ true)
 
 ff : ⊢ 𝔹
-ff = ret (►/ret _ Bool.ff)
+ff = ret (►/ret _ false)
 
 not : ⊢ 𝔹 ⇒ 𝔹
 not =
   lam 𝔹 𝔹 λ x →
   ►/match (F [ 𝔹 ]) x λ where
-    Bool.tt → ff
-    Bool.ff → tt
+    true → ff
+    false → tt
 
 notnot : ⊢ 𝔹 ⇒ 𝔹
 notnot = lam 𝔹 𝔹 (λ x → app 𝔹 𝔹 not (app 𝔹 𝔹 not (ret x)))
@@ -71,8 +64,8 @@ foo z =
   P.cong ret
    (funext
     (►/ind z λ where
-     Bool.tt → P.cong (▷/ret _) (P.trans (unstep _) (P.trans (unstep _) (P.trans (unstep _) (unstep _))))
-     Bool.ff → P.cong (▷/ret _) (P.trans (unstep _) (P.trans (unstep _) (P.trans (unstep _) (unstep _))))))
+     true → P.cong (▷/ret _) (P.trans (unstep _) (P.trans (unstep _) (P.trans (unstep _) (unstep _))))
+     false → P.cong (▷/ret _) (P.trans (unstep _) (P.trans (unstep _) (P.trans (unstep _) (unstep _))))))
 
 _ : ∀ {α β f u} → app α β (lam α β f) (ret u) ≡ step (F [ β ]) (f u)
 _ = refl

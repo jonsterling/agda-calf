@@ -11,8 +11,9 @@ open import Calf.Refinement
 open import Calf.Upper
 open import Calf.Eq
 
-open import Gcd
-open import Gcd-new
+open import Examples.Gcd
+open import Examples.Gcd-new as Gcd-new
+
 open import Data.Nat.GCD
 open import Data.Nat.DivMod
 open import Data.Nat
@@ -26,7 +27,7 @@ open import Function
 open import Data.Nat.Properties
 open import Data.Unit using (tt)
 open import Data.Product.Properties
-open import Data.Bool.Base using (Bool; false; true; not; T)
+open import Data.Bool.Base using (Bool; false; true)
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 open import Relation.Binary

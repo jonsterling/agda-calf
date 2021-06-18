@@ -3,6 +3,9 @@
 module Examples.Sorting where
 
 open import Calf
+open import Calf.Types.Bool
+open import Calf.Types.List as List
+
 open import Relation.Nullary
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
@@ -16,23 +19,6 @@ open import Data.Nat.Properties as N using (module ≤-Reasoning)
 private
   variable
     α : Set
-
-module List where
-  open import Data.List public using (List; []; _∷_; [_]; length; _++_)
-  open import Data.List.Properties public
-
-  list : tp pos → tp pos
-  list A = U (meta (List (val A)))
-
-open List
-
-module Bool where
-  open import Data.Bool public using (Bool; true; false)
-
-  bool : tp pos
-  bool = U (meta Bool)
-
-open Bool
 
 record Comparable : Set₁ where
   field
