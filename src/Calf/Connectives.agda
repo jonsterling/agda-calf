@@ -47,14 +47,14 @@ e/pair : ∀ {A B} →
 Carrier (e/pair {A} {B} cA cB) =
   Σ (Carrier cA) (λ a → Carrier (cB (bwd (rep cA) a)))
 
-fst (fwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
+proj₁ (fwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
   iso.fwd (Ext.rep cA) a
-snd (fwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
+proj₂ (fwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
   P.subst (Carrier ∘ cB) (P.sym (bwd-fwd (rep cA) a)) (fwd (rep (cB a)) b)
 
-fst (bwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
+proj₁ (bwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
   bwd (rep cA) a
-snd (bwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
+proj₂ (bwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
   bwd (rep (cB (bwd (rep cA) a))) b
 
 fwd-bwd (rep (e/pair {A} {B} cA cB)) (a , b) =

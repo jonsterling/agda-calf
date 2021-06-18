@@ -13,7 +13,7 @@ postulate
   Π/step : ∀ {A} {X : val A → tp neg} {f : cmp (Π A X)} → step (Π A X) f ≡ λ x → step (X x) (f x)
   {-# REWRITE Π/step #-}
 
-  Σ+-/step : ∀ {A} {X : val A → tp neg} {p : cmp (Σ+- A X)} → step (Σ+- A X) p ≡ (fst p , step (X (fst p)) (snd p))
+  Σ+-/step : ∀ {A} {X : val A → tp neg} {p : cmp (Σ+- A X)} → step (Σ+- A X) p ≡ (proj₁ p , step (X (proj₁ p)) (proj₂ p))
   {-# REWRITE Σ+-/step #-}
 
   -- I think this is the law that we want to forget costs when constructing elements of a computation type
