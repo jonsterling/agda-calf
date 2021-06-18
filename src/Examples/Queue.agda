@@ -3,9 +3,9 @@
 module Examples.Queue where
 
 open import Calf
-open import Calf.Nat
-open import Calf.Unit
-open import Calf.Sum
+open import Calf.Types.Nat
+open import Calf.Types.Unit
+open import Calf.Types.Sum
 
 open import Data.Nat
 open import Data.Nat.Properties

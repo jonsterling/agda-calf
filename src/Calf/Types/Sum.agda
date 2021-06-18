@@ -1,6 +1,6 @@
 {-# OPTIONS --prop --without-K --rewriting #-}
 
-module Calf.Sum where
+module Calf.Types.Sum where
 
 open import Calf.Prelude
 open import Calf.Metalanguage

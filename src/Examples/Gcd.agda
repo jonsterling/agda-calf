@@ -13,7 +13,7 @@ open import Data.Nat as Nat
 open import Calf.Connectives
 open import Function
 open import Relation.Binary.PropositionalEquality as P
-open import Calf.Nat
+open import Calf.Types.Nat
 open import Induction.WellFounded
 open import Induction
 open import Data.Nat.Properties

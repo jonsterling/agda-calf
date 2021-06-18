@@ -10,10 +10,10 @@ open import Calf.Eq
 open import Data.Nat
 open import Data.Nat.Properties
 open import Calf.Connectives
-open import Calf.Nat as Nat
+open import Calf.Types.Nat as Nat
 open import Relation.Binary.PropositionalEquality as P
 open import Function using (const)
-open import Calf.Sum
+open import Calf.Types.Sum
 
 open Ext
 open iso

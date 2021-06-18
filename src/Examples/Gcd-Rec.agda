@@ -4,7 +4,7 @@ module Examples.Gcd-Rec where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
-open import Calf.Nat
+open import Calf.Types.Nat
 open import Calf.PhaseDistinction
 open import Calf.Connectives
 open import Calf.Refinement

@@ -4,7 +4,7 @@ module Examples.Gcd-Ext where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
-open import Calf.Nat as Nat
+open import Calf.Types.Nat as Nat
 open import Calf.PhaseDistinction
 open import Calf.Connectives
 open import Calf.Refinement

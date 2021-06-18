@@ -1,6 +1,6 @@
 {-# OPTIONS --prop --rewriting #-}
 
-module Calf.Nat where
+module Calf.Types.Nat where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
