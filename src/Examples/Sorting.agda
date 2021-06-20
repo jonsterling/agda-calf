@@ -2,9 +2,13 @@
 
 module Examples.Sorting where
 
-open import Calf
-open import Calf.Types.Bool
-open import Calf.Types.List as List
+open import Calf.CostMonoids using (ℕ-CostMonoid)
+
+CostMonoid = ℕ-CostMonoid
+
+open import Calf CostMonoid
+open import Calf.Types.Bool CostMonoid
+open import Calf.Types.List CostMonoid as List
 
 open import Relation.Nullary
 open import Relation.Binary
@@ -41,7 +45,7 @@ NatComparable = record
   ; ≤-trans = ≤-trans
   ; ≤-total = ≤-total
   ; ≤-antisym = ≤-antisym
-  ; h-cost = λ _ _ → ub/step/suc 0 (ub/ret 0)
+  ; h-cost = λ _ _ → ub/step 0 1 (ub/ret 0)
   }
   where
     open import Data.Nat

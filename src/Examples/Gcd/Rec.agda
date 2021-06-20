@@ -2,14 +2,10 @@
 
 module Examples.Gcd.Rec where
 
-open import Calf.Prelude
-open import Calf.Metalanguage
-open import Calf.Types.Nat
-open import Calf.PhaseDistinction
-open import Calf.Connectives
-open import Calf.Refinement
-open import Calf.Upper
-open import Calf.Eq
+import Calf.CostMonoids as CM
+
+open import Calf CM.ℕ-CostMonoid
+open import Calf.Types.Nat CM.ℕ-CostMonoid as Nat
 
 open import Examples.Gcd.Euclid
 open import Examples.Gcd.Clocked as Clocked
@@ -17,7 +13,6 @@ open import Examples.Gcd.Clocked as Clocked
 open import Data.Nat.GCD
 open import Data.Nat.DivMod
 open import Data.Nat
-open import Data.Product
 open import Data.Nat.Induction
 open import Relation.Binary.PropositionalEquality as P
 open import Induction.WellFounded
@@ -135,7 +130,7 @@ gcd/cost/closed i@(x , y , h) = 1 + fib⁻¹ x
 gcd/cost/closed/ub : ∀ (i@(x , y , h) : m>n) → gcd/cost i ≤ gcd/cost/closed i
 gcd/cost/closed/ub i@(x , y , h) =
   let g : x < fib (1 + fib⁻¹ x)
-      g = fib-fib⁻¹ x .snd in
+      g = fib-fib⁻¹ x .proj₂ in
   let g1 : fib (1 + fib⁻¹ x) ≤ fib (2 + fib⁻¹ x)
       g1 = fib-mono-< {1 + fib⁻¹ x} {2 + fib⁻¹ x} (+-monoˡ-< (fib⁻¹ x) (s≤s (s≤s z≤n))) in
   (<⇒≤ (gcd/cost/bound _ i (<-transˡ g g1) (<-trans h g)))
