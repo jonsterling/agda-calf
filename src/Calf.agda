@@ -1,13 +1,15 @@
 {-# OPTIONS --prop --rewriting #-}
 
-module Calf where
+open import Calf.CostMonoid
 
-open import Calf.Prelude public
-open import Calf.Metalanguage public
-open import Calf.CostEffect public
-open import Calf.PhaseDistinction public
-open import Calf.Eq public
-open import Calf.Upper public
-open import Calf.Connectives public
+module Calf (CostMonoid : CostMonoid) where
 
-open import Calf.Refinement public
+open import Calf.Prelude hiding (_≡_; refl) public
+open import Calf.Metalanguage CostMonoid public
+open import Calf.CostEffect CostMonoid public
+open import Calf.PhaseDistinction CostMonoid public
+open import Calf.Eq CostMonoid public
+open import Calf.Upper CostMonoid public
+open import Calf.Connectives CostMonoid public
+
+open import Calf.Refinement CostMonoid public

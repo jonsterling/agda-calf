@@ -1,9 +1,11 @@
 {-# OPTIONS --prop --without-K --rewriting #-}
 
-module Calf.Types.Unit where
+open import Calf.CostMonoid
+
+module Calf.Types.Unit (CostMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage
+open import Calf.Metalanguage CostMonoid
 
 open import Data.Unit public using (⊤) renaming (tt to triv)
 

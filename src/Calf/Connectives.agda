@@ -1,12 +1,13 @@
 {-# OPTIONS --prop --rewriting #-}
 
-module Calf.Connectives where
+open import Calf.CostMonoid
+
+module Calf.Connectives (CostMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage
-open import Calf.PhaseDistinction
-open import Calf.Upper
-open import Data.Nat
+open import Calf.Metalanguage CostMonoid
+open import Calf.PhaseDistinction CostMonoid
+open import Calf.Upper CostMonoid
 open import Relation.Binary
 open import Level using (Level; _⊔_)
 open import Induction.WellFounded
@@ -20,11 +21,9 @@ open import Function.Bundles
 open import Induction
 import Level as L
 
-private
-  variable
-    a b c ℓ ℓ₁ ℓ₂ ℓ₃ : Level
+open CostMonoid CostMonoid
 
-bounded : (A : tp pos) → (cmp (meta ℕ)) → tp neg
+bounded : (A : tp pos) → cmp cost → tp neg
 bounded A n = Σ+- (U (F A)) λ u → ub⁻ A u n
 
 -- used for extracting the extension from a program in order to compute measure/cost
@@ -97,23 +96,23 @@ bwd-fwd (rep (e/pair {A} {B} cA cB)) (a , b) =
       r = H.icong (Carrier ∘ cB) (bwd-fwd (rep cA) a) (λ {k} z → bwd (rep (cB k)) z) q
       s = H.≡-to-≅ (bwd-fwd (rep (cB a)) b)
 
-Ψ : (A : tp pos) → (B : val A → tp pos) → (h : Ext A) → (Carrier h → ℕ) → tp neg
+Ψ : (A : tp pos) → (B : val A → tp pos) → (h : Ext A) → (Carrier h → ℂ) → tp neg
 Ψ A B h p =
   Σ+- (U(Π A (λ a → F (B a)))) λ f →
     Π A λ a → ub⁻ (B a) (f a) ((p ∘ (iso.fwd (rep h))) a)
 
-lt/cost : ∀ {A} → (h : Ext A) → (p : Carrier h → ℕ) → (val A → val A → Set)
-lt/cost h p = _<_ on (p ∘ (iso.fwd (rep h)))
+-- lt/cost : ∀ {A} → (h : Ext A) → (p : Carrier h → ℂ) → (val A → val A → Set)
+-- lt/cost h p = _<_ on (p ∘ (iso.fwd (rep h)))
 
-lt/cost/wf : ∀ {A h p} → WellFounded (lt/cost {A} h p)
-lt/cost/wf {A} {h} {p} = On.wellFounded (p ∘ (iso.fwd (rep h))) <-wellFounded
+-- lt/cost/wf : ∀ {A h p} → WellFounded (lt/cost {A} h p)
+-- lt/cost/wf {A} {h} {p} = On.wellFounded (p ∘ (iso.fwd (rep h))) <-wellFounded
 
 e/meta : ∀ A → Ext (U (meta A))
 Carrier (e/meta A) = A
 fwd (rep (e/meta A)) = id
 bwd (rep (e/meta A)) = id
-fwd-bwd (rep (e/meta A)) _ = refl
-bwd-fwd (rep (e/meta A)) _ = refl
+fwd-bwd (rep (e/meta A)) _ = P.refl
+bwd-fwd (rep (e/meta A)) _ = P.refl
 
 dom : ∀ {ℓ} {a} {A : Set a} {B : Set a} → Rel B ℓ → Rel (A → B) (a L.⊔ ℓ)
 dom {A = A} r f1 f2 = ∀ (a : A) → r (f1 a) (f2 a)

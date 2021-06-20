@@ -30,3 +30,8 @@ record iso (A B : □) : □ where
     bwd : B → A
     fwd-bwd : ∀ x → fwd (bwd x) ≡ x
     bwd-fwd : ∀ x → bwd (fwd x) ≡ x
+
+open import Level
+
+variable
+  ℓ ℓ₁ ℓ₂ : Level

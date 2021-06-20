@@ -1,9 +1,11 @@
 {-# OPTIONS --prop --without-K --rewriting #-}
 
-module Calf.Types.Bool where
+open import Calf.CostMonoid
+
+module Calf.Types.Bool (CostMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage
+open import Calf.Metalanguage CostMonoid
 
 open import Data.Bool public using (Bool; true; false)
 

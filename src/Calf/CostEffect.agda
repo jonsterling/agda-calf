@@ -2,10 +2,12 @@
 
 -- This module extends the CBPV metalanguage with effects corresponding to computational steps.
 
-module Calf.CostEffect where
+open import Calf.CostMonoid
+
+module Calf.CostEffect (CostMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage
+open import Calf.Metalanguage CostMonoid
 
 postulate
   step : ∀ X → cmp X → cmp X
