@@ -19,43 +19,49 @@ module _ {ℂ : Set} where
   open import Algebra.Structures _≈_
   open import Relation.Binary.Structures _≈_
 
+  record IsOrderedCommutativeMonoid (_∙_ : Op₂ ℂ) (ε : ℂ) (_≤_ : Rel ℂ 0ℓ) : Set where
+    field
+      isCommutativeMonoid : IsCommutativeMonoid _∙_ ε
+      isTotalPreorder     : IsTotalPreorder _≤_
+      ∙-mono-≤            : _∙_ Preserves₂ _≤_ ⟶ _≤_ ⟶ _≤_
+
+    open IsCommutativeMonoid isCommutativeMonoid public
+      using (identityˡ; identityʳ)
+      renaming (comm to ∙-comm)
+    open IsTotalPreorder isTotalPreorder public
+      using ()
+      renaming (refl to ≤-refl; trans to ≤-trans)
+
+    ∙-monoˡ-≤ : ∀ n → (_∙ n) Preserves _≤_ ⟶ _≤_
+    ∙-monoˡ-≤ n m≤o = ∙-mono-≤ m≤o (≤-refl {n})
+
+    ∙-monoʳ-≤ : ∀ n → (n ∙_) Preserves _≤_ ⟶ _≤_
+    ∙-monoʳ-≤ n m≤o = ∙-mono-≤ (≤-refl {n}) m≤o
+
   record IsCostMonoid (_+_ : Op₂ ℂ) (zero : ℂ) (_≤_ : Rel ℂ 0ℓ) : Set where
     field
-      isCommutativeMonoid : IsCommutativeMonoid _+_ zero
-      isTotalPreorder     : IsTotalPreorder _≤_
-      +-mono-≤            : _+_ Preserves₂ _≤_ ⟶ _≤_ ⟶ _≤_
-      z≤c                 : {c : ℂ} → zero ≤ c
+      isOrderedCommutativeMonoid : IsOrderedCommutativeMonoid _+_ zero _≤_
+      z≤c                        : {c : ℂ} → zero ≤ c
 
-    open IsCommutativeMonoid isCommutativeMonoid public
-      using (identityˡ; identityʳ)
-      renaming (comm to +-comm)
-    open IsTotalPreorder isTotalPreorder public
-      using ()
-      renaming (refl to ≤-refl; trans to ≤-trans)
+    open IsOrderedCommutativeMonoid isOrderedCommutativeMonoid public
+      renaming (
+        ∙-comm to +-comm;
+        ∙-mono-≤ to +-mono-≤;
+        ∙-monoˡ-≤ to +-monoˡ-≤;
+        ∙-monoʳ-≤ to +-monoʳ-≤
+      )
 
-    +-monoˡ-≤ : ∀ n → (_+ n) Preserves _≤_ ⟶ _≤_
-    +-monoˡ-≤ n m≤o = +-mono-≤ m≤o (≤-refl {n})
-
-    +-monoʳ-≤ : ∀ n → (n +_) Preserves _≤_ ⟶ _≤_
-    +-monoʳ-≤ n m≤o = +-mono-≤ (≤-refl {n}) m≤o
-
-  record IsOrderedCancellativeCommutativeMonoid (_*_ : Op₂ ℂ) (one : ℂ) (_≤_ : Rel ℂ 0ℓ) : Set where
+  record IsCancellativeOrderedCommutativeMonoid (_∙_ : Op₂ ℂ) (ε : ℂ) (_≤_ : Rel ℂ 0ℓ) : Set where
     field
-      isCommutativeMonoid : IsCommutativeMonoid _*_ one
-      isTotalPreorder     : IsTotalPreorder _≤_
-      cancel              : Cancellative _*_
+      isOrderedCommutativeMonoid : IsOrderedCommutativeMonoid _∙_ ε _≤_
+      cancel                     : Cancellative _∙_
 
-    open IsCommutativeMonoid isCommutativeMonoid public
-      using (identityˡ; identityʳ)
-      renaming (comm to *-comm)
-    open IsTotalPreorder isTotalPreorder public
-      using ()
-      renaming (refl to ≤-refl; trans to ≤-trans)
+    open IsOrderedCommutativeMonoid isOrderedCommutativeMonoid public
 
   record IsParCostMonoid (_+_ : Op₂ ℂ) (zero : ℂ) (_⊗_ : Op₂ ℂ) (one : ℂ) (_≤₊_ : Rel ℂ 0ℓ) (_≤ₓ_ : Rel ℂ 0ℓ) : Set where
     field
       isCostMonoid                           : IsCostMonoid _+_ zero _≤₊_
-      isOrderedCancellativeCommutativeMonoid : IsOrderedCancellativeCommutativeMonoid _⊗_ one _≤ₓ_
+      isCancellativeOrderedCommutativeMonoid : IsCancellativeOrderedCommutativeMonoid _⊗_ one _≤ₓ_
 
     open IsCostMonoid isCostMonoid public
       renaming (
@@ -63,11 +69,11 @@ module _ {ℂ : Set} where
         identityʳ to +-identityʳ;
         ≤-refl to ≤₊-refl
       )
-    open IsOrderedCancellativeCommutativeMonoid isOrderedCancellativeCommutativeMonoid public
+    open IsCancellativeOrderedCommutativeMonoid isCancellativeOrderedCommutativeMonoid public
       renaming (
         identityˡ to *-identityˡ;
         identityʳ to *-identityʳ;
-        *-comm to ⊗-comm;
+        ∙-comm to ⊗-comm;
         ≤-refl to ≤ₓ-refl
       )
 
