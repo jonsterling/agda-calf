@@ -10,10 +10,6 @@ open import Examples.Sorting.Comparable
 open import Relation.Binary.PropositionalEquality as Eq using (module ≡-Reasoning)
 open import Data.Nat using (ℕ)
 
-private
-  variable
-    α : Set
-
 import Examples.Sorting.InsertionSort as InsertionSort
 import Examples.Sorting.MergeSort     as MergeSort
 
