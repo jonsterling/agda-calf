@@ -18,8 +18,10 @@ open import Data.Nat.Properties as N using (module ≤-Reasoning)
 
 exp₂-slow : cmp (Π (U (meta ℕ)) λ _ → F (U (meta ℕ)))
 exp₂-slow zero = ret (suc zero)
-exp₂-slow (suc n) = bind (F (U (meta ℕ))) (exp₂-slow n & exp₂-slow n) λ (r₁ , r₂) → ret (r₁ Nat.+ r₂)
+exp₂-slow (suc n) = bind (F (U (meta ℕ))) (exp₂-slow n & exp₂-slow n) λ (r₁ , r₂) →
+  step' (F (U (meta ℕ))) (1 , 1) (ret (r₁ Nat.+ r₂))
 
 exp₂-fast : cmp (Π (U (meta ℕ)) λ _ → F (U (meta ℕ)))
 exp₂-fast zero = ret (suc zero)
-exp₂-fast (suc n) = bind (F (U (meta ℕ))) (exp₂-fast n) λ r → ret (r Nat.+ r)
+exp₂-fast (suc n) = bind (F (U (meta ℕ))) (exp₂-fast n) λ r →
+  step' (F (U (meta ℕ))) (1 , 1) (ret (r Nat.+ r))
