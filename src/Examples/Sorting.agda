@@ -4,11 +4,11 @@ module Examples.Sorting where
 
 open import Calf.CostMonoids using (ℕ-CostMonoid)
 
-CostMonoid = ℕ-CostMonoid
+costMonoid = ℕ-CostMonoid
 
-open import Calf CostMonoid
-open import Calf.Types.Bool CostMonoid
-open import Calf.Types.List CostMonoid as List
+open import Calf costMonoid
+open import Calf.Types.Bool costMonoid
+open import Calf.Types.List costMonoid as List
 
 open import Relation.Nullary
 open import Relation.Binary
