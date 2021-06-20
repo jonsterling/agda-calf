@@ -59,7 +59,7 @@ gcd/i/eq : ∀ {x x' y y' h h'} →
         (eqn : x ≡ x') →
         (eqn2 : y ≡ y') →
         _≡_ {A = m>n} (x , y , h) (x' , y' , h')
-gcd/i/eq {x} {x'} {y} {y'} {h} {h'} eqn eqn2 = Inverse.f Σ-≡,≡↔≡ (eqn , Inverse.f Σ-≡,≡↔≡ (P.trans (fst/subst eqn) eqn2 ,
+gcd/i/eq {x} {x'} {y} {y'} {h} {h'} eqn eqn2 = Inverse.f Σ-≡,≡↔≡ (eqn , Inverse.f Σ-≡,≡↔≡ (P.trans (proj₁/subst eqn) eqn2 ,
   <-irrelevant _ _))
 
 -- cost of clocked gcd is bounded by for any instantiation of the clock
