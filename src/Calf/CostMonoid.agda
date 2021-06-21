@@ -19,15 +19,14 @@ module _ {ℂ : Set} where
   open import Algebra.Structures _≈_
   open import Relation.Binary.Structures _≈_
 
-  record IsOrderedCommutativeMonoid (_∙_ : Op₂ ℂ) (ε : ℂ) (_≤_ : Rel ℂ 0ℓ) : Set where
+  record IsOrderedMonoid (_∙_ : Op₂ ℂ) (ε : ℂ) (_≤_ : Rel ℂ 0ℓ) : Set where
     field
-      isCommutativeMonoid : IsCommutativeMonoid _∙_ ε
-      isTotalPreorder     : IsTotalPreorder _≤_
-      ∙-mono-≤            : _∙_ Preserves₂ _≤_ ⟶ _≤_ ⟶ _≤_
+      isMonoid        : IsMonoid _∙_ ε
+      isTotalPreorder : IsTotalPreorder _≤_
+      ∙-mono-≤        : _∙_ Preserves₂ _≤_ ⟶ _≤_ ⟶ _≤_
 
-    open IsCommutativeMonoid isCommutativeMonoid public
+    open IsMonoid isMonoid public
       using (identityˡ; identityʳ)
-      renaming (comm to ∙-comm)
     open IsTotalPreorder isTotalPreorder public
       using ()
       renaming (refl to ≤-refl; trans to ≤-trans)
@@ -38,43 +37,44 @@ module _ {ℂ : Set} where
     ∙-monoʳ-≤ : ∀ n → (n ∙_) Preserves _≤_ ⟶ _≤_
     ∙-monoʳ-≤ n m≤o = ∙-mono-≤ (≤-refl {n}) m≤o
 
+  record IsOrderedCommutativeMonoid (_∙_ : Op₂ ℂ) (ε : ℂ) (_≤_ : Rel ℂ 0ℓ) : Set where
+    field
+      isOrderedMonoid : IsOrderedMonoid _∙_ ε _≤_
+      ∙-comm          : Commutative _∙_
+
+    open IsOrderedMonoid isOrderedMonoid public
+
   record IsCostMonoid (_+_ : Op₂ ℂ) (zero : ℂ) (_≤_ : Rel ℂ 0ℓ) : Set where
     field
-      isOrderedCommutativeMonoid : IsOrderedCommutativeMonoid _+_ zero _≤_
-      z≤c                        : {c : ℂ} → zero ≤ c
+      isOrderedMonoid : IsOrderedMonoid _+_ zero _≤_
+      z≤c             : {c : ℂ} → zero ≤ c
 
-    open IsOrderedCommutativeMonoid isOrderedCommutativeMonoid public
+    open IsOrderedMonoid isOrderedMonoid public
       renaming (
-        ∙-comm to +-comm;
         ∙-mono-≤ to +-mono-≤;
         ∙-monoˡ-≤ to +-monoˡ-≤;
         ∙-monoʳ-≤ to +-monoʳ-≤
       )
 
-  record IsCancellativeOrderedCommutativeMonoid (_∙_ : Op₂ ℂ) (ε : ℂ) (_≤_ : Rel ℂ 0ℓ) : Set where
-    field
-      isOrderedCommutativeMonoid : IsOrderedCommutativeMonoid _∙_ ε _≤_
-      cancel                     : Cancellative _∙_
-
-    open IsOrderedCommutativeMonoid isOrderedCommutativeMonoid public
-
   record IsParCostMonoid (_⊕_ : Op₂ ℂ) (𝟘 : ℂ) (_⊗_ : Op₂ ℂ) (𝟙 : ℂ) (_≤₊_ : Rel ℂ 0ℓ) (_≤ₓ_ : Rel ℂ 0ℓ) : Set where
     field
-      isCostMonoid                           : IsCostMonoid _⊕_ 𝟘 _≤₊_
-      isCancellativeOrderedCommutativeMonoid : IsCancellativeOrderedCommutativeMonoid _⊗_ 𝟙 _≤ₓ_
+      isCostMonoid               : IsCostMonoid _⊕_ 𝟘 _≤₊_
+      isOrderedCommutativeMonoid : IsOrderedCommutativeMonoid _⊗_ 𝟙 _≤ₓ_
 
     open IsCostMonoid isCostMonoid public
       renaming (
         identityˡ to ⊕-identityˡ;
         identityʳ to ⊕-identityʳ;
-        ≤-refl to ≤₊-refl
+        ≤-refl to ≤₊-refl;
+        ≤-trans to ≤₊-trans
       )
-    open IsCancellativeOrderedCommutativeMonoid isCancellativeOrderedCommutativeMonoid public
+    open IsOrderedCommutativeMonoid isOrderedCommutativeMonoid public
       renaming (
         identityˡ to ⊗-identityˡ;
         identityʳ to ⊗-identityʳ;
         ∙-comm to ⊗-comm;
-        ≤-refl to ≤ₓ-refl
+        ≤-refl to ≤ₓ-refl;
+        ≤-trans to ≤ₓ-trans
       )
 
 record CostMonoid : Set₁ where

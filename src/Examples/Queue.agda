@@ -117,7 +117,7 @@ module FrontBack where
   rev/helper≤rev/helper/cost : ∀ l l' → ub L (rev/helper l l') (len l)
   rev/helper≤rev/helper/cost l = list/ind l (λ l → meta (∀ l' → ub L (rev/helper l l') (len l)))
     (λ l' → ub/ret 0)
-    (λ a l r → λ l' → subst (ub _ _) (+-comm _ 1) (ub/step {e = rev/helper l (cons a l')} (len l) 1 (r (cons a l'))))
+    (λ a l r → λ l' → ub/step 1 (len l) (r (cons a l')))
 
   rev/cost = len
 

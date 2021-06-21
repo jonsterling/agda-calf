@@ -45,7 +45,7 @@ NatComparable = record
   ; ≤-trans = ≤-trans
   ; ≤-total = ≤-total
   ; ≤-antisym = ≤-antisym
-  ; h-cost = λ _ _ → ub/step 0 1 (ub/ret 0)
+  ; h-cost = λ _ _ → ub/step 1 0 (ub/ret 0)
   }
   where
     open import Data.Nat
@@ -162,15 +162,16 @@ module InsertionSort (M : Comparable) where
     ub/intro _ (N.≤-trans q≤1 (s≤s z≤n)) (ret (eq/intro refl))
   ... | ub/intro {q = q} false q≤1 h-eq rewrite eq/ref h-eq =
     ub/relax
-      (begin
-        length ys + q + 0
-      ≡⟨ N.+-identityʳ _ ⟩
-        length ys + q
-      ≡⟨ N.+-comm (length ys) q ⟩
-        q + length ys
-      ≤⟨ N.+-monoˡ-≤ _ q≤1 ⟩
-        suc (length ys)
-      ∎)
+      ?
+      -- (begin
+      --   length ys + q + 0
+      -- ≡⟨ N.+-identityʳ _ ⟩
+      --   length ys + q
+      -- ≡⟨ N.+-comm (length ys) q ⟩
+      --   q + length ys
+      -- ≤⟨ N.+-monoˡ-≤ _ q≤1 ⟩
+      --   suc (length ys)
+      -- ∎)
       (ub/bind/const _ _ (ub/step (length ys) q (insert≤insert/cost x ys)) λ _ → ub/ret zero)
       where open ≤-Reasoning
 

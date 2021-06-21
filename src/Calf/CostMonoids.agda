@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --without-K --rewriting #-}
+{-# OPTIONS --prop --without-K --rewriting --allow-unsolved-metas #-}
 
 -- Common cost monoids.
 
@@ -14,8 +14,8 @@ open import Data.Product
   ; zero = zero
   ; _≤_ = _≤_
   ; isCostMonoid = record
-    { isOrderedCommutativeMonoid = record
-      { isCommutativeMonoid = +-0-isCommutativeMonoid
+    { isOrderedMonoid = record
+      { isMonoid = +-0-isMonoid
       ; isTotalPreorder = ≤-isTotalPreorder
       ; ∙-mono-≤ = +-mono-≤
       }
@@ -38,24 +38,21 @@ open import Data.Product
   ; _≤ₓ_ = λ (_ , s₁) (_ , s₂) → s₁ ≤ s₂
   ; isParCostMonoid = record
       { isCostMonoid = record
-        { isOrderedCommutativeMonoid = record
-          { isCommutativeMonoid = record
-            { isMonoid = record
-              { isSemigroup = record
-                { isMagma = record
-                  { isEquivalence = isEquivalence
-                  ; ∙-cong = λ h₁ h₂ →
-                      cong₂ _,_
-                        (cong₂ _+_ (cong proj₁ h₁) (cong proj₁ h₂))
-                        (cong₂ _+_ (cong proj₂ h₁) (cong proj₂ h₂))
-                  }
-                ; assoc = λ (w₁ , s₁) (w₂ , s₂) (w₃ , s₃) → cong₂ _,_ (+-assoc w₁ w₂ w₃) (+-assoc s₁ s₂ s₃)
+        { isOrderedMonoid = record
+          { isMonoid = record
+            { isSemigroup = record
+              { isMagma = record
+                { isEquivalence = isEquivalence
+                ; ∙-cong = λ h₁ h₂ →
+                    cong₂ _,_
+                      (cong₂ _+_ (cong proj₁ h₁) (cong proj₁ h₂))
+                      (cong₂ _+_ (cong proj₂ h₁) (cong proj₂ h₂))
                 }
-              ; identity =
-                  (λ (w , s) → cong₂ _,_ (+-identityˡ w) (+-identityˡ s)) ,
-                  (λ (w , s) → cong₂ _,_ (+-identityʳ w) (+-identityʳ s))
+              ; assoc = λ (w₁ , s₁) (w₂ , s₂) (w₃ , s₃) → cong₂ _,_ (+-assoc w₁ w₂ w₃) (+-assoc s₁ s₂ s₃)
               }
-            ; comm = λ (w₁ , s₁) (w₂ , s₂) → cong₂ _,_ (+-comm w₁ w₂) (+-comm s₁ s₂) 
+            ; identity =
+                (λ (w , s) → cong₂ _,_ (+-identityˡ w) (+-identityˡ s)) ,
+                (λ (w , s) → cong₂ _,_ (+-identityʳ w) (+-identityʳ s))
             }
           ; isTotalPreorder = record
             { isPreorder = record
@@ -69,25 +66,22 @@ open import Data.Product
           }
         ; z≤c = z≤n
         }
-      ; isCancellativeOrderedCommutativeMonoid = record
-        { isOrderedCommutativeMonoid = record
-          { isCommutativeMonoid = record
-            { isMonoid = record
-              { isSemigroup = record
-                { isMagma = record
-                  { isEquivalence = isEquivalence
-                  ; ∙-cong = λ h₁ h₂ →
-                      cong₂ _,_
-                        (cong₂ _+_ (cong proj₁ h₁) (cong proj₁ h₂))
-                        (cong₂ _⊔_ (cong proj₂ h₁) (cong proj₂ h₂))
-                  }
-                ; assoc = λ (w₁ , s₁) (w₂ , s₂) (w₃ , s₃) → cong₂ _,_ (+-assoc w₁ w₂ w₃) (⊔-assoc s₁ s₂ s₃)
+      ; isOrderedCommutativeMonoid = record
+        { isOrderedMonoid = record
+          { isMonoid = record
+            { isSemigroup = record
+              { isMagma = record
+                { isEquivalence = isEquivalence
+                ; ∙-cong = λ h₁ h₂ →
+                    cong₂ _,_
+                      (cong₂ _+_ (cong proj₁ h₁) (cong proj₁ h₂))
+                      (cong₂ _⊔_ (cong proj₂ h₁) (cong proj₂ h₂))
                 }
-              ; identity =
-                  (λ (w , s) → cong₂ _,_ (+-identityˡ w) (⊔-identityˡ s)) ,
-                  (λ (w , s) → cong₂ _,_ (+-identityʳ w) (⊔-identityʳ s))
+              ; assoc = λ (w₁ , s₁) (w₂ , s₂) (w₃ , s₃) → cong₂ _,_ (+-assoc w₁ w₂ w₃) (⊔-assoc s₁ s₂ s₃)
               }
-            ; comm = λ (w₁ , s₁) (w₂ , s₂) → cong₂ _,_ (+-comm w₁ w₂) (⊔-comm s₁ s₂)
+            ; identity =
+                (λ (w , s) → cong₂ _,_ (+-identityˡ w) (⊔-identityˡ s)) ,
+                (λ (w , s) → cong₂ _,_ (+-identityʳ w) (⊔-identityʳ s))
             }
           ; isTotalPreorder = record
             { isPreorder = record
@@ -99,9 +93,7 @@ open import Data.Product
             }
           ; ∙-mono-≤ = ⊔-mono-≤
           }
-        ; cancel =
-            (λ (w , s) h → cong₂ _,_ (+-cancelˡ-≡ w (cong proj₁ h)) {!  !}) ,
-            (λ (w₁ , s₁) (w₂ , s₂) h → cong₂ _,_ (+-cancelʳ-≡ w₁ w₂ (cong proj₁ h)) {!   !})
+        ; ∙-comm = λ (w₁ , s₁) (w₂ , s₂) → cong₂ _,_ (+-comm w₁ w₂) (⊔-comm s₁ s₂)
         }
       }
   }

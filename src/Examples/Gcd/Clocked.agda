@@ -84,7 +84,7 @@ gcd/clocked≤gcd/cost (suc k) i@(x , y , z) rewrite gcd/cost-unfold' i =
                     (m%n<n' (toℕ x) _ tt)
             in gcd/clocked k (succ y' , z , h2)
       }} (gcd/cost (suc (toℕ y') , toℕ x % suc (toℕ y') , m%n<n (toℕ x) (toℕ y')))
-  (ub/step 0 1 (ub/ret 0))
+  (ub/step 1 0 (ub/ret 0))
   λ {(z , eqn2) →
   let h2 = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2) (m%n<n' (toℕ x) (toℕ (succ y')) tt) in
   let g = gcd/clocked≤gcd/cost k (succ y' , z , h2) in

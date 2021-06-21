@@ -27,11 +27,11 @@ ub/ret : ∀ {A a} (c : ℂ) → ub A (ret {A} a) c
 ub/ret {A} {a} c = ub/intro {q = zero} a z≤c (ret {eq _ _ _} (eq/intro refl))
 
 ub/step : ∀ {A e} (p q : ℂ) →
-  ub A e p →
-  ub A (step' (F A) q e) (p + q)
-ub/step p q (ub/intro {q = q1} a h1 h2) with eq/ref h2 | p + q | +-comm p q
-...                                              | refl | _ | refl =
-   ub/intro {q = q + q1} a (+-monoʳ-≤ q h1) (ret {eq _ _ _} (eq/intro refl))
+  ub A e q →
+  ub A (step' (F A) p e) (p + q)
+ub/step p q (ub/intro {q = q1} a h1 h2) with eq/ref h2
+...                                              | refl =
+   ub/intro {q = p + q1} a (+-monoʳ-≤ p h1) (ret {eq _ _ _} (eq/intro refl))
 
 ub/bind : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
   (p : ℂ) (q : val A → ℂ) →
