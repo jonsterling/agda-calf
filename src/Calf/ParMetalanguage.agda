@@ -4,11 +4,13 @@
 
 open import Calf.CostMonoid
 
-module Calf.ParMetalanguage (ParCostMonoid : ParCostMonoid) where
+module Calf.ParMetalanguage (parCostMonoid : ParCostMonoid) where
+
+open ParCostMonoid parCostMonoid
 
 open import Calf.Prelude
-open ParCostMonoid ParCostMonoid
-open import Calf.Metalanguage costMonoid public
+open import Calf.Metalanguage
+open import Calf.Step (OrderedMonoid.monoid (CostMonoid.orderedMonoid costMonoid))
 
 postulate
   -- negative product

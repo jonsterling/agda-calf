@@ -2,14 +2,15 @@
 
 module Examples.Queue where
 
+open import Calf.CostMonoid
 open import Calf.CostMonoids using (ℕ-CostMonoid)
 
 costMonoid = ℕ-CostMonoid
 
 open import Calf costMonoid
-open import Calf.Types.Nat costMonoid
-open import Calf.Types.Unit costMonoid
-open import Calf.Types.Sum costMonoid
+open import Calf.Types.Nat (CostMonoid.orderedMonoid costMonoid)
+open import Calf.Types.Unit
+open import Calf.Types.Sum
 
 open import Data.Nat
 open import Data.Nat.Properties

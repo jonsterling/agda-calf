@@ -14,7 +14,6 @@ open import Calf.Upper orderedMonoid
 open import Calf.Eq
 open import Calf.Connectives
 
-open import Data.Nat as ℕ using (ℕ; suc)
 open import Calf.Types.Nat orderedMonoid as Nat hiding (zero)
 open import Calf.Types.Sum
 

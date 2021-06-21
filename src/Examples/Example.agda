@@ -5,7 +5,7 @@ module Examples.Example where
 import Calf.CostMonoids as CM
 
 open import Calf CM.ℕ-CostMonoid
-open import Calf.Types.Bool CM.ℕ-CostMonoid
+open import Calf.Types.Bool
 
 open import Relation.Binary.PropositionalEquality as P using (_≡_; refl)
 
@@ -63,12 +63,12 @@ notnot = lam 𝔹 𝔹 (λ x → app 𝔹 𝔹 not (app 𝔹 𝔹 not (ret x)))
 
 foo : ◯ (notnot ≡ lam 𝔹 𝔹 (λ x → ret x))
 foo z =
-  let unstep = λ x → step'/ext (F boolc) x 1 z in
+  let unstep = λ x → step/ext (F boolc) x z in
   P.cong ret
    (funext
     (►/ind z λ where
      true → P.cong (▷/ret _) (P.trans (unstep _) (P.trans (unstep _) (P.trans (unstep _) (unstep _))))
      false → P.cong (▷/ret _) (P.trans (unstep _) (P.trans (unstep _) (P.trans (unstep _) (unstep _))))))
 
-_ : ∀ {α β f u} → app α β (lam α β f) (ret u) ≡ step' (F [ β ]) 1 (f u)
+_ : ∀ {α β f u} → app α β (lam α β f) (ret u) ≡ step (F [ β ]) (f u)
 _ = refl

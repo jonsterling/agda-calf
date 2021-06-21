@@ -2,10 +2,11 @@
 
 module Examples.Gcd.Clocked where
 
+open import Calf.CostMonoid
 import Calf.CostMonoids as CM
 
 open import Calf CM.ℕ-CostMonoid
-open import Calf.Types.Nat CM.ℕ-CostMonoid
+open import Calf.Types.Nat (CostMonoid.orderedMonoid CM.ℕ-CostMonoid)
 
 open import Data.Nat as Nat
 open import Function

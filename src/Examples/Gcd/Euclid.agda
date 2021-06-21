@@ -2,13 +2,13 @@
 
 module Examples.Gcd.Euclid where
 
+open import Calf.CostMonoid
 import Calf.CostMonoids as CM
-
 
 {- This file defines the parameters of the analysis of Euclid's algorithm for gcd
    and its cost recurrence relation. -}
 open import Calf CM.ℕ-CostMonoid
-open import Calf.Types.Nat CM.ℕ-CostMonoid as Nat
+open import Calf.Types.Nat (CostMonoid.orderedMonoid CM.ℕ-CostMonoid) as Nat
 open import Data.Nat
 open import Function
 open import Relation.Binary.PropositionalEquality as P

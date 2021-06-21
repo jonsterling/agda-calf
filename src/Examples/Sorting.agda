@@ -7,8 +7,8 @@ open import Calf.CostMonoids using (ℕ-CostMonoid)
 costMonoid = ℕ-CostMonoid
 
 open import Calf costMonoid
-open import Calf.Types.Bool costMonoid
-open import Calf.Types.List costMonoid as List
+open import Calf.Types.Bool
+open import Calf.Types.List as List
 
 open import Relation.Nullary
 open import Relation.Binary
