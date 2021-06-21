@@ -2,7 +2,7 @@
 
 module Examples.Queue where
 
-open import Calf
+open import Calf hiding (cost)
 open import Calf.Types.Nat
 open import Calf.Types.Unit
 open import Calf.Types.Sum
