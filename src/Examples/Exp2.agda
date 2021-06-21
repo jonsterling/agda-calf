@@ -20,11 +20,6 @@ open import Data.Nat.Properties as N using (module ≤-Reasoning)
 Correct : cmp (Π (U (meta ℕ)) λ _ → F (U (meta ℕ))) → Set
 Correct exp₂ = (n : ℕ) → ◯ (exp₂ n ≡ ret (2 ^ n))
 
-exp₂-slow : cmp (Π (U (meta ℕ)) λ _ → F (U (meta ℕ)))
-exp₂-slow zero = ret (suc zero)
-exp₂-slow (suc n) = bind (F (U (meta ℕ))) (exp₂-slow n & exp₂-slow n) λ (r₁ , r₂) →
-  step' (F (U (meta ℕ))) (1 , 1) (ret (r₁ + r₂))
-
 lemma/2^suc : ∀ n → 2 ^ n + 2 ^ n ≡ 2 ^ suc n
 lemma/2^suc n =
   begin
@@ -39,6 +34,11 @@ lemma/2^suc n =
     2 ^ suc n
   ∎
     where open ≡-Reasoning
+
+exp₂-slow : cmp (Π (U (meta ℕ)) λ _ → F (U (meta ℕ)))
+exp₂-slow zero = ret (suc zero)
+exp₂-slow (suc n) = bind (F (U (meta ℕ))) (exp₂-slow n & exp₂-slow n) λ (r₁ , r₂) →
+  step' (F (U (meta ℕ))) (1 , 1) (ret (r₁ + r₂))
 
 exp₂-slow/correct : Correct exp₂-slow
 exp₂-slow/correct zero    u = refl
