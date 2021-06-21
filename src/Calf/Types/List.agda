@@ -2,10 +2,10 @@
 
 open import Calf.CostMonoid
 
-module Calf.Types.List (CostMonoid : CostMonoid) where
+module Calf.Types.List (costMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage CostMonoid
+open import Calf.Metalanguage costMonoid
 
 open import Data.List public using (List; []; _∷_; [_]; length; _++_)
 open import Data.List.Properties public

@@ -2,10 +2,10 @@
 
 open import Calf.CostMonoid
 
-module Calf.Types.Bool (CostMonoid : CostMonoid) where
+module Calf.Types.Bool (costMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage CostMonoid
+open import Calf.Metalanguage costMonoid
 
 open import Data.Bool public using (Bool; true; false)
 

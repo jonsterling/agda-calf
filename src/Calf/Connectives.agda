@@ -2,12 +2,12 @@
 
 open import Calf.CostMonoid
 
-module Calf.Connectives (CostMonoid : CostMonoid) where
+module Calf.Connectives (costMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage CostMonoid
-open import Calf.PhaseDistinction CostMonoid
-open import Calf.Upper CostMonoid
+open import Calf.Metalanguage costMonoid
+open import Calf.PhaseDistinction costMonoid
+open import Calf.Upper costMonoid
 open import Relation.Binary
 open import Level using (Level; _⊔_)
 open import Induction.WellFounded
@@ -21,7 +21,7 @@ open import Function.Bundles
 open import Induction
 import Level as L
 
-open CostMonoid CostMonoid
+open CostMonoid costMonoid
 
 bounded : (A : tp pos) → cmp cost → tp neg
 bounded A n = Σ+- (U (F A)) λ u → ub⁻ A u n

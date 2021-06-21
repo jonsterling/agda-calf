@@ -2,10 +2,10 @@
 
 open import Calf.CostMonoid
 
-module Calf.Types.Sum (CostMonoid : CostMonoid) where
+module Calf.Types.Sum (costMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage CostMonoid
+open import Calf.Metalanguage costMonoid
 
 open import Data.Sum using (_⊎_; inj₁; inj₂) public
 

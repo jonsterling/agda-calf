@@ -2,12 +2,12 @@
 
 open import Calf.CostMonoid
 
-module Calf.Upper (CostMonoid : CostMonoid) where
+module Calf.Upper (costMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage CostMonoid
-open import Calf.PhaseDistinction CostMonoid
-open import Calf.Eq CostMonoid
+open import Calf.Metalanguage costMonoid
+open import Calf.PhaseDistinction costMonoid
+open import Calf.Eq costMonoid
 
 open CostMonoid CostMonoid
 

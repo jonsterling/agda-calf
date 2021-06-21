@@ -4,10 +4,10 @@
 
 open import Calf.CostMonoid
 
-module Calf.Metalanguage (CostMonoid : CostMonoid) where
+module Calf.Metalanguage (costMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open CostMonoid CostMonoid
+open CostMonoid costMonoid
 
 postulate
   mode : □

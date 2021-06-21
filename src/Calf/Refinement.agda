@@ -2,23 +2,23 @@
 
 open import Calf.CostMonoid
 
-module Calf.Refinement (CostMonoid : CostMonoid) where
+module Calf.Refinement (costMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage CostMonoid
-open import Calf.PhaseDistinction CostMonoid
-open import Calf.Upper CostMonoid
-open import Calf.Eq CostMonoid
+open import Calf.Metalanguage costMonoid
+open import Calf.PhaseDistinction costMonoid
+open import Calf.Upper costMonoid
+open import Calf.Eq costMonoid
 open import Calf.Connectives
 
 open import Data.Nat as ℕ using (ℕ; suc)
-open import Calf.Types.Nat CostMonoid as Nat hiding (zero)
-open import Calf.Types.Sum CostMonoid
+open import Calf.Types.Nat costMonoid as Nat hiding (zero)
+open import Calf.Types.Sum costMonoid
 
 open import Relation.Binary.PropositionalEquality as P
 open import Function using (const)
 
-open CostMonoid CostMonoid
+open CostMonoid costMonoid
 
 open Ext
 open iso
