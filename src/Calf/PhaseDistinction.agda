@@ -7,7 +7,8 @@ open import Calf.CostMonoid
 module Calf.PhaseDistinction (costMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage costMonoid
+open import Calf.Metalanguage
+open import Calf.Step costMonoid
 open import Calf.CostEffect costMonoid
 
 open CostMonoid costMonoid

@@ -2,11 +2,10 @@
 
 open import Calf.CostMonoid
 
-module Calf.Eq (costMonoid : CostMonoid) where
+module Calf.Eq where
 
 open import Calf.Prelude
-open import Calf.Metalanguage costMonoid
-open import Calf.PhaseDistinction costMonoid
+open import Calf.Metalanguage
 
 postulate
   eq : (A : tp pos) → val A → val A → tp pos

@@ -5,11 +5,12 @@ open import Calf.CostMonoid
 module Calf.Upper (costMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage costMonoid
+open import Calf.Metalanguage
+open import Calf.Step costMonoid
 open import Calf.PhaseDistinction costMonoid
-open import Calf.Eq costMonoid
+open import Calf.Eq
 
-open CostMonoid CostMonoid
+open CostMonoid costMonoid
 
 -- postulate
 --   le/ext : ◯ (cmp (F nat)) → ◯ (cmp (F nat)) → tp neg

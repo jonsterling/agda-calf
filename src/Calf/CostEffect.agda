@@ -7,7 +7,7 @@ open import Calf.CostMonoid
 module Calf.CostEffect (costMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage costMonoid
+open import Calf.Metalanguage
 
 postulate
   step : ∀ X → cmp X → cmp X

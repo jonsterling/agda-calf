@@ -2,10 +2,10 @@
 
 open import Calf.CostMonoid
 
-module Calf.Types.Unit (costMonoid : CostMonoid) where
+module Calf.Types.Unit where
 
 open import Calf.Prelude
-open import Calf.Metalanguage costMonoid
+open import Calf.Metalanguage
 
 open import Data.Unit public using (⊤) renaming (tt to triv)
 

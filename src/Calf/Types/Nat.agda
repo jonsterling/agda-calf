@@ -5,10 +5,10 @@ open import Calf.CostMonoid
 module Calf.Types.Nat (costMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage costMonoid
+open import Calf.Metalanguage
 open import Calf.PhaseDistinction costMonoid
 open import Calf.Upper costMonoid
-open import Calf.Eq costMonoid
+open import Calf.Eq
 open import Calf.Connectives costMonoid
 open import Data.Nat as Nat using (ℕ ; _+_)
 open import Function
