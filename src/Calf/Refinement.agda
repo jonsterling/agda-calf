@@ -4,22 +4,22 @@ open import Calf.CostMonoid
 
 module Calf.Refinement (costMonoid : CostMonoid) where
 
+open CostMonoid costMonoid
+
 open import Calf.Prelude
 open import Calf.Metalanguage
-open import Calf.Step costMonoid
-open import Calf.PhaseDistinction costMonoid
-open import Calf.Upper costMonoid
+open import Calf.Step (OrderedMonoid.monoid orderedMonoid)
+open import Calf.PhaseDistinction orderedMonoid
+open import Calf.Upper orderedMonoid
 open import Calf.Eq
 open import Calf.Connectives
 
 open import Data.Nat as ℕ using (ℕ; suc)
-open import Calf.Types.Nat costMonoid as Nat hiding (zero)
+open import Calf.Types.Nat orderedMonoid as Nat hiding (zero)
 open import Calf.Types.Sum
 
 open import Relation.Binary.PropositionalEquality as P
 open import Function using (const)
-
-open CostMonoid costMonoid
 
 open Ext
 open iso

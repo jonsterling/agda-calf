@@ -16,7 +16,7 @@ module _ {ℂ : Set} where
   _≈_ = _≡_
 
   open import Algebra.Definitions _≈_
-  open import Algebra.Structures _≈_
+  open import Algebra.Structures _≈_ public
   open import Relation.Binary.Structures _≈_
 
   record IsOrderedMonoid (_∙_ : Op₂ ℂ) (ε : ℂ) (_≤_ : Rel ℂ 0ℓ) : Set where
@@ -77,6 +77,33 @@ module _ {ℂ : Set} where
         ≤-trans to ≤ₓ-trans
       )
 
+record Monoid : Set₁ where
+  field
+    ℂ        : Set
+    _∙_      : Op₂ ℂ
+    ε        : ℂ
+    isMonoid : IsMonoid _∙_ ε
+
+  open IsMonoid isMonoid public
+
+record OrderedMonoid : Set₁ where
+  field
+    ℂ               : Set
+    _∙_             : Op₂ ℂ
+    ε               : ℂ
+    _≤_             : Rel ℂ 0ℓ
+    isOrderedMonoid : IsOrderedMonoid _∙_ ε _≤_
+
+  open IsOrderedMonoid isOrderedMonoid public
+
+  monoid : Monoid
+  monoid = record
+    { ℂ = ℂ
+    ; _∙_ = _∙_
+    ; ε = ε
+    ; isMonoid = isMonoid
+    }
+
 record CostMonoid : Set₁ where
   field
     ℂ            : Set
@@ -86,6 +113,14 @@ record CostMonoid : Set₁ where
     isCostMonoid : IsCostMonoid _+_ zero _≤_
 
   open IsCostMonoid isCostMonoid public
+
+  orderedMonoid : OrderedMonoid
+  orderedMonoid = record
+    { ℂ = ℂ
+    ; _∙_ = _+_
+    ; ε = zero
+    ; isOrderedMonoid = isOrderedMonoid
+    }
 
 record ParCostMonoid : Set₁ where
   field

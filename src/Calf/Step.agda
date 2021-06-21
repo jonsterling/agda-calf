@@ -4,9 +4,10 @@
 
 open import Calf.CostMonoid
 
-module Calf.Step (costMonoid : CostMonoid) where
+module Calf.Step (monoid : Monoid) where
 
-open CostMonoid costMonoid
+open Monoid monoid
+  renaming (_∙_ to _+_; ε to zero)
 
 open import Calf.Prelude
 open import Calf.Metalanguage
