@@ -6,7 +6,7 @@ open import Calf.Prelude
 open import Calf.Metalanguage
 open import Calf.Types.Nat as Nat
 open import Calf.PhaseDistinction
-open import Calf.Connectives
+open import Calf.BoundedFunction
 open import Calf.Refinement
 open import Calf.Upper
 open import Calf.Eq

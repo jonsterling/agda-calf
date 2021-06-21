@@ -8,7 +8,7 @@ open import Calf.PhaseDistinction
 open import Calf.Upper
 open import Calf.Eq
 open import Data.Nat as Nat
-open import Calf.Connectives
+open import Calf.BoundedFunction
 open import Function
 open import Relation.Binary.PropositionalEquality as P
 open import Calf.Types.Nat
@@ -97,7 +97,7 @@ gcd/clocked≤gcd/cost (suc k) i@(x , y , z) rewrite gcd/cost-unfold' i =
   let h6 = P.subst (λ cost → ub nat (gcd/clocked k (succ y' , z , h2)) (gcd/cost cost)) h5 h4 in
   h6 }
 
-gcd : cmp (Ψ gcd/i (λ { _ → nat }) e/gcd gcd/cost)
+gcd : cmp (Ψ gcd/i (λ { _ → nat }) (gcd/cost ∘ to-ext))
 gcd = gcd/code ,
       λ { (x , y , h) →
           iso.fwd ub⁻/decode

@@ -9,13 +9,12 @@ open import Calf.Upper
 open import Calf.Eq
 open import Data.Nat
 open import Data.Nat.Properties
-open import Calf.Connectives
+open import Calf.BoundedFunction
 open import Calf.Types.Nat as Nat
 open import Relation.Binary.PropositionalEquality as P
 open import Function using (const)
 open import Calf.Types.Sum
 
-open Ext
 open iso
 
 ub/ret : ∀ {A a} (n : ℕ) → ub A (ret {A} a) n
