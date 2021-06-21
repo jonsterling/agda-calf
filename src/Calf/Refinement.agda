@@ -23,8 +23,8 @@ open CostMonoid CostMonoid
 open Ext
 open iso
 
-ub/ret : ∀ {A a} (c : ℂ) → ub A (ret {A} a) c
-ub/ret {A} {a} c = ub/intro {q = zero} a z≤c (ret {eq _ _ _} (eq/intro refl))
+ub/ret : ∀ {A a} → ub A (ret {A} a) zero
+ub/ret {A} {a} = ub/intro {q = zero} a ≤-refl (ret {eq _ _ _} (eq/intro refl))
 
 ub/step : ∀ {A e} (p q : ℂ) →
   ub A e q →

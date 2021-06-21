@@ -93,7 +93,7 @@ module FrontBack where
   enq (f , b) x = ret (f , cons x b)
 
   enq≤0 : ∀ q x → ub Q (enq q x) 0
-  enq≤0 q x = ub/ret 0
+  enq≤0 q x = ub/ret
 
   rev/helper : cmp (Π L λ _ → Π L λ _ → F L)
   rev/helper l = list/ind l (λ _ → Π L λ _ → F L)
@@ -116,7 +116,7 @@ module FrontBack where
 
   rev/helper≤rev/helper/cost : ∀ l l' → ub L (rev/helper l l') (len l)
   rev/helper≤rev/helper/cost l = list/ind l (λ l → meta (∀ l' → ub L (rev/helper l l') (len l)))
-    (λ l' → ub/ret 0)
+    (λ l' → ub/ret)
     (λ a l r → λ l' → ub/step 1 (len l) (r (cons a l')))
 
   rev/cost = len
@@ -186,7 +186,7 @@ module FrontBack where
 
     where
     emp/emp : ub deq-tp (deq (nil , nil)) (deq/cost (nil , nil))
-    emp/emp rewrite rev/unfold nil = ub/ret 0
+    emp/emp rewrite rev/unfold nil = ub/ret
 
     emp/cons : ∀ a l → ub deq-tp (deq (nil , cons a l)) (deq/cost (nil , cons a l))
     emp/cons a l with rev≤rev/cost (cons a l)
@@ -196,7 +196,7 @@ module FrontBack where
             g l = list/ind l
                   (λ l → meta (n ≤ len l → ub deq-tp (bind (F deq-tp) (step' (F L) n (ret l)) deq/emp) (1 + len l)))
                   (λ h → let h1 = n≤0⇒n≡0 h in
-                   P.subst (λ n → ub deq-tp (step' (F deq-tp) n (ret (inj₁ triv))) 1) (P.sym h1) (ub/ret 1))
+                   P.subst (λ n → ub deq-tp (step' (F deq-tp) n (ret (inj₁ triv))) 1) (P.sym h1) (ub/relax z≤n ub/ret))
                   (λ a l ih → λ h → ub/intro {q = n + 1} (inj₂ ((l , nil) , a))
                     (begin
                     n + 1 ≤⟨ +-monoˡ-≤ 1 h  ⟩
@@ -287,8 +287,8 @@ module FrontBack where
     (λ { (q , x) → ret q }))} (op/cost op/deq q) 0
     (P.subst (λ x → ub deq-tp (deq q) x) (deq/cost≡cost/deq q) (deq≤deq/cost q))
     λ a → ub/sum/case/const/const unit ((Σ++ Q λ _ → nat)) (λ _ → Q) a ((λ _ → ret (nil , nil))) (λ { (q , x) → ret q }) 0
-    (λ _ → ub/ret 0)
-    (λ _ → ub/ret 0)
+    (λ _ → ub/ret)
+    (λ _ → ub/ret)
 
   -- is/acost o k when for any state q, k suffices for the cost of o on q and the difference in the potential.
   is/acost :  op → ℕ → Set
@@ -308,7 +308,7 @@ module FrontBack where
 
   -- Cost of a sequence computation is bounded by the sum of cost of the constituents.
   operate/seq≤cost/seq : ∀ l q → ub Q (l operate/seq q) (cost/seq l q)
-  operate/seq≤cost/seq [] q0 = ub/ret 0
+  operate/seq≤cost/seq [] q0 = ub/ret
   operate/seq≤cost/seq (o ∷ os) q = ub/bind {A = Q} {e = o operate q} {f = λ q → os operate/seq q}
    (op/cost o q) (cost/seq os) (op≤cost o q) λ q → operate/seq≤cost/seq os q
 
