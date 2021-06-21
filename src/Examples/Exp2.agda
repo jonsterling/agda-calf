@@ -88,3 +88,14 @@ exp₂-fast/correct (suc n) u =
     ret (2 ^ suc n)
   ∎
     where open ≡-Reasoning
+
+slow≡fast : ◯ (exp₂-slow ≡ exp₂-fast)
+slow≡fast u = funext λ n →
+  begin
+    exp₂-slow n
+  ≡⟨ exp₂-slow/correct n u ⟩
+    ret (2 ^ n)
+  ≡˘⟨ exp₂-fast/correct n u ⟩
+    exp₂-fast n
+  ∎
+    where open ≡-Reasoning
