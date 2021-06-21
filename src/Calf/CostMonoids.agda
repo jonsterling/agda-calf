@@ -30,10 +30,10 @@ open import Data.Product
 ℕ²-ParCostMonoid : ParCostMonoid
 ℕ²-ParCostMonoid = record
   { ℂ = ℕ × ℕ
-  ; _+_ = λ (w₁ , s₁) (w₂ , s₂) → (w₁ + w₂) , (s₁ + s₂)
-  ; zero = zero , zero
+  ; _⊕_ = λ (w₁ , s₁) (w₂ , s₂) → (w₁ + w₂) , (s₁ + s₂)
+  ; 𝟘 = zero , zero
   ; _⊗_ = λ (w₁ , s₁) (w₂ , s₂) → (w₁ + w₂) , (s₁ ⊔ s₂)
-  ; one = zero , zero
+  ; 𝟙 = zero , zero
   ; _≤₊_ = λ (w₁ , _) (w₂ , _) → w₁ ≤ w₂
   ; _≤ₓ_ = λ (_ , s₁) (_ , s₂) → s₁ ≤ s₂
   ; isParCostMonoid = record

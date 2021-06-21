@@ -58,21 +58,21 @@ module _ {ℂ : Set} where
 
     open IsOrderedCommutativeMonoid isOrderedCommutativeMonoid public
 
-  record IsParCostMonoid (_+_ : Op₂ ℂ) (zero : ℂ) (_⊗_ : Op₂ ℂ) (one : ℂ) (_≤₊_ : Rel ℂ 0ℓ) (_≤ₓ_ : Rel ℂ 0ℓ) : Set where
+  record IsParCostMonoid (_⊕_ : Op₂ ℂ) (𝟘 : ℂ) (_⊗_ : Op₂ ℂ) (𝟙 : ℂ) (_≤₊_ : Rel ℂ 0ℓ) (_≤ₓ_ : Rel ℂ 0ℓ) : Set where
     field
-      isCostMonoid                           : IsCostMonoid _+_ zero _≤₊_
-      isCancellativeOrderedCommutativeMonoid : IsCancellativeOrderedCommutativeMonoid _⊗_ one _≤ₓ_
+      isCostMonoid                           : IsCostMonoid _⊕_ 𝟘 _≤₊_
+      isCancellativeOrderedCommutativeMonoid : IsCancellativeOrderedCommutativeMonoid _⊗_ 𝟙 _≤ₓ_
 
     open IsCostMonoid isCostMonoid public
       renaming (
-        identityˡ to +-identityˡ;
-        identityʳ to +-identityʳ;
+        identityˡ to ⊕-identityˡ;
+        identityʳ to ⊕-identityʳ;
         ≤-refl to ≤₊-refl
       )
     open IsCancellativeOrderedCommutativeMonoid isCancellativeOrderedCommutativeMonoid public
       renaming (
-        identityˡ to *-identityˡ;
-        identityʳ to *-identityʳ;
+        identityˡ to ⊗-identityˡ;
+        identityʳ to ⊗-identityʳ;
         ∙-comm to ⊗-comm;
         ≤-refl to ≤ₓ-refl
       )
@@ -90,21 +90,21 @@ record CostMonoid : Set₁ where
 record ParCostMonoid : Set₁ where
   field
     ℂ               : Set
-    _+_             : Op₂ ℂ
-    zero            : ℂ
+    _⊕_             : Op₂ ℂ
+    𝟘               : ℂ
     _⊗_             : Op₂ ℂ
-    one             : ℂ
+    𝟙               : ℂ
     _≤₊_            : Rel ℂ 0ℓ
     _≤ₓ_            : Rel ℂ 0ℓ
-    isParCostMonoid : IsParCostMonoid _+_ zero _⊗_ one _≤₊_ _≤ₓ_
+    isParCostMonoid : IsParCostMonoid _⊕_ 𝟘 _⊗_ 𝟙 _≤₊_ _≤ₓ_
 
   open IsParCostMonoid isParCostMonoid public
 
   costMonoid : CostMonoid
   costMonoid = record
     { ℂ = ℂ
-    ; _+_ = _+_
-    ; zero = zero
+    ; _+_ = _⊕_
+    ; zero = 𝟘
     ; _≤_ = _≤₊_
     ; isCostMonoid = isCostMonoid
     }

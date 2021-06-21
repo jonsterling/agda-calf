@@ -6,7 +6,7 @@ open import Calf.CostMonoid using (ParCostMonoid)
 open import Calf.CostMonoids using (ℕ²-ParCostMonoid)
 
 parCostMonoid = ℕ²-ParCostMonoid
-open ParCostMonoid parCostMonoid renaming (zero to 𝟘; _+_ to ⊕)
+open ParCostMonoid parCostMonoid
 
 open import Calf.Prelude
 open import Calf.ParMetalanguage parCostMonoid
