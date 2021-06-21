@@ -1,17 +1,19 @@
 {-# OPTIONS --prop --rewriting #-}
 
-open import Prelude
-open import Metalanguage
-open import PhaseDistinction
-open import Upper
-open import Eq
+module Calf.Refinement where
+
+open import Calf.Prelude
+open import Calf.Metalanguage
+open import Calf.PhaseDistinction
+open import Calf.Upper
+open import Calf.Eq
 open import Data.Nat
 open import Data.Nat.Properties
-open import Connectives
-open import Nat
+open import Calf.Connectives
+open import Calf.Types.Nat as Nat
 open import Relation.Binary.PropositionalEquality as P
 open import Function using (const)
-open import Sum
+open import Calf.Types.Sum
 
 open Ext
 open iso

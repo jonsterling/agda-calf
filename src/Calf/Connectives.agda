@@ -1,9 +1,11 @@
 {-# OPTIONS --prop --rewriting #-}
 
-open import Prelude
-open import Metalanguage
-open import PhaseDistinction
-open import Upper
+module Calf.Connectives where
+
+open import Calf.Prelude
+open import Calf.Metalanguage
+open import Calf.PhaseDistinction
+open import Calf.Upper
 open import Data.Nat
 open import Relation.Binary
 open import Level using (Level; _⊔_)
@@ -45,14 +47,14 @@ e/pair : ∀ {A B} →
 Carrier (e/pair {A} {B} cA cB) =
   Σ (Carrier cA) (λ a → Carrier (cB (bwd (rep cA) a)))
 
-fst (fwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
+proj₁ (fwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
   iso.fwd (Ext.rep cA) a
-snd (fwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
-  P.subst (Carrier ∘ cB) (symm (bwd-fwd (rep cA) a)) (fwd (rep (cB a)) b)
+proj₂ (fwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
+  P.subst (Carrier ∘ cB) (P.sym (bwd-fwd (rep cA) a)) (fwd (rep (cB a)) b)
 
-fst (bwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
+proj₁ (bwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
   bwd (rep cA) a
-snd (bwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
+proj₂ (bwd (rep (e/pair {A} {B} cA cB)) (a , b)) =
   bwd (rep (cB (bwd (rep cA) a))) b
 
 fwd-bwd (rep (e/pair {A} {B} cA cB)) (a , b) =
@@ -66,14 +68,14 @@ fwd-bwd (rep (e/pair {A} {B} cA cB)) (a , b) =
          (λ a → Carrier (cB (bwd (rep cA) a)))
          (fwd-bwd (rep cA) a)
          (P.subst (λ a → Carrier (cB a))
-          (symm (bwd-fwd (rep cA) (bwd (rep cA) a)))
+          (P.sym (bwd-fwd (rep cA) (bwd (rep cA) a)))
           (fwd (rep (cB (bwd (rep cA) a)))
            (bwd (rep (cB (bwd (rep cA) a))) b)))
 
       q =
         H.≡-subst-removable
          (λ a → Carrier (cB a))
-         (symm (bwd-fwd (rep cA) (bwd (rep cA) a)))
+         (P.sym (bwd-fwd (rep cA) (bwd (rep cA) a)))
          (fwd (rep (cB (bwd (rep cA) a)))
           (bwd (rep (cB (bwd (rep cA) a))) b))
 
@@ -89,9 +91,9 @@ bwd-fwd (rep (e/pair {A} {B} cA cB)) (a , b) =
          (bwd-fwd (rep cA) a)
          (bwd
           (rep (cB (bwd (rep cA) (fwd (rep cA) a))))
-          (P.subst (Carrier ∘ cB) (symm (bwd-fwd (rep cA) a)) (fwd (rep (cB a)) b)))
+          (P.subst (Carrier ∘ cB) (P.sym (bwd-fwd (rep cA) a)) (fwd (rep (cB a)) b)))
 
-      q = H.≡-subst-removable (Carrier ∘ cB) (symm (bwd-fwd (rep cA) a)) (fwd (rep (cB a)) b)
+      q = H.≡-subst-removable (Carrier ∘ cB) (P.sym (bwd-fwd (rep cA) a)) (fwd (rep (cB a)) b)
       r = H.icong (Carrier ∘ cB) (bwd-fwd (rep cA) a) (λ {k} z → bwd (rep (cB k)) z) q
       s = H.≡-to-≅ (bwd-fwd (rep (cB a)) b)
 

@@ -1,10 +1,10 @@
 {-# OPTIONS --prop --without-K --rewriting #-}
 
-module Prelude where
+module Calf.Prelude where
 
 open import Agda.Builtin.Equality public
 open import Agda.Builtin.Equality.Rewrite public
-open import Agda.Builtin.Sigma public
+open import Data.Product using (Σ; proj₁; proj₂; _×_; _,_; ∃) public
 
 Ω = Prop
 □ = Set
@@ -19,15 +19,6 @@ record sub (A : □) (ϕ : A → Ω) : □ where
     sub/prf : ϕ sub/wit
 
 open sub public
-
-symm : ∀ {ℓ} {A : Set ℓ} {a b : A} → a ≡ b → b ≡ a
-symm refl = refl
-
-trans : ∀ {ℓ} {A : Set ℓ} {a b c : A} → a ≡ b → b ≡ c → a ≡ c
-trans refl refl = refl
-
-cong : ∀ {ℓ ℓ′} {A : Set ℓ} {B : Set ℓ′} {a b : A} (f : A → B) → a ≡ b → f a ≡ f b
-cong f refl = refl
 
 postulate
   funext : ∀ {a b} {A : Set a} {B : A → Set b} {f g : (a : A) → B a} → (∀ x → f x ≡ g x) → f ≡ g

@@ -1,20 +1,22 @@
 {-# OPTIONS --prop --rewriting #-}
 
-open import Prelude
-open import Metalanguage
-open import PhaseDistinction
+module Examples.Id where
+
+open import Calf.Prelude
+open import Calf.Metalanguage
+open import Calf.PhaseDistinction
 open import Cost
-open import Upper
-open import Eq
+open import Calf.Upper
+open import Calf.Eq
 open import Data.Nat as Nat
-open import Connectives renaming (_⇒_[_,_] to Ψ)
+open import Calf.Connectives renaming (_⇒_[_,_] to Ψ)
 open import Function
 open import Relation.Binary.PropositionalEquality as P
 open import Num
 open import Induction.WellFounded
 open import Induction
 open import Data.Nat.Properties
-open import Refinement
+open import Calf.Refinement
 
 id/cost : ℕ → ℕ
 id/cost n = n

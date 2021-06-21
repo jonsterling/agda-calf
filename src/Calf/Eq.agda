@@ -1,8 +1,10 @@
 {-# OPTIONS --prop --without-K --rewriting #-}
 
-open import Prelude
-open import Metalanguage
-open import PhaseDistinction
+module Calf.Eq where
+
+open import Calf.Prelude
+open import Calf.Metalanguage
+open import Calf.PhaseDistinction
 
 postulate
   eq : (A : tp pos) → val A → val A → tp pos

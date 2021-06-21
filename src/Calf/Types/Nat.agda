@@ -1,12 +1,14 @@
 {-# OPTIONS --prop --rewriting #-}
 
-open import Prelude
-open import Metalanguage
-open import PhaseDistinction
-open import Upper
-open import Eq
+module Calf.Types.Nat where
+
+open import Calf.Prelude
+open import Calf.Metalanguage
+open import Calf.PhaseDistinction
+open import Calf.Upper
+open import Calf.Eq
 open import Data.Nat as Nat using (ℕ ; _+_)
-open import Connectives
+open import Calf.Connectives
 open import Function
 open import Relation.Binary.PropositionalEquality as P
 

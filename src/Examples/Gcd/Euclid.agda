@@ -1,21 +1,23 @@
 {-# OPTIONS --prop --rewriting #-}
 
+module Examples.Gcd.Euclid where
+
 {- This file defines the parameters of the analysis of Euclid's algorithm for gcd
    and its cost recurrence relation. -}
-open import Prelude
-open import Metalanguage
-open import PhaseDistinction
-open import Upper
-open import Eq
+open import Calf.Prelude
+open import Calf.Metalanguage
+open import Calf.PhaseDistinction
+open import Calf.Upper
+open import Calf.Eq
 open import Data.Nat as Nat
-open import Connectives
+open import Calf.Connectives
 open import Function
 open import Relation.Binary.PropositionalEquality as P
-open import Nat
+open import Calf.Types.Nat
 open import Induction.WellFounded
 open import Induction
 open import Data.Nat.Properties
-open import Refinement
+open import Calf.Refinement
 open import Data.Nat.DivMod
 open import Relation.Nullary.Decidable using (False; toWitnessFalse)
 open import Data.Nat.Induction using (<-wellFounded)
@@ -120,60 +122,60 @@ e/gcd = e/pair e/nat (λ x → e/pair e/nat (λ y → e/meta (toℕ x > toℕ y)
 
 to-ext = iso.fwd (Ext.rep e/gcd)
 
-fst/subst : ∀ {a b} {A B : Set a} {C : A → B → Set b} {x y : A} {p : Σ B (λ b → C x b)} (e : x ≡ y) →
-            fst (P.subst (λ x → Σ B (λ b → C x b)) e p) ≡ fst p
-fst/subst refl = refl
+proj₁/subst : ∀ {a b} {A B : Set a} {C : A → B → Set b} {x y : A} {p : Σ B (λ b → C x b)} (e : x ≡ y) →
+            proj₁ (P.subst (λ x → Σ B (λ b → C x b)) e p) ≡ proj₁ p
+proj₁/subst refl = refl
 
-snd/subst : ∀ {a b} {A B : Set a} {C : A → B → Set b} {x y : A} {p : Σ B (λ b → C x b)} (e : x ≡ y) →
-            snd (P.subst (λ x → Σ B (λ b → C x b)) e p) ≡
-            P.subst (λ b → C y b) (symm (fst/subst e)) (P.subst (λ x → C x (fst p)) e (snd p))
-snd/subst refl = refl
+proj₂/subst : ∀ {a b} {A B : Set a} {C : A → B → Set b} {x y : A} {p : Σ B (λ b → C x b)} (e : x ≡ y) →
+            proj₂ (P.subst (λ x → Σ B (λ b → C x b)) e p) ≡
+            P.subst (λ b → C y b) (P.sym (proj₁/subst e)) (P.subst (λ x → C x (proj₁ p)) e (proj₂ p))
+proj₂/subst refl = refl
 
 to-ext-unfold : ∀ (i@(x , y , h) : val gcd/i) → to-ext (x , y , h) ≡ (toℕ x , toℕ y , h)
 to-ext-unfold i@(x , y , h) =
   Inverse.f Σ-≡,≡↔≡ (refl , Inverse.f Σ-≡,≡↔≡
-    (fst/subst (symm ( ℕ-nat x)) , ≅-to-≡
+    (proj₁/subst (P.sym ( ℕ-nat x)) , ≅-to-≡
       (H.trans (≡-subst-removable ((λ a → Ext.Carrier (e/meta  (toℕ (iso.bwd (Ext.rep e/nat) (toℕ x)) > toℕ (iso.bwd (Ext.rep e/nat) a)))))
-      ((fst/subst (symm ( ℕ-nat x)))) (snd    (P.subst     (λ a →        Ext.Carrier        (e/pair e/nat         (λ y₁ → e/meta (toℕ (iso.bwd (Ext.rep e/nat) a) > toℕ y₁))))
-           refl (snd (to-ext (x , y , h))))))
-      (let g = snd/subst {C = λ x n → n < toℕ x} {p = (toℕ y ,
-                                  P.subst (λ a → suc (toℕ a) ≤ toℕ x) (symm ( ℕ-nat y)) h)}
-                                  (symm ( ℕ-nat x)) in
+      ((proj₁/subst (P.sym ( ℕ-nat x)))) (proj₂    (P.subst     (λ a →        Ext.Carrier        (e/pair e/nat         (λ y₁ → e/meta (toℕ (iso.bwd (Ext.rep e/nat) a) > toℕ y₁))))
+           refl (proj₂ (to-ext (x , y , h))))))
+      (let g = proj₂/subst {C = λ x n → n < toℕ x} {p = (toℕ y ,
+                                  P.subst (λ a → suc (toℕ a) ≤ toℕ x) (P.sym ( ℕ-nat y)) h)}
+                                  (P.sym ( ℕ-nat x)) in
                                    H.trans (≡-to-≅ g)
                                    (H.trans
                                    (H.trans (≡-subst-removable ((λ n → n <  (toℕ x)))
-                                   ((symm (fst/subst (symm ( ℕ-nat x)))))
-                                   ((P.subst (λ x₁ → toℕ y < toℕ x₁) (symm ( ℕ-nat x))
-                                   (P.subst (λ a → suc (toℕ a) ≤ toℕ x) (symm ( ℕ-nat y)) h))))
-                                   (≡-subst-removable (λ x₁ → toℕ y < toℕ x₁) (symm ( ℕ-nat x)) (P.subst (λ a → suc (toℕ a) ≤ toℕ x) (symm ( ℕ-nat y)) h)))
-                                   (≡-subst-removable (λ a → suc (toℕ a) ≤ toℕ x) (symm ( ℕ-nat y)) h))))))
+                                   ((P.sym (proj₁/subst (P.sym ( ℕ-nat x)))))
+                                   ((P.subst (λ x₁ → toℕ y < toℕ x₁) (P.sym ( ℕ-nat x))
+                                   (P.subst (λ a → suc (toℕ a) ≤ toℕ x) (P.sym ( ℕ-nat y)) h))))
+                                   (≡-subst-removable (λ x₁ → toℕ y < toℕ x₁) (P.sym ( ℕ-nat x)) (P.subst (λ a → suc (toℕ a) ≤ toℕ x) (P.sym ( ℕ-nat y)) h)))
+                                   (≡-subst-removable (λ a → suc (toℕ a) ≤ toℕ x) (P.sym ( ℕ-nat y)) h))))))
 
 gcd/cost-unfold' : ∀ (i@(x , y , h) : val gcd/i) → gcd/cost (to-ext i) ≡
                       if {λ _ → ℕ} (toℕ y) 0
                       (λ y' → suc (gcd/cost (suc y' , toℕ x % suc y' , m%n<n (toℕ x) y')))
-gcd/cost-unfold' i@(x , y , h) rewrite symm (gcd/cost-unfold {toℕ x} {toℕ y} {h}) =
+gcd/cost-unfold' i@(x , y , h) rewrite P.sym (gcd/cost-unfold {toℕ x} {toℕ y} {h}) =
   P.cong gcd/cost {x = to-ext i} {y = (toℕ x , toℕ y , h)}
   (Inverse.f Σ-≡,≡↔≡ (refl ,
-    Inverse.f Σ-≡,≡↔≡ (fst/subst (symm ( ℕ-nat x)) ,
+    Inverse.f Σ-≡,≡↔≡ (proj₁/subst (P.sym ( ℕ-nat x)) ,
     ≅-to-≡
       ( H.trans
-      (≡-subst-removable (_>_ (toℕ x)) ((fst/subst (symm ( ℕ-nat x))))
-      ((snd
+      (≡-subst-removable (_>_ (toℕ x)) ((proj₁/subst (P.sym ( ℕ-nat x))))
+      ((proj₂
      (P.subst
       (λ a →
          Ext.Carrier (e/pair e/nat (λ y₁ → e/meta (toℕ a > toℕ y₁))))
-      (symm ( ℕ-nat x))
+      (P.sym ( ℕ-nat x))
       (iso.fwd
        (Ext.rep (e/pair e/nat (λ y₁ → e/meta (toℕ x > toℕ y₁))))
        (y , h))))))
         (let g = ≡-subst-removable (λ a →
                     Ext.Carrier (e/pair e/nat (λ y₁ → e/meta (toℕ a > toℕ y₁))))
-                (symm ( ℕ-nat x))
+                (P.sym ( ℕ-nat x))
                 (iso.fwd
                   (Ext.rep (e/pair e/nat (λ y₁ → e/meta (toℕ x > toℕ y₁))))
                   (y , h)) in
-         let g1 = H.cong snd g in
-         let g2 = ≡-subst-removable (λ a → suc (toℕ a) ≤ toℕ x) (symm ( ℕ-nat y)) h in
+         let g1 = H.cong proj₂ g in
+         let g2 = ≡-subst-removable (λ a → suc (toℕ a) ≤ toℕ x) (P.sym ( ℕ-nat y)) h in
           H.trans g1 g2)
        ))))
 

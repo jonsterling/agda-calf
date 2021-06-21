@@ -1,9 +1,11 @@
 {-# OPTIONS --prop --without-K --rewriting #-}
 
-open import Prelude
-open import Metalanguage
-open import PhaseDistinction
-open import Eq
+module Calf.Upper where
+
+open import Calf.Prelude
+open import Calf.Metalanguage
+open import Calf.PhaseDistinction
+open import Calf.Eq
 open import Data.Nat
 open import Data.Nat.Properties
 

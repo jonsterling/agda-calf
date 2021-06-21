@@ -1,20 +1,22 @@
 {-# OPTIONS --prop --rewriting #-}
 
-open import Prelude
-open import Metalanguage
-open import PhaseDistinction
-open import Upper
-open import Eq
+module Examples.Gcd.Clocked where
+
+open import Calf.Prelude
+open import Calf.Metalanguage
+open import Calf.PhaseDistinction
+open import Calf.Upper
+open import Calf.Eq
 open import Data.Nat as Nat
-open import Connectives
+open import Calf.Connectives
 open import Function
 open import Relation.Binary.PropositionalEquality as P
-open import Nat
-open import Gcd
+open import Calf.Types.Nat
+open import Examples.Gcd.Euclid
 open import Induction.WellFounded
 open import Induction
 open import Data.Nat.Properties
-open import Refinement
+open import Calf.Refinement
 open import Data.Nat.DivMod
 open import Relation.Nullary.Decidable using (False; toWitnessFalse)
 open import Data.Nat.Induction using (<-wellFounded)
@@ -47,7 +49,7 @@ gcd/clocked (suc k) (x , y , h) = rec y (const (F nat)) (ret {nat} x)
   (λ y' _ →
     bind {mod-tp x (succ y') tt} (F nat) (mod x (succ y') tt)
     λ { (z , eqn2) →
-    let h2 = P.subst (λ k → suc k ≤ toℕ (succ y')) (symm eqn2) (m%n<n' (toℕ x) _ tt) in
+    let h2 = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2) (m%n<n' (toℕ x) _ tt) in
     gcd/clocked k (succ y' , z , h2) })
 
 gcd/code : cmp (Π gcd/i λ _ → F nat)
@@ -57,7 +59,7 @@ gcd/i/eq : ∀ {x x' y y' h h'} →
         (eqn : x ≡ x') →
         (eqn2 : y ≡ y') →
         _≡_ {A = m>n} (x , y , h) (x' , y' , h')
-gcd/i/eq {x} {x'} {y} {y'} {h} {h'} eqn eqn2 = Inverse.f Σ-≡,≡↔≡ (eqn , Inverse.f Σ-≡,≡↔≡ (P.trans (fst/subst eqn) eqn2 ,
+gcd/i/eq {x} {x'} {y} {y'} {h} {h'} eqn eqn2 = Inverse.f Σ-≡,≡↔≡ (eqn , Inverse.f Σ-≡,≡↔≡ (P.trans (proj₁/subst eqn) eqn2 ,
   <-irrelevant _ _))
 
 -- cost of clocked gcd is bounded by for any instantiation of the clock
@@ -72,7 +74,7 @@ gcd/clocked≤gcd/cost (suc k) i@(x , y , z) rewrite gcd/cost-unfold' i =
     bind {mod-tp x (succ y') tt} (F nat) (mod x (succ y') tt)
     λ { (z , eqn2)
           → let h2
-                  = P.subst (λ k → suc k ≤ toℕ (succ y')) (symm eqn2)
+                  = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2)
                     (m%n<n' (toℕ x) _ tt)
             in gcd/clocked k (succ y' , z , h2)
       })
@@ -81,13 +83,13 @@ gcd/clocked≤gcd/cost (suc k) i@(x , y , z) rewrite gcd/cost-unfold' i =
   (ub/ret 0)
   λ y' → ub/bind/suc {e = mod x (succ y') tt} {f = λ { (z , eqn2)
           → let h2
-                  = P.subst (λ k → suc k ≤ toℕ (succ y')) (symm eqn2)
+                  = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2)
                     (m%n<n' (toℕ x) _ tt)
             in gcd/clocked k (succ y' , z , h2)
       }} (gcd/cost (suc (toℕ y') , toℕ x % suc (toℕ y') , m%n<n (toℕ x) (toℕ y')))
   (ub/step/suc 0 (ub/ret 0))
   λ {(z , eqn2) →
-  let h2 = P.subst (λ k → suc k ≤ toℕ (succ y')) (symm eqn2) (m%n<n' (toℕ x) (toℕ (succ y')) tt) in
+  let h2 = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2) (m%n<n' (toℕ x) (toℕ (succ y')) tt) in
   let g = gcd/clocked≤gcd/cost k (succ y' , z , h2) in
   let h3 = to-ext-unfold (succ y' , z , h2) in
   let h4 = P.subst (λ cost → ub nat (gcd/clocked k (succ y' , z , h2)) (gcd/cost cost)) h3 g in

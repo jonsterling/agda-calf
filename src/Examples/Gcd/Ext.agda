@@ -1,17 +1,19 @@
-
 {-# OPTIONS --prop --rewriting #-}
 
-open import Prelude
-open import Metalanguage
-open import Nat
-open import PhaseDistinction
-open import Connectives
-open import Refinement
-open import Upper
-open import Eq
+module Examples.Gcd.Ext where
 
-open import Gcd
-open import Gcd-new
+open import Calf.Prelude
+open import Calf.Metalanguage
+open import Calf.Types.Nat as Nat
+open import Calf.PhaseDistinction
+open import Calf.Connectives
+open import Calf.Refinement
+open import Calf.Upper
+open import Calf.Eq
+
+open import Examples.Gcd.Euclid
+open import Examples.Gcd.Clocked
+
 open import Data.Nat.GCD
 open import Data.Nat.DivMod
 open import Data.Nat
@@ -72,7 +74,7 @@ gcd/clocked≡gcd/spec zero x y h h1 =
   let h1' = P.subst (λ n → 0 ≥ gcd/cost n) (to-ext-unfold (x , y , h)) h1 in
   let h2 = n≤0⇒n≡0 h1' in
   let h3 = gcd/cost≡zero {h = h} h2 in
-  P.subst (λ y → (h : toℕ x > y) → ◯ (ret {nat} x ≡ ret {nat} (tonat (gcd/spec (toℕ x , y , h))))) (symm h3)
+  P.subst (λ y → (h : toℕ x > y) → ◯ (ret {nat} x ≡ ret {nat} (tonat (gcd/spec (toℕ x , y , h))))) (P.sym h3)
   (λ _ _ → refl) h
 gcd/clocked≡gcd/spec (suc k) x y h h1 u =
   Nat.rec y (λ y → meta (P y))
@@ -102,7 +104,7 @@ gcd/clocked≡gcd/spec (suc k) x y h h1 u =
 
 id≥gcd/cost : ∀ x y h → toℕ y ≥ gcd/cost (to-ext (x , y , h))
 id≥gcd/cost x y h = subst (λ i → toℕ y ≥ gcd/cost i)
-  (symm (to-ext-unfold (x , y , h)))
+  (P.sym (to-ext-unfold (x , y , h)))
   (g _ _ h)
    where
    g : ∀ n m → (h : m > n) → n ≥ gcd/cost (m , n , h)
@@ -112,7 +114,7 @@ id≥gcd/cost x y h = subst (λ i → toℕ y ≥ gcd/cost i)
                     WfRec _<_ (λ n₂ → (m₁ : ℕ) (h₂ : m₁ > n₂) → n₂ ≥ gcd/cost (m₁ , n₂ , h₂)) n →
                     ∀ m → (h : m > n) → n ≥ gcd/cost (m , n , h)) of λ {
                   (zero) → λ ih _ _ → ≤-reflexive refl
-                  ; (suc n') → λ ih m h' → subst (λ k → suc n' ≥ k) (symm (gcd/cost-unfold-suc {m} {n'} {h'}))
+                  ; (suc n') → λ ih m h' → subst (λ k → suc n' ≥ k) (P.sym (gcd/cost-unfold-suc {m} {n'} {h'}))
                       ( let g1 = ih (m % suc n') (m%n<n m n') (suc n') (m%n<n m n') in
                       <-transʳ g1 (m%n<n m n'))
                   })

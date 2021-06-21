@@ -1,17 +1,14 @@
 {-# OPTIONS --prop --rewriting #-}
 
-module Sorting where
+module Examples.Sorting where
 
-open import Prelude using (funext)
-open import Metalanguage
-open import Upper
-open import Refinement
-open import Eq
-open import PhaseDistinction
+open import Calf
+open import Calf.Types.Bool
+open import Calf.Types.List as List
+
 open import Relation.Nullary
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
-open import Data.Product using (_×_; _,_; ∃)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Empty
 open import Function
@@ -21,23 +18,6 @@ open import Data.Nat.Properties as N using (module ≤-Reasoning)
 private
   variable
     α : Set
-
-module List where
-  open import Data.List public using (List; []; _∷_; [_]; length; _++_)
-  open import Data.List.Properties public
-
-  list : tp pos → tp pos
-  list A = U (meta (List (val A)))
-
-open List
-
-module Bool where
-  open import Data.Bool public using (Bool; true; false)
-
-  bool : tp pos
-  bool = U (meta Bool)
-
-open Bool
 
 record Comparable : Set₁ where
   field
@@ -116,8 +96,6 @@ module Core (M : Comparable) where
 
   IsSort : cmp (Π (list A) λ _ → F (list A)) → Set
   IsSort sort = ∀ l → SortResult sort l
-
-cost = meta ℕ
 
 test/forward  = 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ 6 ∷ 7 ∷ 8 ∷ 9 ∷ 10 ∷ 11 ∷ 12 ∷ 13 ∷ 14 ∷ 15 ∷ 16 ∷ []
 test/backward = 16 ∷ 15 ∷ 14 ∷ 13 ∷ 12 ∷ 11 ∷ 10 ∷ 9 ∷ 8 ∷ 7 ∷ 6 ∷ 5 ∷ 4 ∷ 3 ∷ 2 ∷ 1 ∷ []

@@ -2,9 +2,9 @@
 
 -- The is the basic CBPV metalanguage.
 
-module Metalanguage where
+module Calf.Metalanguage where
 
-open import Prelude
+open import Calf.Prelude
 open import Data.Nat
 
 postulate
@@ -90,3 +90,5 @@ postulate
   bind/meta : ∀ A 𝕊 𝕋 e f (g : 𝕊 → 𝕋) → g (bind {A} (meta 𝕊) e f) ≡ bind {A} (meta 𝕋) e (λ a → g(f a))
   tbind/meta : ∀ A 𝕊 e f (p : 𝕊 → □) → p (bind {A} (meta 𝕊) e f) ≡ cmp (tbind {A} e (λ a → meta (p (f a))))
   bind/idem : ∀ A 𝕊 e (f : val A → val A → 𝕊) → bind {A} (meta 𝕊) e (λ a → (bind {A} (meta 𝕊) e (λ a' → f a a'))) ≡ bind {A} (meta 𝕊) e (λ a → f a a)
+
+cost = meta ℕ
