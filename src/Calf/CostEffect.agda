@@ -8,6 +8,7 @@ module Calf.CostEffect (orderedMonoid : OrderedMonoid) where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
+open import Data.Product
 
 postulate
   step : ∀ X → cmp X → cmp X

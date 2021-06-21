@@ -143,3 +143,21 @@ record ParCostMonoid : Set₁ where
     ; _≤_ = _≤₊_
     ; isCostMonoid = isCostMonoid
     }
+
+  ⊕-orderedMonoid : OrderedMonoid
+  ⊕-orderedMonoid = record
+    { ℂ = ℂ
+    ; _∙_ = _⊕_
+    ; ε = 𝟘
+    ; _≤_ = _≤₊_
+    ; isOrderedMonoid = IsCostMonoid.isOrderedMonoid isCostMonoid
+    }
+
+  ⊗-orderedMonoid : OrderedMonoid
+  ⊗-orderedMonoid = record
+    { ℂ = ℂ
+    ; _∙_ = _⊗_
+    ; ε = 𝟙
+    ; _≤_ = _≤ₓ_
+    ; isOrderedMonoid = IsOrderedCommutativeMonoid.isOrderedMonoid (IsParCostMonoid.isOrderedCommutativeMonoid isParCostMonoid)
+    }

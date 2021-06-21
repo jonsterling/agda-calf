@@ -11,6 +11,7 @@ open ParCostMonoid parCostMonoid
 open import Calf.Prelude
 open import Calf.Metalanguage
 open import Calf.Step (OrderedMonoid.monoid (CostMonoid.orderedMonoid costMonoid))
+open import Data.Product
 
 postulate
   -- negative product

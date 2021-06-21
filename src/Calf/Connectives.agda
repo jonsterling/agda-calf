@@ -19,6 +19,7 @@ open import Data.Nat.Induction
 open import Function.Base
 import Relation.Binary.PropositionalEquality as P
 import Relation.Binary.HeterogeneousEquality as H
+open import Data.Product
 open import Data.Product.Properties
 open import Function.Bundles
 open import Induction
