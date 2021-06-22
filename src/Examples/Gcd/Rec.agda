@@ -136,5 +136,5 @@ gcd/cost/closed/ub i@(x , y , h) =
       g1 = fib-mono-< {1 + fib⁻¹ x} {2 + fib⁻¹ x} (+-monoˡ-< (fib⁻¹ x) (s≤s (s≤s z≤n))) in
   (<⇒≤ (gcd/cost/bound _ i (<-transˡ g g1) (<-trans h g)))
 
-gcd/closed : cmp (Ψ gcd/i (λ { _ → nat }) e/gcd gcd/cost/closed)
-gcd/closed = pitime/relax gcd/i (const nat) e/gcd gcd/cost/closed/ub Clocked.gcd
+gcd/closed : cmp (Ψ gcd/i (λ { _ → nat }) (gcd/cost/closed ∘ to-ext))
+gcd/closed = Ψ/relax gcd/i (const nat) (λ i → gcd/cost/closed/ub (to-ext i)) Clocked.gcd

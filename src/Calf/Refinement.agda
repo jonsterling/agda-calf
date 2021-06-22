@@ -12,15 +12,13 @@ open import Calf.Step (OrderedMonoid.monoid orderedMonoid)
 open import Calf.PhaseDistinction orderedMonoid
 open import Calf.Upper orderedMonoid
 open import Calf.Eq
-open import Calf.Connectives
+open import Calf.BoundedFunction orderedMonoid
 
-open import Calf.Types.Nat orderedMonoid as Nat hiding (zero)
 open import Calf.Types.Sum
 
 open import Relation.Binary.PropositionalEquality as P
 open import Function using (const)
 
-open Ext
 open iso
 
 ub/ret : ∀ {A a} → ub A (ret {A} a) zero

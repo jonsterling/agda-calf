@@ -14,6 +14,6 @@ open import Calf.CostEffect orderedMonoid public
 open import Calf.PhaseDistinction orderedMonoid public
 open import Calf.Eq public
 open import Calf.Upper orderedMonoid public
-open import Calf.Connectives orderedMonoid public
+open import Calf.BoundedFunction   public
 
 open import Calf.Refinement costMonoid public

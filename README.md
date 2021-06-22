@@ -7,7 +7,7 @@
 - PhaseDistinction
 - Eq
 - Upper
-- Connectives
+- BoundedFunction
 
 ### Types
 - Nat
