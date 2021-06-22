@@ -65,6 +65,9 @@ module _ {ℂ : Set} where
       renaming (
         identityˡ to ⊕-identityˡ;
         identityʳ to ⊕-identityʳ;
+        +-mono-≤ to ⊕-mono-≤;
+        +-monoˡ-≤ to ⊕-monoˡ-≤;
+        +-monoʳ-≤ to ⊕-monoʳ-≤;
         ≤-refl to ≤₊-refl;
         ≤-trans to ≤₊-trans
       )
@@ -72,19 +75,37 @@ module _ {ℂ : Set} where
       renaming (
         identityˡ to ⊗-identityˡ;
         identityʳ to ⊗-identityʳ;
+        ∙-mono-≤ to ⊗-mono-≤;
+        ∙-monoˡ-≤ to ⊗-monoˡ-≤;
+        ∙-monoʳ-≤ to ⊗-monoʳ-≤;
         ∙-comm to ⊗-comm;
         ≤-refl to ≤ₓ-refl;
         ≤-trans to ≤ₓ-trans
       )
 
-record Monoid : Set₁ where
+record Monoid : Set₁
+record MonoidOn (ℂ : Set) : Set₁
+
+record MonoidOn ℂ where
   field
-    ℂ        : Set
     _∙_      : Op₂ ℂ
     ε        : ℂ
     isMonoid : IsMonoid _∙_ ε
 
   open IsMonoid isMonoid public
+
+record Monoid where
+  field
+    ℂ        : Set
+    monoidOn : MonoidOn ℂ
+
+  open MonoidOn monoidOn public
+
+toMonoid : {ℂ : Set} → MonoidOn ℂ → Monoid
+toMonoid {ℂ} monoidOn = record
+  { ℂ = ℂ
+  ; monoidOn = monoidOn
+  }
 
 record OrderedMonoid : Set₁ where
   field
@@ -99,12 +120,16 @@ record OrderedMonoid : Set₁ where
   monoid : Monoid
   monoid = record
     { ℂ = ℂ
-    ; _∙_ = _∙_
-    ; ε = ε
-    ; isMonoid = isMonoid
+    ; monoidOn = record
+      { _∙_ = _∙_
+      ; ε = ε
+      ; isMonoid = isMonoid
+      }
     }
 
 record CostMonoid : Set₁ where
+  infixl 6 _+_
+
   field
     ℂ            : Set
     _+_          : Op₂ ℂ
@@ -123,6 +148,9 @@ record CostMonoid : Set₁ where
     }
 
 record ParCostMonoid : Set₁ where
+  infixl 7 _⊗_
+  infixl 6 _⊕_
+  
   field
     ℂ               : Set
     _⊕_             : Op₂ ℂ

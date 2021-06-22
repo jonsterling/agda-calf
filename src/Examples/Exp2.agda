@@ -12,8 +12,9 @@ open import Calf costMonoid
 open import Calf.ParMetalanguage parCostMonoid
 open import Calf.Types.Bool
 
-import Calf.Upper ⊕-orderedMonoid as ⊕-Upper
-import Calf.Upper ⊗-orderedMonoid as ⊗-Upper
+monoidOn = Monoid.monoidOn (OrderedMonoid.monoid ⊕-orderedMonoid)
+import Calf.Upper ⊕-orderedMonoid monoidOn as ⊕U
+import Calf.Upper ⊗-orderedMonoid monoidOn as ⊗U
 
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning)
 open import Data.Nat as Nat
@@ -50,18 +51,21 @@ lemma/pred-+ (suc m) n m≢zero = refl
 module Slow where
   exp₂ : cmp (Π (U (meta ℕ)) λ _ → F (U (meta ℕ)))
   exp₂ zero = ret (suc zero)
-  exp₂ (suc n) = bind (F (U (meta ℕ))) (exp₂ n & exp₂ n) λ (r₁ , r₂) →
-    step' (F (U (meta ℕ))) (1 , 1) (ret (r₁ + r₂))
+  exp₂ (suc n) =
+    bind (F (U (meta ℕ))) (exp₂ n & exp₂ n) λ (r₁ , r₂) →
+      step' (F (U (meta ℕ))) (1 , 1) (ret (r₁ + r₂))
 
   exp₂/cost : cmp (Π (U (meta ℕ)) λ _ → cost)
   exp₂/cost n = pred (2 ^ n) , n
 
-  exp₂≤exp₂/cost/seq : ∀ n → ⊕-Upper.ub (U (meta ℕ)) (exp₂ n) (exp₂/cost n)
+  exp₂≤exp₂/cost/seq : ∀ n → ⊕U.ub (U (meta ℕ)) (exp₂ n) (exp₂/cost n)
   exp₂≤exp₂/cost/seq zero    = ub/ret
   exp₂≤exp₂/cost/seq (suc n) with exp₂≤exp₂/cost/seq n
-  ... | ⊕-Upper.ub/intro {q = (w , s)} _ ih h-eq rewrite eq/ref h-eq =
-    ub/relax
+  ... | ⊕U.ub/intro {q = (w , s)} _ ih h-eq rewrite eq/ref h-eq =
+    ⊕U.ub/relax
       (begin
+        proj₁ ((w , s) ⊗ (w , s) ⊕ (1 , 1) ⊕ 𝟘)
+      ≡⟨⟩
         proj₁ ((w + w + 1 , s ⊔ s + 1) ⊕ 𝟘)
       ≡⟨ Eq.cong proj₁ (CostMonoid.identityʳ costMonoid (w + w + 1 , s ⊔ s + 1)) ⟩
         w + w + 1
@@ -78,7 +82,26 @@ module Slow where
       ≡⟨ Eq.cong pred (lemma/2^suc n) ⟩
         pred (2 ^ suc n)
       ∎)
-      (ub/step (w + w + 1 , s ⊔ s + 1) 𝟘 ub/ret)
+      (ub/step ((w , s) ⊗ (w , s) ⊕ (1 , 1)) 𝟘 ub/ret)
+      where open ≤-Reasoning
+
+  exp₂≤exp₂/cost/par : ∀ n → ⊗U.ub (U (meta ℕ)) (exp₂ n) (exp₂/cost n)
+  exp₂≤exp₂/cost/par zero    = ⊗U.ub/intro {q = 𝟘} 1 (≤ₓ-refl {𝟘}) (ret (eq/intro refl))
+  exp₂≤exp₂/cost/par (suc n) with exp₂≤exp₂/cost/par n
+  ... | ⊗U.ub/intro {q = (w , s)} a ih h-eq rewrite eq/ref h-eq =
+    ⊗U.ub/intro {q = (w , s) ⊗ (w , s) ⊕ (1 , 1)} (a + a)
+      (begin
+        proj₂ ((w , s) ⊗ (w , s) ⊕ (1 , 1))
+      ≡⟨⟩
+        s ⊔ s + 1
+      ≡⟨ N.+-comm (s ⊔ s) 1 ⟩
+        suc (s ⊔ s)
+      ≡⟨ Eq.cong suc (N.⊔-idem s) ⟩
+        suc s
+      ≤⟨ s≤s ih ⟩
+        suc n
+      ∎)
+      (ret (eq/intro refl))
       where open ≤-Reasoning
 
   exp₂/correct : Correct exp₂
@@ -108,8 +131,9 @@ module Fast where
 
   exp₂ : cmp (Π (U (meta ℕ)) λ _ → F (U (meta ℕ)))
   exp₂ zero = ret (suc zero)
-  exp₂ (suc n) = bind (F (U (meta ℕ))) (exp₂ n) λ r →
-    step' (F (U (meta ℕ))) (1 , 1) (ret (r + r))
+  exp₂ (suc n) =
+    bind (F (U (meta ℕ))) (exp₂ n) λ r →
+      step' (F (U (meta ℕ))) (1 , 1) (ret (r + r))
 
   exp₂/correct : Correct exp₂
   exp₂/correct zero    u = refl

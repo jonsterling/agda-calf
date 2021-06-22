@@ -16,4 +16,4 @@ open import Calf.Eq public
 open import Calf.Upper orderedMonoid public
 open import Calf.BoundedFunction orderedMonoid public
 
-open import Calf.Refinement costMonoid public
+open import Calf.Refinement orderedMonoid public
