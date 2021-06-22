@@ -55,6 +55,29 @@ module Slow where
     bind (F (U (meta ℕ))) (exp₂ n & exp₂ n) λ (r₁ , r₂) →
       step' (F (U (meta ℕ))) (1 , 1) (ret (r₁ + r₂))
 
+  exp₂/correct : Correct exp₂
+  exp₂/correct zero    u = refl
+  exp₂/correct (suc n) u =
+    begin
+      exp₂ (suc n)
+    ≡⟨⟩
+      (bind (F (U (meta ℕ))) (exp₂ n & exp₂ n) λ (r₁ , r₂) →
+        step' (F (U (meta ℕ))) (1 , 1) (ret (r₁ + r₂)))
+    ≡⟨ Eq.cong (bind (F (U (meta ℕ))) (exp₂ n & exp₂ n)) (funext (λ (r₁ , r₂) → step'/ext (F (U (meta ℕ))) _ (1 , 1) u)) ⟩
+      (bind (F (U (meta ℕ))) (exp₂ n & exp₂ n) λ (r₁ , r₂) →
+        ret (r₁ + r₂))
+    ≡⟨ Eq.cong (λ e → bind (F (U (meta ℕ))) (e & e) _) (exp₂/correct n u) ⟩
+      (bind (F (U (meta ℕ))) (ret {U (meta ℕ)} (2 ^ n) & ret {U (meta ℕ)} (2 ^ n)) λ (r₁ , r₂) →
+        ret (r₁ + r₂))
+    ≡⟨ bind/par {p₁ = 𝟘} {p₂ = 𝟘} ⟩
+      step' (F (U (meta ℕ))) (𝟘 ⊗ 𝟘) (ret (2 ^ n + 2 ^ n))
+    ≡⟨⟩
+      ret (2 ^ n + 2 ^ n)
+    ≡⟨ Eq.cong ret (lemma/2^suc n) ⟩
+      ret (2 ^ suc n)
+    ∎
+      where open ≡-Reasoning
+
   exp₂/cost : cmp (Π (U (meta ℕ)) λ _ → cost)
   exp₂/cost n = pred (2 ^ n) , n
 
@@ -104,29 +127,6 @@ module Slow where
       (ret (eq/intro refl))
       where open ≤-Reasoning
 
-  exp₂/correct : Correct exp₂
-  exp₂/correct zero    u = refl
-  exp₂/correct (suc n) u =
-    begin
-      exp₂ (suc n)
-    ≡⟨⟩
-      (bind (F (U (meta ℕ))) (exp₂ n & exp₂ n) λ (r₁ , r₂) →
-        step' (F (U (meta ℕ))) (1 , 1) (ret (r₁ + r₂)))
-    ≡⟨ Eq.cong (bind (F (U (meta ℕ))) (exp₂ n & exp₂ n)) (funext (λ (r₁ , r₂) → step'/ext (F (U (meta ℕ))) _ (1 , 1) u)) ⟩
-      (bind (F (U (meta ℕ))) (exp₂ n & exp₂ n) λ (r₁ , r₂) →
-        ret (r₁ + r₂))
-    ≡⟨ Eq.cong (λ e → bind (F (U (meta ℕ))) (e & e) _) (exp₂/correct n u) ⟩
-      (bind (F (U (meta ℕ))) (ret {U (meta ℕ)} (2 ^ n) & ret {U (meta ℕ)} (2 ^ n)) λ (r₁ , r₂) →
-        ret (r₁ + r₂))
-    ≡⟨ bind/par {p₁ = 𝟘} {p₂ = 𝟘} ⟩
-      step' (F (U (meta ℕ))) (𝟘 ⊗ 𝟘) (ret (2 ^ n + 2 ^ n))
-    ≡⟨⟩
-      ret (2 ^ n + 2 ^ n)
-    ≡⟨ Eq.cong ret (lemma/2^suc n) ⟩
-      ret (2 ^ suc n)
-    ∎
-      where open ≡-Reasoning
-
 module Fast where
 
   exp₂ : cmp (Π (U (meta ℕ)) λ _ → F (U (meta ℕ)))
@@ -155,6 +155,45 @@ module Fast where
       ret (2 ^ suc n)
     ∎
       where open ≡-Reasoning
+
+  exp₂/cost : cmp (Π (U (meta ℕ)) λ _ → cost)
+  exp₂/cost n = n , n
+
+  exp₂≤exp₂/cost/seq : ∀ n → ⊕U.ub (U (meta ℕ)) (exp₂ n) (exp₂/cost n)
+  exp₂≤exp₂/cost/seq zero    = ub/ret
+  exp₂≤exp₂/cost/seq (suc n) with exp₂≤exp₂/cost/seq n
+  ... | ⊕U.ub/intro {q = (w , s)} _ ih h-eq rewrite eq/ref h-eq =
+    ⊕U.ub/relax
+      (begin
+        proj₁ ((w , s) ⊕ (1 , 1) ⊕ 𝟘)
+      ≡⟨⟩
+        proj₁ ((w + 1 , s + 1) ⊕ 𝟘)
+      ≡⟨ Eq.cong proj₁ (CostMonoid.identityʳ costMonoid (w + 1 , s + 1)) ⟩
+        w + 1
+      ≡⟨ N.+-comm w 1 ⟩
+        suc w
+      ≤⟨ s≤s ih ⟩
+        suc n
+      ∎)
+      (ub/step ((w , s) ⊕ (1 , 1)) 𝟘 ub/ret)
+      where open ≤-Reasoning
+
+  exp₂≤exp₂/cost/par : ∀ n → ⊗U.ub (U (meta ℕ)) (exp₂ n) (exp₂/cost n)
+  exp₂≤exp₂/cost/par zero    = ⊗U.ub/intro {q = 𝟘} 1 (≤ₓ-refl {𝟘}) (ret (eq/intro refl))
+  exp₂≤exp₂/cost/par (suc n) with exp₂≤exp₂/cost/par n
+  ... | ⊗U.ub/intro {q = (w , s)} a ih h-eq rewrite eq/ref h-eq =
+    ⊗U.ub/intro {q = (w , s) ⊕ (1 , 1)} (a + a)
+      (begin
+        proj₂ ((w , s) ⊕ (1 , 1))
+      ≡⟨⟩
+        s + 1
+      ≡⟨ N.+-comm s 1 ⟩
+        suc s
+      ≤⟨ s≤s ih ⟩
+        suc n
+      ∎)
+      (ret (eq/intro refl))
+      where open ≤-Reasoning
 
 slow≡fast : ◯ (Slow.exp₂ ≡ Fast.exp₂)
 slow≡fast u = funext λ n →
