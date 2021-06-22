@@ -2,11 +2,16 @@
 
 -- This file adds the phase distinction for extension.
 
-module Calf.PhaseDistinction where
+open import Calf.CostMonoid
+
+module Calf.PhaseDistinction (CostMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage
-open import Calf.CostEffect
+open import Calf.Metalanguage CostMonoid
+open import Calf.CostEffect CostMonoid
+
+open CostMonoid CostMonoid
+
 open import Data.Nat using (ℕ)
 import Relation.Binary.PropositionalEquality as P
 
@@ -35,7 +40,7 @@ postulate
 postulate
   step/ext : ∀ X → (e : cmp X) → ◯ (step X e ≡ e)
   -- sadly the above cannot be made an Agda rewrite rule
-  step'/ext : ∀ X → (e : cmp X) → (n : ℕ) → ◯ (step' X n e ≡ e)
+  step'/ext : ∀ X → (e : cmp X) → (c : ℂ) → ◯ (step' X c e ≡ e)
 
 
 -- Underneath the open modality, we ensure that the abstract types

@@ -1,12 +1,15 @@
 {-# OPTIONS --prop --rewriting #-}
 
-module Calf.BoundedFunction where
+open import Calf.CostMonoid
+
+module Calf.BoundedFunction (costMonoid : CostMonoid) where
+
+open CostMonoid costMonoid
 
 open import Calf.Prelude
-open import Calf.Metalanguage
-open import Calf.PhaseDistinction
-open import Calf.Upper
-open import Data.Nat
+open import Calf.Metalanguage costMonoid
+open import Calf.PhaseDistinction costMonoid
+open import Calf.Upper costMonoid
 open import Relation.Binary
 open import Level using (Level; _⊔_)
 open import Induction.WellFounded
@@ -15,6 +18,7 @@ open import Data.Nat.Induction
 open import Function.Base
 import Relation.Binary.PropositionalEquality as P
 import Relation.Binary.HeterogeneousEquality as H
+open import Data.Product
 open import Data.Product.Properties
 open import Function.Bundles
 open import Induction
@@ -24,10 +28,10 @@ private
   variable
     a b c ℓ ℓ₁ ℓ₂ ℓ₃ : Level
 
-bounded : (A : tp pos) → (cmp (meta ℕ)) → tp neg
+bounded : (A : tp pos) → cmp cost → tp neg
 bounded A n = Σ+- (U (F A)) λ u → ub⁻ A u n
 
-Ψ : (A : tp pos) → (B : val A → tp pos) → (val A → ℕ) → tp neg
+Ψ : (A : tp pos) → (B : val A → tp pos) → (val A → ℂ) → tp neg
 Ψ A B p =
   Σ+- (U(Π A (λ a → F (B a)))) λ f →
     Π A λ a → ub⁻ (B a) (f a) (p a)

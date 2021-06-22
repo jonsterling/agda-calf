@@ -1,9 +1,11 @@
 {-# OPTIONS --prop --without-K --rewriting #-}
 
-module Calf.Types.List where
+open import Calf.CostMonoid
+
+module Calf.Types.List (CostMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage
+open import Calf.Metalanguage CostMonoid
 
 open import Data.List public using (List; []; _∷_; [_]; length; _++_)
 open import Data.List.Properties public

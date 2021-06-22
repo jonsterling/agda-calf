@@ -2,14 +2,10 @@
 
 module Examples.Gcd.Ext where
 
-open import Calf.Prelude
-open import Calf.Metalanguage
-open import Calf.Types.Nat as Nat
-open import Calf.PhaseDistinction
-open import Calf.BoundedFunction
-open import Calf.Refinement
-open import Calf.Upper
-open import Calf.Eq
+import Calf.CostMonoids as CM
+
+open import Calf CM.ℕ-CostMonoid
+open import Calf.Types.Nat CM.ℕ-CostMonoid as Nat
 
 open import Examples.Gcd.Euclid
 open import Examples.Gcd.Clocked
@@ -17,7 +13,6 @@ open import Examples.Gcd.Clocked
 open import Data.Nat.GCD
 open import Data.Nat.DivMod
 open import Data.Nat
-open import Data.Product
 open import Data.Nat.Induction
 open import Relation.Binary.PropositionalEquality as P
 open import Induction.WellFounded

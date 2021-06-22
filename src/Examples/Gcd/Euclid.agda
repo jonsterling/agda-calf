@@ -2,22 +2,19 @@
 
 module Examples.Gcd.Euclid where
 
+import Calf.CostMonoids as CM
+
+
 {- This file defines the parameters of the analysis of Euclid's algorithm for gcd
    and its cost recurrence relation. -}
-open import Calf.Prelude
-open import Calf.Metalanguage
-open import Calf.PhaseDistinction
-open import Calf.Upper
-open import Calf.Eq
-open import Data.Nat as Nat
-open import Calf.BoundedFunction
+open import Calf CM.ℕ-CostMonoid
+open import Calf.Types.Nat CM.ℕ-CostMonoid as Nat
+open import Data.Nat
 open import Function
 open import Relation.Binary.PropositionalEquality as P
-open import Calf.Types.Nat
 open import Induction.WellFounded
 open import Induction
 open import Data.Nat.Properties
-open import Calf.Refinement
 open import Data.Nat.DivMod
 open import Relation.Nullary.Decidable using (False; toWitnessFalse)
 open import Data.Nat.Induction using (<-wellFounded)
@@ -83,6 +80,30 @@ module irr
                                     let g = IH y h (rs y h) (rs' y h) in
                                     P.cong-app (P.cong-app g y') h'
                                   }))
+
+ub/bind/suc : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
+  (p : ℕ) →
+  ub A e 1 →
+  ((a : val A) → ub B (f a) p) →
+  ub B (bind {A} (F B) e f) (suc p)
+ub/bind/suc p h1 h2 = ub/bind/const' 1 p refl h1 h2
+
+if : ∀ {A : ℕ → Set} → (n : ℕ) → (A 0) → ((n : ℕ) → A (suc n)) → A n
+if zero n f = n
+if (suc m) n f = f m
+
+ub/rec :
+  (B : val nat → tp pos)
+  (x : val nat)
+  (e0 : cmp (F (B Nat.zero)))
+  (e1 : (y : val nat) → cmp (F (B (succ y))))
+  (p1 : ℕ)
+  (p2 : ℕ → ℕ) →
+  (ub (B Nat.zero) e0 p1) →
+  ((y : val nat) → ub (B (succ y)) (e1 y) (p2 (toℕ y))) →
+  ub (B x) (Nat.rec x (λ x → F (B x)) e0 (λ y _ → e1 y )) (if {λ _ → ℕ} (toℕ x) p1 p2)
+ub/rec B x e0 e1 p1 p2 h1 h2 = Nat.rec x (λ x → meta (ub (B x) (Nat.rec x (λ x → F (B x)) e0 (λ y _ → e1 y )) (if {λ _ → ℕ} (toℕ x) p1 p2)))
+  h1 λ y _ → h2 y
 
 gcd/cost-unfold-zero : ∀ {x h} → gcd/cost (x , 0 , h) ≡ 0
 gcd/cost-unfold-zero = refl

@@ -2,21 +2,18 @@
 
 module Examples.Gcd.Clocked where
 
-open import Calf.Prelude
-open import Calf.Metalanguage
-open import Calf.PhaseDistinction
-open import Calf.Upper
-open import Calf.Eq
+import Calf.CostMonoids as CM
+
+open import Calf CM.ℕ-CostMonoid
+open import Calf.Types.Nat CM.ℕ-CostMonoid
+
 open import Data.Nat as Nat
-open import Calf.BoundedFunction
 open import Function
 open import Relation.Binary.PropositionalEquality as P
-open import Calf.Types.Nat
 open import Examples.Gcd.Euclid
 open import Induction.WellFounded
 open import Induction
 open import Data.Nat.Properties
-open import Calf.Refinement
 open import Data.Nat.DivMod
 open import Relation.Nullary.Decidable using (False; toWitnessFalse)
 open import Data.Nat.Induction using (<-wellFounded)
@@ -87,7 +84,7 @@ gcd/clocked≤gcd/cost (suc k) i@(x , y , z) rewrite gcd/cost-unfold' i =
                     (m%n<n' (toℕ x) _ tt)
             in gcd/clocked k (succ y' , z , h2)
       }} (gcd/cost (suc (toℕ y') , toℕ x % suc (toℕ y') , m%n<n (toℕ x) (toℕ y')))
-  (ub/step/suc 0 (ub/ret 0))
+  (ub/step 0 1 (ub/ret 0))
   λ {(z , eqn2) →
   let h2 = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2) (m%n<n' (toℕ x) (toℕ (succ y')) tt) in
   let g = gcd/clocked≤gcd/cost k (succ y' , z , h2) in

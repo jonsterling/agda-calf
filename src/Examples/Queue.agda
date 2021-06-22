@@ -2,16 +2,19 @@
 
 module Examples.Queue where
 
-open import Calf hiding (cost)
-open import Calf.Types.Nat
-open import Calf.Types.Unit
-open import Calf.Types.Sum
+open import Calf.CostMonoids using (ℕ-CostMonoid)
+
+CostMonoid = ℕ-CostMonoid
+
+open import Calf CostMonoid
+open import Calf.Types.Nat CostMonoid
+open import Calf.Types.Unit CostMonoid
+open import Calf.Types.Sum CostMonoid
 
 open import Data.Nat
 open import Data.Nat.Properties
 import Data.Integer as Int
 import Data.Integer.Properties as IntP
-open import Data.Product
 open import Data.List using (List; _∷_; []; length; tabulate) renaming (sum to lsum)
 open import Relation.Binary.PropositionalEquality as P
 
@@ -114,7 +117,7 @@ module FrontBack where
   rev/helper≤rev/helper/cost : ∀ l l' → ub L (rev/helper l l') (len l)
   rev/helper≤rev/helper/cost l = list/ind l (λ l → meta (∀ l' → ub L (rev/helper l l') (len l)))
     (λ l' → ub/ret 0)
-    (λ a l r → λ l' → ub/step/suc {e = rev/helper l (cons a l')} (len l) (r (cons a l')))
+    (λ a l r → λ l' → subst (ub _ _) (+-comm _ 1) (ub/step {e = rev/helper l (cons a l')} (len l) 1 (r (cons a l'))))
 
   rev/cost = len
 
@@ -262,12 +265,12 @@ module FrontBack where
       ∎
      where open ≡-Reasoning
 
-  -- cost o q is the cost of o operate q.
-  cost : op → val Q → ℕ
-  cost (op/enq x) q = 0
-  cost (op/deq) (f , b) = list/match f (λ _ → meta ℕ) (list/match b (λ _ → meta ℕ) 0 (λ _ b' → 2 + len b')) (λ _ _ → 1)
+  -- op/cost o q is the cost of o operate q.
+  op/cost : op → val Q → ℕ
+  op/cost (op/enq x) q = 0
+  op/cost (op/deq) (f , b) = list/match f (λ _ → meta ℕ) (list/match b (λ _ → meta ℕ) 0 (λ _ b' → 2 + len b')) (λ _ _ → 1)
 
-  deq/cost≡cost/deq : ∀ q → deq/cost q ≡ cost op/deq q
+  deq/cost≡cost/deq : ∀ q → deq/cost q ≡ op/cost op/deq q
   deq/cost≡cost/deq (f , b) =
     P.cong (λ x → list/match f (λ _ → meta ℕ) x (λ _ _ → 1)) (list/match b
     (λ b →
@@ -277,11 +280,11 @@ module FrontBack where
       refl (λ a l → refl))
 
   -- cost o q upperbounds the cost of o operate q.
-  op≤cost : ∀ o q → ub Q (o operate q) (cost o q)
+  op≤cost : ∀ o q → ub Q (o operate q) (op/cost o q)
   op≤cost (op/enq x) q = enq≤0 q x
-  op≤cost op/deq q rewrite P.sym (+-identityʳ (cost (op/deq) q)) = ub/bind/const {A = deq-tp} {e = deq q} {f = λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s
+  op≤cost op/deq q rewrite P.sym (+-identityʳ (op/cost (op/deq) q)) = ub/bind/const {A = deq-tp} {e = deq q} {f = λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s
     (λ _ → ret (nil , nil))
-    (λ { (q , x) → ret q }))} (cost op/deq q) 0
+    (λ { (q , x) → ret q }))} (op/cost op/deq q) 0
     (P.subst (λ x → ub deq-tp (deq q) x) (deq/cost≡cost/deq q) (deq≤deq/cost q))
     λ a → ub/sum/case/const/const unit ((Σ++ Q λ _ → nat)) (λ _ → Q) a ((λ _ → ret (nil , nil))) (λ { (q , x) → ret q }) 0
     (λ _ → ub/ret 0)
@@ -289,7 +292,7 @@ module FrontBack where
 
   -- is/acost o k when for any state q, k suffices for the cost of o on q and the difference in the potential.
   is/acost :  op → ℕ → Set
-  is/acost o k = ∀ q → (Int.+ (cost o q)) Int.+ ((o operateϕ q) Int.⊖ (ϕ q)) Int.≤ Int.+ k
+  is/acost o k = ∀ q → (Int.+ (op/cost o q)) Int.+ ((o operateϕ q) Int.⊖ (ϕ q)) Int.≤ Int.+ k
 
   acost/weaken : ∀ {m n o} → m ≤ n → is/acost o m → is/acost o n
   acost/weaken h1 h2 = λ q → IntP.≤-trans (h2 q) (Int.+≤+ h1)
@@ -301,18 +304,18 @@ module FrontBack where
 
   cost/seq : ∀ (l : List op) → val Q → ℕ
   cost/seq [] q0 = 0
-  cost/seq (o ∷ os) q = bind (meta ℕ) (o operate q) λ q' → cost o q + cost/seq os q'
+  cost/seq (o ∷ os) q = bind (meta ℕ) (o operate q) λ q' → op/cost o q + cost/seq os q'
 
   -- Cost of a sequence computation is bounded by the sum of cost of the constituents.
   operate/seq≤cost/seq : ∀ l q → ub Q (l operate/seq q) (cost/seq l q)
   operate/seq≤cost/seq [] q0 = ub/ret 0
   operate/seq≤cost/seq (o ∷ os) q = ub/bind {A = Q} {e = o operate q} {f = λ q → os operate/seq q}
-   (cost o q) (cost/seq os) (op≤cost o q) λ q → operate/seq≤cost/seq os q
+   (op/cost o q) (cost/seq os) (op≤cost o q) λ q → operate/seq≤cost/seq os q
 
   -- Telescoping the potential.
   cost/seq/tele : ∀ (l : List op) → val Q → Int.ℤ
   cost/seq/tele [] q0 = Int.0ℤ
-  cost/seq/tele (o ∷ os) q = bind (meta Int.ℤ) (o operate q) λ q' → (Int.+ (cost o q)) Int.+ (o operateϕ q Int.⊖ ϕ q) Int.+ (cost/seq/tele os q')
+  cost/seq/tele (o ∷ os) q = bind (meta Int.ℤ) (o operate q) λ q' → (Int.+ (op/cost o q)) Int.+ (o operateϕ q Int.⊖ ϕ q) Int.+ (cost/seq/tele os q')
 
   ϕn : ℕ → List op → val Q → ℕ
   ϕn zero l q0 = ϕ q0
@@ -338,7 +341,7 @@ module FrontBack where
     where open ≡-Reasoning
 
   -- Telescoping sum:
-  -- Σᵢⁿ cost oᵢ + ϕ qᵢ - ϕ qᵢ­₋₁ = ϕ q_{n-1} - ϕ q_0 + Σᵢ costᵢ
+  -- Σᵢⁿ op/cost oᵢ + ϕ qᵢ - ϕ qᵢ­₋₁ = ϕ q_{n-1} - ϕ q_0 + Σᵢ costᵢ
   cost≡cost/tele : ∀ l q → cost/seq/tele l q ≡ (ϕ/-1 l q Int.⊖ ϕ/0 l q) Int.+ (Int.+ (cost/seq l q))
   cost≡cost/tele [] q =
     P.sym
@@ -354,28 +357,28 @@ module FrontBack where
   cost≡cost/tele (o ∷ os) q rewrite operateϕ≡ϕ∘operate o q
                                   | bind/meta Q ℕ Int.ℤ
                                     (o operate q)
-                                    (λ q' → cost o q + cost/seq os q')
+                                    (λ q' → op/cost o q + cost/seq os q')
                                     (λ x → (ϕ/-1 (o ∷ os) q Int.⊖ ϕ/0 (o ∷ os) q) Int.+ (Int.+ x))
-                                  | bind/dup Q ℕ Int.ℤ (o operate q) (ϕ/-1 os) (λ q' x → (x Int.⊖ ϕ q) Int.+ (Int.+ (cost o q + cost/seq os q')))
-                                  | bind/dup Q ℕ Int.ℤ (o operate q) ϕ (λ q' x → Int.+ (cost o q) Int.+ (x Int.⊖ ϕ q) Int.+ (cost/seq/tele os q')) =
+                                  | bind/dup Q ℕ Int.ℤ (o operate q) (ϕ/-1 os) (λ q' x → (x Int.⊖ ϕ q) Int.+ (Int.+ (op/cost o q + cost/seq os q')))
+                                  | bind/dup Q ℕ Int.ℤ (o operate q) ϕ (λ q' x → Int.+ (op/cost o q) Int.+ (x Int.⊖ ϕ q) Int.+ (cost/seq/tele os q')) =
     P.cong (λ f → bind (meta Int.ℤ) (o operate q) f)
     (funext (λ q' →
     (
       begin
-      (Int.+ (cost o q)) Int.+ (ϕ q' Int.⊖ ϕ q) Int.+ (cost/seq/tele os q') ≡⟨ P.cong (λ x → (Int.+ (cost o q)) Int.+ (ϕ q' Int.⊖ ϕ q) Int.+ x) (cost≡cost/tele os q') ⟩
-      Int.+ cost o q Int.+ (ϕ q' Int.⊖ ϕ q) Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → x Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ cost/seq os q')) (IntP.+-comm (Int.+ cost o q) (ϕ q' Int.⊖ ϕ q)) ⟩
-      ϕ q' Int.⊖ ϕ q Int.+ Int.+ cost o q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ cost/seq os q') ≡⟨ IntP.+-assoc (ϕ q' Int.⊖ ϕ q) (Int.+ cost o q) (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ cost/seq os q') ⟩
-      ϕ q' Int.⊖ ϕ q Int.+ (Int.+ cost o q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ cost/seq os q')) ≡⟨ P.cong (λ x → ϕ q' Int.⊖ ϕ q Int.+ x) (P.sym (IntP.+-assoc (Int.+ cost o q) (ϕ/-1 os q' Int.⊖ ϕ/0 os q') (Int.+ cost/seq os q'))) ⟩
-      ϕ q' Int.⊖ ϕ q Int.+ (Int.+ cost o q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q') Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → ϕ q' Int.⊖ ϕ q Int.+ (x Int.+ Int.+ cost/seq os q')) (IntP.+-comm (Int.+ cost o q) (ϕ/-1 os q' Int.⊖ ϕ/0 os q')) ⟩
-      ϕ q' Int.⊖ ϕ q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ cost o q Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → ϕ q' Int.⊖ ϕ q Int.+ x) (IntP.+-assoc (ϕ/-1 os q' Int.⊖ ϕ/0 os q') (Int.+ cost o q) (Int.+ cost/seq os q')) ⟩
-      ϕ q' Int.⊖ ϕ q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ (Int.+ cost o q Int.+ Int.+ cost/seq os q')) ≡⟨ P.sym (IntP.+-assoc (ϕ q' Int.⊖ ϕ q) (ϕ/-1 os q' Int.⊖ ϕ/0 os q') (Int.+ cost o q Int.+ Int.+ cost/seq os q')) ⟩
-      ϕ q' Int.⊖ ϕ q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q') Int.+ (Int.+ cost o q Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → x Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q') Int.+ (Int.+ cost o q Int.+ Int.+ cost/seq os q')) (P.sym (IntP.m-n≡m⊖n (ϕ q') (ϕ q))) ⟩
-      Int.+ ϕ q' Int.- (Int.+ ϕ q) Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q') Int.+ (Int.+ cost o q Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → Int.+ ϕ q' Int.- (Int.+ ϕ q) Int.+ x Int.+ (Int.+ cost o q Int.+ Int.+ cost/seq os q')) (P.sym (IntP.m-n≡m⊖n (ϕ/-1 os q') (ϕ/0 os q'))) ⟩
-      Int.+ ϕ q' Int.- Int.+ ϕ q Int.+ (Int.+ ϕ/-1 os q' Int.- (Int.+ ϕ/0 os q')) Int.+ (Int.+ cost o q Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → x Int.+ (Int.+ cost o q Int.+ Int.+ cost/seq os q')) (IntP.+-comm (Int.+ ϕ q' Int.- Int.+ ϕ q) (Int.+ ϕ/-1 os q' Int.- (Int.+ ϕ/0 os q'))) ⟩
-      Int.+ ϕ/-1 os q' Int.- Int.+ ϕ/0 os q' Int.+ (Int.+ ϕ q' Int.- Int.+ ϕ q) Int.+ (Int.+ cost o q Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → x Int.+ (Int.+ cost o q Int.+ Int.+ cost/seq os q')) (IntP.+-minus-telescope (Int.+ ϕ/-1 os q') (Int.+ ϕ q') (Int.+ ϕ q)) ⟩
-      Int.+ ϕ/-1 os q' Int.- Int.+ ϕ q Int.+ (Int.+ cost o q Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → x Int.+ (Int.+ cost o q Int.+ Int.+ cost/seq os q')) (IntP.m-n≡m⊖n (ϕ/-1 os q') (ϕ q )) ⟩
-      ϕ/-1 os q' Int.⊖ ϕ q Int.+ (Int.+ cost o q Int.+ Int.+ cost/seq os q') ≡⟨ refl ⟩
-      ϕ/-1 os q' Int.⊖ ϕ q Int.+ (Int.+ cost o q Int.+ Int.+ cost/seq os q')
+      (Int.+ (op/cost o q)) Int.+ (ϕ q' Int.⊖ ϕ q) Int.+ (cost/seq/tele os q') ≡⟨ P.cong (λ x → (Int.+ (op/cost o q)) Int.+ (ϕ q' Int.⊖ ϕ q) Int.+ x) (cost≡cost/tele os q') ⟩
+      Int.+ op/cost o q Int.+ (ϕ q' Int.⊖ ϕ q) Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → x Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ cost/seq os q')) (IntP.+-comm (Int.+ op/cost o q) (ϕ q' Int.⊖ ϕ q)) ⟩
+      ϕ q' Int.⊖ ϕ q Int.+ Int.+ op/cost o q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ cost/seq os q') ≡⟨ IntP.+-assoc (ϕ q' Int.⊖ ϕ q) (Int.+ op/cost o q) (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ cost/seq os q') ⟩
+      ϕ q' Int.⊖ ϕ q Int.+ (Int.+ op/cost o q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ cost/seq os q')) ≡⟨ P.cong (λ x → ϕ q' Int.⊖ ϕ q Int.+ x) (P.sym (IntP.+-assoc (Int.+ op/cost o q) (ϕ/-1 os q' Int.⊖ ϕ/0 os q') (Int.+ cost/seq os q'))) ⟩
+      ϕ q' Int.⊖ ϕ q Int.+ (Int.+ op/cost o q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q') Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → ϕ q' Int.⊖ ϕ q Int.+ (x Int.+ Int.+ cost/seq os q')) (IntP.+-comm (Int.+ op/cost o q) (ϕ/-1 os q' Int.⊖ ϕ/0 os q')) ⟩
+      ϕ q' Int.⊖ ϕ q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ op/cost o q Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → ϕ q' Int.⊖ ϕ q Int.+ x) (IntP.+-assoc (ϕ/-1 os q' Int.⊖ ϕ/0 os q') (Int.+ op/cost o q) (Int.+ cost/seq os q')) ⟩
+      ϕ q' Int.⊖ ϕ q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ (Int.+ op/cost o q Int.+ Int.+ cost/seq os q')) ≡⟨ P.sym (IntP.+-assoc (ϕ q' Int.⊖ ϕ q) (ϕ/-1 os q' Int.⊖ ϕ/0 os q') (Int.+ op/cost o q Int.+ Int.+ cost/seq os q')) ⟩
+      ϕ q' Int.⊖ ϕ q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q') Int.+ (Int.+ op/cost o q Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → x Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q') Int.+ (Int.+ op/cost o q Int.+ Int.+ cost/seq os q')) (P.sym (IntP.m-n≡m⊖n (ϕ q') (ϕ q))) ⟩
+      Int.+ ϕ q' Int.- (Int.+ ϕ q) Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q') Int.+ (Int.+ op/cost o q Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → Int.+ ϕ q' Int.- (Int.+ ϕ q) Int.+ x Int.+ (Int.+ op/cost o q Int.+ Int.+ cost/seq os q')) (P.sym (IntP.m-n≡m⊖n (ϕ/-1 os q') (ϕ/0 os q'))) ⟩
+      Int.+ ϕ q' Int.- Int.+ ϕ q Int.+ (Int.+ ϕ/-1 os q' Int.- (Int.+ ϕ/0 os q')) Int.+ (Int.+ op/cost o q Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → x Int.+ (Int.+ op/cost o q Int.+ Int.+ cost/seq os q')) (IntP.+-comm (Int.+ ϕ q' Int.- Int.+ ϕ q) (Int.+ ϕ/-1 os q' Int.- (Int.+ ϕ/0 os q'))) ⟩
+      Int.+ ϕ/-1 os q' Int.- Int.+ ϕ/0 os q' Int.+ (Int.+ ϕ q' Int.- Int.+ ϕ q) Int.+ (Int.+ op/cost o q Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → x Int.+ (Int.+ op/cost o q Int.+ Int.+ cost/seq os q')) (IntP.+-minus-telescope (Int.+ ϕ/-1 os q') (Int.+ ϕ q') (Int.+ ϕ q)) ⟩
+      Int.+ ϕ/-1 os q' Int.- Int.+ ϕ q Int.+ (Int.+ op/cost o q Int.+ Int.+ cost/seq os q') ≡⟨ P.cong (λ x → x Int.+ (Int.+ op/cost o q Int.+ Int.+ cost/seq os q')) (IntP.m-n≡m⊖n (ϕ/-1 os q') (ϕ q )) ⟩
+      ϕ/-1 os q' Int.⊖ ϕ q Int.+ (Int.+ op/cost o q Int.+ Int.+ cost/seq os q') ≡⟨ refl ⟩
+      ϕ/-1 os q' Int.⊖ ϕ q Int.+ (Int.+ op/cost o q Int.+ Int.+ cost/seq os q')
       ∎
     )
     ))
@@ -387,11 +390,11 @@ module FrontBack where
 
   amortized≥cost/tele : ∀ q0 l l' → Amortized l l' → Int.+ (lsum l') Int.≥ cost/seq/tele l q0
   amortized≥cost/tele q .[] .[] a/emp = IntP.≤-refl
-  amortized≥cost/tele q .(o ∷ os) .(k ∷ l') (a/cons o k os l' x h) rewrite tbind/meta Q Int.ℤ (o operate q) (λ q' → (Int.+ (cost o q)) Int.+ (o operateϕ q Int.⊖ ϕ q) Int.+ (cost/seq/tele os q')) (λ z → z Int.≤ Int.+ lsum (k ∷ l')) =
-    dbind (λ q' → meta ((Int.+ (cost o q)) Int.+ (o operateϕ q Int.⊖ ϕ q) Int.+ (cost/seq/tele os q') Int.≤ Int.+ lsum (k ∷ l'))) (o operate q)
+  amortized≥cost/tele q .(o ∷ os) .(k ∷ l') (a/cons o k os l' x h) rewrite tbind/meta Q Int.ℤ (o operate q) (λ q' → (Int.+ (op/cost o q)) Int.+ (o operateϕ q Int.⊖ ϕ q) Int.+ (cost/seq/tele os q')) (λ z → z Int.≤ Int.+ lsum (k ∷ l')) =
+    dbind (λ q' → meta ((Int.+ (op/cost o q)) Int.+ (o operateϕ q Int.⊖ ϕ q) Int.+ (cost/seq/tele os q') Int.≤ Int.+ lsum (k ∷ l'))) (o operate q)
     λ q' →
     begin
-    Int.+ cost o q Int.+ ((o operateϕ q) Int.⊖ ϕ q) Int.+ cost/seq/tele os q' ≤⟨ IntP.+-monoˡ-≤ (cost/seq/tele os q') (x q) ⟩
+    Int.+ op/cost o q Int.+ ((o operateϕ q) Int.⊖ ϕ q) Int.+ cost/seq/tele os q' ≤⟨ IntP.+-monoˡ-≤ (cost/seq/tele os q') (x q) ⟩
     Int.+ k Int.+ cost/seq/tele os q' ≤⟨ IntP.+-monoʳ-≤ (Int.+ k) (amortized≥cost/tele q' os l' h) ⟩
     Int.+ k Int.+ Int.+ lsum l' ≤⟨ IntP.≤-refl ⟩
     Int.+ k Int.+ Int.+ lsum l'
@@ -440,9 +443,9 @@ module FrontBack where
 
   deq/acost : is/acost op/deq 0
   deq/acost (f , b) =
-    list/match f (λ f → meta ((Int.+ (cost op/deq (f , b))) Int.+ ((op/deq operateϕ (f , b)) Int.⊖ (ϕ (f , b))) Int.≤ Int.0ℤ))
+    list/match f (λ f → meta ((Int.+ (op/cost op/deq (f , b))) Int.+ ((op/deq operateϕ (f , b)) Int.⊖ (ϕ (f , b))) Int.≤ Int.0ℤ))
     (
-    list/match b (λ b → meta ((Int.+ (cost op/deq (nil , b))) Int.+ ((op/deq operateϕ (nil , b)) Int.⊖ (ϕ (nil , b))) Int.≤ Int.0ℤ))
+    list/match b (λ b → meta ((Int.+ (op/cost op/deq (nil , b))) Int.+ ((op/deq operateϕ (nil , b)) Int.⊖ (ϕ (nil , b))) Int.≤ Int.0ℤ))
     IntP.≤-refl
     λ a b' →
     begin

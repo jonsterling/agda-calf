@@ -1,19 +1,21 @@
 {-# OPTIONS --prop --without-K --rewriting #-}
 
-module Calf.Upper where
+open import Calf.CostMonoid
+
+module Calf.Upper (CostMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage
-open import Calf.PhaseDistinction
-open import Calf.Eq
-open import Data.Nat
-open import Data.Nat.Properties
+open import Calf.Metalanguage CostMonoid
+open import Calf.PhaseDistinction CostMonoid
+open import Calf.Eq CostMonoid
+
+open CostMonoid CostMonoid
 
 -- postulate
 --   le/ext : ◯ (cmp (F nat)) → ◯ (cmp (F nat)) → tp neg
 --   le/ext/decode : ∀ {p q} → cmp (le/ext p q) ≡ ((u : ext) → p u ≤ q u)
 
-data ub (A : tp pos) : cmp (F A) → cmp (meta ℕ) → □ where
+data ub (A : tp pos) : cmp (F A) → cmp cost → □ where
   ub/intro : ∀ {e p q} (a : val A) →
     q ≤ p →
     cmp (F (eq (U(F A)) e (step' (F A) q (ret {A} a)))) →
@@ -31,7 +33,7 @@ data ub (A : tp pos) : cmp (F A) → cmp (meta ℕ) → □ where
 --   {-# REWRITE ub/decode #-}
 
 postulate
-  ub⁻ : (A : tp pos) → cmp (F A) → (cmp (meta ℕ)) → tp neg
+  ub⁻ : (A : tp pos) → cmp (F A) → cmp cost → tp neg
   ub⁻/decode : ∀ {A e p} → iso (ub A e p) (cmp (ub⁻ A e p))
 
 ub/relax : ∀ {A e p p'} → p ≤ p' → ub A e p → ub A e p'

@@ -1,11 +1,13 @@
 {-# OPTIONS --prop --without-K --rewriting #-}
 
--- The is the basic CBPV metalanguage.
+-- The basic CBPV metalanguage.
 
-module Calf.Metalanguage where
+open import Calf.CostMonoid
+
+module Calf.Metalanguage (CostMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Data.Nat
+open CostMonoid CostMonoid
 
 postulate
   mode : □
@@ -66,7 +68,11 @@ postulate
   meta/out : ∀ {A} → val (U (meta A)) ≡ A
   {-# REWRITE meta/out #-}
 
-  step' : ∀ (B : tp neg) → (cmp (meta ℕ)) → cmp B → cmp B
+cost : tp neg
+cost = meta ℂ
+
+postulate
+  step' : ∀ (B : tp neg) → cmp cost → cmp B → cmp B
   step'/id : ∀ {B : tp neg} {e : cmp B} →
     step' B zero e ≡ e
   {-# REWRITE step'/id #-}
@@ -90,5 +96,3 @@ postulate
   bind/meta : ∀ A 𝕊 𝕋 e f (g : 𝕊 → 𝕋) → g (bind {A} (meta 𝕊) e f) ≡ bind {A} (meta 𝕋) e (λ a → g(f a))
   tbind/meta : ∀ A 𝕊 e f (p : 𝕊 → □) → p (bind {A} (meta 𝕊) e f) ≡ cmp (tbind {A} e (λ a → meta (p (f a))))
   bind/idem : ∀ A 𝕊 e (f : val A → val A → 𝕊) → bind {A} (meta 𝕊) e (λ a → (bind {A} (meta 𝕊) e (λ a' → f a a'))) ≡ bind {A} (meta 𝕊) e (λ a → f a a)
-
-cost = meta ℕ
