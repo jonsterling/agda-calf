@@ -9,7 +9,7 @@ open import Calf.Metalanguage CostMonoid
 open import Calf.PhaseDistinction CostMonoid
 open import Calf.Upper CostMonoid
 open import Calf.Eq CostMonoid
-open import Calf.Connectives
+open import Calf.BoundedFunction CostMonoid
 
 open import Data.Nat as ℕ using (ℕ; suc)
 open import Calf.Types.Nat CostMonoid as Nat hiding (zero)
@@ -20,7 +20,6 @@ open import Function using (const)
 
 open CostMonoid CostMonoid
 
-open Ext
 open iso
 
 ub/ret : ∀ {A a} (c : ℂ) → ub A (ret {A} a) c

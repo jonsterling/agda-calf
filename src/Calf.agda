@@ -10,6 +10,6 @@ open import Calf.CostEffect CostMonoid public
 open import Calf.PhaseDistinction CostMonoid public
 open import Calf.Eq CostMonoid public
 open import Calf.Upper CostMonoid public
-open import Calf.Connectives CostMonoid public
+open import Calf.BoundedFunction CostMonoid public
 
 open import Calf.Refinement CostMonoid public

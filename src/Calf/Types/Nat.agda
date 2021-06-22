@@ -9,12 +9,11 @@ open import Calf.Metalanguage CostMonoid
 open import Calf.PhaseDistinction CostMonoid
 open import Calf.Upper CostMonoid
 open import Calf.Eq CostMonoid
-open import Calf.Connectives CostMonoid
+open import Calf.BoundedFunction CostMonoid
 open import Data.Nat as Nat using (ℕ ; _+_)
 open import Function
 open import Relation.Binary.PropositionalEquality as P
 
-open Ext
 open iso
 
 postulate
@@ -37,12 +36,6 @@ postulate
   toℕ-zero : toℕ zero ≡ 0
   toℕ-succ : ∀ {x} → toℕ (succ x) ≡ Nat.suc (toℕ x)
   {-# REWRITE nat-ℕ ℕ-nat toℕ-zero toℕ-succ #-}
-
-e/nat : Ext nat
-e/nat = record
-  { Carrier = ℕ
-  ; rep = record { fwd = toℕ ; bwd = tonat ; bwd-fwd = ℕ-nat ; fwd-bwd = nat-ℕ }
-  }
 
 -- toℕ : val nat → ℕ
 -- toℕ n = rec n (λ _ → meta ℕ) 0 (λ _ r → 1 + r)
