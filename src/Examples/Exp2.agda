@@ -40,14 +40,6 @@ lemma/2^suc n =
   ∎
     where open ≡-Reasoning
 
-lemma/2^n≢0 : ∀ n → 2 ^ n ≢ zero
-lemma/2^n≢0 n 2^n≡0 with N.m^n≡0⇒m≡0 2 n 2^n≡0
-... | ()
-
-lemma/pred-+ : ∀ m n → m ≢ zero → pred m + n ≡ pred (m + n)
-lemma/pred-+ zero    n m≢zero = ⊥-elim (m≢zero refl)
-lemma/pred-+ (suc m) n m≢zero = refl
-
 module Slow where
   exp₂ : cmp (Π (U (meta ℕ)) λ _ → F (U (meta ℕ)))
   exp₂ zero = ret (suc zero)
@@ -106,7 +98,16 @@ module Slow where
         pred (2 ^ suc n)
       ∎)
       (ub/step ((w , s) ⊗ (w , s) ⊕ (1 , 1)) 𝟘 ub/ret)
-      where open ≤-Reasoning
+      where
+        open ≤-Reasoning
+
+        lemma/2^n≢0 : ∀ n → 2 ^ n ≢ zero
+        lemma/2^n≢0 n 2^n≡0 with N.m^n≡0⇒m≡0 2 n 2^n≡0
+        ... | ()
+
+        lemma/pred-+ : ∀ m n → m ≢ zero → pred m + n ≡ pred (m + n)
+        lemma/pred-+ zero    n m≢zero = ⊥-elim (m≢zero refl)
+        lemma/pred-+ (suc m) n m≢zero = refl
 
   exp₂≤exp₂/cost/par : ∀ n → ⊗U.ub (U (meta ℕ)) (exp₂ n) (exp₂/cost n)
   exp₂≤exp₂/cost/par zero    = ⊗U.ub/intro {q = 𝟘} 1 (≤ₓ-refl {𝟘}) (ret (eq/intro refl))
