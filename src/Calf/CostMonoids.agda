@@ -6,6 +6,7 @@ module Calf.CostMonoids where
 
 open import Calf.CostMonoid
 open import Data.Product
+open import Relation.Binary.PropositionalEquality
 
 ℕ-CostMonoid : CostMonoid
 ℕ-CostMonoid = record
@@ -22,16 +23,55 @@ open import Data.Product
   where
     open import Data.Nat
     open import Data.Nat.Properties
-    open import Relation.Binary.PropositionalEquality
 
-ℕ²-ParCostMonoid : ParCostMonoid
-ℕ²-ParCostMonoid = record
-  { ℂ = ℕ × ℕ
-  ; _⊕_ = λ (w₁ , s₁) (w₂ , s₂) → (w₁ + w₂) , (s₁ + s₂)
-  ; 𝟘 = zero , zero
-  ; _⊗_ = λ (w₁ , s₁) (w₂ , s₂) → (w₁ + w₂) , (s₁ ⊔ s₂)
-  ; 𝟙 = zero , zero
-  ; _≤_ = λ (w₁ , s₁) (w₂ , s₂) → w₁ ≤ w₂ × s₁ ≤ s₂
+ℕ-Work-ParCostMonoid : ParCostMonoid
+ℕ-Work-ParCostMonoid = record
+  { ℂ = ℕ
+  ; _⊕_ = _+_
+  ; 𝟘 = 0
+  ; _⊗_ = _+_
+  ; 𝟙 = 0
+  ; _≤_ = _≤_
+  ; isParCostMonoid = record
+    { isMonoid = +-0-isMonoid
+    ; isCommutativeMonoid = +-0-isCommutativeMonoid
+    ; isPreorder = ≤-isPreorder
+    ; isMonotone-⊕ = record { ∙-mono-≤ = +-mono-≤ }
+    ; isMonotone-⊗ = record { ∙-mono-≤ = +-mono-≤ }
+    }
+  }
+  where
+    open import Data.Nat
+    open import Data.Nat.Properties
+
+ℕ-Span-ParCostMonoid : ParCostMonoid
+ℕ-Span-ParCostMonoid = record
+  { ℂ = ℕ
+  ; _⊕_ = _+_
+  ; 𝟘 = 0
+  ; _⊗_ = _⊔_
+  ; 𝟙 = 0
+  ; _≤_ = _≤_
+  ; isParCostMonoid = record
+    { isMonoid = +-0-isMonoid
+    ; isCommutativeMonoid = ⊔-0-isCommutativeMonoid
+    ; isPreorder = ≤-isPreorder
+    ; isMonotone-⊕ = record { ∙-mono-≤ = +-mono-≤ }
+    ; isMonotone-⊗ = record { ∙-mono-≤ = ⊔-mono-≤ }
+    }
+  }
+  where
+    open import Data.Nat
+    open import Data.Nat.Properties
+
+combineParCostMonoids : ParCostMonoid → ParCostMonoid → ParCostMonoid
+combineParCostMonoids pcm₁ pcm₂ = record
+  { ℂ = ℂ pcm₁ × ℂ pcm₂
+  ; _⊕_ = λ (a₁ , a₂) (b₁ , b₂) → _⊕_ pcm₁ a₁ b₁ , _⊕_ pcm₂ a₂ b₂
+  ; 𝟘 = 𝟘 pcm₁ , 𝟘 pcm₂
+  ; _⊗_ = λ (a₁ , a₂) (b₁ , b₂) → _⊗_ pcm₁ a₁ b₁ , _⊗_ pcm₂ a₂ b₂
+  ; 𝟙 = 𝟙 pcm₁ , 𝟙 pcm₂
+  ; _≤_ = λ (a₁ , a₂) (b₁ , b₂) → _≤_ pcm₁ a₁ b₁ × _≤_ pcm₂ a₂ b₂
   ; isParCostMonoid = record
     { isMonoid = record
       { isSemigroup = record
@@ -39,14 +79,14 @@ open import Data.Product
           { isEquivalence = isEquivalence
           ; ∙-cong = λ h₁ h₂ →
               cong₂ _,_
-                (cong₂ _+_ (cong proj₁ h₁) (cong proj₁ h₂))
-                (cong₂ _+_ (cong proj₂ h₁) (cong proj₂ h₂))
+                (cong₂ (_⊕_ pcm₁) (cong proj₁ h₁) (cong proj₁ h₂))
+                (cong₂ (_⊕_ pcm₂) (cong proj₂ h₁) (cong proj₂ h₂))
           }
-        ; assoc = λ (w₁ , s₁) (w₂ , s₂) (w₃ , s₃) → cong₂ _,_ (+-assoc w₁ w₂ w₃) (+-assoc s₁ s₂ s₃)
+        ; assoc = λ (a₁ , a₂) (b₁ , b₂) (c₁ , c₂) → cong₂ _,_ (⊕-assoc pcm₁ a₁ b₁ c₁) (⊕-assoc pcm₂ a₂ b₂ c₂)
         }
       ; identity =
-        (λ (w , s) → cong₂ _,_ (+-identityˡ w) (+-identityˡ s)) ,
-        (λ (w , s) → cong₂ _,_ (+-identityʳ w) (+-identityʳ s))
+        (λ (a₁ , a₂) → cong₂ _,_ (⊕-identityˡ pcm₁ a₁) (⊕-identityˡ pcm₂ a₂)) ,
+        (λ (a₁ , a₂) → cong₂ _,_ (⊕-identityʳ pcm₁ a₁) (⊕-identityʳ pcm₂ a₂))
       }
     ; isCommutativeMonoid = record
       { isMonoid = record
@@ -55,31 +95,31 @@ open import Data.Product
             { isEquivalence = isEquivalence
             ; ∙-cong = λ h₁ h₂ →
                 cong₂ _,_
-                  (cong₂ _+_ (cong proj₁ h₁) (cong proj₁ h₂))
-                  (cong₂ _⊔_ (cong proj₂ h₁) (cong proj₂ h₂))
+                  (cong₂ (_⊗_ pcm₁) (cong proj₁ h₁) (cong proj₁ h₂))
+                  (cong₂ (_⊗_ pcm₂) (cong proj₂ h₁) (cong proj₂ h₂))
             }
-          ; assoc = λ (w₁ , s₁) (w₂ , s₂) (w₃ , s₃) → cong₂ _,_ (+-assoc w₁ w₂ w₃) (⊔-assoc s₁ s₂ s₃)
+          ; assoc = λ (a₁ , a₂) (b₁ , b₂) (c₁ , c₂) → cong₂ _,_ (⊗-assoc pcm₁ a₁ b₁ c₁) (⊗-assoc pcm₂ a₂ b₂ c₂)
           }
         ; identity =
-            (λ (w , s) → cong₂ _,_ (+-identityˡ w) (⊔-identityˡ s)) ,
-            (λ (w , s) → cong₂ _,_ (+-identityʳ w) (⊔-identityʳ s))
+          (λ (a₁ , a₂) → cong₂ _,_ (⊗-identityˡ pcm₁ a₁) (⊗-identityˡ pcm₂ a₂)) ,
+          (λ (a₁ , a₂) → cong₂ _,_ (⊗-identityʳ pcm₁ a₁) (⊗-identityʳ pcm₂ a₂))
         }
-      ; comm = λ (w₁ , s₁) (w₂ , s₂) → cong₂ _,_ (+-comm w₁ w₂) (⊔-comm s₁ s₂)
+      ; comm = λ (a₁ , a₂) (b₁ , b₂) → cong₂ _,_ (⊗-comm pcm₁ a₁ b₁) (⊗-comm pcm₂ a₂ b₂)
       }
     ; isPreorder = record
       { isEquivalence = isEquivalence
-      ; reflexive = λ { refl → ≤-refl , ≤-refl }
-      ; trans = λ (hw₁ , hs₁) (hw₂ , hs₂) → ≤-trans hw₁ hw₂ , ≤-trans hs₁ hs₂
+      ; reflexive = λ { refl → ≤-refl pcm₁ , ≤-refl pcm₂ }
+      ; trans = λ (h₁ , h₂) (h₁' , h₂') → ≤-trans pcm₁ h₁ h₁' , ≤-trans pcm₂ h₂ h₂'
       }
     ; isMonotone-⊕ = record
-      { ∙-mono-≤ = λ (hw₁ , hs₁) (hw₂ , hs₂) → (+-mono-≤ hw₁ hw₂) , (+-mono-≤ hs₁ hs₂)
+      { ∙-mono-≤ = λ (h₁ , h₂) (h₁' , h₂') → ⊕-mono-≤ pcm₁ h₁ h₁' , ⊕-mono-≤ pcm₂ h₂ h₂'
       }
     ; isMonotone-⊗ = record
-      { ∙-mono-≤ = λ (hw₁ , hs₁) (hw₂ , hs₂) → (+-mono-≤ hw₁ hw₂) , (⊔-mono-≤ hs₁ hs₂)
+      { ∙-mono-≤ = λ (h₁ , h₂) (h₁' , h₂') → ⊗-mono-≤ pcm₁ h₁ h₁' , ⊗-mono-≤ pcm₂ h₂ h₂'
       }
     }
   }
-  where
-    open import Data.Nat
-    open import Data.Nat.Properties
-    open import Relation.Binary.PropositionalEquality
+  where open ParCostMonoid
+
+ℕ²-ParCostMonoid : ParCostMonoid
+ℕ²-ParCostMonoid = combineParCostMonoids ℕ-Work-ParCostMonoid ℕ-Span-ParCostMonoid
