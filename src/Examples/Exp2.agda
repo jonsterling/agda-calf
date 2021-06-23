@@ -40,6 +40,14 @@ lemma/2^suc n =
   ∎
     where open ≡-Reasoning
 
+ub/par : {A₁ A₂ : tp pos} {e₁ : cmp (F A₁)} {e₂ : cmp (F A₂)} {p₁ p₂ : ℂ} →
+  ⊕U.ub A₁ e₁ p₁ →
+  ⊕U.ub A₂ e₂ p₂ →
+  ⊕U.ub (Σ++ A₁ λ _ → A₂) (e₁ & e₂) (p₁ ⊗ p₂)
+ub/par (⊕U.ub.ub/intro {q = q₁} a₁ h≤₁ h≡₁) (⊕U.ub.ub/intro {q = q₂} a₂ h≤₂ h≡₂) with eq/ref h≡₁ | eq/ref h≡₂
+... | refl | refl =
+  ⊕U.ub.ub/intro {q = q₁ ⊗ q₂} (a₁ , a₂) {!   !} (ret (eq/intro {!   !}))
+
 module Slow where
   exp₂ : cmp (Π (U (meta ℕ)) λ _ → F (U (meta ℕ)))
   exp₂ zero = ret (suc zero)
@@ -71,35 +79,19 @@ module Slow where
       where open ≡-Reasoning
 
   exp₂/cost : cmp (Π (U (meta ℕ)) λ _ → cost)
-  exp₂/cost n = pred (2 ^ n) , n
+  exp₂/cost zero    = 𝟘
+  exp₂/cost (suc n) with exp₂/cost n
+  ... | (w , s) = suc (w + w) , suc s
 
-  exp₂≤exp₂/cost/seq : ∀ n → ⊕U.ub (U (meta ℕ)) (exp₂ n) (exp₂/cost n)
-  exp₂≤exp₂/cost/seq zero    = ub/ret
-  exp₂≤exp₂/cost/seq (suc n) with exp₂≤exp₂/cost/seq n
-  ... | ⊕U.ub/intro {q = (w , s)} _ ih h-eq rewrite eq/ref h-eq =
-    ⊕U.ub/relax
-      (begin
-        proj₁ ((w , s) ⊗ (w , s) ⊕ (1 , 1) ⊕ 𝟘)
-      ≡⟨⟩
-        proj₁ ((w + w + 1 , s ⊔ s + 1) ⊕ 𝟘)
-      ≡⟨ Eq.cong proj₁ (CostMonoid.identityʳ costMonoid (w + w + 1 , s ⊔ s + 1)) ⟩
-        w + w + 1
-      ≡⟨ N.+-comm (w + w) 1 ⟩
-        suc (w + w)
-      ≤⟨ s≤s (N.+-mono-≤ ih ih) ⟩
-        suc (pred (2 ^ n) + pred (2 ^ n))
-      ≡˘⟨ N.+-suc (pred (2 ^ n)) (pred (2 ^ n)) ⟩
-        pred (2 ^ n) + suc (pred (2 ^ n))
-      ≡⟨ Eq.cong (pred (2 ^ n) +_) (N.suc[pred[n]]≡n (lemma/2^n≢0 n)) ⟩
-        pred (2 ^ n) + 2 ^ n
-      ≡⟨ lemma/pred-+ (2 ^ n) (2 ^ n) (lemma/2^n≢0 n) ⟩
-        pred (2 ^ n + 2 ^ n)
-      ≡⟨ Eq.cong pred (lemma/2^suc n) ⟩
-        pred (2 ^ suc n)
-      ∎)
-      (ub/step ((w , s) ⊗ (w , s) ⊕ (1 , 1)) 𝟘 ub/ret)
+  exp₂/cost/closed : cmp (Π (U (meta ℕ)) λ _ → cost)
+  exp₂/cost/closed n = pred (2 ^ n) , n
+
+  exp₂/cost≡exp₂/cost/closed : ∀ n → exp₂/cost n ≡ exp₂/cost/closed n
+  exp₂/cost≡exp₂/cost/closed zero    = refl
+  exp₂/cost≡exp₂/cost/closed (suc n) with exp₂/cost n | exp₂/cost≡exp₂/cost/closed n
+  ... | (w , s) | refl = Eq.cong (_, suc n) lemma/work
       where
-        open ≤-Reasoning
+        open ≡-Reasoning
 
         lemma/2^n≢0 : ∀ n → 2 ^ n ≢ zero
         lemma/2^n≢0 n 2^n≡0 with N.m^n≡0⇒m≡0 2 n 2^n≡0
@@ -109,23 +101,74 @@ module Slow where
         lemma/pred-+ zero    n m≢zero = ⊥-elim (m≢zero refl)
         lemma/pred-+ (suc m) n m≢zero = refl
 
+        lemma/work : suc (pred (2 ^ n) + pred (2 ^ n)) ≡ pred (2 ^ suc n)
+        lemma/work =
+          begin
+            suc (pred (2 ^ n) + pred (2 ^ n))
+          ≡˘⟨ N.+-suc (pred (2 ^ n)) (pred (2 ^ n)) ⟩
+            pred (2 ^ n) + suc (pred (2 ^ n))
+          ≡⟨ Eq.cong (pred (2 ^ n) +_) (N.suc[pred[n]]≡n (lemma/2^n≢0 n)) ⟩
+            pred (2 ^ n) + 2 ^ n
+          ≡⟨ lemma/pred-+ (2 ^ n) (2 ^ n) (lemma/2^n≢0 n) ⟩
+            pred (2 ^ n + 2 ^ n)
+          ≡⟨ Eq.cong pred (lemma/2^suc n) ⟩
+            pred (2 ^ suc n)
+          ∎
+
+  lemma/cost/suc : ∀ n → exp₂/cost n ⊗ exp₂/cost n ⊕ ((1 , 1) ⊕ 𝟘) ≡ exp₂/cost (suc n)
+  lemma/cost/suc n =
+    let (w , s) = exp₂/cost n in
+    begin
+      exp₂/cost n ⊗ exp₂/cost n ⊕ ((1 , 1) ⊕ 𝟘)
+    ≡⟨⟩
+      (w , s) ⊗ (w , s) ⊕ ((1 , 1) ⊕ 𝟘)
+    ≡⟨ Eq.cong ((w , s) ⊗ (w , s) ⊕_) (⊕-identityʳ (1 , 1)) ⟩
+      (w , s) ⊗ (w , s) ⊕ (1 , 1)
+    ≡⟨⟩
+      w + w + 1 , s ⊔ s + 1
+    ≡⟨ Eq.cong₂ _,_ (N.+-comm (w + w) 1) (N.+-comm (s ⊔ s) 1) ⟩
+      suc (w + w) , suc (s ⊔ s)
+    ≡⟨ Eq.cong (suc (w + w) ,_) (Eq.cong suc (N.⊔-idem s)) ⟩
+      suc (w + w) , suc s
+    ≡⟨⟩
+      exp₂/cost (suc n)
+    ∎
+      where open ≡-Reasoning
+
+  exp₂≤exp₂/cost/seq : ∀ n → ⊕U.ub (U (meta ℕ)) (exp₂ n) (exp₂/cost n)
+  exp₂≤exp₂/cost/seq zero    = ub/ret
+  exp₂≤exp₂/cost/seq (suc n) =
+    Eq.subst (⊕U.ub _ _) (lemma/cost/suc n) (
+      ub/bind/const (exp₂/cost n ⊗ exp₂/cost n) ((1 , 1) ⊕ 𝟘) (ub/par (exp₂≤exp₂/cost/seq n) (exp₂≤exp₂/cost/seq n)) λ r →
+        ub/step (1 , 1) 𝟘 ub/ret
+    )
+
   exp₂≤exp₂/cost/par : ∀ n → ⊗U.ub (U (meta ℕ)) (exp₂ n) (exp₂/cost n)
   exp₂≤exp₂/cost/par zero    = ⊗U.ub/intro {q = 𝟘} 1 (≤ₓ-refl {𝟘}) (ret (eq/intro refl))
   exp₂≤exp₂/cost/par (suc n) with exp₂≤exp₂/cost/par n
   ... | ⊗U.ub/intro {q = (w , s)} a ih h-eq rewrite eq/ref h-eq =
-    ⊗U.ub/intro {q = (w , s) ⊗ (w , s) ⊕ (1 , 1)} (a + a)
-      (begin
-        proj₂ ((w , s) ⊗ (w , s) ⊕ (1 , 1))
-      ≡⟨⟩
-        s ⊔ s + 1
-      ≡⟨ N.+-comm (s ⊔ s) 1 ⟩
-        suc (s ⊔ s)
-      ≡⟨ Eq.cong suc (N.⊔-idem s) ⟩
-        suc s
-      ≤⟨ s≤s ih ⟩
-        suc n
-      ∎)
-      (ret (eq/intro refl))
+    Eq.subst (⊗U.ub _ _) (lemma/cost/suc n) (
+      ⊗U.ub/intro {q = ((w , s) ⊗ (w , s)) ⊕ ((1 , 1) ⊕ 𝟘)}
+        (a + a)
+        (⊕-monoˡ-≤ ((1 , 1) ⊕ 𝟘) {{!   !}} {{!   !}} (⊗-mono-≤ {w , s} {exp₂/cost n} {w , s} {exp₂/cost n} ih ih))
+        (ret (eq/intro refl))
+      -- (⊕-monoˡ-≤ ((1 , 1) ⊕ 𝟘) (⊗-mono-≤ ih ih))
+
+    -- ⊗U.ub/intro {q = (w , s) ⊗ (w , s) ⊕ (1 , 1)} (a + a)
+    --   (begin
+    --     proj₂ ((w , s) ⊗ (w , s) ⊕ (1 , 1))
+    --   ≡⟨⟩
+    --     s ⊔ s + 1
+    --   ≡⟨ N.+-comm (s ⊔ s) 1 ⟩
+    --     suc (s ⊔ s)
+    --   ≡⟨ Eq.cong suc (N.⊔-idem s) ⟩
+    --     suc s
+    --   ≤⟨ {!   !} ⟩
+    --     {!   !}
+    --     -- proj₂ (exp₂/cost (suc n))
+    --   ∎)
+    --   (ret (eq/intro refl))
+    )
       where open ≤-Reasoning
 
 module Fast where

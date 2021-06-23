@@ -27,6 +27,7 @@ module _ {ℂ : Set} where
 
     open IsMonoid isMonoid public
       using (identityˡ; identityʳ)
+      renaming (assoc to ∙-assoc)
     open IsTotalPreorder isTotalPreorder public
       using ()
       renaming (refl to ≤-refl; trans to ≤-trans)
@@ -51,6 +52,7 @@ module _ {ℂ : Set} where
 
     open IsOrderedMonoid isOrderedMonoid public
       renaming (
+        ∙-assoc to +-assoc;
         ∙-mono-≤ to +-mono-≤;
         ∙-monoˡ-≤ to +-monoˡ-≤;
         ∙-monoʳ-≤ to +-monoʳ-≤
@@ -65,6 +67,7 @@ module _ {ℂ : Set} where
       renaming (
         identityˡ to ⊕-identityˡ;
         identityʳ to ⊕-identityʳ;
+        +-assoc to ⊕-assoc;
         +-mono-≤ to ⊕-mono-≤;
         +-monoˡ-≤ to ⊕-monoˡ-≤;
         +-monoʳ-≤ to ⊕-monoʳ-≤;
@@ -75,6 +78,7 @@ module _ {ℂ : Set} where
       renaming (
         identityˡ to ⊗-identityˡ;
         identityʳ to ⊗-identityʳ;
+        ∙-assoc to ⊗-assoc;
         ∙-mono-≤ to ⊗-mono-≤;
         ∙-monoˡ-≤ to ⊗-monoˡ-≤;
         ∙-monoʳ-≤ to ⊗-monoʳ-≤;
