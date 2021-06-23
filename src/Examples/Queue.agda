@@ -8,7 +8,7 @@ open import Calf.CostMonoids using (ℕ-CostMonoid)
 costMonoid = ℕ-CostMonoid
 
 open import Calf costMonoid
-open import Calf.Types.Nat (CostMonoid.orderedMonoid costMonoid)
+open import Calf.Types.Nat costMonoid
 open import Calf.Types.Unit
 open import Calf.Types.Sum
 
@@ -17,6 +17,7 @@ open import Data.Nat.Properties
 import Data.Integer as Int
 import Data.Integer.Properties as IntP
 open import Data.List using (List; _∷_; []; length; tabulate) renaming (sum to lsum)
+open import Data.Product
 open import Relation.Binary.PropositionalEquality as P
 
 record Queue : Set where

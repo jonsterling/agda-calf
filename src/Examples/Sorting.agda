@@ -13,6 +13,7 @@ open import Calf.Types.List as List
 open import Relation.Nullary
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
+open import Data.Product using (_×_; _,_; ∃)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Empty
 open import Function
