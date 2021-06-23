@@ -10,7 +10,7 @@ open ParCostMonoid parCostMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage
-open import Calf.Step ⊕-monoid
+open import Calf.Step costMonoid
 open import Data.Product
 
 postulate

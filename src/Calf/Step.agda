@@ -4,9 +4,9 @@
 
 open import Calf.CostMonoid
 
-module Calf.Step (monoid : Monoid) where
+module Calf.Step (costMonoid : CostMonoid) where
 
-open Monoid monoid
+open CostMonoid costMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage

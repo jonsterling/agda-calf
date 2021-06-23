@@ -8,7 +8,7 @@ open CostMonoid costMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage
-open import Calf.Step monoid
+open import Calf.Step costMonoid
 open import Calf.PhaseDistinction costMonoid
 open import Calf.Eq
 
