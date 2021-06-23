@@ -10,13 +10,13 @@ open ParCostMonoid parCostMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage
-open import Calf.Step (OrderedMonoid.monoid (CostMonoid.orderedMonoid costMonoid))
+open import Calf.Step ⊕-monoid
 open import Data.Product
 
 postulate
   -- negative product
   _&_ : {A₁ A₂ : tp pos} → cmp (F A₁) → cmp (F A₂) → cmp (F (Σ++ A₁ (λ _ → A₂)))
 
-  bind/par : ∀ {A₁ A₂} {X} {v₁ v₂ f p₁ p₂} → bind {Σ++ A₁ (λ _ → A₂)} X (step' (F A₁) p₁ (ret v₁) & step' (F A₂) p₂ (ret v₂)) f ≡ step' X (p₁ ⊗ p₂) (f (v₁ , v₂))
-  {-# REWRITE bind/par #-}
-  -- TODO: define tbind/par, dbind/par
+  &/par : ∀ {A₁ A₂} {v₁ v₂ p₁ p₂} →
+    step' (F A₁) p₁ (ret v₁) & step' (F A₂) p₂ (ret v₂) ≡ step' (F (Σ++ A₁ λ _ → A₂)) (p₁ ⊗ p₂) (ret (v₁ , v₂))
+  {-# REWRITE &/par #-}

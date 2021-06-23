@@ -4,7 +4,7 @@
 
 open import Calf.CostMonoid
 
-module Calf.CostEffect (orderedMonoid : OrderedMonoid) where
+module Calf.CostEffect where
 
 open import Calf.Prelude
 open import Calf.Metalanguage

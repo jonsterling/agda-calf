@@ -4,14 +4,14 @@
 
 open import Calf.CostMonoid
 
-module Calf.PhaseDistinction (orderedMonoid : OrderedMonoid) where
+module Calf.PhaseDistinction (costMonoid : CostMonoid) where
 
-open OrderedMonoid orderedMonoid
+open CostMonoid costMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage
 open import Calf.Step monoid
-open import Calf.CostEffect orderedMonoid
+open import Calf.CostEffect
 
 open import Data.Nat using (ℕ)
 import Relation.Binary.PropositionalEquality as P

@@ -2,17 +2,14 @@
 
 open import Calf.CostMonoid
 
-module Calf.Upper
-  (orderedMonoid : OrderedMonoid)
-  (stepMonoid : MonoidOn (OrderedMonoid.ℂ orderedMonoid))
-  where
+module Calf.Upper (costMonoid : CostMonoid) where
 
-open OrderedMonoid orderedMonoid
+open CostMonoid costMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage
-open import Calf.Step (toMonoid stepMonoid)
-open import Calf.PhaseDistinction orderedMonoid
+open import Calf.Step monoid
+open import Calf.PhaseDistinction costMonoid
 open import Calf.Eq
 
 -- postulate

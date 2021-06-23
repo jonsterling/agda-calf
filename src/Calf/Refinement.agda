@@ -2,24 +2,17 @@
 
 open import Calf.CostMonoid
 
-module Calf.Refinement (orderedMonoid : OrderedMonoid) where
+module Calf.Refinement (costMonoid : CostMonoid) where
 
-open OrderedMonoid orderedMonoid
-  renaming (
-    _∙_ to _+_;
-    ε to zero;
-    ∙-mono-≤ to +-mono-≤;
-    ∙-monoˡ-≤ to +-monoˡ-≤;
-    ∙-monoʳ-≤ to +-monoʳ-≤
-  )
+open CostMonoid costMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage
 open import Calf.Step monoid
-open import Calf.PhaseDistinction orderedMonoid
-open import Calf.Upper orderedMonoid (Monoid.monoidOn monoid)
+open import Calf.PhaseDistinction costMonoid
+open import Calf.Upper costMonoid
 open import Calf.Eq
-open import Calf.BoundedFunction orderedMonoid
+open import Calf.BoundedFunction costMonoid
 
 open import Calf.Types.Sum
 

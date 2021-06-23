@@ -7,7 +7,6 @@ open import Calf.CostMonoid
 module Calf.Step (monoid : Monoid) where
 
 open Monoid monoid
-  renaming (_∙_ to _+_; ε to zero)
 
 open import Calf.Prelude
 open import Calf.Metalanguage

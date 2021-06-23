@@ -12,22 +12,21 @@ open import Relation.Binary.PropositionalEquality using (_≡_)
 
 
 module _ {ℂ : Set} where
-  _≈_ : Rel ℂ 0ℓ
+  Relation = Rel ℂ 0ℓ
+
+  _≈_ : Relation
   _≈_ = _≡_
 
   open import Algebra.Definitions _≈_
   open import Algebra.Structures _≈_ public
   open import Relation.Binary.Structures _≈_
 
-  record IsOrderedMonoid (_∙_ : Op₂ ℂ) (ε : ℂ) (_≤_ : Rel ℂ 0ℓ) : Set where
+  record IsOrderPreserving (_∙_ : Op₂ ℂ) (ε : ℂ) (_≤_ : Relation) : Set where
     field
-      isMonoid        : IsMonoid _∙_ ε
       isTotalPreorder : IsTotalPreorder _≤_
+      z≤c             : {c : ℂ} → ε ≤ c
       ∙-mono-≤        : _∙_ Preserves₂ _≤_ ⟶ _≤_ ⟶ _≤_
 
-    open IsMonoid isMonoid public
-      using (identityˡ; identityʳ)
-      renaming (assoc to ∙-assoc)
     open IsTotalPreorder isTotalPreorder public
       using ()
       renaming (refl to ≤-refl; trans to ≤-trans)
@@ -38,98 +37,77 @@ module _ {ℂ : Set} where
     ∙-monoʳ-≤ : ∀ n → (n ∙_) Preserves _≤_ ⟶ _≤_
     ∙-monoʳ-≤ n m≤o = ∙-mono-≤ (≤-refl {n}) m≤o
 
-  record IsOrderedCommutativeMonoid (_∙_ : Op₂ ℂ) (ε : ℂ) (_≤_ : Rel ℂ 0ℓ) : Set where
+  record IsCostMonoid (_+_ : Op₂ ℂ) (zero : ℂ) (_≤_ : Relation) : Set where
     field
-      isOrderedMonoid : IsOrderedMonoid _∙_ ε _≤_
-      ∙-comm          : Commutative _∙_
+      isMonoid          : IsMonoid _+_ zero
+      isOrderPreserving : IsOrderPreserving _+_ zero _≤_
 
-    open IsOrderedMonoid isOrderedMonoid public
-
-  record IsCostMonoid (_+_ : Op₂ ℂ) (zero : ℂ) (_≤_ : Rel ℂ 0ℓ) : Set where
-    field
-      isOrderedMonoid : IsOrderedMonoid _+_ zero _≤_
-      z≤c             : {c : ℂ} → zero ≤ c
-
-    open IsOrderedMonoid isOrderedMonoid public
+    open IsMonoid isMonoid public
+      using ()
       renaming (
-        ∙-assoc to +-assoc;
+        identityˡ to +-identityˡ;
+        identityʳ to +-identityʳ;
+        assoc to +-assoc
+      )
+
+    open IsOrderPreserving isOrderPreserving public
+      renaming (
         ∙-mono-≤ to +-mono-≤;
         ∙-monoˡ-≤ to +-monoˡ-≤;
         ∙-monoʳ-≤ to +-monoʳ-≤
       )
 
-  record IsParCostMonoid (_⊕_ : Op₂ ℂ) (𝟘 : ℂ) (_⊗_ : Op₂ ℂ) (𝟙 : ℂ) (_≤₊_ : Rel ℂ 0ℓ) (_≤ₓ_ : Rel ℂ 0ℓ) : Set where
+  record IsParCostMonoid (_⊕_ : Op₂ ℂ) (𝟘 : ℂ) (_⊗_ : Op₂ ℂ) (𝟙 : ℂ) (_≤₊_ : Relation) (_≤ₓ_ : Relation) : Set where
     field
-      isCostMonoid               : IsCostMonoid _⊕_ 𝟘 _≤₊_
-      isOrderedCommutativeMonoid : IsOrderedCommutativeMonoid _⊗_ 𝟙 _≤ₓ_
+      isMonoid            : IsMonoid _⊕_ 𝟘
+      isCommutativeMonoid : IsCommutativeMonoid _⊗_ 𝟙
+      isOrderPreserving₊  : IsOrderPreserving _⊕_ 𝟘 _≤₊_
+      isOrderPreservingₓ  : IsOrderPreserving _⊕_ 𝟘 _≤ₓ_
+      ⊗-mono-≤ₓ           : _⊗_ Preserves₂ _≤ₓ_ ⟶ _≤ₓ_ ⟶ _≤ₓ_
 
-    open IsCostMonoid isCostMonoid public
+    open IsMonoid isMonoid public
+      using ()
       renaming (
         identityˡ to ⊕-identityˡ;
         identityʳ to ⊕-identityʳ;
-        +-assoc to ⊕-assoc;
-        +-mono-≤ to ⊕-mono-≤;
-        +-monoˡ-≤ to ⊕-monoˡ-≤;
-        +-monoʳ-≤ to ⊕-monoʳ-≤;
-        ≤-refl to ≤₊-refl;
-        ≤-trans to ≤₊-trans
+        assoc to ⊕-assoc
       )
-    open IsOrderedCommutativeMonoid isOrderedCommutativeMonoid public
+
+    open IsCommutativeMonoid isCommutativeMonoid public
+      using ()
       renaming (
         identityˡ to ⊗-identityˡ;
         identityʳ to ⊗-identityʳ;
-        ∙-assoc to ⊗-assoc;
-        ∙-mono-≤ to ⊗-mono-≤;
-        ∙-monoˡ-≤ to ⊗-monoˡ-≤;
-        ∙-monoʳ-≤ to ⊗-monoʳ-≤;
-        ∙-comm to ⊗-comm;
-        ≤-refl to ≤ₓ-refl;
-        ≤-trans to ≤ₓ-trans
+        assoc to ⊗-assoc;
+        comm to ⊗-comm
       )
 
-record Monoid : Set₁
-record MonoidOn (ℂ : Set) : Set₁
+    open IsOrderPreserving isOrderPreserving₊ public
+      renaming (
+        ≤-refl to ≤₊-refl;
+        ≤-trans to ≤₊-trans;
+        ∙-mono-≤ to ⊕-mono-≤₊;
+        ∙-monoˡ-≤ to ⊕-monoˡ-≤₊;
+        ∙-monoʳ-≤ to ⊕-monoʳ-≤₊
+      )
 
-record MonoidOn ℂ where
-  field
-    _∙_      : Op₂ ℂ
-    ε        : ℂ
-    isMonoid : IsMonoid _∙_ ε
+    open IsOrderPreserving isOrderPreservingₓ public
+      renaming (
+        ≤-refl to ≤ₓ-refl;
+        ≤-trans to ≤ₓ-trans;
+        ∙-mono-≤ to ⊕-mono-≤ₓ;
+        ∙-monoˡ-≤ to ⊕-monoˡ-≤ₓ;
+        ∙-monoʳ-≤ to ⊕-monoʳ-≤ₓ
+      )
 
-  open IsMonoid isMonoid public
-
-record Monoid where
+record Monoid : Set₁ where
   field
     ℂ        : Set
-    monoidOn : MonoidOn ℂ
-
-  open MonoidOn monoidOn public
-
-toMonoid : {ℂ : Set} → MonoidOn ℂ → Monoid
-toMonoid {ℂ} monoidOn = record
-  { ℂ = ℂ
-  ; monoidOn = monoidOn
-  }
-
-record OrderedMonoid : Set₁ where
-  field
-    ℂ               : Set
-    _∙_             : Op₂ ℂ
-    ε               : ℂ
-    _≤_             : Rel ℂ 0ℓ
-    isOrderedMonoid : IsOrderedMonoid _∙_ ε _≤_
-
-  open IsOrderedMonoid isOrderedMonoid public
-
-  monoid : Monoid
-  monoid = record
-    { ℂ = ℂ
-    ; monoidOn = record
-      { _∙_ = _∙_
-      ; ε = ε
-      ; isMonoid = isMonoid
-      }
-    }
+    _+_      : Op₂ ℂ
+    zero     : ℂ
+    isMonoid : IsMonoid _+_ zero
+  
+  open IsMonoid isMonoid
 
 record CostMonoid : Set₁ where
   infixl 6 _+_
@@ -138,17 +116,17 @@ record CostMonoid : Set₁ where
     ℂ            : Set
     _+_          : Op₂ ℂ
     zero         : ℂ
-    _≤_          : Rel ℂ 0ℓ
+    _≤_          : Relation
     isCostMonoid : IsCostMonoid _+_ zero _≤_
 
   open IsCostMonoid isCostMonoid public
 
-  orderedMonoid : OrderedMonoid
-  orderedMonoid = record
+  monoid : Monoid
+  monoid = record
     { ℂ = ℂ
-    ; _∙_ = _+_
-    ; ε = zero
-    ; isOrderedMonoid = isOrderedMonoid
+    ; _+_ = _+_
+    ; zero = zero
+    ; isMonoid = isMonoid
     }
 
 record ParCostMonoid : Set₁ where
@@ -161,35 +139,58 @@ record ParCostMonoid : Set₁ where
     𝟘               : ℂ
     _⊗_             : Op₂ ℂ
     𝟙               : ℂ
-    _≤₊_            : Rel ℂ 0ℓ
-    _≤ₓ_            : Rel ℂ 0ℓ
+    _≤₊_            : Relation
+    _≤ₓ_            : Relation
     isParCostMonoid : IsParCostMonoid _⊕_ 𝟘 _⊗_ 𝟙 _≤₊_ _≤ₓ_
 
   open IsParCostMonoid isParCostMonoid public
 
-  costMonoid : CostMonoid
-  costMonoid = record
+  ⊕-monoid : Monoid
+  ⊕-monoid = record
+    { ℂ = ℂ
+    ; _+_ = _⊕_
+    ; zero = 𝟘
+    ; isMonoid = isMonoid
+    }
+
+  costMonoid-≤₊ : CostMonoid
+  costMonoid-≤₊ = record
     { ℂ = ℂ
     ; _+_ = _⊕_
     ; zero = 𝟘
     ; _≤_ = _≤₊_
-    ; isCostMonoid = isCostMonoid
+    ; isCostMonoid = record
+      { isMonoid = isMonoid
+      ; isOrderPreserving = isOrderPreserving₊
+      }
     }
 
-  ⊕-orderedMonoid : OrderedMonoid
-  ⊕-orderedMonoid = record
+  costMonoid-≤ₓ : CostMonoid
+  costMonoid-≤ₓ = record
     { ℂ = ℂ
-    ; _∙_ = _⊕_
-    ; ε = 𝟘
-    ; _≤_ = _≤₊_
-    ; isOrderedMonoid = IsCostMonoid.isOrderedMonoid isCostMonoid
-    }
-
-  ⊗-orderedMonoid : OrderedMonoid
-  ⊗-orderedMonoid = record
-    { ℂ = ℂ
-    ; _∙_ = _⊗_
-    ; ε = 𝟙
+    ; _+_ = _⊕_
+    ; zero = 𝟘
     ; _≤_ = _≤ₓ_
-    ; isOrderedMonoid = IsOrderedCommutativeMonoid.isOrderedMonoid (IsParCostMonoid.isOrderedCommutativeMonoid isParCostMonoid)
+    ; isCostMonoid = record
+      { isMonoid = isMonoid
+      ; isOrderPreserving = isOrderPreservingₓ
+      }
     }
+
+--   -- ⊕-orderedMonoid : OrderedMonoid
+--   -- ⊕-orderedMonoid = record
+--   --   { ℂ = ℂ
+--   --   ; _∙_ = _⊕_
+--   --   ; ε = 𝟘
+--   --   ; _≤_ = _≤₊_
+--   --   ; isOrderedMonoid = IsCostMonoid.isOrderedMonoid isCostMonoid
+--   --   }
+
+--   -- ⊗-orderedMonoid : OrderedMonoid
+--   -- ⊗-orderedMonoid = record
+--   --   { ℂ = ℂ
+--   --   ; _∙_ = _⊗_
+--   --   ; ε = 𝟙
+--   --   ; _≤_ = _≤ₓ_
+--   --   ; isOrderedMonoid = IsOrderedCommutativeMonoid.isOrderedMonoid (IsParCostMonoid.isOrderedCommutativeMonoid isParCostMonoid)
+--   --   }

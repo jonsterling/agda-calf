@@ -2,15 +2,15 @@
 
 open import Calf.CostMonoid
 
-module Calf.BoundedFunction (orderedMonoid : OrderedMonoid) where
+module Calf.BoundedFunction (costMonoid : CostMonoid) where
 
-open OrderedMonoid orderedMonoid
+open CostMonoid costMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage
 open import Calf.Step monoid
-open import Calf.PhaseDistinction orderedMonoid
-open import Calf.Upper orderedMonoid (Monoid.monoidOn monoid)
+open import Calf.PhaseDistinction costMonoid
+open import Calf.Upper costMonoid
 open import Relation.Binary
 open import Level using (Level; _⊔_)
 open import Induction.WellFounded
