@@ -103,15 +103,6 @@ module _ {ℂ : Set} where
         ∙-monoʳ-≤ to ⊗-monoʳ-≤
       )
 
-record Monoid : Set₁ where
-  field
-    ℂ        : Set
-    _+_      : Op₂ ℂ
-    zero     : ℂ
-    isMonoid : IsMonoid _+_ zero
-  
-  open IsMonoid isMonoid
-
 record CostMonoid : Set₁ where
   infixl 6 _+_
 
@@ -123,14 +114,6 @@ record CostMonoid : Set₁ where
     isCostMonoid : IsCostMonoid _+_ zero _≤_
 
   open IsCostMonoid isCostMonoid public
-
-  monoid : Monoid
-  monoid = record
-    { ℂ = ℂ
-    ; _+_ = _+_
-    ; zero = zero
-    ; isMonoid = isMonoid
-    }
 
 record ParCostMonoid : Set₁ where
   infixl 7 _⊗_
