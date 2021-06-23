@@ -37,9 +37,9 @@ module _ {ℂ : Set} where
 
   record IsCostMonoid (_+_ : Op₂ ℂ) (zero : ℂ) (_≤_ : Relation) : Set where
     field
-      isMonoid        : IsMonoid _+_ zero
+      isMonoid   : IsMonoid _+_ zero
       isPreorder : IsPreorder _≤_
-      isMonotone      : IsMonotone _+_ _≤_ isPreorder
+      isMonotone : IsMonotone _+_ _≤_ isPreorder
 
     open IsMonoid isMonoid public
       using ()
