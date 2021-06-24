@@ -8,8 +8,7 @@ module Calf.CostMonoid where
 
 open import Level using (Level; 0ℓ; suc; _⊔_)
 open import Algebra.Core
-open import Relation.Binary.PropositionalEquality using (_≡_)
-
+open import Relation.Binary.PropositionalEquality using (_≡_; resp₂)
 
 module _ {ℂ : Set} where
   Relation = Rel ℂ 0ℓ
@@ -118,7 +117,7 @@ record CostMonoid : Set₁ where
 record ParCostMonoid : Set₁ where
   infixl 7 _⊗_
   infixl 6 _⊕_
-  
+
   field
     ℂ               : Set
     _⊕_             : Op₂ ℂ
@@ -142,3 +141,14 @@ record ParCostMonoid : Set₁ where
       ; isMonotone = isMonotone-⊕
       }
     }
+
+  module ≤-Reasoning where
+    open import Relation.Binary.Reasoning.Base.Triple
+      isPreorder
+      ≤-trans
+      (resp₂ _≤_)
+      (λ h → h)
+      ≤-trans
+      ≤-trans
+      public
+      hiding (step-≈; step-≈˘; step-<)
