@@ -2,14 +2,15 @@
 
 open import Calf.CostMonoid
 
-module Calf.Upper (CostMonoid : CostMonoid) where
+module Calf.Upper (costMonoid : CostMonoid) where
+
+open CostMonoid costMonoid
 
 open import Calf.Prelude
-open import Calf.Metalanguage CostMonoid
-open import Calf.PhaseDistinction CostMonoid
-open import Calf.Eq CostMonoid
-
-open CostMonoid CostMonoid
+open import Calf.Metalanguage
+open import Calf.Step costMonoid
+open import Calf.PhaseDistinction costMonoid
+open import Calf.Eq
 
 -- postulate
 --   le/ext : ◯ (cmp (F nat)) → ◯ (cmp (F nat)) → tp neg

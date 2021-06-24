@@ -4,10 +4,11 @@
 
 open import Calf.CostMonoid
 
-module Calf.CostEffect (CostMonoid : CostMonoid) where
+module Calf.CostEffect where
 
 open import Calf.Prelude
-open import Calf.Metalanguage CostMonoid
+open import Calf.Metalanguage
+open import Data.Product
 
 postulate
   step : ∀ X → cmp X → cmp X

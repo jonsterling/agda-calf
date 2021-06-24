@@ -2,14 +2,14 @@
 
 open import Calf.CostMonoid
 
-module Calf.Types.Nat (CostMonoid : CostMonoid) where
+module Calf.Types.Nat (costMonoid : CostMonoid) where
 
 open import Calf.Prelude
-open import Calf.Metalanguage CostMonoid
-open import Calf.PhaseDistinction CostMonoid
-open import Calf.Upper CostMonoid
-open import Calf.Eq CostMonoid
-open import Calf.BoundedFunction CostMonoid
+open import Calf.Metalanguage
+open import Calf.PhaseDistinction costMonoid
+open import Calf.Upper costMonoid
+open import Calf.Eq
+open import Calf.BoundedFunction costMonoid
 open import Data.Nat as Nat using (ℕ ; _+_)
 open import Function
 open import Relation.Binary.PropositionalEquality as P

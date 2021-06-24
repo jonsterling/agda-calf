@@ -2,6 +2,7 @@
 
 module Examples.Gcd.Clocked where
 
+open import Calf.CostMonoid
 import Calf.CostMonoids as CM
 
 open import Calf CM.ℕ-CostMonoid
@@ -19,6 +20,7 @@ open import Relation.Nullary.Decidable using (False; toWitnessFalse)
 open import Data.Nat.Induction using (<-wellFounded)
 open import Data.Unit using (tt)
 open import Function.Base using (_on_)
+open import Data.Product
 open import Data.Product.Properties
 open import Relation.Binary.HeterogeneousEquality as H
 open import Agda.Builtin.Nat using (div-helper; mod-helper)
@@ -61,7 +63,7 @@ gcd/i/eq {x} {x'} {y} {y'} {h} {h'} eqn eqn2 = Inverse.f Σ-≡,≡↔≡ (eqn ,
 
 -- cost of clocked gcd is bounded by for any instantiation of the clock
 gcd/clocked≤gcd/cost : ∀ k i → ub nat (gcd/clocked k i) (gcd/cost (to-ext i))
-gcd/clocked≤gcd/cost 0 i = ub/ret (gcd/cost (to-ext i))
+gcd/clocked≤gcd/cost 0 i = ub/relax z≤n ub/ret
 gcd/clocked≤gcd/cost (suc k) i@(x , y , z) rewrite gcd/cost-unfold' i =
   ub/rec
   (const nat)
@@ -77,14 +79,14 @@ gcd/clocked≤gcd/cost (suc k) i@(x , y , z) rewrite gcd/cost-unfold' i =
       })
   0
   (λ n' → suc (gcd/cost (suc n' , toℕ x % suc n' , m%n<n (toℕ x) n')))
-  (ub/ret 0)
+  ub/ret
   λ y' → ub/bind/suc {e = mod x (succ y') tt} {f = λ { (z , eqn2)
           → let h2
                   = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2)
                     (m%n<n' (toℕ x) _ tt)
             in gcd/clocked k (succ y' , z , h2)
       }} (gcd/cost (suc (toℕ y') , toℕ x % suc (toℕ y') , m%n<n (toℕ x) (toℕ y')))
-  (ub/step 0 1 (ub/ret 0))
+  (ub/step 1 0 ub/ret)
   λ {(z , eqn2) →
   let h2 = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2) (m%n<n' (toℕ x) (toℕ (succ y')) tt) in
   let g = gcd/clocked≤gcd/cost k (succ y' , z , h2) in

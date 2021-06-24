@@ -2,35 +2,33 @@
 
 open import Calf.CostMonoid
 
-module Calf.Refinement (CostMonoid : CostMonoid) where
+module Calf.Refinement (costMonoid : CostMonoid) where
+
+open CostMonoid costMonoid
 
 open import Calf.Prelude
-open import Calf.Metalanguage CostMonoid
-open import Calf.PhaseDistinction CostMonoid
-open import Calf.Upper CostMonoid
-open import Calf.Eq CostMonoid
-open import Calf.BoundedFunction CostMonoid
+open import Calf.Metalanguage
+open import Calf.Step costMonoid
+open import Calf.PhaseDistinction costMonoid
+open import Calf.Upper costMonoid
+open import Calf.Eq
+open import Calf.BoundedFunction costMonoid
 
-open import Data.Nat as ℕ using (ℕ; suc)
-open import Calf.Types.Nat CostMonoid as Nat hiding (zero)
-open import Calf.Types.Sum CostMonoid
+open import Calf.Types.Sum
 
-open import Relation.Binary.PropositionalEquality as P
-open import Function using (const)
-
-open CostMonoid CostMonoid
+open import Relation.Binary.PropositionalEquality as Eq
 
 open iso
 
-ub/ret : ∀ {A a} (c : ℂ) → ub A (ret {A} a) c
-ub/ret {A} {a} c = ub/intro {q = zero} a z≤c (ret {eq _ _ _} (eq/intro refl))
+ub/ret : ∀ {A a} → ub A (ret {A} a) zero
+ub/ret {A} {a} = ub/intro a ≤-refl (ret (eq/intro refl))
 
 ub/step : ∀ {A e} (p q : ℂ) →
-  ub A e p →
-  ub A (step' (F A) q e) (p + q)
-ub/step p q (ub/intro {q = q1} a h1 h2) with eq/ref h2 | p + q | +-comm p q
-...                                              | refl | _ | refl =
-   ub/intro {q = q + q1} a (+-monoʳ-≤ q h1) (ret {eq _ _ _} (eq/intro refl))
+  ub A e q →
+  ub A (step' (F A) p e) (p + q)
+ub/step p q (ub/intro {q = q1} a h1 h2) with eq/ref h2
+...                                              | refl =
+   ub/intro {q = p + q1} a (+-monoʳ-≤ p h1) (ret (eq/intro refl))
 
 ub/bind : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
   (p : ℂ) (q : val A → ℂ) →
@@ -40,20 +38,17 @@ ub/bind : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
        (bind {A} (meta ℂ) e (λ a → p + q a))
 ub/bind {f = f} p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
 ... | refl with h3 a
-... | ub/intro {q = q2} b h4 h5 with (f a) | eq/ref h5
+... | ub/intro {q = q2} b h4 h5 with f a | eq/ref h5
 ... | _ | refl =
-  ub/intro {q = q1 + q2} b (+-mono-≤ h1 h4) (ret {eq _ _ _} (eq/intro refl))
+  ub/intro {q = q1 + q2} b (+-mono-≤ h1 h4) (ret (eq/intro refl))
 
 ub/bind/const : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
   (p q : ℂ) →
   ub A e p →
   ((a : val A) → ub B (f a) q) →
   ub B (bind {A} (F B) e f) (p + q)
-ub/bind/const {f = f} p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
-... | refl with h3 a
-... | ub/intro {q = q2} b h4 h5 with (f a) | eq/ref h5
-... | _ | refl =
-  ub/intro {q = q1 + q2} b (+-mono-≤ h1 h4) (ret {eq _ _ _} (eq/intro refl))
+ub/bind/const {e = e} {f = f} p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
+... | refl = ub/bind p (λ _ → q) (ub/intro {q = q1} a h1 h2) h3
 
 ub/bind/const' : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
   (p q : ℂ) → {r : ℂ} →

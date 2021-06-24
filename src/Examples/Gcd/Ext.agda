@@ -2,6 +2,7 @@
 
 module Examples.Gcd.Ext where
 
+open import Calf.CostMonoid
 import Calf.CostMonoids as CM
 
 open import Calf CM.ℕ-CostMonoid
@@ -21,6 +22,7 @@ open import Function.Base using (_on_)
 open import Function
 open import Data.Nat.Properties
 open import Data.Unit using (tt)
+open import Data.Product
 open import Data.Product.Properties
 
 -- mathematical specification of the greatest common divisor (gcd)

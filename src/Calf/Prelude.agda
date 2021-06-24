@@ -4,7 +4,6 @@ module Calf.Prelude where
 
 open import Agda.Builtin.Equality public
 open import Agda.Builtin.Equality.Rewrite public
-open import Data.Product using (Σ; proj₁; proj₂; _×_; _,_; ∃) public
 
 Ω = Prop
 □ = Set

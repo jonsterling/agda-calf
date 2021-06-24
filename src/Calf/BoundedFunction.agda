@@ -7,7 +7,8 @@ module Calf.BoundedFunction (costMonoid : CostMonoid) where
 open CostMonoid costMonoid
 
 open import Calf.Prelude
-open import Calf.Metalanguage costMonoid
+open import Calf.Metalanguage
+open import Calf.Step costMonoid
 open import Calf.PhaseDistinction costMonoid
 open import Calf.Upper costMonoid
 open import Relation.Binary

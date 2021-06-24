@@ -5,7 +5,7 @@ module Examples.Example where
 import Calf.CostMonoids as CM
 
 open import Calf CM.ℕ-CostMonoid
-open import Calf.Types.Bool CM.ℕ-CostMonoid
+open import Calf.Types.Bool
 
 open import Relation.Binary.PropositionalEquality as P using (_≡_; refl)
 
