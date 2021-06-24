@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --without-K --rewriting --allow-unsolved-metas #-}
+{-# OPTIONS --prop --without-K --rewriting #-}
 
 -- Common cost monoids.
 
