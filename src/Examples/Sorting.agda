@@ -650,7 +650,7 @@ module MergeSort (M : Comparable) where
       ))
     ⟩
       (bind cost (split l) λ (l₁ , l₂) → split/cost l +
-        k * length l₁ + (k * length l₂ + (length l₁ + length l₂)))
+        (k * length l₁ + (k * length l₂ + (length l₁ + length l₂))))
     ≡⟨ split/length l (λ n₁ n₂ → k * n₁ + (k * n₂ + (n₁ + n₂))) ⟩
       k * ⌊ length l /2⌋ + (k * ⌈ length l /2⌉ + (⌊ length l /2⌋ + ⌈ length l /2⌉))
     ≡˘⟨ N.+-assoc (k * ⌊ length l /2⌋) _ _ ⟩
