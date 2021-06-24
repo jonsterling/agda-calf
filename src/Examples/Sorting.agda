@@ -2,18 +2,27 @@
 
 module Examples.Sorting where
 
-open import Calf.CostMonoids using (ℕ-CostMonoid)
+open import Calf.CostMonoid
+open import Calf.CostMonoids using (ℕ²-ParCostMonoid)
 
-costMonoid = ℕ-CostMonoid
+parCostMonoid = ℕ²-ParCostMonoid
+open ParCostMonoid parCostMonoid
+  renaming (
+    _≤_ to _P≤_;
+    ≤-refl to P≤-refl;
+    ≤-trans to P≤-trans;
+    module ≤-Reasoning to P≤-Reasoning
+  )
 
 open import Calf costMonoid
+open import Calf.ParMetalanguage parCostMonoid
 open import Calf.Types.Bool
 open import Calf.Types.List as List
 
 open import Relation.Nullary
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
-open import Data.Product using (_×_; _,_; ∃)
+open import Data.Product using (_×_; _,_; proj₁; proj₂; ∃)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Empty
 open import Function
@@ -34,19 +43,19 @@ record Comparable : Set₁ where
     ≤-trans : Transitive _≤_
     ≤-total : Total _≤_
     ≤-antisym : Antisymmetric _≡_ _≤_
-    h-cost : (x y : val A) → ub bool (x ≤ᵇ y) 1
+    h-cost : (x y : val A) → ub bool (x ≤ᵇ y) (1 , 1)
 
 NatComparable : Comparable
 NatComparable = record
   { A = U (meta ℕ)
   ; _≤_ = _≤_
-  ; _≤ᵇ_ = λ x y → step' (F bool) 1 (ret (x ≤ᵇ y))
+  ; _≤ᵇ_ = λ x y → step' (F bool) (1 , 1) (ret (x ≤ᵇ y))
   ; ≤ᵇ-reflects-≤ = reflects
   ; ≤-refl = ≤-refl
   ; ≤-trans = ≤-trans
   ; ≤-total = ≤-total
   ; ≤-antisym = ≤-antisym
-  ; h-cost = λ _ _ → ub/step 1 0 ub/ret
+  ; h-cost = λ _ _ → ub/step (1 , 1) 𝟘 ub/ret
   }
   where
     open import Data.Nat
@@ -55,8 +64,8 @@ NatComparable = record
     ret-injective : ∀ {𝕊 v₁ v₂} → ret {U (meta 𝕊)} v₁ ≡ ret {U (meta 𝕊)} v₂ → v₁ ≡ v₂
     ret-injective {𝕊} = Eq.cong (λ e → bind {U (meta 𝕊)} (meta 𝕊) e id)
 
-    reflects : ∀ {m n b} → ◯ (step' (F bool) 1 (ret (m ≤ᵇ n)) ≡ ret {bool} b → Reflects (m ≤ n) b)
-    reflects {m} {n} {b} u h with ret-injective (Eq.subst (_≡ ret b) (step'/ext (F bool) (ret (m ≤ᵇ n)) 1 u) h)
+    reflects : ∀ {m n b} → ◯ (step' (F bool) (1 , 1) (ret (m ≤ᵇ n)) ≡ ret {bool} b → Reflects (m ≤ n) b)
+    reflects {m} {n} {b} u h with ret-injective (Eq.subst (_≡ ret b) (step'/ext (F bool) (ret (m ≤ᵇ n)) (1 , 1) u) h)
     ... | refl = ≤ᵇ-reflects-≤ m n
 
 module Core (M : Comparable) where
@@ -154,24 +163,39 @@ module InsertionSort (M : Comparable) where
   ... | ub/intro true  _ h-eq rewrite eq/ref h-eq = refl
 
   insert/cost : cmp (Π A λ _ → Π (list A) λ _ → cost)
-  insert/cost _ = length
+  insert/cost x []       = 𝟘
+  insert/cost x (y ∷ ys) with h-cost x y
+  ... | ub/intro {q = q} false q≤1 h-eq = q ⊕ (insert/cost x ys ⊕ 𝟘)
+  ... | ub/intro {q = q} true  q≤1 h-eq = q ⊕ 𝟘
+
+  insert/cost/closed : cmp (Π A λ _ → Π (list A) λ _ → cost)
+  insert/cost/closed x l = length l , length l
+ 
+  insert/cost≤insert/cost/closed : ∀ x l → insert/cost x l P≤ insert/cost/closed x l
+  insert/cost≤insert/cost/closed x []       = P≤-refl
+  insert/cost≤insert/cost/closed x (y ∷ ys) with h-cost x y
+  ... | ub/intro {q = q} false q≤1 h-eq =
+    Eq.subst (λ n → (q ⊕ n) P≤ (suc (length ys) , suc (length ys))) (Eq.sym (⊕-identityʳ (insert/cost x ys))) (
+      P≤-trans
+        (⊕-monoˡ-≤ _ q≤1)
+        (s≤s (proj₁ (insert/cost≤insert/cost/closed x ys)) ,
+         s≤s (proj₂ (insert/cost≤insert/cost/closed x ys)))
+    )
+  ... | ub/intro {q = q} true  q≤1 h-eq rewrite ⊕-identityʳ q =
+    Eq.subst (_P≤ (suc (length ys) , suc (length ys))) (Eq.sym (⊕-identityʳ q)) (
+      P≤-trans q≤1 (s≤s z≤n , s≤s z≤n)
+    )
 
   insert≤insert/cost : ∀ x l → ub (list A) (insert x l) (insert/cost x l)
   insert≤insert/cost x []       = ub/ret
   insert≤insert/cost x (y ∷ ys) with h-cost x y
   ... | ub/intro {q = q} false q≤1 h-eq rewrite eq/ref h-eq =
-    ub/relax
-      (begin
-        q + length ys + 0
-      ≡⟨ N.+-identityʳ _ ⟩
-        q + length ys
-      ≤⟨ N.+-monoˡ-≤ _ q≤1 ⟩
-        suc (length ys)
-      ∎)
-      (ub/bind/const _ _ (ub/step q (length ys) (insert≤insert/cost x ys)) λ _ → ub/ret)
-      where open ≤-Reasoning
-  ... | ub/intro true  q≤1 h-eq rewrite eq/ref h-eq =
-    ub/intro _ (N.≤-trans q≤1 (s≤s z≤n)) (ret (eq/intro refl))
+    ub/step q (insert/cost x ys ⊕ 𝟘) (ub/bind/const (insert/cost x ys) 𝟘 (insert≤insert/cost x ys) λ _ → ub/ret)
+  ... | ub/intro {q = q} true  q≤1 h-eq rewrite eq/ref h-eq =
+    ub/step q 𝟘 ub/ret
+
+  insert≤insert/cost/closed : ∀ x l → ub (list A) (insert x l) (insert/cost/closed x l)
+  insert≤insert/cost/closed x l = ub/relax (insert/cost≤insert/cost/closed x l) (insert≤insert/cost x l)
 
   sort : cmp (Π (list A) λ _ → F (list A))
   sort []       = ret []
@@ -223,43 +247,59 @@ module InsertionSort (M : Comparable) where
       where open ≡-Reasoning
 
   sort/cost : cmp (Π (list A) λ _ → cost)
-  sort/cost []       = zero
-  sort/cost (x ∷ xs) = bind cost (sort xs) (λ xs' → sort/cost xs + insert/cost x xs')
+  sort/cost []       = zero , zero
+  sort/cost (x ∷ xs) = bind cost (sort xs) (λ xs' → sort/cost xs ⊕ insert/cost/closed x xs')
 
-  sort/cost≤n² : ∀ l → sort/cost l Nat.≤ (length l ^ 2)
-  sort/cost≤n² []       = z≤n
-  sort/cost≤n² (x ∷ xs) =
+  sort/cost/closed : cmp (Π (list A) λ _ → cost)
+  sort/cost/closed l = length l ^ 2 , length l ^ 2
+
+  sort/cost≤sort/cost/closed : ∀ l → sort/cost l P≤ sort/cost/closed l
+  sort/cost≤sort/cost/closed []       = P≤-refl
+  sort/cost≤sort/cost/closed (x ∷ xs) =
+    let open P≤-Reasoning in
     begin
       sort/cost (x ∷ xs)
     ≡⟨⟩
-      bind cost (sort xs) (λ xs' → sort/cost xs + insert/cost x xs')
-    ≡⟨ sort/length xs (sort/cost xs +_) ⟩
-      sort/cost xs + length xs
-    ≤⟨ N.+-monoˡ-≤ (length xs) (sort/cost≤n² xs) ⟩
-      length xs ^ 2 + length xs
-    ≡⟨ N.+-comm (length xs ^ 2) (length xs) ⟩
-      length xs + length xs ^ 2
-    ≡⟨ Eq.cong (λ n → length xs + length xs * n) (N.*-identityʳ (length xs)) ⟩
-      length xs + length xs * length xs
-    ≤⟨ N.m≤n+m (length xs + length xs * length xs) (suc (length xs)) ⟩
-      suc (length xs) + (length xs + length xs * length xs)
+      bind cost (sort xs) (λ xs' → sort/cost xs ⊕ insert/cost/closed x xs')
+    ≡⟨ sort/length xs (λ n → sort/cost xs ⊕ (n , n)) ⟩
+      sort/cost xs ⊕ insert/cost/closed x xs
+    ≤⟨ ⊕-monoˡ-≤ (insert/cost/closed x xs) (sort/cost≤sort/cost/closed xs) ⟩
+      sort/cost/closed xs ⊕ insert/cost/closed x xs
     ≡⟨⟩
-      suc (length xs + (length xs + length xs * length xs))
-    ≡˘⟨ Eq.cong (λ n → suc (length xs + n)) (N.*-suc (length xs) (length xs)) ⟩
-      suc (length xs + length xs * suc (length xs))
-    ≡˘⟨ Eq.cong (λ n → suc (n + length xs * suc n)) (N.*-identityʳ (length xs)) ⟩
-      suc (length xs * 1 + length xs * suc (length xs * 1))
+      (length xs ^ 2 , length xs ^ 2) ⊕ (length xs , length xs)
+    ≤⟨ lemma/arithmetic (length xs) , lemma/arithmetic (length xs) ⟩
+      length (x ∷ xs) ^ 2 , length (x ∷ xs) ^ 2
     ≡⟨⟩
-      length (x ∷ xs) ^ 2
+      sort/cost/closed (x ∷ xs)
     ∎
-      where open ≤-Reasoning
+      where
+        lemma/arithmetic : ∀ n → n ^ 2 + n Nat.≤ suc n ^ 2
+        lemma/arithmetic n =
+          begin
+            n ^ 2 + n
+          ≡⟨ N.+-comm (n ^ 2) n ⟩
+            n + n ^ 2
+          ≡⟨ Eq.cong (λ m → n + n * m) (N.*-identityʳ n) ⟩
+            n + n * n
+          ≤⟨ N.m≤n+m (n + n * n) (suc n) ⟩
+            suc n + (n + n * n)
+          ≡⟨⟩
+            suc (n + (n + n * n))
+          ≡˘⟨ Eq.cong (λ m → suc (n + m)) (N.*-suc n n) ⟩
+            suc (n + n * suc n)
+          ≡˘⟨ Eq.cong (λ m → suc (m + n * suc m)) (N.*-identityʳ n) ⟩
+            suc (n * 1 + n * suc (n * 1))
+          ≡⟨⟩
+            suc n ^ 2
+          ∎
+          where open ≤-Reasoning
 
   sort≤sort/cost : ∀ l → ub (list A) (sort l) (sort/cost l)
   sort≤sort/cost []       = ub/ret
-  sort≤sort/cost (x ∷ xs) = ub/bind (sort/cost xs) (insert/cost x) (sort≤sort/cost xs) (insert≤insert/cost x)
+  sort≤sort/cost (x ∷ xs) = ub/bind (sort/cost xs) (insert/cost/closed x) (sort≤sort/cost xs) (insert≤insert/cost/closed x)
 
-  sort≤n² : ∀ l → ub (list A) (sort l) (length l ^ 2)
-  sort≤n² l = ub/relax (sort/cost≤n² l) (sort≤sort/cost l)
+  sort≤sort/cost/closed : ∀ l → ub (list A) (sort l) (sort/cost/closed l)
+  sort≤sort/cost/closed l = ub/relax (sort/cost≤sort/cost/closed l) (sort≤sort/cost l)
 
 module Ex/InsertionSort where
   module Sort = InsertionSort NatComparable
