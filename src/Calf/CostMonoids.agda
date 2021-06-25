@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --without-K --rewriting --allow-unsolved-metas #-}
+{-# OPTIONS --prop --without-K --rewriting #-}
 
 -- Common cost monoids.
 
@@ -17,6 +17,7 @@ open import Relation.Binary.PropositionalEquality
   ; isCostMonoid = record
     { isMonoid = +-0-isMonoid
     ; isPreorder = ≤-isPreorder
+    ; isCancellative = record { ∙-cancel-≤ = +-cancel-≤ }
     ; isMonotone = record { ∙-mono-≤ = +-mono-≤ }
     }
   }
@@ -36,6 +37,7 @@ open import Relation.Binary.PropositionalEquality
     { isMonoid = +-0-isMonoid
     ; isCommutativeMonoid = +-0-isCommutativeMonoid
     ; isPreorder = ≤-isPreorder
+    ; isCancellative = record { ∙-cancel-≤ = +-cancel-≤ }
     ; isMonotone-⊕ = record { ∙-mono-≤ = +-mono-≤ }
     ; isMonotone-⊗ = record { ∙-mono-≤ = +-mono-≤ }
     }
@@ -56,6 +58,7 @@ open import Relation.Binary.PropositionalEquality
     { isMonoid = +-0-isMonoid
     ; isCommutativeMonoid = ⊔-0-isCommutativeMonoid
     ; isPreorder = ≤-isPreorder
+    ; isCancellative = record { ∙-cancel-≤ = +-cancel-≤ }
     ; isMonotone-⊕ = record { ∙-mono-≤ = +-mono-≤ }
     ; isMonotone-⊗ = record { ∙-mono-≤ = ⊔-mono-≤ }
     }
@@ -110,6 +113,11 @@ combineParCostMonoids pcm₁ pcm₂ = record
       { isEquivalence = isEquivalence
       ; reflexive = λ { refl → ≤-refl pcm₁ , ≤-refl pcm₂ }
       ; trans = λ (h₁ , h₂) (h₁' , h₂') → ≤-trans pcm₁ h₁ h₁' , ≤-trans pcm₂ h₂ h₂'
+      }
+    ; isCancellative = record
+      { ∙-cancel-≤ =
+        (λ (x₁ , x₂) (h₁ , h₂) → ⊕-cancelˡ-≤ pcm₁ x₁ h₁ , ⊕-cancelˡ-≤ pcm₂ x₂ h₂) ,
+        (λ (y₁ , y₂) (z₁ , z₂) (h₁ , h₂) → ⊕-cancelʳ-≤ pcm₁ y₁ z₁ h₁ , ⊕-cancelʳ-≤ pcm₂ y₂ z₂ h₂)
       }
     ; isMonotone-⊕ = record
       { ∙-mono-≤ = λ (h₁ , h₂) (h₁' , h₂') → ⊕-mono-≤ pcm₁ h₁ h₁' , ⊕-mono-≤ pcm₂ h₂ h₂'
