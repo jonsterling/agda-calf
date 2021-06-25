@@ -547,69 +547,63 @@ module MergeSort (M : Comparable) where
   sort/clocked zero    l = ret l
   sort/clocked (suc k) l =
     bind (F (list A)) (split l) λ (l₁ , l₂) →
-      bind (F (list A)) (sort/clocked k l₁ & sort/clocked k l₂) λ (l₁' , l₂') →
-        merge (l₁' , l₂')
+      bind (F (list A)) (sort/clocked k l₁ & sort/clocked k l₂) merge
 
---   sort/clocked/correct : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → SortResult (sort/clocked k) l
---   sort/clocked/correct zero    l h u = l , refl , refl , short-sorted (⌈log₂n⌉≡0⇒n≤1 (N.n≤0⇒n≡0 h))
---   sort/clocked/correct (suc k) l h u =
---     let (l₁ , l₂ , ≡ , length₁ , length₂ , ↭) = split/correct l u in
---     let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ (
---                                       let open ≤-Reasoning in
---                                       begin
---                                         ⌈log₂ length l₁ ⌉
---                                       ≡⟨ Eq.cong ⌈log₂_⌉ length₁ ⟩
---                                         ⌈log₂ ⌊ length l /2⌋ ⌉
---                                       ≤⟨ log₂-mono (N.⌊n/2⌋≤⌈n/2⌉ (length l)) ⟩
---                                         ⌈log₂ ⌈ length l /2⌉ ⌉
---                                       ≤⟨ log₂-suc (length l) h ⟩
---                                         k
---                                       ∎
---                                     ) u in
---     let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ (
---                                       let open ≤-Reasoning in
---                                       begin
---                                         ⌈log₂ length l₂ ⌉
---                                       ≡⟨ Eq.cong ⌈log₂_⌉ length₂ ⟩
---                                         ⌈log₂ ⌈ length l /2⌉ ⌉
---                                       ≤⟨ log₂-suc (length l) h ⟩
---                                         k
---                                       ∎
---                                     ) u in
---     let (l' , ≡' , ↭' , sorted) = merge/correct l₁' l₂' sorted₁ sorted₂ u in
---     l' , (
---       let open ≡-Reasoning in
---       begin
---         sort/clocked (suc k) l
---       ≡⟨⟩
---         (bind (F (list A)) (split l) λ (l₁ , l₂) →
---           bind (F (list A)) (sort/clocked k l₁) λ l₁' →
---             bind (F (list A)) (sort/clocked k l₂) λ l₂' →
---               merge (l₁' , l₂'))
---       ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) ≡ ⟩
---         (bind (F (list A)) (sort/clocked k l₁) λ l₁' →
---           bind (F (list A)) (sort/clocked k l₂) λ l₂' →
---             merge (l₁' , l₂'))
---       ≡⟨ Eq.cong (λ e → bind (F (list A)) e λ l₁' → bind (F (list A)) (sort/clocked k l₂) _) ≡₁ ⟩
---         (bind (F (list A)) (sort/clocked k l₂) λ l₂' →
---           merge (l₁' , l₂'))
---       ≡⟨ Eq.cong (λ e → bind (F (list A)) e λ l₂' → merge (l₁' , l₂')) ≡₂ ⟩
---         merge (l₁' , l₂')
---       ≡⟨ ≡' ⟩
---         ret l'
---       ∎
---     ) , (
---       let open PermutationReasoning in
---       begin
---         l
---       ↭⟨ ↭ ⟩
---         l₁ ++ l₂
---       ↭⟨ ++⁺-↭ ↭₁ ↭₂ ⟩
---         l₁' ++ l₂'
---       ↭⟨ ↭' ⟩
---         l'
---       ∎
---     ) , sorted
+  sort/clocked/correct : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → SortResult (sort/clocked k) l
+  sort/clocked/correct zero    l h u = l , refl , refl , short-sorted (⌈log₂n⌉≡0⇒n≤1 (N.n≤0⇒n≡0 h))
+  sort/clocked/correct (suc k) l h u =
+    let (l₁ , l₂ , ≡ , length₁ , length₂ , ↭) = split/correct l u in
+    let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ (
+                                      let open ≤-Reasoning in
+                                      begin
+                                        ⌈log₂ length l₁ ⌉
+                                      ≡⟨ Eq.cong ⌈log₂_⌉ length₁ ⟩
+                                        ⌈log₂ ⌊ length l /2⌋ ⌉
+                                      ≤⟨ log₂-mono (N.⌊n/2⌋≤⌈n/2⌉ (length l)) ⟩
+                                        ⌈log₂ ⌈ length l /2⌉ ⌉
+                                      ≤⟨ log₂-suc (length l) h ⟩
+                                        k
+                                      ∎
+                                    ) u in
+    let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ (
+                                      let open ≤-Reasoning in
+                                      begin
+                                        ⌈log₂ length l₂ ⌉
+                                      ≡⟨ Eq.cong ⌈log₂_⌉ length₂ ⟩
+                                        ⌈log₂ ⌈ length l /2⌉ ⌉
+                                      ≤⟨ log₂-suc (length l) h ⟩
+                                        k
+                                      ∎
+                                    ) u in
+    let (l' , ≡' , ↭' , sorted) = merge/correct l₁' l₂' sorted₁ sorted₂ u in
+    l' , (
+      let open ≡-Reasoning in
+      begin
+        sort/clocked (suc k) l
+      ≡⟨⟩
+        (bind (F (list A)) (split l) λ (l₁ , l₂) →
+          bind (F (list A)) (sort/clocked k l₁ & sort/clocked k l₂) merge)
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) ≡ ⟩
+        bind (F (list A)) (sort/clocked k l₁ & sort/clocked k l₂) merge
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e merge) (Eq.cong₂ _&_ ≡₁ ≡₂) ⟩
+        bind (F (list A)) (ret l₁' & ret l₂') merge
+      ≡⟨ bind/par 𝟘 𝟘 ⟩
+        merge (l₁' , l₂')
+      ≡⟨ ≡' ⟩
+        ret l'
+      ∎
+    ) , (
+      let open PermutationReasoning in
+      begin
+        l
+      ↭⟨ ↭ ⟩
+        l₁ ++ l₂
+      ↭⟨ ++⁺-↭ ↭₁ ↭₂ ⟩
+        l₁' ++ l₂'
+      ↭⟨ ↭' ⟩
+        l'
+      ∎
+    ) , sorted
 
   sort/clocked/length : ∀ k l (κ : ℕ → α) → bind (meta α) (sort/clocked k l) (κ ∘ length) ≡ κ (length l)
   sort/clocked/length {_} zero    l κ = refl
@@ -769,8 +763,8 @@ module MergeSort (M : Comparable) where
   sort : cmp (Π (list A) λ _ → F (list A))
   sort l = sort/clocked (sort/depth l) l
 
-  -- sort/correct : IsSort sort
-  -- sort/correct l = sort/clocked/correct (sort/depth l) l N.≤-refl
+  sort/correct : IsSort sort
+  sort/correct l = sort/clocked/correct (sort/depth l) l N.≤-refl
 
   sort/cost : cmp (Π (list A) λ _ → cost)
   sort/cost l = sort/clocked/cost (sort/depth l) l
@@ -784,48 +778,48 @@ module MergeSort (M : Comparable) where
   sort≤sort/cost/closed : ∀ l → ub (list A) (sort l) (sort/cost/closed l)
   sort≤sort/cost/closed l = sort/clocked≤sort/clocked/cost/closed (sort/depth l) l
 
--- module Ex/MergeSort where
---   module Sort = MergeSort NatComparable
+module Ex/MergeSort where
+  module Sort = MergeSort NatComparable
 
---   list' = list (U (meta ℕ))
+  list' = list (U (meta ℕ))
 
---   ex/split : cmp (F Sort.pair)
---   ex/split = Sort.split (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ [])
+  ex/split : cmp (F Sort.pair)
+  ex/split = Sort.split (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ [])
 
---   ex/merge : cmp (F list')
---   ex/merge = Sort.merge (2 ∷ 3 ∷ 6 ∷ 8 ∷ [] , 1 ∷ 5 ∷ 8 ∷ [])
+  ex/merge : cmp (F list')
+  ex/merge = Sort.merge (2 ∷ 3 ∷ 6 ∷ 8 ∷ [] , 1 ∷ 5 ∷ 8 ∷ [])
 
---   ex/sort : cmp (F list')
---   ex/sort = Sort.sort (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ [])
+  ex/sort : cmp (F list')
+  ex/sort = Sort.sort (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ [])
 
---   ex/sort/forward : cmp (F list')
---   ex/sort/forward = Sort.sort test/forward  -- cost: 32
+  ex/sort/forward : cmp (F list')
+  ex/sort/forward = Sort.sort test/forward  -- cost: 32
 
---   ex/sort/backward : cmp (F list')
---   ex/sort/backward = Sort.sort test/backward  -- cost: 32
+  ex/sort/backward : cmp (F list')
+  ex/sort/backward = Sort.sort test/backward  -- cost: 32
 
---   ex/sort/shuffled : cmp (F list')
---   ex/sort/shuffled = Sort.sort test/shuffled  -- cost: 47
+  ex/sort/shuffled : cmp (F list')
+  ex/sort/shuffled = Sort.sort test/shuffled  -- cost: 47
 
--- module SortEquivalence (M : Comparable) where
---   open Comparable M
---   open Core M
+module SortEquivalence (M : Comparable) where
+  open Comparable M
+  open Core M
 
---   module ISort = InsertionSort M
---   module MSort = MergeSort M
+  module ISort = InsertionSort M
+  module MSort = MergeSort M
 
---   isort≡msort : ◯ (ISort.sort ≡ MSort.sort)
---   isort≡msort u =
---     funext λ l →
---       let (l'ᵢ , ≡ᵢ , ↭ᵢ , sortedᵢ) = ISort.sort/correct l u in
---       let (l'ₘ , ≡ₘ , ↭ₘ , sortedₘ) = MSort.sort/correct l u in
---       begin
---         ISort.sort l
---       ≡⟨ ≡ᵢ ⟩
---         ret l'ᵢ
---       ≡⟨ Eq.cong ret (unique-sorted sortedᵢ sortedₘ (trans (↭-sym ↭ᵢ) ↭ₘ)) ⟩
---         ret l'ₘ
---       ≡˘⟨ ≡ₘ ⟩
---         MSort.sort l
---       ∎
---         where open ≡-Reasoning
+  isort≡msort : ◯ (ISort.sort ≡ MSort.sort)
+  isort≡msort u =
+    funext λ l →
+      let (l'ᵢ , ≡ᵢ , ↭ᵢ , sortedᵢ) = ISort.sort/correct l u in
+      let (l'ₘ , ≡ₘ , ↭ₘ , sortedₘ) = MSort.sort/correct l u in
+      begin
+        ISort.sort l
+      ≡⟨ ≡ᵢ ⟩
+        ret l'ᵢ
+      ≡⟨ Eq.cong ret (unique-sorted sortedᵢ sortedₘ (trans (↭-sym ↭ᵢ) ↭ₘ)) ⟩
+        ret l'ₘ
+      ≡˘⟨ ≡ₘ ⟩
+        MSort.sort l
+      ∎
+        where open ≡-Reasoning
