@@ -40,10 +40,8 @@ bounded A n = Σ+- (U (F A)) λ u → ub⁻ A u n
 dom : ∀ {ℓ} {a} {A : Set a} {B : Set a} → Rel B ℓ → Rel (A → B) (a L.⊔ ℓ)
 dom {A = A} r f1 f2 = ∀ (a : A) → r (f1 a) (f2 a)
 
-open iso
-
 Ψ/relax : ∀ A B {p p'} → dom _≤_ p p' →
                  (f : cmp (Ψ A B p)) →
                  cmp (Ψ A B p')
 Ψ/relax A B h (func , prf) = func ,
-  λ a → ub⁻/decode .fwd (ub/relax (h a) (ub⁻/decode .bwd (prf a)))
+  λ a → ub/relax (h a) (prf a)

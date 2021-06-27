@@ -99,7 +99,5 @@ gcd/clocked≤gcd/cost (suc k) i@(x , y , z) rewrite gcd/cost-unfold' i =
 gcd : cmp (Ψ gcd/i (λ { _ → nat }) (gcd/cost ∘ to-ext))
 gcd = gcd/code ,
       λ { (x , y , h) →
-          iso.fwd ub⁻/decode
-          (gcd/clocked≤gcd/cost (gcd/cost (to-ext (x , y , h))) ((x , y , h)))
+          gcd/clocked≤gcd/cost (gcd/cost (to-ext (x , y , h))) ((x , y , h))
       }
-

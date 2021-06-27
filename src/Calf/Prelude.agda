@@ -22,10 +22,3 @@ open sub public
 postulate
   funext : ∀ {a b} {A : Set a} {B : A → Set b} {f g : (a : A) → B a} → (∀ x → f x ≡ g x) → f ≡ g
   funext/Ω : {A : Prop} {B : □} {f g : A → B} → (∀ x → f x ≡ g x) → f ≡ g
-
-record iso (A B : □) : □ where
-  field
-    fwd : A → B
-    bwd : B → A
-    fwd-bwd : ∀ x → fwd (bwd x) ≡ x
-    bwd-fwd : ∀ x → bwd (fwd x) ≡ x
