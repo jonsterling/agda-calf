@@ -6,7 +6,7 @@ module Calf (costMonoid : CostMonoid) where
 
 open CostMonoid costMonoid
 
-open import Calf.Prelude hiding (_≡_; refl) public
+open import Calf.Prelude public
 open import Calf.Metalanguage public
 open import Calf.Step costMonoid public
 open import Calf.PhaseDistinction costMonoid public

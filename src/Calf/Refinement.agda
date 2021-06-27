@@ -12,7 +12,6 @@ open import Calf.Step costMonoid
 open import Calf.PhaseDistinction costMonoid
 open import Calf.Upper costMonoid
 open import Calf.Eq
-open import Calf.BoundedFunction costMonoid
 
 open import Calf.Types.Sum
 

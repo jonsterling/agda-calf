@@ -1,18 +1,10 @@
 {-# OPTIONS --prop --rewriting #-}
 
-open import Calf.CostMonoid
-
-module Calf.Types.Nat (costMonoid : CostMonoid) where
+module Calf.Types.Nat where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
-open import Calf.PhaseDistinction costMonoid
-open import Calf.Upper costMonoid
-open import Calf.Eq
-open import Calf.BoundedFunction costMonoid
-open import Data.Nat as Nat using (ℕ ; _+_)
-open import Function
-open import Relation.Binary.PropositionalEquality as P
+open import Data.Nat as Nat using (ℕ)
 
 nat : tp pos
 nat = U (meta ℕ)

@@ -9,7 +9,6 @@ open CostMonoid costMonoid
 open import Calf.Prelude
 open import Calf.Metalanguage
 open import Calf.Step costMonoid
-open import Calf.PhaseDistinction costMonoid
 open import Calf.Eq
 
 data ub (A : tp pos) : cmp (F A) → cmp cost → □ where

@@ -10,6 +10,7 @@ open CostMonoid costMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage
+open import Relation.Binary.PropositionalEquality
 
 cost : tp neg
 cost = meta ℂ

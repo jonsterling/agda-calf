@@ -6,6 +6,7 @@ module Calf.Eq where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
+open import Relation.Binary.PropositionalEquality
 
 postulate
   eq : (A : tp pos) → val A → val A → tp pos

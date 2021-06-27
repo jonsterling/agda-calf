@@ -8,6 +8,7 @@ module Calf.CostEffect where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
+open import Relation.Binary.PropositionalEquality
 open import Data.Product
 
 postulate
