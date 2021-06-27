@@ -14,7 +14,7 @@ open import Calf.Step costMonoid
 open import Calf.CostEffect
 
 open import Data.Nat using (ℕ)
-import Relation.Binary.PropositionalEquality as P
+open import Relation.Binary.PropositionalEquality as P
 
 postulate
   ext : Ω

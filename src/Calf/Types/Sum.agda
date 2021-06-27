@@ -1,7 +1,5 @@
 {-# OPTIONS --prop --without-K --rewriting #-}
 
-open import Calf.CostMonoid
-
 module Calf.Types.Sum where
 
 open import Calf.Prelude

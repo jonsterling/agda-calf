@@ -7,6 +7,7 @@ open import Calf.CostMonoid
 module Calf.Metalanguage where
 
 open import Calf.Prelude
+open import Relation.Binary.PropositionalEquality
 open import Data.Product
 
 postulate

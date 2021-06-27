@@ -8,7 +8,7 @@ open import Calf.CostMonoids using (ℕ-CostMonoid)
 costMonoid = ℕ-CostMonoid
 
 open import Calf costMonoid
-open import Calf.Types.Nat costMonoid
+open import Calf.Types.Nat
 open import Calf.Types.Unit
 open import Calf.Types.Sum
 

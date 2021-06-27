@@ -6,7 +6,7 @@ open import Calf.CostMonoid
 import Calf.CostMonoids as CM
 
 open import Calf CM.ℕ-CostMonoid
-open import Calf.Types.Nat CM.ℕ-CostMonoid as Nat
+open import Calf.Types.Nat as Nat
 
 open import Examples.Gcd.Euclid
 open import Examples.Gcd.Clocked as Clocked
