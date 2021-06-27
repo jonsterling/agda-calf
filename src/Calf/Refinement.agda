@@ -18,8 +18,6 @@ open import Calf.Types.Sum
 
 open import Relation.Binary.PropositionalEquality as Eq
 
-open iso
-
 ub/ret : ∀ {A a} → ub A (ret {A} a) zero
 ub/ret {A} {a} = ub/intro a ≤-refl (ret (eq/intro refl))
 

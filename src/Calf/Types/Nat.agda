@@ -14,32 +14,22 @@ open import Data.Nat as Nat using (ℕ ; _+_)
 open import Function
 open import Relation.Binary.PropositionalEquality as P
 
-open iso
+nat : tp pos
+nat = U (meta ℕ)
 
-postulate
-  nat : tp pos
-  zero : val nat
-  succ : val nat → val nat
-  rec : (n : val nat) → (X : (n : val nat) → tp neg) → cmp (X zero) → ((n : val nat) → (cmp (X n)) → cmp (X (succ n))) →
-    cmp (X n)
-  rec/zero : ∀ {X e0 e1} → rec zero X e0 e1 ≡ e0
-  rec/succ : ∀ {n X e0 e1} → rec (succ n) X e0 e1 ≡ e1 n (rec n X e0 e1)
-  {-# REWRITE rec/zero rec/succ #-}
+zero : val nat
+zero = Nat.zero
 
--- Converting nat to ℕ
--- Better to keep these as postulates so some equations are rewritten automatically
-postulate
-  toℕ : val nat → ℕ
-  tonat : ℕ → val nat
-  ℕ-nat : ∀ x → tonat (toℕ x) ≡ x
-  nat-ℕ : ∀ n → toℕ (tonat n) ≡ n
-  toℕ-zero : toℕ zero ≡ 0
-  toℕ-succ : ∀ {x} → toℕ (succ x) ≡ Nat.suc (toℕ x)
-  {-# REWRITE nat-ℕ ℕ-nat toℕ-zero toℕ-succ #-}
+succ : val nat → val nat
+succ = Nat.suc
 
--- toℕ : val nat → ℕ
--- toℕ n = rec n (λ _ → meta ℕ) 0 (λ _ r → 1 + r)
+rec : (n : val nat) → (X : (n : val nat) → tp neg) → cmp (X zero) → ((n : val nat) → (cmp (X n)) → cmp (X (succ n))) →
+  cmp (X n)
+rec Nat.zero    X bc is = bc
+rec (Nat.suc n) X bc is = is n (rec n X bc is)
 
--- tonat : ℕ → val nat
--- tonat 0 = zero
--- tonat (Nat.suc n) = succ (tonat n)
+toℕ : val nat → ℕ
+toℕ n = n
+
+tonat : ℕ → val nat
+tonat n = n
