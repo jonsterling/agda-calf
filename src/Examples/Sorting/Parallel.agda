@@ -633,7 +633,31 @@ module MergeSort (M : Comparable) where
           κ (length l₁' + length l₂'))
     ≡⟨
       Eq.cong (bnd (split l)) (funext λ (l₁ , l₂) →
-        {!   !}
+        bind/par/seq
+          {κ = λ (l₁' , l₂') → κ (length l₁' + length l₂')}
+          {e₁ = sort/clocked k l₁}
+          {e₂ = sort/clocked k l₂}
+      )
+    ⟩
+      (bnd (split l) λ (l₁ , l₂) →
+        bnd (sort/clocked k l₁) λ l₁' →
+          bnd (sort/clocked k l₂) λ l₂' →
+            κ (length l₁' + length l₂'))
+    ≡⟨
+      Eq.cong (bnd (split l)) (funext λ (l₁ , l₂) →
+        Eq.cong (bnd (sort/clocked k l₁)) (funext λ l₁' →
+          sort/clocked/length k l₂ λ n₂ →
+            κ (length l₁' + n₂)
+        )
+      )
+    ⟩
+      (bnd (split l) λ (l₁ , l₂) →
+        bnd (sort/clocked k l₁) λ l₁' →
+          κ (length l₁' + length l₂))
+    ≡⟨
+      Eq.cong (bnd (split l)) (funext λ (l₁ , l₂) →
+        sort/clocked/length k l₁ λ n₁ →
+          κ (n₁ + length l₂)
       )
     ⟩
       (bnd (split l) λ (l₁ , l₂) →
@@ -673,11 +697,67 @@ module MergeSort (M : Comparable) where
       (bind cost (split l) λ (l₁ , l₂) → split/cost l ⊕
         bind cost (sort/clocked k l₁ & sort/clocked k l₂) λ (l₁' , l₂') → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
           (length l₁' + length l₂' , length l₁' + length l₂'))
-    ≡⟨ {!   !} ⟩
+    ≡⟨
+      Eq.cong (bind cost (split l)) (funext λ (l₁ , l₂) → Eq.cong (split/cost l ⊕_) (
+        bind/par/seq
+          {κ = λ (l₁' , l₂') → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕ (length l₁' + length l₂' , length l₁' + length l₂')}
+          {e₁ = sort/clocked k l₁}
+          {e₂ = sort/clocked k l₂}
+      ))
+    ⟩
+      (bind cost (split l) λ (l₁ , l₂) → split/cost l ⊕
+        bind cost (sort/clocked k l₁) λ l₁' →
+          bind cost (sort/clocked k l₂) λ l₂' → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
+            (length l₁' + length l₂' , length l₁' + length l₂'))
+    ≡⟨
+      Eq.cong (bind cost (split l)) (funext λ (l₁ , l₂) → Eq.cong (split/cost l ⊕_) (
+        sort/clocked/length k l₁ λ n₁ →
+          bind cost (sort/clocked k l₂) λ l₂' → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
+            (n₁ + length l₂' , n₁ + length l₂')
+      ))
+    ⟩
+      (bind cost (split l) λ (l₁ , l₂) → split/cost l ⊕
+        bind cost (sort/clocked k l₂) λ l₂' → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
+          (length l₁ + length l₂' , length l₁ + length l₂'))
+    ≡⟨
+      Eq.cong (bind cost (split l)) (funext λ (l₁ , l₂) → Eq.cong (split/cost l ⊕_) (
+        sort/clocked/length k l₂ λ n₂ → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
+            (length l₁ + n₂ , length l₁ + n₂)
+      ))
+    ⟩
       (bind cost (split l) λ (l₁ , l₂) → split/cost l ⊕
         ((sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
           (length l₁ + length l₂ , length l₁ + length l₂)))
-    ≤⟨ {!   !} ⟩
+    ≤⟨
+      Eq.subst
+        id
+        (Eq.sym (
+          tbind/meta'
+            pair
+            ℂ
+            ℂ
+            (split l)
+            (λ (l₁ , l₂) → split/cost l ⊕ ((sort/clocked/cost        k l₁ ⊗ sort/clocked/cost        k l₂) ⊕ (length l₁ + length l₂ , length l₁ + length l₂)))
+            (λ (l₁ , l₂) → split/cost l ⊕ ((sort/clocked/cost/closed k l₁ ⊗ sort/clocked/cost/closed k l₂) ⊕ (length l₁ + length l₂ , length l₁ + length l₂)))
+            _P≤_
+        ))
+        (dbind
+          (λ (l₁ , l₂) → meta (
+            (split/cost l ⊕ ((sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕ (length l₁ + length l₂ , length l₁ + length l₂)))
+            P≤
+            (split/cost l ⊕ ((sort/clocked/cost/closed k l₁ ⊗ sort/clocked/cost/closed k l₂) ⊕ (length l₁ + length l₂ , length l₁ + length l₂)))
+          ))
+          (split l)
+          λ (l₁ , l₂) →
+            ⊕-monoʳ-≤ 𝟘 (
+              ⊕-monoˡ-≤ (length l₁ + length l₂ , length l₁ + length l₂) (
+                ⊗-mono-≤
+                  (sort/clocked/cost≤sort/clocked/cost/closed k l₁)
+                  (sort/clocked/cost≤sort/clocked/cost/closed k l₂)
+              )
+            )
+        )
+    ⟩
       (bind cost (split l) λ (l₁ , l₂) → split/cost l ⊕
         ((sort/clocked/cost/closed k l₁ ⊗ sort/clocked/cost/closed k l₂) ⊕
           (length l₁ + length l₂ , length l₁ + length l₂)))
