@@ -1056,7 +1056,7 @@ module MergeSortFast (M : Comparable) where
             ; true  → bind (F pair) (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) → ret (l₁ ++ mid ∷ l₂₁ , l₂₂) }
 
   splitBy/clocked/correct : ∀ k l pivot → ⌈log₂ suc (length l) ⌉ Nat.≤ k → Sorted l →
-    ◯ (∃ λ l₁ → ∃ λ l₂ → splitBy/clocked k l pivot ≡ ret (l₁ , l₂) × All (_≤ pivot) l₁ × All (pivot ≤_) l₂ × l ↭ (l₁ ++ l₂))
+    ◯ (∃ λ l₁ → ∃ λ l₂ → splitBy/clocked k l pivot ≡ ret (l₁ , l₂) × All (_≤ pivot) l₁ × All (pivot ≤_) l₂ × l ≡ (l₁ ++ l₂))
   splitBy/clocked/correct zero    l        pivot h sorted u with ⌈log₂n⌉≡0⇒n≤1 {suc (length l)} (N.n≤0⇒n≡0 h)
   splitBy/clocked/correct zero    []       pivot h sorted u | s≤s z≤n = [] , [] , refl , [] , [] , refl
   splitBy/clocked/correct (suc k) []       pivot h sorted u = [] , [] , refl , [] , [] , refl
@@ -1066,16 +1066,16 @@ module MergeSortFast (M : Comparable) where
     with Eq.subst Sorted ≡-↭ sorted | ≤ᵇ-reflects-≤ u (Eq.trans (eq/ref h-eq) (step'/ext (F bool) (ret b) q u)) | ≤-total mid pivot
   splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro b     _ h-eq | sorted' | ofⁿ ¬p | inj₁ mid≤pivot = ⊥-elim (¬p mid≤pivot)
   splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro false _ h-eq | sorted' | ofⁿ ¬p | inj₂ pivot≤mid =
-    let (l₁₁ , l₁₂ , ≡' , h₁₁ , h₁₂ , ↭') = splitBy/clocked/correct k l₁ pivot (
-                                              let open ≤-Reasoning in
-                                              begin
-                                                ⌈log₂ suc (length l₁) ⌉
-                                              ≤⟨ log₂-mono (s≤s h₁) ⟩
-                                                ⌈log₂ suc ⌊ length (x ∷ xs) /2⌋ ⌉
-                                              ≤⟨ h ⟩
-                                                k
-                                              ∎
-                                            ) (++⁻ˡ l₁ sorted') u in
+    let (l₁₁ , l₁₂ , ≡' , h₁₁ , h₁₂ , ≡-↭') = splitBy/clocked/correct k l₁ pivot (
+                                                let open ≤-Reasoning in
+                                                begin
+                                                  ⌈log₂ suc (length l₁) ⌉
+                                                ≤⟨ log₂-mono (s≤s h₁) ⟩
+                                                  ⌈log₂ suc ⌊ length (x ∷ xs) /2⌋ ⌉
+                                                ≤⟨ h ⟩
+                                                  k
+                                                ∎
+                                              ) (++⁻ˡ l₁ sorted') u in
     l₁₁ , l₁₂ ++ mid ∷ l₂ , (
       let open ≡-Reasoning in
       begin
@@ -1109,38 +1109,38 @@ module MergeSortFast (M : Comparable) where
         ret (l₁₁ , l₁₂ ++ mid ∷ l₂)
       ∎
     ) , h₁₁ , ++⁺-All h₁₂ (pivot≤mid ∷ ≤-≤* pivot≤mid (uncons₁ (++⁻ʳ l₁ sorted'))) , (
-      let open PermutationReasoning in
+      let open ≡-Reasoning in
       begin
         (x ∷ xs)
       ≡⟨ ≡-↭ ⟩
         l₁ ++ mid ∷ l₂
-      ↭⟨ ++⁺ʳ-↭ (mid ∷ l₂) ↭' ⟩
+      ≡⟨ Eq.cong (_++ (mid ∷ l₂)) ≡-↭' ⟩
         (l₁₁ ++ l₁₂) ++ mid ∷ l₂
       ≡⟨ ++-assoc l₁₁ l₁₂ (mid ∷ l₂) ⟩
         l₁₁ ++ (l₁₂ ++ mid ∷ l₂)
       ∎
     )
   splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro true  _ h-eq | sorted' | ofʸ p  | _              =
-    let (l₂₁ , l₂₂ , ≡' , h₂₁ , h₂₂ , ↭') = splitBy/clocked/correct k l₂ pivot (
-                                              let open ≤-Reasoning in
-                                              begin
-                                                ⌈log₂ suc (length l₂) ⌉
-                                              ≤⟨ log₂-mono (s≤s h₂) ⟩
-                                                ⌈log₂ suc ⌊ length (x ∷ xs) /2⌋ ⌉
-                                              ≤⟨ h ⟩
-                                                k
-                                              ∎
-                                            ) (uncons₂ (++⁻ʳ l₁ sorted')) u in
+    let (l₂₁ , l₂₂ , ≡' , h₂₁ , h₂₂ , ≡-↭') = splitBy/clocked/correct k l₂ pivot (
+                                                let open ≤-Reasoning in
+                                                begin
+                                                  ⌈log₂ suc (length l₂) ⌉
+                                                ≤⟨ log₂-mono (s≤s h₂) ⟩
+                                                  ⌈log₂ suc ⌊ length (x ∷ xs) /2⌋ ⌉
+                                                ≤⟨ h ⟩
+                                                  k
+                                                ∎
+                                              ) (uncons₂ (++⁻ʳ l₁ sorted')) u in
     l₁ ++ mid ∷ l₂₁ , l₂₂ , (
       let open ≡-Reasoning in
       {!   !}
     ) , ++⁺-All {xs = l₁} {ys = mid ∷ l₂₁} {!   !} (p ∷ h₂₁) , h₂₂ , (
-      let open PermutationReasoning in
+      let open ≡-Reasoning in
       begin
         (x ∷ xs)
       ≡⟨ ≡-↭ ⟩
         l₁ ++ mid ∷ l₂
-      ↭⟨ ++⁺ˡ-↭ l₁ (prep mid ↭') ⟩
+      ≡⟨ Eq.cong (λ l₂ → l₁ ++ mid ∷ l₂) ≡-↭' ⟩
         l₁ ++ mid ∷ (l₂₁ ++ l₂₂)
       ≡˘⟨ ++-assoc l₁ (mid ∷ l₂₁) l₂₂ ⟩
         (l₁ ++ mid ∷ l₂₁) ++ l₂₂
@@ -1193,7 +1193,7 @@ module MergeSortFast (M : Comparable) where
   splitBy l pivot = splitBy/clocked ⌈log₂ suc (length l) ⌉ l pivot
 
   splitBy/correct : ∀ l pivot → Sorted l →
-    ◯ (∃ λ l₁ → ∃ λ l₂ → splitBy l pivot ≡ ret (l₁ , l₂) × All (_≤ pivot) l₁ × All (pivot ≤_) l₂ × l ↭ (l₁ ++ l₂))
+    ◯ (∃ λ l₁ → ∃ λ l₂ → splitBy l pivot ≡ ret (l₁ , l₂) × All (_≤ pivot) l₁ × All (pivot ≤_) l₂ × l ≡ (l₁ ++ l₂))
   splitBy/correct l pivot = splitBy/clocked/correct ⌈log₂ suc (length l) ⌉ l pivot N.≤-refl
 
   splitBy/length : ∀ l pivot (κ : ℕ → ℕ → α) → ∃ λ n₁ → ∃ λ n₂ → n₁ Nat.≤ (length l) × n₂ Nat.≤ (length l) ×
@@ -1223,21 +1223,43 @@ module MergeSortFast (M : Comparable) where
 
   merge/clocked/correct : ∀ k l₁ l₂ → ⌈log₂ suc (length l₁) ⌉ Nat.≤ k → Sorted l₁ → Sorted l₂ →
     ◯ (∃ λ l → merge/clocked k (l₁ , l₂) ≡ ret l × SortedOf (l₁ ++ l₂) l)
-  merge/clocked/correct zero    l₁       l₂ h-clock sorted₁       sorted₂ u with ⌈log₂n⌉≡0⇒n≤1 {suc (length l₁)} (N.n≤0⇒n≡0 h-clock)
-  merge/clocked/correct zero    []       l₂ h-clock []            sorted₂ u | s≤s z≤n = l₂ , refl , refl , sorted₂
-  merge/clocked/correct (suc k) []       l₂ h-clock []            sorted₂ u = l₂ , refl , refl , sorted₂
-  merge/clocked/correct (suc k) (x ∷ l₁) l₂ h-clock (h ∷ sorted₁) sorted₂ u =
+  merge/clocked/correct zero    l₁       l₂ h-clock sorted₁ sorted₂ u with ⌈log₂n⌉≡0⇒n≤1 {suc (length l₁)} (N.n≤0⇒n≡0 h-clock)
+  merge/clocked/correct zero    []       l₂ h-clock []      sorted₂ u | s≤s z≤n = l₂ , refl , refl , sorted₂
+  merge/clocked/correct (suc k) []       l₂ h-clock []      sorted₂ u = l₂ , refl , refl , sorted₂
+  merge/clocked/correct (suc k) (x ∷ l₁) l₂ h-clock sorted₁ sorted₂ u =
     let (l₁₁ , pivot , l₁₂ , ≡ , h₁₁ , h₁₂ , ≡-↭) = splitMid/correct (x ∷ l₁) (s≤s z≤n) u in
-    let (l₂₁ , l₂₂ , ≡' , h₂₁ , h₂₂ , ↭) = splitBy/correct l₂ pivot sorted₂ u in
-    let (l₁' , ≡₁' , ↭₁' , sorted₁') = merge/clocked/correct k l₁₁ l₂₁ {!   !} {!   !} {!   !} u in
-    let (l₂' , ≡₂' , ↭₂' , sorted₂') = merge/clocked/correct k l₁₂ l₂₂ {!   !} {!   !} {!   !} u in
+    let sorted₁ = Eq.subst Sorted ≡-↭ sorted₁ in
+    let (l₂₁ , l₂₂ , ≡' , h₂₁ , h₂₂ , ≡-↭') = splitBy/correct l₂ pivot sorted₂ u in
+    let sorted₂ = Eq.subst Sorted ≡-↭' sorted₂ in
+    let (l₁' , ≡₁' , ↭₁' , sorted₁') = merge/clocked/correct k l₁₁ l₂₁
+                                        (let open ≤-Reasoning in
+                                        begin
+                                          ⌈log₂ suc (length l₁₁) ⌉
+                                        ≤⟨ log₂-mono (s≤s h₁₁) ⟩
+                                          ⌈log₂ ⌈ suc (length (x ∷ l₁)) /2⌉ ⌉
+                                        ≤⟨ log₂-suc (suc (length (x ∷ l₁))) h-clock ⟩
+                                          k
+                                        ∎)
+                                        (++⁻ˡ l₁₁ sorted₁)
+                                        (++⁻ˡ l₂₁ sorted₂)
+                                        u in
+    let (l₂' , ≡₂' , ↭₂' , sorted₂') = merge/clocked/correct k l₁₂ l₂₂
+                                        (let open ≤-Reasoning in
+                                        begin
+                                          ⌈log₂ suc (length l₁₂) ⌉
+                                        ≤⟨ log₂-mono (s≤s h₁₂) ⟩
+                                          ⌈log₂ ⌈ suc (length (x ∷ l₁)) /2⌉ ⌉
+                                        ≤⟨ log₂-suc (suc (length (x ∷ l₁))) h-clock ⟩
+                                          k
+                                        ∎)
+                                        (uncons₂ (++⁻ʳ l₁₁ sorted₁))
+                                        (++⁻ʳ l₂₁ sorted₂)
+                                        u in
     l₁' ++ pivot ∷ l₂' , {!   !} , (
       let open PermutationReasoning in
       begin
         (x ∷ l₁) ++ l₂
-      ≡⟨ Eq.cong (_++ l₂) ≡-↭ ⟩
-        (l₁₁ ++ pivot ∷ l₁₂) ++ l₂
-      ↭⟨ ++⁺ˡ-↭ (l₁₁ ++ pivot ∷ l₁₂) (↭) ⟩
+      ≡⟨ Eq.cong₂ (_++_) ≡-↭ ≡-↭' ⟩
         (l₁₁ ++ pivot ∷ l₁₂) ++ (l₂₁ ++ l₂₂)
       ≡⟨ ++-assoc l₁₁ (pivot ∷ l₁₂) (l₂₁ ++ l₂₂) ⟩
         l₁₁ ++ (pivot ∷ l₁₂ ++ (l₂₁ ++ l₂₂))
