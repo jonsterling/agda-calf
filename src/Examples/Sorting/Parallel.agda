@@ -72,9 +72,11 @@ module Core (M : Comparable) where
   open Comparable M
 
   open import Data.List.Relation.Binary.Permutation.Propositional public
-  open import Data.List.Relation.Binary.Permutation.Propositional.Properties renaming (++⁺ to ++⁺-↭) public
-  open import Data.List.Relation.Unary.All public
-  open import Data.List.Relation.Unary.All.Properties using () renaming (++⁺ to ++⁺-All) public
+  open import Data.List.Relation.Binary.Permutation.Propositional.Properties
+    using (¬x∷xs↭[]; All-resp-↭; Any-resp-↭; drop-∷)
+    renaming (++-comm to ++-comm-↭; ++⁺ to ++⁺-↭) public
+  open import Data.List.Relation.Unary.All using (All; []; _∷_; map; lookup) public
+  open import Data.List.Relation.Unary.All.Properties as AllP using () renaming (++⁺ to ++⁺-All) public
   open import Data.List.Relation.Unary.Any using (Any; here; there)
 
   _≤*_ : val A → val (list A) → Set
@@ -102,12 +104,16 @@ module Core (M : Comparable) where
       (lookup (≤-refl ∷ h₂) (Any-resp-↭ (↭) (here refl)))
   ... | refl = Eq.cong (_ ∷_) (unique-sorted sorted₁ sorted₂ (drop-∷ ↭))
 
-
   ++⁻ˡ : ∀ xs {ys} → Sorted (xs ++ ys) → Sorted xs
-  ++⁻ˡ xs sorted = {!   !}
+  ++⁻ˡ []       sorted       = []
+  ++⁻ˡ (x ∷ xs) (h ∷ sorted) = AllP.++⁻ˡ xs h ∷ (++⁻ˡ xs sorted)
 
   ++⁻ʳ : ∀ xs {ys} → Sorted (xs ++ ys) → Sorted ys
-  ++⁻ʳ xs sorted = {!   !}
+  ++⁻ʳ []       sorted       = sorted
+  ++⁻ʳ (x ∷ xs) (h ∷ sorted) = ++⁻ʳ xs sorted
+
+  uncons : ∀ {x xs} → Sorted (x ∷ xs) → x ≤* xs
+  uncons (h ∷ sorted) = h
 
   SortedOf : val (list A) → val (list A) → Set
   SortedOf l l' = l ↭ l' × Sorted l'
@@ -470,11 +476,11 @@ module MergeSort (M : Comparable) where
       let open PermutationReasoning in
       begin
         (x ∷ xs ++ y ∷ ys)
-      ↭⟨ ++-comm (x ∷ xs) (y ∷ ys) ⟩
+      ↭⟨ ++-comm-↭ (x ∷ xs) (y ∷ ys) ⟩
         (y ∷ ys ++ x ∷ xs)
       ≡⟨⟩
         y ∷ (ys ++ x ∷ xs)
-      <⟨ ++-comm ys (x ∷ xs) ⟩
+      <⟨ ++-comm-↭ ys (x ∷ xs) ⟩
         y ∷ (x ∷ xs ++ ys)
       <⟨ ↭ ⟩
         y ∷ l
@@ -1022,12 +1028,59 @@ module MergeSortFast (M : Comparable) where
     ◯ (∃ λ l₁ → ∃ λ l₂ → splitBy/clocked k l pivot ≡ ret (l₁ , l₂) × All (_≤ pivot) l₁ × All (pivot ≤_) l₂ × l ↭ (l₁ ++ l₂))
   splitBy/clocked/correct (suc k) []       pivot h sorted u = [] , [] , refl , [] , [] , refl
   splitBy/clocked/correct (suc k) (x ∷ xs) pivot h sorted u with splitMid/correct (x ∷ xs) (s≤s z≤n) u
-  ... | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) with h-cost mid pivot
-  ... | ub/intro false _ h-eq =
+  splitBy/clocked/correct (suc k) (x ∷ xs) pivot h sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) with h-cost mid pivot
+  splitBy/clocked/correct (suc k) (x ∷ xs) pivot h sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro {q = q} b _ h-eq rewrite eq/ref h-eq
+    with Eq.subst Sorted ≡-↭ sorted | ≤ᵇ-reflects-≤ u (Eq.trans (eq/ref h-eq) (step'/ext (F bool) (ret b) q u)) | ≤-total mid pivot
+  splitBy/clocked/correct (suc k) (x ∷ xs) pivot h sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro b     _ h-eq | sorted' | ofⁿ ¬p | inj₁ mid≤pivot = ⊥-elim (¬p mid≤pivot)
+  splitBy/clocked/correct (suc k) (x ∷ xs) pivot h sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro false _ h-eq | sorted' | ofⁿ ¬p | inj₂ pivot≤mid =
+    let (l₁₁ , l₁₂ , ≡' , h₁₁ , h₁₂ , ↭') = splitBy/clocked/correct k l₁ pivot {!   !} (++⁻ˡ l₁ sorted') u in
+    l₁₁ , l₁₂ ++ mid ∷ l₂ , (
+      let open ≡-Reasoning in
+      begin
+        splitBy/clocked (suc k) (x ∷ xs) pivot
+      ≡⟨ {!   !} ⟩
+        (bind (F pair) (splitMid (x ∷ xs) (s≤s z≤n)) λ (l₁ , mid , l₂) →
+          bind (F pair) (mid ≤ᵇ pivot) λ b →
+            case b of
+              λ { false → bind (F pair) (splitBy/clocked k l₁ pivot) λ (l₁₁ , l₁₂) → ret (l₁₁ , l₁₂ ++ mid ∷ l₂)
+                ; true  → bind (F pair) (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) → ret (l₁ ++ mid ∷ l₂₁ , l₂₂) })
+      ≡⟨
+        {!   !}
+        -- Eq.cong
+        --   (λ e → bind (F pair) e (
+        --       λ (l₁ , mid , l₂) →
+        --         bind (F pair) (mid ≤ᵇ pivot) λ b →
+        --           case b of
+        --             λ { false → bind (F pair) (splitBy/clocked k l₁ pivot) λ (l₁₁ , l₁₂) → ret (l₁₁ , l₁₂ ++ mid ∷ l₂)
+        --               ; true  → bind (F pair) (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) → ret (l₁ ++ mid ∷ l₂₁ , l₂₂) }
+        --   ))
+        --   ≡
+      ⟩
+        (bind (F pair) (ret {triple} (l₁ , mid , l₂)) λ (l₁ , mid , l₂) →
+          bind (F pair) (mid ≤ᵇ pivot) λ b →
+            case b of
+              λ { false → bind (F pair) (splitBy/clocked k l₁ pivot) λ (l₁₁ , l₁₂) → ret (l₁₁ , l₁₂ ++ mid ∷ l₂)
+                ; true  → bind (F pair) (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) → ret (l₁ ++ mid ∷ l₂₁ , l₂₂) })
+      ≡⟨ {!   !} ⟩
+        (bind (F pair) (splitBy/clocked k l₁ pivot) λ (l₁₁ , l₁₂) → ret (l₁₁ , l₁₂ ++ mid ∷ l₂))
+      ≡⟨ Eq.cong (λ e → bind (F pair) e _) ≡' ⟩
+        ret (l₁₁ , l₁₂ ++ mid ∷ l₂)
+      ∎
+    ) , h₁₁ , ++⁺-All h₁₂ (pivot≤mid ∷ ≤-≤* pivot≤mid (uncons (++⁻ʳ l₁ sorted'))) , (
+      let open PermutationReasoning in
+      begin
+        (x ∷ xs)
+      ≡⟨ ≡-↭ ⟩
+        l₁ ++ mid ∷ l₂ 
+      ↭⟨ ++⁺-↭ ↭' refl ⟩
+        (l₁₁ ++ l₁₂) ++ mid ∷ l₂
+      ≡⟨ ++-assoc l₁₁ l₁₂ (mid ∷ l₂) ⟩
+        l₁₁ ++ (l₁₂ ++ mid ∷ l₂)
+      ∎
+    )
+  ... | sorted' | ofʸ p  | _              = {!   !}
   -- (++⁻ˡ {!   !} {!   !})
-    let (l₁₁ , l₁₂ , ≡' , h₁₁ , h₁₂ , ↭') = splitBy/clocked/correct k l₁ pivot {!   !} (++⁻ˡ l₁ (Eq.subst Sorted ≡-↭ sorted)) u in
-    l₁₁ , l₁₂ ++ mid ∷ l₂ , {!   !} , h₁₁ , ++⁺-All h₁₂ ({!   !} ∷ {!   !}) , {!   !}
-  ... | ub/intro true  _ h-eq = {!   !}
+  -- ... | ub/intro true  _ h-eq = {!   !}
     -- {!   !} , {!   !} , {!   !} , {!   !} , {!   !} , {!   !}
   -- splitBy/clocked/correct (suc k) k' (x ∷ xs) h    u =
   --   let (l₁ , l₂ , ≡ , h₁ , h₂ , ↭) = splitBy/clocked/correct k k' xs (N.suc-injective h) u in
@@ -1073,11 +1126,6 @@ module MergeSortFast (M : Comparable) where
 
   splitBy/clocked≤splitBy/clocked/cost/closed : ∀ k l pivot → ub pair (splitBy/clocked k l pivot) (splitBy/clocked/cost/closed k l pivot)
   splitBy/clocked≤splitBy/clocked/cost/closed k l pivot = ub/relax (splitBy/clocked/cost≤splitBy/clocked/cost/closed k l pivot) (splitBy/clocked≤splitBy/clocked/cost k l pivot)
-
-  -- splitBy/clocked≤splitBy/clocked/cost : ∀ k l → ub pair (splitBy/clocked k l) (splitBy/clocked/cost k l)
-  -- splitBy/clocked≤splitBy/clocked/cost zero    l        = ub/ret
-  -- splitBy/clocked≤splitBy/clocked/cost (suc k) []       = ub/ret
-  -- splitBy/clocked≤splitBy/clocked/cost (suc k) (x ∷ xs) = ub/bind/const 𝟘 𝟘 (splitBy/clocked≤splitBy/clocked/cost k xs) λ _ → ub/ret
 
   splitBy : cmp (Π (list A) λ _ → Π A λ _ → F pair)
   splitBy l pivot = splitBy/clocked ⌈log₂ length l ⌉ l pivot
@@ -1145,11 +1193,11 @@ module MergeSortFast (M : Comparable) where
   --     let open PermutationReasoning in
   --     begin
   --       (x ∷ xs ++ y ∷ ys)
-  --     ↭⟨ ++-comm (x ∷ xs) (y ∷ ys) ⟩
+  --     ↭⟨ ++-comm-↭ (x ∷ xs) (y ∷ ys) ⟩
   --       (y ∷ ys ++ x ∷ xs)
   --     ≡⟨⟩
   --       y ∷ (ys ++ x ∷ xs)
-  --     <⟨ ++-comm ys (x ∷ xs) ⟩
+  --     <⟨ ++-comm-↭ ys (x ∷ xs) ⟩
   --       y ∷ (x ∷ xs ++ ys)
   --     <⟨ ↭ ⟩
   --       y ∷ l
