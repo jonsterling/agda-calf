@@ -1150,16 +1150,10 @@ module MergeSortFast (M : Comparable) where
   splitBy≤splitBy/cost/closed : ∀ l pivot → ub pair (splitBy l pivot) (splitBy/cost/closed l pivot)
   splitBy≤splitBy/cost/closed l pivot = splitBy/clocked≤splitBy/clocked/cost/closed ⌈log₂ length l ⌉ l pivot
 
-  minmax : val (list A) × val (list A) → val (list A) × val (list A)
-  minmax (l₁ , l₂) with length l₁ Nat.≤ᵇ length l₂
-  ... | false = l₂ , l₁
-  ... | true  = l₁ , l₂
-
   merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F (list A))
-  merge/clocked zero    (l₁ , l₂) = ret (l₁ ++ l₂)
-  merge/clocked (suc k) (l₁ , l₂) with minmax (l₁ , l₂)
-  merge/clocked (suc k) _ | []     , l₂ = ret l₂
-  merge/clocked (suc k) _ | x ∷ l₁ , l₂ =
+  merge/clocked zero    (l₁     , l₂) = ret (l₁ ++ l₂)
+  merge/clocked (suc k) ([]     , l₂) = ret l₂
+  merge/clocked (suc k) (x ∷ l₁ , l₂) =
     bind (F (list A)) (splitMid (x ∷ l₁) (s≤s z≤n)) λ (l₁₁ , pivot , l₁₂) →
       bind (F (list A)) (splitBy l₂ pivot) λ (l₂₁ , l₂₂) →
         bind (F (list A)) (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') →
@@ -1246,10 +1240,9 @@ module MergeSortFast (M : Comparable) where
   --     where open ≡-Reasoning
 
   merge/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → cost)
-  merge/clocked/cost zero    (l₁ , l₂) = 𝟘
-  merge/clocked/cost (suc k) (l₁ , l₂) with minmax (l₁ , l₂)
-  merge/clocked/cost (suc k) _ | []     , l₂ = 𝟘
-  merge/clocked/cost (suc k) _ | x ∷ l₁ , l₂ =
+  merge/clocked/cost zero    (l₁     , l₂) = 𝟘
+  merge/clocked/cost (suc k) ([]     , l₂) = 𝟘
+  merge/clocked/cost (suc k) (x ∷ l₁ , l₂) =
     bind cost (splitMid (x ∷ l₁) (s≤s z≤n)) λ (l₁₁ , pivot , l₁₂) → splitMid/cost (x ∷ l₁) (s≤s z≤n) ⊕
       bind cost (splitBy l₂ pivot) λ (l₂₁ , l₂₂) → splitBy/cost/closed l₂ pivot ⊕
         bind cost (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
@@ -1261,10 +1254,9 @@ module MergeSortFast (M : Comparable) where
     k * (⌈log₂ length l₁ ⌉ ⊔ ⌈log₂ length l₂ ⌉)
 
   merge/clocked/cost≤merge/clocked/cost/closed : ∀ k p → merge/clocked/cost k p P≤ merge/clocked/cost/closed k p
-  merge/clocked/cost≤merge/clocked/cost/closed zero    (orig/l₁ , orig/l₂) = z≤n , z≤n
-  merge/clocked/cost≤merge/clocked/cost/closed (suc k) (orig/l₁ , orig/l₂) with minmax (orig/l₁ , orig/l₂)
-  merge/clocked/cost≤merge/clocked/cost/closed (suc k) (orig/l₁ , orig/l₂) | []     , l₂ = z≤n , z≤n
-  merge/clocked/cost≤merge/clocked/cost/closed (suc k) (orig/l₁ , orig/l₂) | x ∷ l₁ , l₂ =
+  merge/clocked/cost≤merge/clocked/cost/closed zero    (l₁     , l₂) = z≤n , z≤n
+  merge/clocked/cost≤merge/clocked/cost/closed (suc k) ([]     , l₂) = z≤n , z≤n
+  merge/clocked/cost≤merge/clocked/cost/closed (suc k) (x ∷ l₁ , l₂) =
     let open P≤-Reasoning in
     begin
       (bind cost (splitMid (x ∷ l₁) (s≤s z≤n)) λ (l₁₁ , pivot , l₁₂) → splitMid/cost (x ∷ l₁) (s≤s z≤n) ⊕
@@ -1297,15 +1289,14 @@ module MergeSortFast (M : Comparable) where
           ((2 ^ k * (⌈log₂ length l₁₁ ⌉ ⊔ ⌈log₂ length l₂₁ ⌉) , k * (⌈log₂ length l₁₁ ⌉ ⊔ ⌈log₂ length l₂₁ ⌉)) ⊗
            (2 ^ k * (⌈log₂ length l₁₂ ⌉ ⊔ ⌈log₂ length l₂₂ ⌉) , k * (⌈log₂ length l₁₂ ⌉ ⊔ ⌈log₂ length l₂₂ ⌉))))
     ≤⟨ {!   !} ⟩
-      2 ^ suc k * (⌈log₂ length orig/l₁ ⌉ ⊔ ⌈log₂ length orig/l₂ ⌉) ,
-      suc k * (⌈log₂ length orig/l₁ ⌉ ⊔ ⌈log₂ length orig/l₂ ⌉)
+      2 ^ suc k * (⌈log₂ length (x ∷ l₁) ⌉ ⊔ ⌈log₂ length l₂ ⌉) ,
+      suc k * (⌈log₂ length (x ∷ l₁) ⌉ ⊔ ⌈log₂ length l₂ ⌉)
     ∎
 
   merge/clocked≤merge/clocked/cost : ∀ k p → ub (list A) (merge/clocked k p) (merge/clocked/cost k p)
-  merge/clocked≤merge/clocked/cost zero    (l₁ , l₂) = ub/ret
-  merge/clocked≤merge/clocked/cost (suc k) (l₁ , l₂) with minmax (l₁ , l₂)
-  merge/clocked≤merge/clocked/cost (suc k) _ | []     , l₂ = ub/ret
-  merge/clocked≤merge/clocked/cost (suc k) _ | x ∷ l₁ , l₂ =
+  merge/clocked≤merge/clocked/cost zero    (l₁     , l₂) = ub/ret
+  merge/clocked≤merge/clocked/cost (suc k) ([]     , l₂) = ub/ret
+  merge/clocked≤merge/clocked/cost (suc k) (x ∷ l₁ , l₂) =
     ub/bind (splitMid/cost (x ∷ l₁) (s≤s z≤n)) _ (splitMid≤splitMid/cost (x ∷ l₁) (s≤s z≤n)) λ (l₁₁ , pivot , l₁₂) →
       ub/bind (splitBy/cost/closed l₂ pivot) _ (splitBy≤splitBy/cost/closed l₂ pivot) λ (l₂₁ , l₂₂) →
         ub/bind (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) _ (ub/par (merge/clocked≤merge/clocked/cost k (l₁₁ , l₂₁)) (merge/clocked≤merge/clocked/cost k (l₁₂ , l₂₂))) λ (l₁' , l₂') →
