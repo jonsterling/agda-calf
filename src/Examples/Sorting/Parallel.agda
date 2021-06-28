@@ -957,7 +957,7 @@ module MergeSortFast (M : Comparable) where
   triple = Σ++ (list A) λ _ → Σ++ A λ _ → (list A)
 
   splitMid/clocked : cmp (Π (U (meta ℕ)) λ k → Π (list A) λ l → Π (U (meta (k Nat.< length l))) λ _ → F triple)
-  splitMid/clocked zero    (x ∷ xs) (s≤s _) = ret ([] , x , xs)
+  splitMid/clocked zero    (x ∷ xs) (s≤s h) = ret ([] , x , xs)
   splitMid/clocked (suc k) (x ∷ xs) (s≤s h) =
     bind (F triple) (splitMid/clocked k xs h) λ (l₁ , mid , l₂) → ret ((x ∷ l₁) , mid , l₂)
 
@@ -968,10 +968,11 @@ module MergeSortFast (M : Comparable) where
     let (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) = splitMid/clocked/correct k k' xs h (N.suc-injective h-length) u in
     x ∷ l₁ , mid , l₂ , Eq.cong (λ e → bind (F triple) e _) ≡ , Eq.cong suc h₁ , h₂ , Eq.cong (x ∷_) ≡-↭
 
-  -- splitMid/clocked/length : ∀ k k' l → k + k' ≡ length l → (κ : ℕ → ℕ → α) →
-  --   bind (meta α) (splitMid/clocked k l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ k k'
-  -- splitMid/clocked/length zero    _  l        refl _ = refl
-  -- splitMid/clocked/length (suc k) k' (x ∷ xs) h    κ = splitMid/clocked/length k k' xs (N.suc-injective h) (κ ∘ suc)
+  splitMid/clocked/length : ∀ k k' l h → k + suc k' ≡ length l → (κ : ℕ → ℕ → α) →
+    bind (meta α) (splitMid/clocked k l h) (λ (l₁ , _ , l₂) → κ (length l₁) (length l₂)) ≡ κ k k'
+  splitMid/clocked/length zero    _  (x ∷ xs) (s≤s h) refl     κ = refl
+  splitMid/clocked/length (suc k) k' (x ∷ xs) (s≤s h) h-length κ =
+    splitMid/clocked/length k k' xs h (N.suc-injective h-length) λ n₁ n₂ → κ (suc n₁) n₂
 
   splitMid/clocked/cost : cmp (Π (U (meta ℕ)) λ k → Π (list A) λ l → Π (U (meta (k Nat.< length l))) λ _ → cost)
   splitMid/clocked/cost _ _ _ = 𝟘
@@ -985,28 +986,50 @@ module MergeSortFast (M : Comparable) where
   splitMid (x ∷ xs) (s≤s h) = splitMid/clocked ⌊ length (x ∷ xs) /2⌋ (x ∷ xs) (s≤s (N.⌈n/2⌉≤n _))
 
   splitMid/correct : ∀ l h →
-    ◯ (∃ λ l₁ → ∃ λ mid → ∃ λ l₂ → splitMid l h ≡ ret (l₁ , mid , l₂) × length l₁ ≡ ⌊ length l /2⌋ × length l₂ ≡ ⌊ pred (length l) /2⌋ × l ≡ (l₁ ++ [ mid ] ++ l₂))
-  splitMid/correct (x ∷ xs) (s≤s h) = splitMid/clocked/correct ⌊ length (x ∷ xs) /2⌋ ⌊ pred (length (x ∷ xs)) /2⌋ (x ∷ xs) (s≤s (N.⌈n/2⌉≤n _)) $
-    begin
-      ⌊ length (x ∷ xs) /2⌋ + suc ⌊ pred (length (x ∷ xs)) /2⌋
-    ≡⟨⟩
-      ⌊ length (x ∷ xs) /2⌋ + suc ⌊ length xs /2⌋
-    ≡⟨⟩
-      ⌈ length xs /2⌉ + suc ⌊ length xs /2⌋
-    ≡⟨ N.+-suc ⌈ length xs /2⌉ ⌊ length xs /2⌋ ⟩
-      suc (⌈ length xs /2⌉ + ⌊ length xs /2⌋)
-    ≡⟨ Eq.cong suc (N.+-comm ⌈ length xs /2⌉ ⌊ length xs /2⌋) ⟩
-      suc (⌊ length xs /2⌋ + ⌈ length xs /2⌉)
-    ≡⟨ Eq.cong suc (N.⌊n/2⌋+⌈n/2⌉≡n (length xs)) ⟩
-      suc (length xs)
-    ≡⟨⟩
-      length (x ∷ xs)
-    ∎
-      where open ≡-Reasoning
+    ◯ (∃ λ l₁ → ∃ λ mid → ∃ λ l₂ → splitMid l h ≡ ret (l₁ , mid , l₂) × length l₁ Nat.≤ ⌊ length l /2⌋ × length l₂ Nat.≤ ⌊ length l /2⌋ × l ≡ (l₁ ++ [ mid ] ++ l₂))
+  splitMid/correct (x ∷ xs) (s≤s h) u =
+    let (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) = splitMid/clocked/correct ⌊ length (x ∷ xs) /2⌋ ⌊ pred (length (x ∷ xs)) /2⌋ (x ∷ xs) (s≤s (N.⌈n/2⌉≤n _))
+                                                (let open ≡-Reasoning in
+                                                begin
+                                                  ⌊ length (x ∷ xs) /2⌋ + suc ⌊ pred (length (x ∷ xs)) /2⌋
+                                                ≡⟨⟩
+                                                  ⌊ length (x ∷ xs) /2⌋ + suc ⌊ length xs /2⌋
+                                                ≡⟨⟩
+                                                  ⌈ length xs /2⌉ + suc ⌊ length xs /2⌋
+                                                ≡⟨ N.+-suc ⌈ length xs /2⌉ ⌊ length xs /2⌋ ⟩
+                                                  suc (⌈ length xs /2⌉ + ⌊ length xs /2⌋)
+                                                ≡⟨ Eq.cong suc (N.+-comm ⌈ length xs /2⌉ ⌊ length xs /2⌋) ⟩
+                                                  suc (⌊ length xs /2⌋ + ⌈ length xs /2⌉)
+                                                ≡⟨ Eq.cong suc (N.⌊n/2⌋+⌈n/2⌉≡n (length xs)) ⟩
+                                                  suc (length xs)
+                                                ≡⟨⟩
+                                                  length (x ∷ xs)
+                                                ∎) u in
+    l₁ , mid , l₂ , ≡ , N.≤-reflexive h₁ , (
+      let open ≤-Reasoning in
+      begin
+        length l₂
+      ≡⟨ h₂ ⟩
+        ⌊ pred (length (x ∷ xs)) /2⌋
+      ≤⟨ N.⌊n/2⌋-mono N.pred[n]≤n ⟩
+        ⌊ length (x ∷ xs) /2⌋
+      ∎
+    ), ≡-↭
 
-  -- splitMid/length : ∀ l (κ : ℕ → ℕ → α) →
-  --   bind (meta α) (splitMid l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ ⌊ length l /2⌋ ⌈ length l /2⌉
-  -- splitMid/length l = splitMid/clocked/length ⌊ length l /2⌋ ⌈ length l /2⌉ l (N.⌊n/2⌋+⌈n/2⌉≡n (length l))
+  splitMid/length : ∀ l h (κ : ℕ → ℕ → α) → ∃ λ n₁ → ∃ λ n₂ → n₁ Nat.≤ ⌊ length l /2⌋ × n₂ Nat.≤ ⌊ length l /2⌋ ×
+    bind (meta α) (splitMid l h) (λ (l₁ , _ , l₂) → κ (length l₁) (length l₂)) ≡ κ n₁ n₂
+  splitMid/length (x ∷ xs) (s≤s h) κ =
+    ⌊ length (x ∷ xs) /2⌋ ,
+    ⌊ pred (length (x ∷ xs)) /2⌋ ,
+    N.≤-refl ,
+    N.⌊n/2⌋-mono N.pred[n]≤n , (
+      let open ≡-Reasoning in
+      begin
+        {!   !} -- splitMid/clocked/length ⌊ length l /2⌋ ⌈ length l /2⌉ l (N.⌊n/2⌋+⌈n/2⌉≡n (length l))
+      ≡⟨ {!   !} ⟩
+        {!   !}
+      ∎
+    )
 
   splitMid/cost : cmp (Π (list A) λ l → Π (U (meta (0 Nat.< length l))) λ _ → cost)
   splitMid/cost (x ∷ xs) (s≤s h) = splitMid/clocked/cost ⌊ length (x ∷ xs) /2⌋ (x ∷ xs) (s≤s (N.⌈n/2⌉≤n _))
