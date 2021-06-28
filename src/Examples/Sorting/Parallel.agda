@@ -1024,16 +1024,27 @@ module MergeSortFast (M : Comparable) where
           λ { false → bind (F pair) (splitBy/clocked k l₁ pivot) λ (l₁₁ , l₁₂) → ret (l₁₁ , l₁₂ ++ mid ∷ l₂)
             ; true  → bind (F pair) (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) → ret (l₁ ++ mid ∷ l₂₁ , l₂₂) }
 
-  splitBy/clocked/correct : ∀ k l pivot → suc ⌈log₂ length l ⌉ Nat.≤ k → Sorted l →
+  splitBy/clocked/correct : ∀ k l pivot → ⌈log₂ suc (length l) ⌉ Nat.≤ k → Sorted l →
     ◯ (∃ λ l₁ → ∃ λ l₂ → splitBy/clocked k l pivot ≡ ret (l₁ , l₂) × All (_≤ pivot) l₁ × All (pivot ≤_) l₂ × l ↭ (l₁ ++ l₂))
+  splitBy/clocked/correct zero    l        pivot h sorted u with ⌈log₂n⌉≡0⇒n≤1 {suc (length l)} (N.n≤0⇒n≡0 h)
+  splitBy/clocked/correct zero    []       pivot h sorted u | s≤s z≤n = [] , [] , refl , [] , [] , refl
   splitBy/clocked/correct (suc k) []       pivot h sorted u = [] , [] , refl , [] , [] , refl
-  splitBy/clocked/correct (suc k) (x ∷ xs) pivot h sorted u with splitMid/correct (x ∷ xs) (s≤s z≤n) u
-  splitBy/clocked/correct (suc k) (x ∷ xs) pivot h sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) with h-cost mid pivot
-  splitBy/clocked/correct (suc k) (x ∷ xs) pivot h sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro {q = q} b _ h-eq rewrite eq/ref h-eq
+  splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u with splitMid/correct (x ∷ xs) (s≤s z≤n) u
+  splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) with h-cost mid pivot
+  splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro {q = q} b _ h-eq rewrite eq/ref h-eq
     with Eq.subst Sorted ≡-↭ sorted | ≤ᵇ-reflects-≤ u (Eq.trans (eq/ref h-eq) (step'/ext (F bool) (ret b) q u)) | ≤-total mid pivot
-  splitBy/clocked/correct (suc k) (x ∷ xs) pivot h sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro b     _ h-eq | sorted' | ofⁿ ¬p | inj₁ mid≤pivot = ⊥-elim (¬p mid≤pivot)
-  splitBy/clocked/correct (suc k) (x ∷ xs) pivot h sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro false _ h-eq | sorted' | ofⁿ ¬p | inj₂ pivot≤mid =
-    let (l₁₁ , l₁₂ , ≡' , h₁₁ , h₁₂ , ↭') = splitBy/clocked/correct k l₁ pivot {!   !} (++⁻ˡ l₁ sorted') u in
+  splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro b     _ h-eq | sorted' | ofⁿ ¬p | inj₁ mid≤pivot = ⊥-elim (¬p mid≤pivot)
+  splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro false _ h-eq | sorted' | ofⁿ ¬p | inj₂ pivot≤mid =
+    let (l₁₁ , l₁₂ , ≡' , h₁₁ , h₁₂ , ↭') = splitBy/clocked/correct k l₁ pivot (
+                                              let open ≤-Reasoning in
+                                              begin
+                                                ⌈log₂ suc (length l₁) ⌉
+                                              ≤⟨ log₂-mono (s≤s h₁) ⟩
+                                                ⌈log₂ suc ⌊ length (x ∷ xs) /2⌋ ⌉
+                                              ≤⟨ h ⟩
+                                                k
+                                              ∎
+                                            ) (++⁻ˡ l₁ sorted') u in
     l₁₁ , l₁₂ ++ mid ∷ l₂ , (
       let open ≡-Reasoning in
       begin
@@ -1086,10 +1097,11 @@ module MergeSortFast (M : Comparable) where
   --   let (l₁ , l₂ , ≡ , h₁ , h₂ , ↭) = splitBy/clocked/correct k k' xs (N.suc-injective h) u in
   --   x ∷ l₁ , l₂ , Eq.cong (λ e → bind (F pair) e _) ≡ , Eq.cong suc h₁ , h₂ , prep x ↭
 
-  -- splitBy/clocked/length : ∀ k k' l → k + k' ≡ length l → (κ : ℕ → ℕ → α) →
-  --   bind (meta α) (splitBy/clocked k l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ k k'
-  -- splitBy/clocked/length zero    _  l        refl _ = refl
-  -- splitBy/clocked/length (suc k) k' (x ∷ xs) h    κ = splitBy/clocked/length k k' xs (N.suc-injective h) (κ ∘ suc)
+  splitBy/clocked/length : ∀ k l pivot → (κ : ℕ → ℕ → α) → ∃ λ n₁ → ∃ λ n₂ → n₁ Nat.≤ (length l) × n₂ Nat.≤ (length l) ×
+    bind (meta α) (splitBy/clocked k l pivot) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ n₁ n₂
+  splitBy/clocked/length zero    l        pivot κ = 0 , length l , z≤n , N.≤-refl , refl
+  splitBy/clocked/length (suc k) []       pivot κ = 0 , 0 , z≤n , z≤n , refl
+  splitBy/clocked/length (suc k) (x ∷ xs) pivot κ = {!   !}
 
   splitBy/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → Π A λ _ → cost)
   splitBy/clocked/cost zero    l        pivot = 𝟘
@@ -1128,27 +1140,27 @@ module MergeSortFast (M : Comparable) where
   splitBy/clocked≤splitBy/clocked/cost/closed k l pivot = ub/relax (splitBy/clocked/cost≤splitBy/clocked/cost/closed k l pivot) (splitBy/clocked≤splitBy/clocked/cost k l pivot)
 
   splitBy : cmp (Π (list A) λ _ → Π A λ _ → F pair)
-  splitBy l pivot = splitBy/clocked ⌈log₂ length l ⌉ l pivot
+  splitBy l pivot = splitBy/clocked ⌈log₂ suc (length l) ⌉ l pivot
 
-  -- splitBy/correct : ∀ l →
-  --   ◯ (∃ λ l₁ → ∃ λ l₂ → splitBy l ≡ ret (l₁ , l₂) × length l₁ ≡ ⌊ length l /2⌋ × length l₂ ≡ ⌈ length l /2⌉ × l ↭ (l₁ ++ l₂))
-  -- splitBy/correct l = splitBy/clocked/correct ⌊ length l /2⌋ ⌈ length l /2⌉ l (N.⌊n/2⌋+⌈n/2⌉≡n (length l))
+  splitBy/correct : ∀ l pivot → Sorted l →
+    ◯ (∃ λ l₁ → ∃ λ l₂ → splitBy l pivot ≡ ret (l₁ , l₂) × All (_≤ pivot) l₁ × All (pivot ≤_) l₂ × l ↭ (l₁ ++ l₂))
+  splitBy/correct l pivot = splitBy/clocked/correct {!   !} l pivot {!   !}
 
-  -- splitBy/length : ∀ l (κ : ℕ → ℕ → α) →
-  --   bind (meta α) (splitBy l) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ ⌊ length l /2⌋ ⌈ length l /2⌉
-  -- splitBy/length l = splitBy/clocked/length ⌊ length l /2⌋ ⌈ length l /2⌉ l (N.⌊n/2⌋+⌈n/2⌉≡n (length l))
+  splitBy/length : ∀ l pivot (κ : ℕ → ℕ → α) → ∃ λ n₁ → ∃ λ n₂ → n₁ Nat.≤ (length l) × n₂ Nat.≤ (length l) ×
+    bind (meta α) (splitBy l pivot) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ n₁ n₂
+  splitBy/length l pivot = splitBy/clocked/length ⌈log₂ suc (length l) ⌉ l pivot 
 
   splitBy/cost : cmp (Π (list A) λ _ → Π A λ _ → cost)
-  splitBy/cost l pivot = splitBy/clocked/cost ⌈log₂ length l ⌉ l pivot
+  splitBy/cost l pivot = splitBy/clocked/cost ⌈log₂ suc (length l) ⌉ l pivot
 
   splitBy/cost/closed : cmp (Π (list A) λ _ → Π A λ _ → cost)
-  splitBy/cost/closed l pivot = splitBy/clocked/cost/closed ⌈log₂ length l ⌉ l pivot
+  splitBy/cost/closed l pivot = splitBy/clocked/cost/closed ⌈log₂ suc (length l) ⌉ l pivot
 
   splitBy≤splitBy/cost : ∀ l pivot → ub pair (splitBy l pivot) (splitBy/cost l pivot)
-  splitBy≤splitBy/cost l pivot = splitBy/clocked≤splitBy/clocked/cost ⌈log₂ length l ⌉ l pivot
+  splitBy≤splitBy/cost l pivot = splitBy/clocked≤splitBy/clocked/cost ⌈log₂ suc (length l) ⌉ l pivot
 
   splitBy≤splitBy/cost/closed : ∀ l pivot → ub pair (splitBy l pivot) (splitBy/cost/closed l pivot)
-  splitBy≤splitBy/cost/closed l pivot = splitBy/clocked≤splitBy/clocked/cost/closed ⌈log₂ length l ⌉ l pivot
+  splitBy≤splitBy/cost/closed l pivot = splitBy/clocked≤splitBy/clocked/cost/closed ⌈log₂ suc (length l) ⌉ l pivot
 
   merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F (list A))
   merge/clocked zero    (l₁     , l₂) = ret (l₁ ++ l₂)
