@@ -907,17 +907,56 @@ module Square where
   n ² = n * n
 
   ²-mono : _² Preserves Nat._≤_ ⟶ Nat._≤_
-  ²-mono = {!   !}
+  ²-mono m≤n = N.*-mono-≤ m≤n m≤n
 
 module PredExp2 where
   pred[2^_] : ℕ → ℕ
   pred[2^ n ] = pred (2 ^ n)
 
+  private
+    lemma/2^suc : ∀ n → 2 ^ n + 2 ^ n ≡ 2 ^ suc n
+    lemma/2^suc n =
+      begin
+        2 ^ n + 2 ^ n
+      ≡˘⟨ Eq.cong ((2 ^ n) +_) (N.*-identityˡ (2 ^ n)) ⟩
+        2 ^ n + (2 ^ n + 0)
+      ≡⟨⟩
+        2 ^ n + (2 ^ n + 0 * (2 ^ n))
+      ≡⟨⟩
+        2 * (2 ^ n)
+      ≡⟨⟩
+        2 ^ suc n
+      ∎
+        where open ≡-Reasoning
+
+    lemma/1≤2^n : ∀ n → 1 Nat.≤ 2 ^ n
+    lemma/1≤2^n zero    = N.≤-refl {1}
+    lemma/1≤2^n (suc n) =
+      begin
+        1
+      ≤⟨ s≤s z≤n ⟩
+        1 + 1
+      ≤⟨ N.+-mono-≤ (lemma/1≤2^n n) (lemma/1≤2^n n) ⟩
+        2 ^ n + 2 ^ n
+      ≡⟨ lemma/2^suc n ⟩
+        2 ^ suc n
+      ∎
+        where open ≤-Reasoning
+
+    lemma/2^n≢0 : ∀ n → 2 ^ n ≢ zero
+    lemma/2^n≢0 n 2^n≡0 with 2 ^ n | lemma/1≤2^n n
+    ... | zero | ()
+
+    lemma/pred-+ : ∀ m n → m ≢ zero → pred m + n ≡ pred (m + n)
+    lemma/pred-+ zero    n m≢zero = ⊥-elim (m≢zero refl)
+    lemma/pred-+ (suc m) n m≢zero = refl
+
   pred[2^]-mono : pred[2^_] Preserves Nat._≤_ ⟶ Nat._≤_
   pred[2^]-mono m≤n = N.pred-mono (2^-mono m≤n)
     where
       2^-mono : (2 ^_) Preserves Nat._≤_ ⟶ Nat._≤_
-      2^-mono = {!   !}
+      2^-mono {y = y} z≤n = lemma/1≤2^n y
+      2^-mono (s≤s m≤n) = N.*-monoʳ-≤ 2 (2^-mono m≤n)
 
   pred[2^suc[n]] : (n : ℕ) → suc (pred[2^ n ] + pred[2^ n ]) ≡ pred[2^ suc n ]
   pred[2^suc[n]] n =
@@ -936,36 +975,16 @@ module PredExp2 where
     ≡⟨⟩
       pred[2^ suc n ]
     ∎
-      where
-        open ≡-Reasoning
+      where open ≡-Reasoning
 
-        lemma/2^suc : ∀ n → 2 ^ n + 2 ^ n ≡ 2 ^ suc n
-        lemma/2^suc n =
-          begin
-            2 ^ n + 2 ^ n
-          ≡˘⟨ Eq.cong ((2 ^ n) +_) (N.*-identityˡ (2 ^ n)) ⟩
-            2 ^ n + (2 ^ n + 0)
-          ≡⟨⟩
-            2 ^ n + (2 ^ n + 0 * (2 ^ n))
-          ≡⟨⟩
-            2 * (2 ^ n)
-          ≡⟨⟩
-            2 ^ suc n
-          ∎
-            where open ≡-Reasoning
-
-        lemma/2^n≢0 : ∀ n → 2 ^ n ≢ zero
-        lemma/2^n≢0 n 2^n≡0 with N.m^n≡0⇒m≡0 2 n 2^n≡0
-        ... | ()
-
-        lemma/pred-+ : ∀ m n → m ≢ zero → pred m + n ≡ pred (m + n)
-        lemma/pred-+ zero    n m≢zero = ⊥-elim (m≢zero refl)
-        lemma/pred-+ (suc m) n m≢zero = refl
+  pred[2^log₂] : (n : ℕ) → pred[2^ Log2.⌈log₂ suc ⌈ n /2⌉ ⌉ ] Nat.≤ n
+  pred[2^log₂] n = {!   !}
 
 module MergeSortFast (M : Comparable) where
   open Comparable M
   open Core M
   open Log2
+  open Square
   open PredExp2
 
   _≥_ : val A → val A → Set
@@ -1052,12 +1071,12 @@ module MergeSortFast (M : Comparable) where
     ub/bind/const 𝟘 𝟘 (splitMid/clocked≤splitMid/clocked/cost k xs h) λ _ → ub/ret
 
   splitMid : cmp (Π (list A) λ l → Π (U (meta (0 Nat.< length l))) λ _ → F triple)
-  splitMid (x ∷ xs) (s≤s h) = splitMid/clocked ⌊ length (x ∷ xs) /2⌋ (x ∷ xs) (s≤s (N.⌈n/2⌉≤n _))
+  splitMid (x ∷ xs) (s≤s h) = splitMid/clocked ⌊ length (x ∷ xs) /2⌋ (x ∷ xs) (N.⌊n/2⌋<n _)
 
   splitMid/correct : ∀ l h →
     ◯ (∃ λ l₁ → ∃ λ mid → ∃ λ l₂ → splitMid l h ≡ ret (l₁ , mid , l₂) × length l₁ Nat.≤ ⌊ length l /2⌋ × length l₂ Nat.≤ ⌊ length l /2⌋ × l ≡ (l₁ ++ [ mid ] ++ l₂))
   splitMid/correct (x ∷ xs) (s≤s h) u =
-    let (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) = splitMid/clocked/correct ⌊ length (x ∷ xs) /2⌋ ⌊ pred (length (x ∷ xs)) /2⌋ (x ∷ xs) (s≤s (N.⌈n/2⌉≤n _))
+    let (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) = splitMid/clocked/correct ⌊ length (x ∷ xs) /2⌋ ⌊ pred (length (x ∷ xs)) /2⌋ (x ∷ xs) (N.⌊n/2⌋<n _)
                                                 (let open ≡-Reasoning in
                                                 begin
                                                   ⌊ length (x ∷ xs) /2⌋ + suc ⌊ pred (length (x ∷ xs)) /2⌋
@@ -1085,26 +1104,35 @@ module MergeSortFast (M : Comparable) where
       ∎
     ), ≡-↭
 
-  splitMid/length : ∀ l h (κ : ℕ → ℕ → α) → ∃ λ n₁ → ∃ λ n₂ → n₁ Nat.≤ ⌊ length l /2⌋ × n₂ Nat.≤ ⌊ length l /2⌋ × n₁ + n₂ ≡ length l ×
+  splitMid/length : ∀ l h (κ : ℕ → ℕ → α) → ∃ λ n₁ → ∃ λ n₂ → n₁ Nat.≤ ⌊ length l /2⌋ × n₂ Nat.≤ ⌊ length l /2⌋ × n₁ + suc n₂ ≡ length l ×
     bind (meta α) (splitMid l h) (λ (l₁ , _ , l₂) → κ (length l₁) (length l₂)) ≡ κ n₁ n₂
   splitMid/length (x ∷ xs) (s≤s h) κ =
-    ⌊ length (x ∷ xs) /2⌋ ,
-    ⌊ pred (length (x ∷ xs)) /2⌋ ,
-    N.≤-refl ,
-    N.⌊n/2⌋-mono N.pred[n]≤n , (
-      let open ≡-Reasoning in
-      begin
-        {!   !} -- splitMid/clocked/length ⌊ length l /2⌋ ⌈ length l /2⌉ l (N.⌊n/2⌋+⌈n/2⌉≡n (length l))
-      ≡⟨ {!   !} ⟩
-        {!   !}
-      ∎
-    ) , {!   !}
+    let h-sum =
+                let open ≡-Reasoning in
+                begin
+                  ⌊ length (x ∷ xs) /2⌋ + suc ⌊ pred (length (x ∷ xs)) /2⌋
+                ≡⟨⟩
+                  ⌊ length (x ∷ xs) /2⌋ + suc ⌊ length xs /2⌋
+                ≡⟨⟩
+                  ⌈ length xs /2⌉ + suc ⌊ length xs /2⌋
+                ≡⟨ N.+-suc ⌈ length xs /2⌉ ⌊ length xs /2⌋ ⟩
+                  suc (⌈ length xs /2⌉ + ⌊ length xs /2⌋)
+                ≡⟨ Eq.cong suc (N.+-comm ⌈ length xs /2⌉ ⌊ length xs /2⌋) ⟩
+                  suc (⌊ length xs /2⌋ + ⌈ length xs /2⌉)
+                ≡⟨ Eq.cong suc (N.⌊n/2⌋+⌈n/2⌉≡n (length xs)) ⟩
+                  suc (length xs)
+                ≡⟨⟩
+                  length (x ∷ xs)
+                ∎
+    in
+    ⌊ length (x ∷ xs) /2⌋ , ⌊ pred (length (x ∷ xs)) /2⌋ , N.≤-refl , N.⌊n/2⌋-mono N.pred[n]≤n , h-sum ,
+      splitMid/clocked/length ⌊ length (x ∷ xs) /2⌋ ⌊ pred (length (x ∷ xs)) /2⌋ (x ∷ xs) (N.⌊n/2⌋<n _) h-sum κ
 
   splitMid/cost : cmp (Π (list A) λ l → Π (U (meta (0 Nat.< length l))) λ _ → cost)
-  splitMid/cost (x ∷ xs) (s≤s h) = splitMid/clocked/cost ⌊ length (x ∷ xs) /2⌋ (x ∷ xs) (s≤s (N.⌈n/2⌉≤n _))
+  splitMid/cost (x ∷ xs) (s≤s h) = splitMid/clocked/cost ⌊ length (x ∷ xs) /2⌋ (x ∷ xs) (N.⌊n/2⌋<n _)
 
   splitMid≤splitMid/cost : ∀ l h → ub triple (splitMid l h) (splitMid/cost l h)
-  splitMid≤splitMid/cost (x ∷ xs) (s≤s h) = splitMid/clocked≤splitMid/clocked/cost ⌊ length (x ∷ xs) /2⌋ (x ∷ xs) (s≤s (N.⌈n/2⌉≤n _))
+  splitMid≤splitMid/cost (x ∷ xs) (s≤s h) = splitMid/clocked≤splitMid/clocked/cost ⌊ length (x ∷ xs) /2⌋ (x ∷ xs) (N.⌊n/2⌋<n _)
 
   splitBy/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → Π A λ _ → F pair)
   splitBy/clocked zero    l        pivot = ret ([] , l)
