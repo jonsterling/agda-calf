@@ -14,5 +14,3 @@ open import Calf.Eq public
 open import Calf.Upper costMonoid public
 open import Calf.BoundedFunction costMonoid public
 open import Calf.Refinement costMonoid public
-
-open import Calf.CostEffect public
