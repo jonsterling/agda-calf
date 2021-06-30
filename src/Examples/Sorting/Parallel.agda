@@ -117,6 +117,10 @@ module Core (M : Comparable) where
   ++⁻ʳ []       sorted       = sorted
   ++⁻ʳ (x ∷ xs) (h ∷ sorted) = ++⁻ʳ xs sorted
 
+  split-sorted₁ : ∀ xs {x} → Sorted (xs ∷ʳ x) → All (_≤ x) xs
+  split-sorted₁ []       sorted       = []
+  split-sorted₁ (x ∷ xs) (h ∷ sorted) = proj₂ (AllP.∷ʳ⁻ h) ∷ split-sorted₁ xs sorted
+
   uncons₁ : ∀ {x xs} → Sorted (x ∷ xs) → x ≤* xs
   uncons₁ (h ∷ sorted) = h
 
@@ -1392,7 +1396,12 @@ module MergeSortFast (M : Comparable) where
       ↭⟨ ++⁺-↭ ↭₁' (prep pivot ↭₂') ⟩
         l₁' ++ pivot ∷ l₂'
       ∎
-    ) , join-sorted sorted₁' sorted₂' (All-resp-↭ ↭₁' (++⁺-All {!   !} h₂₁)) (All-resp-↭ ↭₂' (++⁺-All {!   !} h₂₂))
+    ) ,
+    join-sorted
+      sorted₁'
+      sorted₂'
+      (All-resp-↭ ↭₁' (++⁺-All (split-sorted₁ l₁₁ (++⁻ˡ (l₁₁ ∷ʳ pivot) (Eq.subst Sorted (Eq.sym (++-assoc l₁₁ [ pivot ] l₁₂)) sorted₁))) h₂₁))
+      (All-resp-↭ ↭₂' (++⁺-All (uncons₁ (++⁻ʳ l₁₁ sorted₁)) h₂₂))
 
   merge/clocked/length : ∀ k (l₁ l₂ : val (list A)) (κ : ℕ → α) →
     bind (meta α) (merge/clocked k (l₁ , l₂)) (κ ∘ length) ≡ κ (length l₁ + length l₂)
