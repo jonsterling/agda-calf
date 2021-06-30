@@ -975,7 +975,38 @@ module PredExp2 where
       where open ≡-Reasoning
 
   pred[2^log₂] : (n : ℕ) → pred[2^ Log2.⌈log₂ suc ⌈ n /2⌉ ⌉ ] Nat.≤ n
-  pred[2^log₂] n = {!   !}
+  pred[2^log₂] n = strong-induction n n N.≤-refl
+    where
+      strong-induction : (n m : ℕ) → m Nat.≤ n → pred[2^ Log2.⌈log₂ suc ⌈ m /2⌉ ⌉ ] Nat.≤ m
+      strong-induction n zero    h = z≤n
+      strong-induction n (suc zero) h = s≤s z≤n
+      strong-induction (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
+        begin
+          pred[2^ Log2.⌈log₂ suc ⌈ suc (suc m) /2⌉ ⌉ ]
+        ≡⟨⟩
+          pred[2^ suc Log2.⌈log₂ ⌈ suc ⌈ suc (suc m) /2⌉ /2⌉ ⌉ ]
+        ≡˘⟨ pred[2^suc[n]] Log2.⌈log₂ ⌈ suc ⌈ suc (suc m) /2⌉ /2⌉ ⌉ ⟩
+          suc (pred[2^ Log2.⌈log₂ ⌈ suc ⌈ suc (suc m) /2⌉ /2⌉ ⌉ ] + pred[2^ Log2.⌈log₂ ⌈ suc ⌈ suc (suc m) /2⌉ /2⌉ ⌉ ])
+        ≡⟨⟩
+          suc (pred[2^ Log2.⌈log₂ ⌈ suc (suc ⌈ m /2⌉) /2⌉ ⌉ ] + pred[2^ Log2.⌈log₂ ⌈ suc (suc ⌈ m /2⌉) /2⌉ ⌉ ])
+        ≡⟨⟩
+          suc (pred[2^ Log2.⌈log₂ suc ⌈ ⌈ m /2⌉ /2⌉ ⌉ ] + pred[2^ Log2.⌈log₂ suc ⌈ ⌈ m /2⌉ /2⌉ ⌉ ])
+        ≤⟨
+          s≤s (
+            N.+-mono-≤
+              (strong-induction (suc n) ⌈ m /2⌉ (N.≤-trans (N.⌊n/2⌋≤n (suc m)) (s≤s h)))
+              (strong-induction (suc n) ⌈ m /2⌉ (N.≤-trans (N.⌊n/2⌋≤n (suc m)) (s≤s h)))
+          )
+        ⟩
+          suc (⌈ m /2⌉ + ⌈ m /2⌉)
+        ≡⟨⟩
+          suc (⌊ suc m /2⌋ + ⌈ m /2⌉)
+        ≤⟨ s≤s (N.+-monoʳ-≤ ⌊ suc m /2⌋ (N.⌈n/2⌉-mono (N.n≤1+n m))) ⟩
+          suc (⌊ suc m /2⌋ + ⌈ suc m /2⌉)
+        ≡⟨ Eq.cong suc (N.⌊n/2⌋+⌈n/2⌉≡n (suc m)) ⟩
+          suc (suc m)
+        ∎
+          where open ≤-Reasoning
 
 module MergeSortFast (M : Comparable) where
   open Comparable M
