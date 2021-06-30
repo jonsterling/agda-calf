@@ -1135,14 +1135,18 @@ module MergeSortFast (M : Comparable) where
   splitMid≤splitMid/cost (x ∷ xs) (s≤s h) = splitMid/clocked≤splitMid/clocked/cost ⌊ length (x ∷ xs) /2⌋ (x ∷ xs) (N.⌊n/2⌋<n _)
 
   splitBy/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → Π A λ _ → F pair)
+  splitBy/clocked/aux : val (U (meta ℕ)) → val A → val (list A) → val A → val (list A) → val bool → cmp (F pair)
+
   splitBy/clocked zero    l        pivot = ret ([] , l)
   splitBy/clocked (suc k) []       pivot = ret ([] , [])
   splitBy/clocked (suc k) (x ∷ xs) pivot =
     bind (F pair) (splitMid (x ∷ xs) (s≤s z≤n)) λ (l₁ , mid , l₂) →
-      bind (F pair) (mid ≤ᵇ pivot) λ b →
-        case b of
-          λ { false → bind (F pair) (splitBy/clocked k l₁ pivot) λ (l₁₁ , l₁₂) → ret (l₁₁ , l₁₂ ++ mid ∷ l₂)
-            ; true  → bind (F pair) (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) → ret (l₁ ++ mid ∷ l₂₁ , l₂₂) }
+      bind (F pair) (mid ≤ᵇ pivot) (splitBy/clocked/aux k pivot l₁ mid l₂)
+
+  splitBy/clocked/aux k pivot l₁ mid l₂ false =
+    bind (F pair) (splitBy/clocked k l₁ pivot) λ (l₁₁ , l₁₂) → ret (l₁₁ , l₁₂ ++ mid ∷ l₂)
+  splitBy/clocked/aux k pivot l₁ mid l₂ true  =
+    bind (F pair) (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) → ret (l₁ ++ mid ∷ l₂₁ , l₂₂)
 
   splitBy/clocked/correct : ∀ k l pivot → ⌈log₂ suc (length l) ⌉ Nat.≤ k → Sorted l →
     ◯ (∃ λ l₁ → ∃ λ l₂ → splitBy/clocked k l pivot ≡ ret (l₁ , l₂) × All (_≤ pivot) l₁ × All (pivot ≤_) l₂ × l ≡ (l₁ ++ l₂))
@@ -1151,7 +1155,7 @@ module MergeSortFast (M : Comparable) where
   splitBy/clocked/correct (suc k) []       pivot h sorted u = [] , [] , refl , [] , [] , refl
   splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u with splitMid/correct (x ∷ xs) (s≤s z≤n) u
   splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) with h-cost mid pivot
-  splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro {q = q} b _ h-eq rewrite eq/ref h-eq
+  splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro {q = q} b _ h-eq
     with Eq.subst Sorted ≡-↭ sorted | ≤ᵇ-reflects-≤ u (Eq.trans (eq/ref h-eq) (step'/ext (F bool) (ret b) q u)) | ≤-total mid pivot
   splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro b     _ h-eq | sorted' | ofⁿ ¬p | inj₁ mid≤pivot = ⊥-elim (¬p mid≤pivot)
   splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro false _ h-eq | sorted' | ofⁿ ¬p | inj₂ pivot≤mid =
@@ -1169,30 +1173,14 @@ module MergeSortFast (M : Comparable) where
       let open ≡-Reasoning in
       begin
         splitBy/clocked (suc k) (x ∷ xs) pivot
-      ≡⟨ {!   !} ⟩
+      ≡⟨⟩
         (bind (F pair) (splitMid (x ∷ xs) (s≤s z≤n)) λ (l₁ , mid , l₂) →
-          bind (F pair) (mid ≤ᵇ pivot) λ b →
-            case b of
-              λ { false → bind (F pair) (splitBy/clocked k l₁ pivot) λ (l₁₁ , l₁₂) → ret (l₁₁ , l₁₂ ++ mid ∷ l₂)
-                ; true  → bind (F pair) (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) → ret (l₁ ++ mid ∷ l₂₁ , l₂₂) })
-      ≡⟨
-        {!   !}
-        -- Eq.cong
-        --   (λ e → bind (F pair) e (
-        --       λ (l₁ , mid , l₂) →
-        --         bind (F pair) (mid ≤ᵇ pivot) λ b →
-        --           case b of
-        --             λ { false → bind (F pair) (splitBy/clocked k l₁ pivot) λ (l₁₁ , l₁₂) → ret (l₁₁ , l₁₂ ++ mid ∷ l₂)
-        --               ; true  → bind (F pair) (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) → ret (l₁ ++ mid ∷ l₂₁ , l₂₂) }
-        --   ))
-        --   ≡
-      ⟩
-        (bind (F pair) (ret {triple} (l₁ , mid , l₂)) λ (l₁ , mid , l₂) →
-          bind (F pair) (mid ≤ᵇ pivot) λ b →
-            case b of
-              λ { false → bind (F pair) (splitBy/clocked k l₁ pivot) λ (l₁₁ , l₁₂) → ret (l₁₁ , l₁₂ ++ mid ∷ l₂)
-                ; true  → bind (F pair) (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) → ret (l₁ ++ mid ∷ l₂₁ , l₂₂) })
-      ≡⟨ {!   !} ⟩
+          bind (F pair) (mid ≤ᵇ pivot) (splitBy/clocked/aux k pivot l₁ mid l₂))
+      ≡⟨ Eq.cong (λ e → bind (F pair) e _) (≡) ⟩
+        bind (F pair) (mid ≤ᵇ pivot) (splitBy/clocked/aux k pivot l₁ mid l₂)
+      ≡⟨ Eq.cong (λ e → bind (F pair) e (splitBy/clocked/aux k pivot l₁ mid l₂)) (eq/ref h-eq) ⟩
+        splitBy/clocked/aux k pivot l₁ mid l₂ false
+      ≡⟨⟩
         (bind (F pair) (splitBy/clocked k l₁ pivot) λ (l₁₁ , l₁₂) → ret (l₁₁ , l₁₂ ++ mid ∷ l₂))
       ≡⟨ Eq.cong (λ e → bind (F pair) e _) ≡' ⟩
         ret (l₁₁ , l₁₂ ++ mid ∷ l₂)
@@ -1222,8 +1210,25 @@ module MergeSortFast (M : Comparable) where
                                               ) (uncons₂ (++⁻ʳ l₁ sorted')) u in
     l₁ ++ mid ∷ l₂₁ , l₂₂ , (
       let open ≡-Reasoning in
-      {!   !}
-    ) , ++⁺-All {xs = l₁} {ys = mid ∷ l₂₁} {!   !} (p ∷ h₂₁) , h₂₂ , (
+      begin
+        splitBy/clocked (suc k) (x ∷ xs) pivot
+      ≡⟨⟩
+        (bind (F pair) (splitMid (x ∷ xs) (s≤s z≤n)) λ (l₁ , mid , l₂) →
+          bind (F pair) (mid ≤ᵇ pivot) (splitBy/clocked/aux k pivot l₁ mid l₂))
+      ≡⟨ Eq.cong (λ e → bind (F pair) e _) (≡) ⟩
+        bind (F pair) (mid ≤ᵇ pivot) (splitBy/clocked/aux k pivot l₁ mid l₂)
+      ≡⟨ Eq.cong (λ e → bind (F pair) e (splitBy/clocked/aux k pivot l₁ mid l₂)) (eq/ref h-eq) ⟩
+        splitBy/clocked/aux k pivot l₁ mid l₂ true
+      ≡⟨⟩
+        (bind (F pair) (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) → ret (l₁ ++ mid ∷ l₂₁ , l₂₂))
+      ≡⟨ Eq.cong (λ e → bind (F pair) e _) ≡' ⟩
+        ret (l₁ ++ mid ∷ l₂₁ , l₂₂)
+      ∎
+    ) ,
+    ++⁺-All
+      (map (λ h → ≤-trans h p) (split-sorted₁ l₁ (++⁻ˡ (l₁ ∷ʳ mid) (Eq.subst Sorted (Eq.sym (++-assoc l₁ [ mid ] l₂)) sorted'))))
+      (p ∷ h₂₁) ,
+    h₂₂ , (
       let open ≡-Reasoning in
       begin
         (x ∷ xs)
@@ -1344,7 +1349,29 @@ module MergeSortFast (M : Comparable) where
                                         (uncons₂ (++⁻ʳ l₁₁ sorted₁))
                                         (++⁻ʳ l₂₁ sorted₂)
                                         u in
-    l₁' ++ pivot ∷ l₂' , {!   !} , (
+    l₁' ++ pivot ∷ l₂' , (
+      let open ≡-Reasoning in
+      begin
+        merge/clocked (suc k) (x ∷ l₁ , l₂)
+      ≡⟨⟩
+        (bind (F (list A)) (splitMid (x ∷ l₁) (s≤s z≤n)) λ (l₁₁ , pivot , l₁₂) →
+          bind (F (list A)) (splitBy l₂ pivot) λ (l₂₁ , l₂₂) →
+            bind (F (list A)) (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') →
+              ret (l₁' ++ pivot ∷ l₂'))
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) (≡) ⟩
+        (bind (F (list A)) (splitBy l₂ pivot) λ (l₂₁ , l₂₂) →
+          bind (F (list A)) (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') →
+            ret (l₁' ++ pivot ∷ l₂'))
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) (≡') ⟩
+        (bind (F (list A)) (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') →
+          ret (l₁' ++ pivot ∷ l₂'))
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) (Eq.cong₂ _&_ ≡₁' ≡₂') ⟩
+        (bind (F (list A)) (ret {list A} l₁' & ret {list A} l₂') λ (l₁' , l₂') →
+          ret (l₁' ++ pivot ∷ l₂'))
+      ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) (&/par {v₁ = l₁'} {v₂ = l₂'} {p₁ = 𝟘} {p₂ = 𝟘}) ⟩
+        ret (l₁' ++ pivot ∷ l₂')
+      ∎
+    ) , (
       let open PermutationReasoning in
       begin
         (x ∷ l₁) ++ l₂
