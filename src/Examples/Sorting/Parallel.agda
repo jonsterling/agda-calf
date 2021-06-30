@@ -1185,8 +1185,8 @@ module MergeSortFast (M : Comparable) where
   splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) with h-cost mid pivot
   splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro {q = q} b _ h-eq
     with Eq.subst Sorted ≡-↭ sorted | ≤ᵇ-reflects-≤ u (Eq.trans (eq/ref h-eq) (step'/ext (F bool) (ret b) q u)) | ≤-total mid pivot
-  splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro b     _ h-eq | sorted' | ofⁿ ¬p | inj₁ mid≤pivot = ⊥-elim (¬p mid≤pivot)
-  splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro false _ h-eq | sorted' | ofⁿ ¬p | inj₂ pivot≤mid =
+  splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro {q = q} b     _ h-eq | sorted' | ofⁿ ¬p | inj₁ mid≤pivot = ⊥-elim (¬p mid≤pivot)
+  splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro {q = q} false _ h-eq | sorted' | ofⁿ ¬p | inj₂ pivot≤mid =
     let (l₁₁ , l₁₂ , ≡' , h₁₁ , h₁₂ , ≡-↭') = splitBy/clocked/correct k l₁ pivot (
                                                 let open ≤-Reasoning in
                                                 begin
@@ -1207,6 +1207,8 @@ module MergeSortFast (M : Comparable) where
       ≡⟨ Eq.cong (λ e → bind (F pair) e _) (≡) ⟩
         bind (F pair) (mid ≤ᵇ pivot) (splitBy/clocked/aux k pivot l₁ mid l₂)
       ≡⟨ Eq.cong (λ e → bind (F pair) e (splitBy/clocked/aux k pivot l₁ mid l₂)) (eq/ref h-eq) ⟩
+        step' (F pair) q (splitBy/clocked/aux k pivot l₁ mid l₂ false)
+      ≡⟨ step'/ext (F pair) (splitBy/clocked/aux k pivot l₁ mid l₂ false) q u ⟩
         splitBy/clocked/aux k pivot l₁ mid l₂ false
       ≡⟨⟩
         (bind (F pair) (splitBy/clocked k l₁ pivot) λ (l₁₁ , l₁₂) → ret (l₁₁ , l₁₂ ++ mid ∷ l₂))
@@ -1225,7 +1227,7 @@ module MergeSortFast (M : Comparable) where
         l₁₁ ++ (l₁₂ ++ mid ∷ l₂)
       ∎
     )
-  splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro true  _ h-eq | sorted' | ofʸ p  | _              =
+  splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) sorted u | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) | ub/intro {q = q} true  _ h-eq | sorted' | ofʸ p  | _              =
     let (l₂₁ , l₂₂ , ≡' , h₂₁ , h₂₂ , ≡-↭') = splitBy/clocked/correct k l₂ pivot (
                                                 let open ≤-Reasoning in
                                                 begin
@@ -1246,6 +1248,8 @@ module MergeSortFast (M : Comparable) where
       ≡⟨ Eq.cong (λ e → bind (F pair) e _) (≡) ⟩
         bind (F pair) (mid ≤ᵇ pivot) (splitBy/clocked/aux k pivot l₁ mid l₂)
       ≡⟨ Eq.cong (λ e → bind (F pair) e (splitBy/clocked/aux k pivot l₁ mid l₂)) (eq/ref h-eq) ⟩
+        step' (F pair) q (splitBy/clocked/aux k pivot l₁ mid l₂ true)
+      ≡⟨ step'/ext (F pair) (splitBy/clocked/aux k pivot l₁ mid l₂ true) q u ⟩
         splitBy/clocked/aux k pivot l₁ mid l₂ true
       ≡⟨⟩
         (bind (F pair) (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) → ret (l₁ ++ mid ∷ l₂₁ , l₂₂))

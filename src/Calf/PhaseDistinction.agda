@@ -42,7 +42,6 @@ postulate
   step/ext : ∀ X → (e : cmp X) → ◯ (step X e ≡ e)
   -- sadly the above cannot be made an Agda rewrite rule
   step'/ext : ∀ X → (e : cmp X) → (c : ℂ) → ◯ (step' X c e ≡ e)
-  {-# REWRITE step'/ext #-}
 
 
 -- Underneath the open modality, we ensure that the abstract types
