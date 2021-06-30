@@ -1370,7 +1370,22 @@ module MergeSortFast (M : Comparable) where
       (k , k)
     ∎
       where open P≤-Reasoning
-  splitBy/clocked/cost/aux≤k k pivot l₁ mid l₂ true  = {!   !}
+  splitBy/clocked/cost/aux≤k k pivot l₁ mid l₂ true  =
+    begin
+      splitBy/clocked/cost/aux k pivot l₁ mid l₂ true
+    ≡⟨⟩
+      (bind cost (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) → splitBy/clocked/cost k l₂ pivot ⊕ 𝟘)
+    ≡⟨(
+      let (_ , _ , _ , ≡) = splitBy/clocked/length k l₂ pivot _ in
+      ≡
+    )⟩
+      splitBy/clocked/cost k l₂ pivot ⊕ 𝟘
+    ≡⟨ ⊕-identityʳ _ ⟩
+      splitBy/clocked/cost k l₂ pivot
+    ≤⟨ splitBy/clocked/cost≤splitBy/clocked/cost/closed k l₂ pivot ⟩
+      (k , k)
+    ∎
+      where open P≤-Reasoning
 
   splitBy/clocked≤splitBy/clocked/cost : ∀ k l pivot → ub pair (splitBy/clocked k l pivot) (splitBy/clocked/cost k l pivot)
   splitBy/clocked≤splitBy/clocked/cost zero    l        pivot = ub/ret
