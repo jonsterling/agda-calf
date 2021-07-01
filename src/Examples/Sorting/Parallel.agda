@@ -1008,7 +1008,7 @@ module PredExp2 where
         ∎
           where open ≤-Reasoning
 
-module MergeSortFast (M : Comparable) where
+module MergeSortPar (M : Comparable) where
   open Comparable M
   open Core M
   open Log2
@@ -2281,8 +2281,8 @@ module MergeSortFast (M : Comparable) where
   sort≤sort/cost/closed : ∀ l → ub (list A) (sort l) (sort/cost/closed l)
   sort≤sort/cost/closed l = sort/clocked≤sort/clocked/cost/closed (sort/depth l) l
 
-module Ex/MergeSortFast where
-  module Sort = MergeSortFast NatComparable
+module Ex/MergeSortPar where
+  module Sort = MergeSortPar NatComparable
 
   list' = list (U (meta ℕ))
 
@@ -2314,21 +2314,28 @@ module SortEquivalence (M : Comparable) where
   open Comparable M
   open Core M
 
-  module ISort = InsertionSort M
-  module MSort = MergeSort M
-
-  isort≡msort : ◯ (ISort.sort ≡ MSort.sort)
-  isort≡msort u =
+  IsSort⇒≡ : ∀ sort₁ → IsSort sort₁ → ∀ sort₂ → IsSort sort₂ → ◯ (sort₁ ≡ sort₂)
+  IsSort⇒≡ sort₁ correct₁ sort₂ correct₂ u =
     funext λ l →
-      let (l'ᵢ , ≡ᵢ , ↭ᵢ , sortedᵢ) = ISort.sort/correct l u in
-      let (l'ₘ , ≡ₘ , ↭ₘ , sortedₘ) = MSort.sort/correct l u in
+      let (l'₁ , ≡₁ , ↭₁ , sorted₁) = correct₁ l u in
+      let (l'₂ , ≡₂ , ↭₂ , sorted₂) = correct₂ l u in
       begin
-        ISort.sort l
-      ≡⟨ ≡ᵢ ⟩
-        ret l'ᵢ
-      ≡⟨ Eq.cong ret (unique-sorted sortedᵢ sortedₘ (trans (↭-sym ↭ᵢ) ↭ₘ)) ⟩
-        ret l'ₘ
-      ≡˘⟨ ≡ₘ ⟩
-        MSort.sort l
+        sort₁ l
+      ≡⟨ ≡₁ ⟩
+        ret l'₁
+      ≡⟨ Eq.cong ret (unique-sorted sorted₁ sorted₂ (trans (↭-sym ↭₁) ↭₂)) ⟩
+        ret l'₂
+      ≡˘⟨ ≡₂ ⟩
+        sort₂ l
       ∎
         where open ≡-Reasoning
+
+  module ISort = InsertionSort M
+  module MSort = MergeSort M
+  module PSort = MergeSortPar M
+
+  isort≡msort : ◯ (ISort.sort ≡ MSort.sort)
+  isort≡msort = IsSort⇒≡ ISort.sort ISort.sort/correct MSort.sort MSort.sort/correct
+
+  msort≡psort : ◯ (MSort.sort ≡ PSort.sort)
+  msort≡psort = IsSort⇒≡ MSort.sort MSort.sort/correct PSort.sort PSort.sort/correct 
