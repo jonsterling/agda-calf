@@ -29,8 +29,10 @@ module Hard where
   id : cmp (Π nat λ _ → F nat)
   id zero = ret zero
   id (suc n) =
-    bind (F nat) (id n) λ n' →
-      step' (F nat) 1 (ret (suc n'))
+    step' (F nat) 1 (
+      bind (F nat) (id n) λ n' →
+        ret (suc n')
+    )
 
   id/correct : ∀ n → ◯ (id n ≡ ret n)
   id/correct zero    u = refl
@@ -38,11 +40,14 @@ module Hard where
     begin
       id (suc n)
     ≡⟨⟩
+      step' (F nat) 1 (
+        bind (F nat) (id n) λ n' →
+          ret (suc n')
+      )
+    ≡⟨ step'/ext (F nat) _ 1 u ⟩
       (bind (F nat) (id n) λ n' →
-        step' (F nat) 1 (ret (suc n')))
+        ret (suc n'))
     ≡⟨ Eq.cong (λ e → bind (F nat) e _) (id/correct n u) ⟩
-      step' (F nat) 1 (ret (suc n))
-    ≡⟨ step'/ext (F nat) (ret (suc n)) 1 u ⟩
       ret (suc n)
     ∎
       where open ≡-Reasoning
@@ -50,8 +55,10 @@ module Hard where
   id/cost : cmp (Π nat λ _ → cost)
   id/cost zero    = 0
   id/cost (suc n) =
-    bind cost (id n) λ n' → id/cost n +
-      (1 + 0)
+    1 + (
+      bind cost (id n) λ n' → id/cost n +
+        0
+    )
 
   id/cost/closed : cmp (Π nat λ _ → cost)
   id/cost/closed n = n
@@ -62,13 +69,18 @@ module Hard where
     begin
       id/cost (suc n)
     ≡⟨⟩
-      (bind cost (id n) λ n' → id/cost n +
-        (1 + 0))
-    ≡⟨ {!   !} ⟩
-      id/cost n + (1 + 0)
+      1 + (
+        bind cost (id n) λ n' → id/cost n +
+          0
+      )
     ≡⟨⟩
-      id/cost n + 1
-    ≡⟨ +-comm (id/cost n) 1 ⟩
+      suc (
+        bind cost (id n) λ n' → id/cost n +
+          0
+      )
+    ≡⟨ {!   !} ⟩
+      suc (id/cost n + 0)
+    ≡⟨ Eq.cong suc (+-identityʳ _) ⟩
       suc (id/cost n)
     ≤⟨ s≤s (id/cost≤id/cost/closed n) ⟩
       suc (id/cost/closed n)
@@ -82,8 +94,10 @@ module Hard where
   id≤id/cost : ∀ n → ub nat (id n) (id/cost n)
   id≤id/cost zero    = ub/ret
   id≤id/cost (suc n) =
-    ub/bind (id/cost n) _ (id≤id/cost n) λ n →
-      ub/step 1 _ ub/ret
+    ub/step 1 _ (
+      ub/bind (id/cost n) _ (id≤id/cost n) λ n →
+        ub/ret
+    )
 
   id≤id/cost/closed : ∀ n → ub nat (id n) (id/cost/closed n)
   id≤id/cost/closed n = ub/relax (id/cost≤id/cost/closed n) (id≤id/cost n)
