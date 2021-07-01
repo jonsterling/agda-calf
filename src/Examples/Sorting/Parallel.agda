@@ -1273,11 +1273,123 @@ module MergeSortFast (M : Comparable) where
       ∎
     )
 
-  splitBy/clocked/length : ∀ k l pivot → (κ : ℕ → ℕ → α) → ∃ λ n₁ → ∃ λ n₂ → n₁ + n₂ ≡ (length l) ×
+  splitBy/clocked/length : ∀ k l pivot → (κ : ℕ → ℕ → α) → ∃ λ n₁ → ∃ λ n₂ → n₁ + n₂ ≡ length l ×
     bind (meta α) (splitBy/clocked k l pivot) (λ (l₁ , l₂) → κ (length l₁) (length l₂)) ≡ κ n₁ n₂
-  splitBy/clocked/length zero    l        pivot κ = 0 , length l , refl , refl
-  splitBy/clocked/length (suc k) []       pivot κ = 0 , 0        , refl , refl
-  splitBy/clocked/length (suc k) (x ∷ xs) pivot κ = {!   !}
+  splitBy/clocked/length {_} zero    l        pivot κ = 0 , length l , refl , refl
+  splitBy/clocked/length {_} (suc k) []       pivot κ = 0 , 0        , refl , refl
+  splitBy/clocked/length {α} (suc k) (x ∷ xs) pivot κ =
+    Eq.subst id
+      (Eq.sym (
+        tbind/meta triple α (splitMid (x ∷ xs) (s≤s z≤n))
+          _
+          λ e → ∃ λ n₁ → ∃ λ n₂ → n₁ + n₂ ≡ length (x ∷ xs) × e ≡ κ n₁ n₂
+      ))
+      (dbind _
+        (splitMid (x ∷ xs) (s≤s z≤n))
+        (λ (l₁ , mid , l₂) →
+          let (n₁ , n₂ , h-+ , ≡) = aux l₁ mid l₂ in
+          n₁ , n₂ , (
+            let open ≡-Reasoning in
+            begin
+              n₁ + n₂
+            ≡⟨ h-+ ⟩
+              length l₁ + suc (length l₂)
+            ≡⟨ {!   !} ⟩
+              length (x ∷ xs)
+            ∎
+          ) , ≡
+        )
+      )
+      where
+        aux : ∀ l₁ mid l₂ → ∃ λ n₁ → ∃ λ n₂ → n₁ + n₂ ≡ length l₁ + suc (length l₂) ×
+          (bind (meta α) (mid ≤ᵇ pivot) λ b →
+            bind (meta α) (splitBy/clocked/aux k pivot l₁ mid l₂ b) λ (l₁' , l₂') →
+              κ (length l₁') (length l₂')) ≡ κ n₁ n₂
+        aux l₁ mid l₂ with h-cost mid pivot
+        ... | ub/intro false _ h-eq =
+          let (n₁₁ , n₁₂ , h-+₁ , ≡₁) = splitBy/clocked/length k l₁ pivot λ n₁₁ n₁₂ → κ n₁₁ (n₁₂ + suc (length l₂)) in
+          n₁₁ , n₁₂ + suc (length l₂) , (
+            let open ≡-Reasoning in
+            begin
+              n₁₁ + (n₁₂ + suc (length l₂))
+            ≡˘⟨ N.+-assoc n₁₁ n₁₂ (suc (length l₂)) ⟩
+              (n₁₁ + n₁₂) + suc (length l₂)
+            ≡⟨ Eq.cong (_+ suc (length l₂)) h-+₁ ⟩
+              length l₁ + suc (length l₂)
+            ∎
+          ) , (
+            let open ≡-Reasoning in
+            begin
+              (bind (meta α) (mid ≤ᵇ pivot) λ b →
+                bind (meta α) (splitBy/clocked/aux k pivot l₁ mid l₂ b) λ (l₁' , l₂') →
+                  κ (length l₁') (length l₂'))
+            ≡⟨
+              Eq.cong
+                (λ e → bind (meta α) e λ b →
+                  bind (meta α) (splitBy/clocked/aux k pivot l₁ mid l₂ b) λ (l₁' , l₂') →
+                    κ (length l₁') (length l₂')
+                )
+                (eq/ref h-eq)
+            ⟩
+              (bind (meta α) (splitBy/clocked/aux k pivot l₁ mid l₂ false) λ (l₁' , l₂') →
+                κ (length l₁') (length l₂'))
+            ≡⟨⟩
+              (bind (meta α) (splitBy/clocked k l₁ pivot) λ (l₁₁ , l₁₂) →
+                κ (length l₁₁) (length (l₁₂ ++ mid ∷ l₂)))
+            ≡⟨
+              Eq.cong (bind (meta α) (splitBy/clocked k l₁ pivot)) (funext λ (l₁₁ , l₁₂) →
+                Eq.cong (κ (length l₁₁)) (length-++ l₁₂)
+              )
+            ⟩
+              (bind (meta α) (splitBy/clocked k l₁ pivot) λ (l₁₁ , l₁₂) →
+                κ (length l₁₁) (length l₁₂ + suc (length l₂)))
+            ≡⟨ ≡₁ ⟩
+              κ n₁₁ (n₁₂ + suc (length l₂))
+            ∎
+          )
+        ... | ub/intro true  _ h-eq =
+          let (n₂₁ , n₂₂ , h-+₂ , ≡₂) = splitBy/clocked/length k l₂ pivot λ n₂₁ n₂₂ → κ (length l₁ + suc n₂₁) n₂₂ in
+          length l₁ + suc n₂₁ , n₂₂ , (
+            let open ≡-Reasoning in
+            begin
+              (length l₁ + suc n₂₁) + n₂₂
+            ≡⟨ N.+-assoc (length l₁) (suc n₂₁) n₂₂ ⟩
+              length l₁ + (suc n₂₁ + n₂₂)
+            ≡⟨⟩
+              length l₁ + suc (n₂₁ + n₂₂)
+            ≡⟨ Eq.cong (λ m → length l₁ + suc m) h-+₂ ⟩
+              length l₁ + suc (length l₂)
+            ∎
+          ) , (
+            let open ≡-Reasoning in
+            begin
+              (bind (meta α) (mid ≤ᵇ pivot) λ b →
+                bind (meta α) (splitBy/clocked/aux k pivot l₁ mid l₂ b) λ (l₁' , l₂') →
+                  κ (length l₁') (length l₂'))
+            ≡⟨
+              Eq.cong
+                (λ e → bind (meta α) e λ b →
+                  bind (meta α) (splitBy/clocked/aux k pivot l₁ mid l₂ b) λ (l₁' , l₂') →
+                    κ (length l₁') (length l₂')
+                )
+                (eq/ref h-eq)
+            ⟩
+              (bind (meta α) (splitBy/clocked/aux k pivot l₁ mid l₂ true) λ (l₁' , l₂') →
+                κ (length l₁') (length l₂'))
+            ≡⟨⟩
+              (bind (meta α) (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) →
+                κ (length (l₁ ++ mid ∷ l₂₁)) (length l₂₂))
+            ≡⟨
+              Eq.cong (bind (meta α) (splitBy/clocked k l₂ pivot)) (funext λ (l₂₁ , l₂₂) →
+                Eq.cong (flip κ (length l₂₂)) (length-++ l₁)
+              )
+            ⟩
+              (bind (meta α) (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) →
+                κ (length l₁ + suc (length l₂₁)) (length l₂₂))
+            ≡⟨ ≡₂ ⟩
+              κ (length l₁ + suc n₂₁) n₂₂
+            ∎
+          )
 
   splitBy/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → Π A λ _ → cost)
   splitBy/clocked/cost/aux : cmp (Π (U (meta ℕ)) λ _ → Π A λ _ → Π (list A) λ _ → Π A λ _ → Π (list A) λ _ → Π bool λ _ → cost)
