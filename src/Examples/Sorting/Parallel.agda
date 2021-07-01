@@ -1729,11 +1729,11 @@ module MergeSortFast (M : Comparable) where
           ≡⟨⟩
             (bind cost (splitBy l₂ pivot) λ (l₂₁ , l₂₂) → (⌈log₂ suc (length l₂) ⌉ , ⌈log₂ suc (length l₂) ⌉) ⊕
               ((pred[2^ k ] * ⌈log₂ suc (length l₂₁) ⌉ , k * ⌈log₂ suc (length l₂₁) ⌉) ⊗
-                (pred[2^ k ] * ⌈log₂ suc (length l₂₂) ⌉ , k * ⌈log₂ suc (length l₂₂) ⌉)))
+               (pred[2^ k ] * ⌈log₂ suc (length l₂₂) ⌉ , k * ⌈log₂ suc (length l₂₂) ⌉)))
           ≡⟨ ≡' ⟩
             (⌈log₂ suc (length l₂) ⌉ , ⌈log₂ suc (length l₂) ⌉) ⊕
               ((pred[2^ k ] * ⌈log₂ suc n₂₁ ⌉ , k * ⌈log₂ suc n₂₁ ⌉) ⊗
-                (pred[2^ k ] * ⌈log₂ suc n₂₂ ⌉ , k * ⌈log₂ suc n₂₂ ⌉))
+               (pred[2^ k ] * ⌈log₂ suc n₂₂ ⌉ , k * ⌈log₂ suc n₂₂ ⌉))
           ≤⟨
             ⊕-monoʳ-≤ ((⌈log₂ suc (length l₂) ⌉ , ⌈log₂ suc (length l₂) ⌉)) (
               ⊗-mono-≤
@@ -1743,7 +1743,7 @@ module MergeSortFast (M : Comparable) where
           ⟩
             ((⌈log₂ suc (length l₂) ⌉ , ⌈log₂ suc (length l₂) ⌉) ⊕
               ((pred[2^ k ] * ⌈log₂ suc (length l₂) ⌉ , k * ⌈log₂ suc (length l₂) ⌉) ⊗
-                (pred[2^ k ] * ⌈log₂ suc (length l₂) ⌉ , k * ⌈log₂ suc (length l₂) ⌉)))
+               (pred[2^ k ] * ⌈log₂ suc (length l₂) ⌉ , k * ⌈log₂ suc (length l₂) ⌉)))
           ∎
         )
     ⟩
