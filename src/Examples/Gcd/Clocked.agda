@@ -63,7 +63,7 @@ gcd/i/eq {x} {x'} {y} {y'} {h} {h'} eqn eqn2 = Inverse.f Σ-≡,≡↔≡ (eqn ,
 
 -- cost of clocked gcd is bounded by for any instantiation of the clock
 gcd/clocked≤gcd/cost : ∀ k i → ub nat (gcd/clocked k i) (gcd/cost (to-ext i))
-gcd/clocked≤gcd/cost 0 i = ub/relax z≤n ub/ret
+gcd/clocked≤gcd/cost 0 i = ub/relax (λ _ → z≤n) ub/ret
 gcd/clocked≤gcd/cost (suc k) i@(x , y , z) rewrite gcd/cost-unfold' i =
   ub/rec
   (const nat)

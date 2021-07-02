@@ -23,7 +23,7 @@ add : cmp (Π nat λ _ → Π nat λ _ → F nat)
 add m n = step' (F nat) (1 , 1) (ret (m + n))
 
 ub/add : ∀ m n → ub nat (add m n) (1 , 1)
-ub/add m n = ub/intro (m + n) ≤-refl (ret (eq/intro refl))
+ub/add m n = ub/intro (m + n) (λ _ → ≤-refl) (ret (eq/intro refl))
 
 data Tree : Set where
   leaf : val nat → Tree
