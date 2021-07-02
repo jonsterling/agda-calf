@@ -19,15 +19,15 @@ open import Relation.Binary.PropositionalEquality as Eq
 
 ub/circ : ∀ {A e} p {q} →
   ub A e q →
-  ub A e (step' (meta ℂ) p q)
+  ub A e (step (meta ℂ) p q)
 ub/circ p {q = q₁} (ub/intro {q = q} a h1 h2) =
-  ub/intro {q = q} a (λ u → subst (q ≤_) (sym (step'/ext (meta ℂ) q₁ p u)) (h1 u)) h2
+  ub/intro {q = q} a (λ u → subst (q ≤_) (sym (step/ext (meta ℂ) q₁ p u)) (h1 u)) h2
 
 ub/circ' : ∀ {A e} p {q} →
-  ub A e (step' (meta ℂ) p q) →
+  ub A e (step (meta ℂ) p q) →
   ub A e q
 ub/circ' p {q = q₁} (ub/intro {q = q} a h1 h2) =
-  ub/intro {q = q} a (λ u → subst (q ≤_) (step'/ext (meta ℂ) q₁ p u) (h1 u)) h2
+  ub/intro {q = q} a (λ u → subst (q ≤_) (step/ext (meta ℂ) q₁ p u) (h1 u)) h2
 
 
 ub/ret : ∀ {A a} → ub A (ret {A} a) zero
@@ -35,7 +35,7 @@ ub/ret {A} {a} = ub/intro a (λ _ → ≤-refl) (ret (eq/intro refl))
 
 ub/step : ∀ {A e} (p q : ℂ) →
   ub A e q →
-  ub A (step' (F A) p e) (p + q)
+  ub A (step (F A) p e) (p + q)
 ub/step p q (ub/intro {q = q1} a h1 h2) with eq/ref h2
 ...                                              | refl =
    ub/intro {q = p + q1} a (λ u → +-monoʳ-≤ p (h1 u)) (ret (eq/intro refl))

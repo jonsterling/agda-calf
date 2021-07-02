@@ -38,5 +38,5 @@ postulate
 ◯⁻ A = ext/cmp (λ _ → A)
 
 postulate
-  step'/ext : ∀ X → (e : cmp X) → (c : ℂ) → ◯ (step' X c e ≡ e)
+  step/ext : ∀ X → (e : cmp X) → (c : ℂ) → ◯ (step X c e ≡ e)
   -- sadly the above cannot be made an Agda rewrite rule

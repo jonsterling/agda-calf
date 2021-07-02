@@ -41,7 +41,7 @@ module Slow where
   exp₂ zero = ret (suc zero)
   exp₂ (suc n) =
     bind (F (U (meta ℕ))) (exp₂ n & exp₂ n) λ (r₁ , r₂) →
-      step' (F (U (meta ℕ))) (1 , 1) (ret (r₁ + r₂))
+      step (F (U (meta ℕ))) (1 , 1) (ret (r₁ + r₂))
 
   exp₂/correct : Correct exp₂
   exp₂/correct zero    u = refl
@@ -50,15 +50,15 @@ module Slow where
       exp₂ (suc n)
     ≡⟨⟩
       (bind (F (U (meta ℕ))) (exp₂ n & exp₂ n) λ (r₁ , r₂) →
-        step' (F (U (meta ℕ))) (1 , 1) (ret (r₁ + r₂)))
-    ≡⟨ Eq.cong (bind (F (U (meta ℕ))) (exp₂ n & exp₂ n)) (funext (λ (r₁ , r₂) → step'/ext (F (U (meta ℕ))) _ (1 , 1) u)) ⟩
+        step (F (U (meta ℕ))) (1 , 1) (ret (r₁ + r₂)))
+    ≡⟨ Eq.cong (bind (F (U (meta ℕ))) (exp₂ n & exp₂ n)) (funext (λ (r₁ , r₂) → step/ext (F (U (meta ℕ))) _ (1 , 1) u)) ⟩
       (bind (F (U (meta ℕ))) (exp₂ n & exp₂ n) λ (r₁ , r₂) →
         ret (r₁ + r₂))
     ≡⟨ Eq.cong (λ e → bind (F (U (meta ℕ))) (e & e) _) (exp₂/correct n u) ⟩
       (bind (F (U (meta ℕ))) (ret {U (meta ℕ)} (2 ^ n) & ret {U (meta ℕ)} (2 ^ n)) λ (r₁ , r₂) →
         ret (r₁ + r₂))
     ≡⟨ bind/par 𝟘 𝟘 ⟩
-      step' (F (U (meta ℕ))) (𝟘 ⊗ 𝟘) (ret (2 ^ n + 2 ^ n))
+      step (F (U (meta ℕ))) (𝟘 ⊗ 𝟘) (ret (2 ^ n + 2 ^ n))
     ≡⟨⟩
       ret (2 ^ n + 2 ^ n)
     ≡⟨ Eq.cong ret (lemma/2^suc n) ⟩
@@ -144,7 +144,7 @@ module Fast where
   exp₂ zero = ret (suc zero)
   exp₂ (suc n) =
     bind (F (U (meta ℕ))) (exp₂ n) λ r →
-      step' (F (U (meta ℕ))) (1 , 1) (ret (r + r))
+      step (F (U (meta ℕ))) (1 , 1) (ret (r + r))
 
   exp₂/correct : Correct exp₂
   exp₂/correct zero    u = refl
@@ -153,8 +153,8 @@ module Fast where
       exp₂ (suc n)
     ≡⟨⟩
       (bind (F (U (meta ℕ))) (exp₂ n) λ r →
-        step' (F (U (meta ℕ))) (1 , 1) (ret (r + r)))
-    ≡⟨ Eq.cong (bind (F (U (meta ℕ))) (exp₂ n)) (funext (λ r → step'/ext (F (U (meta ℕ))) _ (1 , 1) u)) ⟩
+        step (F (U (meta ℕ))) (1 , 1) (ret (r + r)))
+    ≡⟨ Eq.cong (bind (F (U (meta ℕ))) (exp₂ n)) (funext (λ r → step/ext (F (U (meta ℕ))) _ (1 , 1) u)) ⟩
       (bind (F (U (meta ℕ))) (exp₂ n) λ r →
         ret (r + r))
     ≡⟨ Eq.cong (λ e → bind (F (U (meta ℕ))) e _) (exp₂/correct n u) ⟩

@@ -86,7 +86,7 @@ gcd/clocked≡gcd/spec (suc k) x y h h1 u =
   let h5 = g' h4 u in
   begin
   gcd/clocked (suc k) (x , succ y' , h) ≡⟨ refl ⟩
-  step' (F nat) 1 (gcd/clocked k (succ y' , tonat (toℕ x % toℕ (succ y')) , m%n<n (toℕ x) (toℕ y'))) ≡⟨ step'/ext (F nat) (gcd/clocked k (succ y' , tonat (toℕ x % toℕ (succ y')) , m%n<n (toℕ x) (toℕ y'))) 1 u ⟩
+  step (F nat) 1 (gcd/clocked k (succ y' , tonat (toℕ x % toℕ (succ y')) , m%n<n (toℕ x) (toℕ y'))) ≡⟨ step/ext (F nat) (gcd/clocked k (succ y' , tonat (toℕ x % toℕ (succ y')) , m%n<n (toℕ x) (toℕ y'))) 1 u ⟩
   gcd/clocked k (succ y' , tonat (toℕ x % toℕ (succ y')) , m%n<n (toℕ x) (toℕ y')) ≡⟨ h5 ⟩
   ret (tonat (gcd/spec (toℕ (succ y') , toℕ x % toℕ (succ y') , m%n<n (toℕ x) (toℕ y')))) ≡⟨ P.cong (λ x → ret (tonat x)) (P.sym (gcd/spec-unfold {toℕ x} {toℕ (succ y')} {h})) ⟩
   ret (tonat (gcd/spec (toℕ x , toℕ (succ y') , h)))

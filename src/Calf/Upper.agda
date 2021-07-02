@@ -15,7 +15,7 @@ open import Calf.Eq
 data ub (A : tp pos) : cmp (F A) → cmp cost → □ where
   ub/intro : ∀ {e p q} (a : val A) →
     ◯ (q ≤ p) →
-    cmp (F (eq (U(F A)) e (step' (F A) q (ret {A} a)))) →
+    cmp (F (eq (U(F A)) e (step (F A) q (ret {A} a)))) →
     ub A e p
 
 ub⁻ : (A : tp pos) → cmp (F A) → cmp cost → tp neg
