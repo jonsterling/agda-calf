@@ -235,7 +235,7 @@ module InsertionSort (M : Comparable) where
       bind cost (sort xs) (λ xs' → sort/cost xs + length xs')
     ≡⟨ Eq.cong (λ e → bind cost e λ xs' → sort/cost xs + length xs') (≡) ⟩
       sort/cost xs + length xs'
-    ≡⟨ Eq.cong (sort/cost xs +_) (↭-length (↭-sym ↭)) ⟩
+    ≡˘⟨ Eq.cong (sort/cost xs +_) (↭-length ↭) ⟩
       sort/cost xs + length xs
     ≤⟨ +-monoˡ-≤ (insert/cost/closed x xs) (sort/cost≤sort/cost/closed xs u) ⟩
       sort/cost/closed xs + insert/cost/closed x xs
@@ -642,11 +642,9 @@ module MergeSort (M : Comparable) where
       (sort/clocked/cost/closed k l₁ + sort/clocked/cost/closed k l₂) + merge/cost (l₁' , l₂')
     ≡⟨⟩
       (sort/clocked/cost/closed k l₁ + sort/clocked/cost/closed k l₂) + (length l₁' + length l₂')
-    ≡⟨
+    ≡˘⟨
       Eq.cong ((sort/clocked/cost/closed k l₁ + sort/clocked/cost/closed k l₂) +_) (
-        Eq.cong₂ _+_
-          (↭-length (↭-sym ↭₁))
-          (↭-length (↭-sym ↭₂))
+        Eq.cong₂ _+_ (↭-length ↭₁) (↭-length ↭₂)
       )
     ⟩
       (sort/clocked/cost/closed k l₁ + sort/clocked/cost/closed k l₂) + (length l₁ + length l₂)
