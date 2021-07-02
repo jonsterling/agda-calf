@@ -119,7 +119,7 @@ module FrontBack where
   rev/helper≤rev/helper/cost : ∀ l l' → ub L (rev/helper l l') (len l)
   rev/helper≤rev/helper/cost l = list/ind l (λ l → meta (∀ l' → ub L (rev/helper l l') (len l)))
     (λ l' → ub/ret)
-    (λ a l r → λ l' → ub/step 1 (len l) (r (cons a l')))
+    (λ a l r → λ l' → ub/circ 1 (ub/step 1 (len l) (r (cons a l'))))
 
   rev/cost = len
 
@@ -194,14 +194,25 @@ module FrontBack where
     emp/cons a l with rev≤rev/cost (cons a l)
     ... | ub/intro {q = n} rv h eqn rewrite rev/pres/len (cons a l)
         | (eq/ref eqn) =
-        let g : ∀ rv → (n ≤ len rv) → ub deq-tp (bind (F deq-tp) (step' (F L) n (ret rv)) deq/emp) (1 + len rv)
+        let g : ∀ rv → ◯ (n ≤ len rv) → ub deq-tp (bind (F deq-tp) (step' (F L) n (ret rv)) deq/emp) (1 + len rv)
             g l = list/ind l
-                  (λ l → meta (n ≤ len l → ub deq-tp (bind (F deq-tp) (step' (F L) n (ret l)) deq/emp) (1 + len l)))
-                  (λ h → let h1 = n≤0⇒n≡0 h in
-                   P.subst (λ n → ub deq-tp (step' (F deq-tp) n (ret (inj₁ triv))) 1) (P.sym h1) (ub/relax z≤n ub/ret))
+                  (λ l → meta (◯ (n ≤ len l) → ub deq-tp (bind (F deq-tp) (step' (F L) n (ret l)) deq/emp) (1 + len l)))
+                  (λ h →
+                    ub/relax
+                      (λ u →
+                        begin
+                          n + 0
+                        ≡⟨ +-identityʳ n ⟩
+                          n
+                        ≡⟨ n≤0⇒n≡0 (h u) ⟩
+                          0
+                        ≤⟨ z≤n ⟩
+                          1
+                        ∎)
+                      (ub/step n 0 ub/ret))
                   (λ a l ih → λ h → ub/intro {q = n + 1} (inj₂ ((l , nil) , a))
-                    (begin
-                    n + 1 ≤⟨ +-monoˡ-≤ 1 h  ⟩
+                    (λ u → begin
+                    n + 1 ≤⟨ +-monoˡ-≤ 1 (h u)  ⟩
                     len (cons a l) + 1 ≡⟨ +-comm (len (cons a l)) 1 ⟩
                     1 + len (cons a l) ≤⟨ ≤-refl ⟩
                     1 + len (cons a l)
@@ -213,7 +224,7 @@ module FrontBack where
       where open ≤-Reasoning
 
     cons/back : ∀ a l b → ub deq-tp (deq (cons a l , b)) (deq/cost (cons a l , b))
-    cons/back a l b = ub/intro {q = 1} (inj₂ ((l , b) , a)) ≤-refl (ret (eq/intro refl))
+    cons/back a l b = ub/intro {q = 1} (inj₂ ((l , b) , a)) (λ u → ≤-refl) (ret (eq/intro refl))
 
   -- Amortized analysis for front-back queue.
   -- The goal is to bound the cost of a single-thread sequence of queue operations staring with an initial queue q0,
@@ -502,4 +513,4 @@ module FrontBack where
 
   -- Starting with an empty queue, a sequence of n operations costs at most 2 * n
   fb≤2*|l| : ∀ l → ub Q (l operate/seq emp) (2 * length l)
-  fb≤2*|l| l = ub/relax (IntP.drop‿+≤+ (fb/amortized emp l)) (operate/seq≤cost/seq l emp)
+  fb≤2*|l| l = ub/relax (λ u → IntP.drop‿+≤+ (fb/amortized emp l)) (operate/seq≤cost/seq l emp)

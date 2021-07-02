@@ -44,4 +44,4 @@ dom {A = A} r f1 f2 = ∀ (a : A) → r (f1 a) (f2 a)
                  (f : cmp (Ψ A B p)) →
                  cmp (Ψ A B p')
 Ψ/relax A B h (func , prf) = func ,
-  λ a → ub/relax (h a) (prf a)
+  λ a → ub/relax (λ _ → h a) (prf a)
