@@ -17,15 +17,28 @@ open import Calf.Types.Sum
 
 open import Relation.Binary.PropositionalEquality as Eq
 
+ub/circ : ∀ {A e} p {q} →
+  ub A e q →
+  ub A e (step (meta ℂ) p q)
+ub/circ p {q = q₁} (ub/intro {q = q} a h1 h2) =
+  ub/intro {q = q} a (λ u → subst (q ≤_) (sym (step/ext (meta ℂ) q₁ p u)) (h1 u)) h2
+
+ub/circ' : ∀ {A e} p {q} →
+  ub A e (step (meta ℂ) p q) →
+  ub A e q
+ub/circ' p {q = q₁} (ub/intro {q = q} a h1 h2) =
+  ub/intro {q = q} a (λ u → subst (q ≤_) (step/ext (meta ℂ) q₁ p u) (h1 u)) h2
+
+
 ub/ret : ∀ {A a} → ub A (ret {A} a) zero
-ub/ret {A} {a} = ub/intro a ≤-refl (ret (eq/intro refl))
+ub/ret {A} {a} = ub/intro a (λ _ → ≤-refl) (ret (eq/intro refl))
 
 ub/step : ∀ {A e} (p q : ℂ) →
   ub A e q →
-  ub A (step' (F A) p e) (p + q)
+  ub A (step (F A) p e) (p + q)
 ub/step p q (ub/intro {q = q1} a h1 h2) with eq/ref h2
 ...                                              | refl =
-   ub/intro {q = p + q1} a (+-monoʳ-≤ p h1) (ret (eq/intro refl))
+   ub/intro {q = p + q1} a (λ u → +-monoʳ-≤ p (h1 u)) (ret (eq/intro refl))
 
 ub/bind : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
   (p : ℂ) (q : val A → ℂ) →
@@ -37,7 +50,7 @@ ub/bind {f = f} p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
 ... | refl with h3 a
 ... | ub/intro {q = q2} b h4 h5 with f a | eq/ref h5
 ... | _ | refl =
-  ub/intro {q = q1 + q2} b (+-mono-≤ h1 h4) (ret (eq/intro refl))
+  ub/circ q1 (ub/intro b (λ u → +-mono-≤ (h1 u) (h4 u)) (ret (eq/intro refl)))
 
 ub/bind/const : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
   (p q : ℂ) →
@@ -45,7 +58,7 @@ ub/bind/const : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
   ((a : val A) → ub B (f a) q) →
   ub B (bind {A} (F B) e f) (p + q)
 ub/bind/const {e = e} {f = f} p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
-... | refl = ub/bind p (λ _ → q) (ub/intro {q = q1} a h1 h2) h3
+... | refl = ub/circ' q1 (ub/bind {e = e} p (λ _ → q) (ub/intro {q = q1} a h1 h2) h3)
 
 ub/bind/const' : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
   (p q : ℂ) → {r : ℂ} →

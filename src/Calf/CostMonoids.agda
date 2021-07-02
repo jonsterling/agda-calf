@@ -16,8 +16,8 @@ open import Relation.Binary.PropositionalEquality
   ; _≤_ = _≤_
   ; isCostMonoid = record
     { isMonoid = +-0-isMonoid
+    ; isCancellative = record { ∙-cancel-≡ = +-cancel-≡ }
     ; isPreorder = ≤-isPreorder
-    ; isCancellative = record { ∙-cancel-≤ = +-cancel-≤ }
     ; isMonotone = record { ∙-mono-≤ = +-mono-≤ }
     }
   }
@@ -36,8 +36,8 @@ open import Relation.Binary.PropositionalEquality
   ; isParCostMonoid = record
     { isMonoid = +-0-isMonoid
     ; isCommutativeMonoid = +-0-isCommutativeMonoid
+    ; isCancellative = record { ∙-cancel-≡ = +-cancel-≡ }
     ; isPreorder = ≤-isPreorder
-    ; isCancellative = record { ∙-cancel-≤ = +-cancel-≤ }
     ; isMonotone-⊕ = record { ∙-mono-≤ = +-mono-≤ }
     ; isMonotone-⊗ = record { ∙-mono-≤ = +-mono-≤ }
     }
@@ -58,7 +58,7 @@ open import Relation.Binary.PropositionalEquality
     { isMonoid = +-0-isMonoid
     ; isCommutativeMonoid = ⊔-0-isCommutativeMonoid
     ; isPreorder = ≤-isPreorder
-    ; isCancellative = record { ∙-cancel-≤ = +-cancel-≤ }
+    ; isCancellative = record { ∙-cancel-≡ = +-cancel-≡ }
     ; isMonotone-⊕ = record { ∙-mono-≤ = +-mono-≤ }
     ; isMonotone-⊗ = record { ∙-mono-≤ = ⊔-mono-≤ }
     }
@@ -109,15 +109,15 @@ combineParCostMonoids pcm₁ pcm₂ = record
         }
       ; comm = λ (a₁ , a₂) (b₁ , b₂) → cong₂ _,_ (⊗-comm pcm₁ a₁ b₁) (⊗-comm pcm₂ a₂ b₂)
       }
+    ; isCancellative = record
+      { ∙-cancel-≡ =
+        (λ (x₁ , x₂)           h → cong₂ _,_ (⊕-cancelˡ-≡ pcm₁ x₁    (cong proj₁ h)) (⊕-cancelˡ-≡ pcm₂ x₂    (cong proj₂ h))) ,
+        (λ (y₁ , y₂) (z₁ , z₂) h → cong₂ _,_ (⊕-cancelʳ-≡ pcm₁ y₁ z₁ (cong proj₁ h)) (⊕-cancelʳ-≡ pcm₂ y₂ z₂ (cong proj₂ h)))
+      }
     ; isPreorder = record
       { isEquivalence = isEquivalence
       ; reflexive = λ { refl → ≤-refl pcm₁ , ≤-refl pcm₂ }
       ; trans = λ (h₁ , h₂) (h₁' , h₂') → ≤-trans pcm₁ h₁ h₁' , ≤-trans pcm₂ h₂ h₂'
-      }
-    ; isCancellative = record
-      { ∙-cancel-≤ =
-        (λ (x₁ , x₂) (h₁ , h₂) → ⊕-cancelˡ-≤ pcm₁ x₁ h₁ , ⊕-cancelˡ-≤ pcm₂ x₂ h₂) ,
-        (λ (y₁ , y₂) (z₁ , z₂) (h₁ , h₂) → ⊕-cancelʳ-≤ pcm₁ y₁ z₁ h₁ , ⊕-cancelʳ-≤ pcm₂ y₂ z₂ h₂)
       }
     ; isMonotone-⊕ = record
       { ∙-mono-≤ = λ (h₁ , h₂) (h₁' , h₂') → ⊕-mono-≤ pcm₁ h₁ h₁' , ⊕-mono-≤ pcm₂ h₂ h₂'

@@ -18,21 +18,18 @@ module _ {ℂ : Set} where
   _≈_ = _≡_
 
   open import Algebra.Definitions _≈_
-    hiding (LeftCancellative; RightCancellative; Cancellative)
-  open import Algebra.Definitions
-    using (LeftCancellative; RightCancellative; Cancellative)
   open import Algebra.Structures _≈_ public
   open import Relation.Binary.Structures _≈_
 
-  record IsCancellative (_∙_ : Op₂ ℂ) (_≤_ : Relation) : Set where
+  record IsCancellative (_∙_ : Op₂ ℂ) : Set where
     field
-      ∙-cancel-≤ : Cancellative _≤_ _∙_
+      ∙-cancel-≡ : Cancellative _∙_
 
-    ∙-cancelˡ-≤ : LeftCancellative _≤_ _∙_
-    ∙-cancelˡ-≤ = proj₁ ∙-cancel-≤
+    ∙-cancelˡ-≡ : LeftCancellative _∙_
+    ∙-cancelˡ-≡ = proj₁ ∙-cancel-≡
 
-    ∙-cancelʳ-≤ : RightCancellative _≤_ _∙_
-    ∙-cancelʳ-≤ = proj₂ ∙-cancel-≤
+    ∙-cancelʳ-≡ : RightCancellative _∙_
+    ∙-cancelʳ-≡ = proj₂ ∙-cancel-≡
 
   record IsMonotone (_∙_ : Op₂ ℂ) (_≤_ : Relation) (isPreorder : IsPreorder _≤_) : Set where
     field
@@ -51,8 +48,8 @@ module _ {ℂ : Set} where
   record IsCostMonoid (_+_ : Op₂ ℂ) (zero : ℂ) (_≤_ : Relation) : Set where
     field
       isMonoid       : IsMonoid _+_ zero
+      isCancellative : IsCancellative _+_
       isPreorder     : IsPreorder _≤_
-      isCancellative : IsCancellative _+_ _≤_
       isMonotone     : IsMonotone _+_ _≤_ isPreorder
 
     open IsMonoid isMonoid public
@@ -63,16 +60,16 @@ module _ {ℂ : Set} where
         assoc to +-assoc
       )
 
+    open IsCancellative isCancellative public
+      renaming (
+        ∙-cancel-≡ to +-cancel-≡;
+        ∙-cancelˡ-≡ to +-cancelˡ-≡;
+        ∙-cancelʳ-≡ to +-cancelʳ-≡
+      )
+
     open IsPreorder isPreorder public
       using ()
       renaming (refl to ≤-refl; trans to ≤-trans)
-
-    open IsCancellative isCancellative public
-      renaming (
-        ∙-cancel-≤ to +-cancel-≤;
-        ∙-cancelˡ-≤ to +-cancelˡ-≤;
-        ∙-cancelʳ-≤ to +-cancelʳ-≤
-      )
 
     open IsMonotone isMonotone public
       renaming (
@@ -85,8 +82,8 @@ module _ {ℂ : Set} where
     field
       isMonoid            : IsMonoid _⊕_ 𝟘
       isCommutativeMonoid : IsCommutativeMonoid _⊗_ 𝟙
+      isCancellative      : IsCancellative _⊕_
       isPreorder          : IsPreorder _≤_
-      isCancellative      : IsCancellative _⊕_ _≤_
       isMonotone-⊕        : IsMonotone _⊕_ _≤_ isPreorder
       isMonotone-⊗        : IsMonotone _⊗_ _≤_ isPreorder
 
@@ -107,16 +104,16 @@ module _ {ℂ : Set} where
         comm to ⊗-comm
       )
 
+    open IsCancellative isCancellative public
+      renaming (
+        ∙-cancel-≡ to ⊕-cancel-≡;
+        ∙-cancelˡ-≡ to ⊕-cancelˡ-≡;
+        ∙-cancelʳ-≡ to ⊕-cancelʳ-≡
+      )
+
     open IsPreorder isPreorder public
       using ()
       renaming (refl to ≤-refl; trans to ≤-trans)
-
-    open IsCancellative isCancellative public
-      renaming (
-        ∙-cancel-≤ to ⊕-cancel-≤;
-        ∙-cancelˡ-≤ to ⊕-cancelˡ-≤;
-        ∙-cancelʳ-≤ to ⊕-cancelʳ-≤
-      )
 
     open IsMonotone isMonotone-⊕ public
       renaming (
