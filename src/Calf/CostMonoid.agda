@@ -141,6 +141,17 @@ record CostMonoid : Set₁ where
 
   open IsCostMonoid isCostMonoid public
 
+  module ≤-Reasoning where
+    open import Relation.Binary.Reasoning.Base.Triple
+      isPreorder
+      ≤-trans
+      (resp₂ _≤_)
+      (λ h → h)
+      ≤-trans
+      ≤-trans
+      public
+      hiding (step-≈; step-≈˘; step-<)
+
 record ParCostMonoid : Set₁ where
   infixl 7 _⊗_
   infixl 6 _⊕_

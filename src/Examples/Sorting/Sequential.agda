@@ -22,7 +22,7 @@ open import Data.Sum using (inj₁; inj₂)
 open import Data.Empty
 open import Function
 open import Data.Nat as Nat using (ℕ; zero; suc; z≤n; s≤s; _+_; _*_; _^_; ⌊_/2⌋; ⌈_/2⌉)
-open import Data.Nat.Properties as N using (module ≤-Reasoning)
+import Data.Nat.Properties as N
 
 private
   variable
