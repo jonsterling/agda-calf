@@ -34,7 +34,7 @@ id/hard/body : (y : val num) →
         cmp (F num)
 id/hard/body y h = ifz (λ _ → F num) y
             (ret {num} (to-num 0))
-            (λ y' h' → step' (F num) 1 (num-suc (h y' (≤-≡ h'))))
+            (λ y' h' → step (F num) 1 (num-suc (h y' (≤-≡ h'))))
 
 id/hard/code : cmp (num ⇒ F num)
 id/hard/code = λ x → All.wfRec (lt/cost/wf {num} {e/num} {id/cost}) _
@@ -48,7 +48,7 @@ body-ext : (x : val num) →
       id/hard/body x IH ≡ id/hard/body x IH'
 body-ext x h = P.cong (λ f → ifz (λ _ → F num) x (ret {num} (to-num 0)) f)
                    (funext λ y' → funext λ h' →
-                    P.cong (step' (F num) 1 ∘ num-suc) (h (≤-≡ h')))
+                    P.cong (step (F num) 1 ∘ num-suc) (h (≤-≡ h')))
 
 id/hard : cmp (Ψ num (λ _ → num) e/num id/cost)
 id/hard =
@@ -73,10 +73,10 @@ id/hard =
         body
         body-ext {y} =
           ub/ifz (λ _ → num) y (ret {num} (to-num 0))
-          (λ y' h' → step' (F num) 1 (num-suc (func y')))
+          (λ y' h' → step (F num) 1 (num-suc (func y')))
           0 suc (ub/ret 0)
           (λ y' h →
-          P.subst (λ n → ub num (step' (F num) 1 (num-suc (func y'))) n)
+          P.subst (λ n → ub num (step (F num) 1 (num-suc (func y'))) n)
           (P.trans (+-suc (to-nat y') zero) (P.cong suc (+-identityʳ (to-nat y'))))
           (ub/step (to-nat y') 1
           (P.subst (λ n → ub num (num-suc (func y')) n)
@@ -120,5 +120,5 @@ id/hard≡id/easy u x =
         (λ _ → cmp (F num))
         id/hard/body
         body-ext {to-num (suc (to-nat y'))} =
-        let g = P.cong ((step' (F num) 1) ∘ num-suc) (h y' (≤-≡ h')) in
-        P.trans g (step'/ext (F num) (ret {num} (to-num (suc (to-nat y')))) 1 u)
+        let g = P.cong ((step (F num) 1) ∘ num-suc) (h y' (≤-≡ h')) in
+        P.trans g (step/ext (F num) (ret {num} (to-num (suc (to-nat y')))) 1 u)

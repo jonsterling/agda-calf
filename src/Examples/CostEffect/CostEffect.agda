@@ -22,7 +22,7 @@ postulate
   ► : (c : ℂ) → tp pos → tp pos
   ►/ret : ∀ c A → val A → val (► c A)
   ►/match : ∀ {c A} X → val (► c A) → (val A → cmp X) → cmp X
-  ►/match/ret : ∀ {c A X} {u : val A} {f : val A → cmp X} → ►/match X (►/ret c A u) f ≡ step' X c (f u)
+  ►/match/ret : ∀ {c A X} {u : val A} {f : val A → cmp X} → ►/match X (►/ret c A u) f ≡ step X c (f u)
   {-# REWRITE ►/match/ret #-}
 
 -- I don't know the above is strong enough, but at least it seems not
@@ -35,7 +35,7 @@ postulate
   ▷ : (c : ℂ) → tp neg → tp neg
   ▷/ret : ∀ c X → cmp X → cmp (▷ c X)
   ▷/match : ∀ {c X} Y → cmp (▷ c X) → (cmp X → cmp Y) → cmp Y
-  ▷/match/ret : ∀ {c X Y} {e : cmp X} {f : cmp X → cmp Y} → ▷/match Y (▷/ret c X e) f ≡ step' Y c (f e)
+  ▷/match/ret : ∀ {c X Y} {e : cmp X} {f : cmp X → cmp Y} → ▷/match Y (▷/ret c X e) f ≡ step Y c (f e)
   {-# REWRITE ▷/match/ret #-}
 
 -- Experiments with a cost-aware list type
