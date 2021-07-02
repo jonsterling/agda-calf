@@ -10,6 +10,7 @@ open ParCostMonoid parCostMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage
+open import Relation.Binary.PropositionalEquality
 open import Calf.Step costMonoid
 open import Data.Product
 
@@ -33,4 +34,4 @@ ub/par : {A₁ A₂ : tp pos} {e₁ : cmp (F A₁)} {e₂ : cmp (F A₂)} {p₁ 
   ub A₂ e₂ p₂ →
   ub (Σ++ A₁ λ _ → A₂) (e₁ & e₂) (p₁ ⊗ p₂)
 ub/par (ub/intro {p = p₁} {q = q₁} a₁ h≤₁ h≡₁) (ub/intro {p = p₂} {q = q₂} a₂ h≤₂ h≡₂) with eq/ref h≡₁ | eq/ref h≡₂
-... | refl | refl = ub/intro (a₁ , a₂) (⊗-mono-≤ h≤₁ h≤₂) (ret (eq/intro refl))
+... | refl | refl = ub/intro (a₁ , a₂) (λ u → ⊗-mono-≤ (h≤₁ u) (h≤₂ u)) (ret (eq/intro refl))
