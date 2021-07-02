@@ -63,9 +63,9 @@ module Hard where
   id/cost/closed : cmp (Π nat λ _ → cost)
   id/cost/closed n = n
 
-  id/cost≤id/cost/closed : ∀ n → id/cost n ≤ id/cost/closed n
-  id/cost≤id/cost/closed zero    = ≤-refl
-  id/cost≤id/cost/closed (suc n) =
+  id/cost≤id/cost/closed : ∀ n → ◯ (id/cost n ≤ id/cost/closed n)
+  id/cost≤id/cost/closed zero    u = ≤-refl
+  id/cost≤id/cost/closed (suc n) u =
     begin
       id/cost (suc n)
     ≡⟨⟩
@@ -78,11 +78,11 @@ module Hard where
         bind cost (id n) λ n' → id/cost n +
           0
       )
-    ≡⟨ {!   !} ⟩
+    ≡⟨ Eq.cong (λ e → suc (bind cost e λ n' → id/cost n + 0)) (id/correct n u) ⟩
       suc (id/cost n + 0)
     ≡⟨ Eq.cong suc (+-identityʳ _) ⟩
       suc (id/cost n)
-    ≤⟨ s≤s (id/cost≤id/cost/closed n) ⟩
+    ≤⟨ s≤s (id/cost≤id/cost/closed n u) ⟩
       suc (id/cost/closed n)
     ≡⟨⟩
       suc n
