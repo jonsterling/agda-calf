@@ -29,7 +29,7 @@ module Hard where
   id : cmp (Π nat λ _ → F nat)
   id zero = ret zero
   id (suc n) =
-    step' (F nat) 1 (
+    step (F nat) 1 (
       bind (F nat) (id n) λ n' →
         ret (suc n')
     )
@@ -40,11 +40,11 @@ module Hard where
     begin
       id (suc n)
     ≡⟨⟩
-      step' (F nat) 1 (
+      step (F nat) 1 (
         bind (F nat) (id n) λ n' →
           ret (suc n')
       )
-    ≡⟨ step'/ext (F nat) _ 1 u ⟩
+    ≡⟨ step/ext (F nat) _ 1 u ⟩
       (bind (F nat) (id n) λ n' →
         ret (suc n'))
     ≡⟨ Eq.cong (λ e → bind (F nat) e _) (id/correct n u) ⟩

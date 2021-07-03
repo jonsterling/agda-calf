@@ -38,7 +38,7 @@ mod : cmp (
         Π nat λ y →
         Π (U (meta (False (toℕ y ≟ 0)))) λ h →
         F (mod-tp x y h))
-mod x y h = step' (F (mod-tp x y h)) 1 (ret {mod-tp x y h} (tonat (_%_ (toℕ x) (toℕ y) {h}) , refl))
+mod x y h = step (F (mod-tp x y h)) 1 (ret {mod-tp x y h} (tonat (_%_ (toℕ x) (toℕ y) {h}) , refl))
 
 m>n = Σ ℕ λ m → Σ ℕ λ n → (m > n)
 

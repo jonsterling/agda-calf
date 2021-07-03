@@ -48,7 +48,7 @@ postulate
   list/ind/cons : ∀ {A n X} → (a : val A) → (l : val ((list n A))) → (e0 : cmp (X nil)) →
       (e1 : (a : val A) → (l : val ((list n A))) → (r : val (U (X l))) →
       cmp (X (cons a l))) →
-    list/ind (cons a l) X e0 e1 ≡ step' (X (cons a l)) n (e1 a l (list/ind l X e0 e1))
+    list/ind (cons a l) X e0 e1 ≡ step (X (cons a l)) n (e1 a l (list/ind l X e0 e1))
   {-# REWRITE list/ind/cons #-}
 
 list/match : ∀ {A n} → (l : val (list n A)) → (X : val (list n A) → tp neg) → cmp (X nil) →
@@ -123,9 +123,9 @@ module FrontBack where
 
   rev/cost = len
 
-  rev/helper/cons : ∀ l x r → Σ ℕ λ n → Σ (val nat) λ x' → Σ (val L) λ l' → (len l' ≡ len r + len l) × rev/helper (cons x l) r ≡ step' (F L) n (ret (cons x' l'))
+  rev/helper/cons : ∀ l x r → Σ ℕ λ n → Σ (val nat) λ x' → Σ (val L) λ l' → (len l' ≡ len r + len l) × rev/helper (cons x l) r ≡ step (F L) n (ret (cons x' l'))
   rev/helper/cons l = list/ind l
-    (λ l → meta (∀ x r → Σ ℕ λ n → Σ (val nat) λ x' → Σ (val L) λ l' → len l' ≡ len r + len l × rev/helper (cons x l) r ≡ step' (F L) n (ret (cons x' l'))))
+    (λ l → meta (∀ x r → Σ ℕ λ n → Σ (val nat) λ x' → Σ (val L) λ l' → len l' ≡ len r + len l × rev/helper (cons x l) r ≡ step (F L) n (ret (cons x' l'))))
     (λ x r → 1 , x , r , P.sym (+-identityʳ (len r)) , refl)
     λ y ys ih → λ x r →
     let (n , x' , l' , eqn1 , eqn2) = ih y (cons x r) in
@@ -140,7 +140,7 @@ module FrontBack where
       len r + (len (cons y ys))
       ∎
       ) ,
-     P.cong (λ x → step' (F L) 1 x) {x = (rev/helper (cons y ys) (cons x r))} {y = step' (F L) n (ret (cons x' l'))} eqn2
+     P.cong (λ x → step (F L) 1 x) {x = (rev/helper (cons y ys) (cons x r))} {y = step (F L) n (ret (cons x' l'))} eqn2
     )
     where open ≡-Reasoning
 
@@ -157,11 +157,11 @@ module FrontBack where
   rev≤rev/cost : ∀ l → ub L (rev l) (len l)
   rev≤rev/cost l rewrite rev/unfold l = rev/helper≤rev/helper/cost l nil
 
-  rev/ret : ∀ l → Σ ℕ λ n → Σ (val L) λ a → rev l ≡ step' (F L) n (ret a)
+  rev/ret : ∀ l → Σ ℕ λ n → Σ (val L) λ a → rev l ≡ step (F L) n (ret a)
   rev/ret l with rev≤rev/cost l
   ... | ub/intro {q = q} a h eqn = q , a , eq/ref eqn
 
-  rev/cons : ∀ x l → Σ ℕ λ n → Σ (val nat) λ x' → Σ (val L) λ l' → len l' ≡ len l × rev (cons x l) ≡ step' (F L) n (ret (cons x' l'))
+  rev/cons : ∀ x l → Σ ℕ λ n → Σ (val nat) λ x' → Σ (val L) λ l' → len l' ≡ len l × rev (cons x l) ≡ step (F L) n (ret (cons x' l'))
   rev/cons x l rewrite rev/unfold (cons x l) = rev/helper/cons l x nil
 
   deq-tp = sum unit (Σ++ Q λ _ → nat)
@@ -194,9 +194,9 @@ module FrontBack where
     emp/cons a l with rev≤rev/cost (cons a l)
     ... | ub/intro {q = n} rv h eqn rewrite rev/pres/len (cons a l)
         | (eq/ref eqn) =
-        let g : ∀ rv → ◯ (n ≤ len rv) → ub deq-tp (bind (F deq-tp) (step' (F L) n (ret rv)) deq/emp) (1 + len rv)
+        let g : ∀ rv → ◯ (n ≤ len rv) → ub deq-tp (bind (F deq-tp) (step (F L) n (ret rv)) deq/emp) (1 + len rv)
             g l = list/ind l
-                  (λ l → meta (◯ (n ≤ len l) → ub deq-tp (bind (F deq-tp) (step' (F L) n (ret l)) deq/emp) (1 + len l)))
+                  (λ l → meta (◯ (n ≤ len l) → ub deq-tp (bind (F deq-tp) (step (F L) n (ret l)) deq/emp) (1 + len l)))
                   (λ h →
                     ub/relax
                       (λ u →
