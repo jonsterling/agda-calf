@@ -22,6 +22,6 @@
 ## Examples
 - Example
 - Gcd
-- Id (broken)
+- Id
 - Queue
 - Sorting

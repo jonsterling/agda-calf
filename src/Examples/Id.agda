@@ -2,123 +2,114 @@
 
 module Examples.Id where
 
-open import Calf.Prelude
-open import Calf.Metalanguage
-open import Calf.PhaseDistinction
-open import Cost
-open import Calf.Upper
-open import Calf.Eq
-open import Data.Nat as Nat
-open import Calf.Connectives renaming (_⇒_[_,_] to Ψ)
-open import Function
-open import Relation.Binary.PropositionalEquality as P
-open import Num
-open import Induction.WellFounded
-open import Induction
+open import Calf.CostMonoids using (ℕ-CostMonoid)
+
+open import Calf ℕ-CostMonoid
+open import Calf.Types.Nat using (nat)
+
+open import Data.Nat
 open import Data.Nat.Properties
-open import Calf.Refinement
 
-id/cost : ℕ → ℕ
-id/cost n = n
+open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
 
-baz : (y : val num) → if {λ _ → ℕ} (to-nat y) 0 (λ n → suc n) ≡ to-nat y
-baz y with to-nat y
-... | zero = refl
-... | suc n = refl
+module Easy where
+  id : cmp (Π nat λ _ → F nat)
+  id n = ret n
 
-num-suc : cmp (F num) → cmp (F num)
-num-suc c = bind {num} (F num) c λ n → ret {num} (to-num (suc (to-nat n)))
+  id/correct : ∀ n → ◯ (id n ≡ ret n)
+  id/correct n u = refl
 
-id/hard/body : (y : val num) →
-        WfRec (lt/cost e/num id/cost) (λ x → cmp (F num)) y →
-        cmp (F num)
-id/hard/body y h = ifz (λ _ → F num) y
-            (ret {num} (to-num 0))
-            (λ y' h' → step (F num) 1 (num-suc (h y' (≤-≡ h'))))
+  id/cost : cmp (Π nat λ _ → cost)
+  id/cost n = 0
 
-id/hard/code : cmp (num ⇒ F num)
-id/hard/code = λ x → All.wfRec (lt/cost/wf {num} {e/num} {id/cost}) _
-    (λ _ → cmp (F num))
-    id/hard/body
-    x
+  id≤id/cost : ∀ n → ub nat (id n) (id/cost n)
+  id≤id/cost n = ub/ret
 
-body-ext : (x : val num) →
-      {IH IH' : WfRec (lt/cost e/num id/cost) (λ x → cmp (F num)) x} →
-      (∀ {y} y<x → IH y y<x ≡ IH' y y<x) →
-      id/hard/body x IH ≡ id/hard/body x IH'
-body-ext x h = P.cong (λ f → ifz (λ _ → F num) x (ret {num} (to-num 0)) f)
-                   (funext λ y' → funext λ h' →
-                    P.cong (step (F num) 1 ∘ num-suc) (h (≤-≡ h')))
+module Hard where
+  id : cmp (Π nat λ _ → F nat)
+  id zero = ret zero
+  id (suc n) =
+    step (F nat) 1 (
+      bind (F nat) (id n) λ n' →
+        ret (suc n')
+    )
 
-id/hard : cmp (Ψ num (λ _ → num) e/num id/cost)
-id/hard =
-  id/hard/code , e
+  id/correct : ∀ n → ◯ (id n ≡ ret n)
+  id/correct zero    u = refl
+  id/correct (suc n) u =
+    begin
+      id (suc n)
+    ≡⟨⟩
+      step (F nat) 1 (
+        bind (F nat) (id n) λ n' →
+          ret (suc n')
+      )
+    ≡⟨ step/ext (F nat) _ 1 u ⟩
+      (bind (F nat) (id n) λ n' →
+        ret (suc n'))
+    ≡⟨ Eq.cong (λ e → bind (F nat) e _) (id/correct n u) ⟩
+      ret (suc n)
+    ∎
+      where open ≡-Reasoning
 
-  where
-  func = id/hard/code
-  body = id/hard/body
+  id/cost : cmp (Π nat λ _ → cost)
+  id/cost zero    = 0
+  id/cost (suc n) =
+    1 + (
+      bind cost (id n) λ n' → id/cost n +
+        0
+    )
 
-  e : ∀ x → cmp (ub⁻ num (func x) (id/cost (to-nat x)))
-  e x = iso.fwd ub⁻/decode
-          (All.wfRec (lt/cost/wf {num} {e/num} {id/cost}) _
-            (λ x → ub num (func x) (to-nat x))
-            (λ y h → foo {y} h) x)
-    where
-    bar : ∀ {y : val num} →
-      WfRec (lt/cost e/num id/cost) (λ x → ub num (func x) (to-nat x)) y →
-      ub num (func y) (if {λ _ → ℕ} (to-nat y) 0 (λ n → suc n))
-    bar {y} h1 rewrite FixPoint.unfold-wfRec
-        (lt/cost/wf {num} {e/num} {id/cost})
-        (λ _ → cmp (F num))
-        body
-        body-ext {y} =
-          ub/ifz (λ _ → num) y (ret {num} (to-num 0))
-          (λ y' h' → step (F num) 1 (num-suc (func y')))
-          0 suc (ub/ret 0)
-          (λ y' h →
-          P.subst (λ n → ub num (step (F num) 1 (num-suc (func y'))) n)
-          (P.trans (+-suc (to-nat y') zero) (P.cong suc (+-identityʳ (to-nat y'))))
-          (ub/step (to-nat y') 1
-          (P.subst (λ n → ub num (num-suc (func y')) n)
-            (+-identityʳ (to-nat y'))
-            (ub/bind/const e/num (to-nat y') 0 (h1 y' (≤-≡ h)) (λ _ → ub/ret 0))
-          )
-          )
-          )
+  id/cost/closed : cmp (Π nat λ _ → cost)
+  id/cost/closed n = n
 
-    foo : ∀ {y} →
-      WfRec (lt/cost e/num id/cost) (λ x → ub num (func x) (to-nat x)) y →
-      ub num (func y) (to-nat y)
-    foo {y} h = P.subst (λ n → ub num (func y) n) (baz y) (bar {y} h)
+  id/cost≤id/cost/closed : ∀ n → ◯ (id/cost n ≤ id/cost/closed n)
+  id/cost≤id/cost/closed zero    u = ≤-refl
+  id/cost≤id/cost/closed (suc n) u =
+    begin
+      id/cost (suc n)
+    ≡⟨⟩
+      1 + (
+        bind cost (id n) λ n' → id/cost n +
+          0
+      )
+    ≡⟨⟩
+      suc (
+        bind cost (id n) λ n' → id/cost n +
+          0
+      )
+    ≡⟨ Eq.cong (λ e → suc (bind cost e λ n' → id/cost n + 0)) (id/correct n u) ⟩
+      suc (id/cost n + 0)
+    ≡⟨ Eq.cong suc (+-identityʳ _) ⟩
+      suc (id/cost n)
+    ≤⟨ s≤s (id/cost≤id/cost/closed n u) ⟩
+      suc (id/cost/closed n)
+    ≡⟨⟩
+      suc n
+    ≡⟨⟩
+      id/cost/closed (suc n)
+    ∎
+      where open ≤-Reasoning
 
-id/easy/code : cmp (num ⇒ F num)
-id/easy/code = λ x → ret {num} x
+  id≤id/cost : ∀ n → ub nat (id n) (id/cost n)
+  id≤id/cost zero    = ub/ret
+  id≤id/cost (suc n) =
+    ub/step 1 _ (
+      ub/bind (id/cost n) _ (id≤id/cost n) λ n →
+        ub/ret
+    )
 
-id/easy : cmp (Ψ num (λ _ → num) e/num (const 0))
-id/easy = id/easy/code ,
-          λ x → iso.fwd ub⁻/decode
-            (ub/ret 0)
+  id≤id/cost/closed : ∀ n → ub nat (id n) (id/cost/closed n)
+  id≤id/cost/closed n = ub/relax (id/cost≤id/cost/closed n) (id≤id/cost n)
 
-open Some
-id/hard≡id/easy : ◯ (∀ x → id/hard/code x ≡ id/easy/code x)
-id/hard≡id/easy u x =
-  All.wfRec (lt/cost/wf {num} {e/num} {id/cost}) _
-  (λ x → id/hard/code x ≡ id/easy/code x)
-  (λ y h →
-    ifz
-    (λ n → meta (id/hard/code (to-num n) ≡ id/easy/code (to-num n)))
-    y
-    refl
-    λ y' h' → foo y h y' h') x
-  where
-  foo : (y : val num) → ((y' : val num) →  (lt/cost e/num id/cost) y' y → id/hard/code y' ≡ id/easy/code y') →
-        (y' : val num) →
-        (h' : suc (to-nat y') ≡ to-nat y) →
-        id/hard/code (to-num (suc (to-nat y'))) ≡ id/easy/code (to-num (suc (to-nat y')))
-  foo y h y' h' rewrite FixPoint.unfold-wfRec
-        (lt/cost/wf {num} {e/num} {id/cost})
-        (λ _ → cmp (F num))
-        id/hard/body
-        body-ext {to-num (suc (to-nat y'))} =
-        let g = P.cong ((step (F num) 1) ∘ num-suc) (h y' (≤-≡ h')) in
-        P.trans g (step/ext (F num) (ret {num} (to-num (suc (to-nat y')))) 1 u)
+easy≡hard : ◯ (Easy.id ≡ Hard.id)
+easy≡hard u =
+  funext λ n →
+    begin
+      Easy.id n
+    ≡⟨ Easy.id/correct n u ⟩
+      ret n
+    ≡˘⟨ Hard.id/correct n u ⟩
+      Hard.id n
+    ∎
+      where open ≡-Reasoning
