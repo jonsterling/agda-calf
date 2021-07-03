@@ -587,7 +587,6 @@ module MergeSort (M : Comparable) where
     in
     let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ h₁ u in
     let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ h₂ u in
-    let (l' , ≡' , ↭' , sorted) = merge/correct l₁' l₂' sorted₁ sorted₂ u in
     let open ≡-Reasoning in
     begin
       sort/clocked/cost (suc k) l

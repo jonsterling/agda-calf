@@ -55,9 +55,6 @@ module Slow where
       (bind (F (U (meta ℕ))) (exp₂ n & exp₂ n) λ (r₁ , r₂) →
         ret (r₁ + r₂))
     ≡⟨ Eq.cong (λ e → bind (F (U (meta ℕ))) (e & e) _) (exp₂/correct n u) ⟩
-      (bind (F (U (meta ℕ))) (ret {U (meta ℕ)} (2 ^ n) & ret {U (meta ℕ)} (2 ^ n)) λ (r₁ , r₂) →
-        ret (r₁ + r₂))
-    ≡⟨ bind/par 𝟘 𝟘 ⟩
       step (F (U (meta ℕ))) (𝟘 ⊗ 𝟘) (ret (2 ^ n + 2 ^ n))
     ≡⟨⟩
       ret (2 ^ n + 2 ^ n)
