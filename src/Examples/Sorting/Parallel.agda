@@ -1773,8 +1773,8 @@ module MergeSortPar (M : Comparable) where
       ub/bind (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) _ (ub/par (sort/clocked≤sort/clocked/cost k l₁) (sort/clocked≤sort/clocked/cost k l₂)) λ (l₁' , l₂') →
         merge≤merge/cost/closed l₁' l₂' {!   !} {!   !}
 
-  sort/clocked≤sort/clocked/cost/closed : ∀ k l → ub (list A) (sort/clocked k l) (sort/clocked/cost/closed k l)
-  sort/clocked≤sort/clocked/cost/closed k l = ub/relax (sort/clocked/cost≤sort/clocked/cost/closed k l {!   !}) (sort/clocked≤sort/clocked/cost k l)
+  sort/clocked≤sort/clocked/cost/closed : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → ub (list A) (sort/clocked k l) (sort/clocked/cost/closed k l)
+  sort/clocked≤sort/clocked/cost/closed k l h = ub/relax (sort/clocked/cost≤sort/clocked/cost/closed k l h) (sort/clocked≤sort/clocked/cost k l)
 
   sort/depth : cmp (Π (list A) λ _ → meta ℕ)
   sort/depth l = ⌈log₂ length l ⌉
@@ -1795,7 +1795,7 @@ module MergeSortPar (M : Comparable) where
   sort≤sort/cost l = sort/clocked≤sort/clocked/cost (sort/depth l) l
 
   sort≤sort/cost/closed : ∀ l → ub (list A) (sort l) (sort/cost/closed l)
-  sort≤sort/cost/closed l = sort/clocked≤sort/clocked/cost/closed (sort/depth l) l
+  sort≤sort/cost/closed l = sort/clocked≤sort/clocked/cost/closed (sort/depth l) l N.≤-refl
 
 module Ex/MergeSortPar where
   module Sort = MergeSortPar NatComparable
