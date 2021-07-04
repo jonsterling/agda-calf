@@ -770,13 +770,13 @@ module Ex/MergeSort where
   ex/sort = Sort.sort (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ [])
 
   ex/sort/forward : cmp (F list')
-  ex/sort/forward = Sort.sort test/forward  -- cost: ?
+  ex/sort/forward = Sort.sort test/forward  -- cost: 32, 15
 
   ex/sort/backward : cmp (F list')
-  ex/sort/backward = Sort.sort test/backward  -- cost: ?
+  ex/sort/backward = Sort.sort test/backward  -- cost: 32, 15
 
   ex/sort/shuffled : cmp (F list')
-  ex/sort/shuffled = Sort.sort test/shuffled  -- cost: ?
+  ex/sort/shuffled = Sort.sort test/shuffled  -- cost: 47, 26
 
 module Square where
   _² : ℕ → ℕ
@@ -1822,13 +1822,13 @@ module Ex/MergeSortPar where
   ex/sort = Sort.sort (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ [])
 
   ex/sort/forward : cmp (F list')
-  ex/sort/forward = Sort.sort test/forward  -- cost: ?
+  ex/sort/forward = Sort.sort test/forward  -- cost: 40, 21
 
   ex/sort/backward : cmp (F list')
-  ex/sort/backward = Sort.sort test/backward  -- cost: ?
+  ex/sort/backward = Sort.sort test/backward  -- cost: 40, 21
 
   ex/sort/shuffled : cmp (F list')
-  ex/sort/shuffled = Sort.sort test/shuffled  -- cost: ?
+  ex/sort/shuffled = Sort.sort test/shuffled  -- cost: 43, 17
 
 module SortEquivalence (M : Comparable) where
   open Comparable M
