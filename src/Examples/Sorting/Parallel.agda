@@ -29,10 +29,6 @@ open import Function
 open import Data.Nat as Nat using (ℕ; zero; suc; z≤n; s≤s; _+_; _*_; _^_; ⌊_/2⌋; ⌈_/2⌉; pred; _⊔_)
 open import Data.Nat.Properties as N using (module ≤-Reasoning)
 
-private
-  variable
-    α : Set
-
 record Comparable : Set₁ where
   field
     A : tp pos
