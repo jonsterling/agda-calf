@@ -8,10 +8,10 @@ open import Calf.CostMonoids using (ℕ²-ParCostMonoid)
 parCostMonoid = ℕ²-ParCostMonoid
 open ParCostMonoid parCostMonoid
   renaming (
-    _≤_ to _P≤_;
-    ≤-refl to P≤-refl;
-    ≤-trans to P≤-trans;
-    module ≤-Reasoning to P≤-Reasoning
+    _≤_ to _≤ₚ_;
+    ≤-refl to ≤ₚ-refl;
+    ≤-trans to ≤ₚ-trans;
+    module ≤-Reasoning to ≤ₚ-Reasoning
   )
 
 open import Calf costMonoid
@@ -186,19 +186,19 @@ module InsertionSort (M : Comparable) where
   insert/cost/closed : cmp (Π A λ _ → Π (list A) λ _ → cost)
   insert/cost/closed x l = length l , length l
 
-  insert/cost≤insert/cost/closed : ∀ x l → ◯ (insert/cost x l P≤ insert/cost/closed x l)
-  insert/cost≤insert/cost/closed x []       u = P≤-refl
+  insert/cost≤insert/cost/closed : ∀ x l → ◯ (insert/cost x l ≤ₚ insert/cost/closed x l)
+  insert/cost≤insert/cost/closed x []       u = ≤ₚ-refl
   insert/cost≤insert/cost/closed x (y ∷ ys) u with h-cost x y
   ... | ub/intro {q = q} false q≤1 h-eq =
-    Eq.subst (λ n → (q ⊕ n) P≤ (suc (length ys) , suc (length ys))) (Eq.sym (⊕-identityʳ (insert/cost x ys))) (
-      P≤-trans
+    Eq.subst (λ n → (q ⊕ n) ≤ₚ (suc (length ys) , suc (length ys))) (Eq.sym (⊕-identityʳ (insert/cost x ys))) (
+      ≤ₚ-trans
         (⊕-monoˡ-≤ _ (q≤1 u))
         (s≤s (proj₁ (insert/cost≤insert/cost/closed x ys u)) ,
          s≤s (proj₂ (insert/cost≤insert/cost/closed x ys u)))
     )
   ... | ub/intro {q = q} true  q≤1 h-eq =
-    Eq.subst (_P≤ (suc (length ys) , suc (length ys))) (Eq.sym (⊕-identityʳ q)) (
-      P≤-trans (q≤1 u) (s≤s z≤n , s≤s z≤n)
+    Eq.subst (_≤ₚ (suc (length ys) , suc (length ys))) (Eq.sym (⊕-identityʳ q)) (
+      ≤ₚ-trans (q≤1 u) (s≤s z≤n , s≤s z≤n)
     )
 
   insert≤insert/cost : ∀ x l → ub (list A) (insert x l) (insert/cost x l)
@@ -252,12 +252,12 @@ module InsertionSort (M : Comparable) where
   sort/cost/closed : cmp (Π (list A) λ _ → cost)
   sort/cost/closed l = length l ^ 2 , length l ^ 2
 
-  sort/cost≤sort/cost/closed : ∀ l → ◯ (sort/cost l P≤ sort/cost/closed l)
-  sort/cost≤sort/cost/closed []       u = P≤-refl
+  sort/cost≤sort/cost/closed : ∀ l → ◯ (sort/cost l ≤ₚ sort/cost/closed l)
+  sort/cost≤sort/cost/closed []       u = ≤ₚ-refl
   sort/cost≤sort/cost/closed (x ∷ xs) u =
     let (xs'   , h-xs'   , xs↭xs'     , sorted-xs'  ) = sort/correct xs u in
     let (x∷xs' , h-x∷xs' , x∷xs↭x∷xs' , sorted-x∷xs') = insert/correct x xs' sorted-xs' u in
-    let open P≤-Reasoning in
+    let open ≤ₚ-Reasoning in
     begin
       sort/cost (x ∷ xs)
     ≡⟨⟩
@@ -577,7 +577,7 @@ module MergeSort (M : Comparable) where
   sort/clocked/cost/closed : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
   sort/clocked/cost/closed k l = k * length l , 2 * length l + k
 
-  sort/clocked/cost≤sort/clocked/cost/closed : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → ◯ (sort/clocked/cost k l P≤ sort/clocked/cost/closed k l)
+  sort/clocked/cost≤sort/clocked/cost/closed : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → ◯ (sort/clocked/cost k l ≤ₚ sort/clocked/cost/closed k l)
   sort/clocked/cost≤sort/clocked/cost/closed zero    l h u = z≤n , z≤n
   sort/clocked/cost≤sort/clocked/cost/closed (suc k) l h u =
     let (l₁ , l₂ , ≡ , length₁ , length₂ , ↭) = split/correct l u in
@@ -607,7 +607,7 @@ module MergeSort (M : Comparable) where
     in
     let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ h₁ u in
     let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ h₂ u in
-    let open P≤-Reasoning in
+    let open ≤ₚ-Reasoning in
     begin
       sort/clocked/cost (suc k) l
     ≡⟨⟩
@@ -1136,9 +1136,9 @@ module MergeSortPar (M : Comparable) where
   splitBy/clocked/cost/closed k _ _ = k , k
 
   splitBy/clocked/cost≤splitBy/clocked/cost/closed : ∀ k l pivot → ⌈log₂ suc (length l) ⌉ Nat.≤ k →
-    ◯ (splitBy/clocked/cost k l pivot P≤ splitBy/clocked/cost/closed k l pivot)
+    ◯ (splitBy/clocked/cost k l pivot ≤ₚ splitBy/clocked/cost/closed k l pivot)
   splitBy/clocked/cost/aux≤k : ∀ k pivot l₁ mid l₂ b → ⌈log₂ suc (length l₁) ⌉ Nat.≤ k → ⌈log₂ suc (length l₂) ⌉ Nat.≤ k →
-    ◯ (splitBy/clocked/cost/aux k pivot l₁ mid l₂ b P≤ (k , k))
+    ◯ (splitBy/clocked/cost/aux k pivot l₁ mid l₂ b ≤ₚ (k , k))
 
   splitBy/clocked/cost≤splitBy/clocked/cost/closed zero    l        pivot h u = z≤n , z≤n
   splitBy/clocked/cost≤splitBy/clocked/cost/closed (suc k) []       pivot h u = z≤n , z≤n
@@ -1174,7 +1174,7 @@ module MergeSortPar (M : Comparable) where
     ≡⟨⟩
       splitBy/clocked/cost/closed (suc k) (x ∷ xs) pivot
     ∎
-      where open P≤-Reasoning
+      where open ≤ₚ-Reasoning
 
   splitBy/clocked/cost/aux≤k k pivot l₁ mid l₂ false h₁ h₂ u =
     let (l₁₁ , l₁₂ , ≡' , _ , ≡-↭') = splitBy/clocked/correct k l₁ pivot h₁ u in
@@ -1189,7 +1189,7 @@ module MergeSortPar (M : Comparable) where
     ≤⟨ splitBy/clocked/cost≤splitBy/clocked/cost/closed k l₁ pivot h₁ u ⟩
       (k , k)
     ∎
-      where open P≤-Reasoning
+      where open ≤ₚ-Reasoning
   splitBy/clocked/cost/aux≤k k pivot l₁ mid l₂ true  h₁ h₂ u =
     let (l₂₁ , l₂₂ , ≡' , _ , ≡-↭') = splitBy/clocked/correct k l₂ pivot h₂ u in
     begin
@@ -1203,7 +1203,7 @@ module MergeSortPar (M : Comparable) where
     ≤⟨ splitBy/clocked/cost≤splitBy/clocked/cost/closed k l₂ pivot h₂ u ⟩
       (k , k)
     ∎
-      where open P≤-Reasoning
+      where open ≤ₚ-Reasoning
 
   splitBy/clocked≤splitBy/clocked/cost : ∀ k l pivot → ub pair (splitBy/clocked k l pivot) (splitBy/clocked/cost k l pivot)
   splitBy/clocked≤splitBy/clocked/cost zero    l        pivot = ub/ret
@@ -1340,7 +1340,7 @@ module MergeSortPar (M : Comparable) where
   merge/clocked/cost/closed k (l₁ , l₂) = pred[2^ k ] * ⌈log₂ suc (length l₂) ⌉ , k * ⌈log₂ suc (length l₂) ⌉
 
   merge/clocked/cost≤merge/clocked/cost/closed : ∀ k l₁ l₂ → ⌈log₂ suc (length l₁) ⌉ Nat.≤ k →
-    ◯ (merge/clocked/cost k (l₁ , l₂) P≤ merge/clocked/cost/closed k (l₁ , l₂))
+    ◯ (merge/clocked/cost k (l₁ , l₂) ≤ₚ merge/clocked/cost/closed k (l₁ , l₂))
   merge/clocked/cost≤merge/clocked/cost/closed zero    l₁       l₂ h-clock u = z≤n , z≤n
   merge/clocked/cost≤merge/clocked/cost/closed (suc k) []       l₂ h-clock u = z≤n , z≤n
   merge/clocked/cost≤merge/clocked/cost/closed (suc k) (x ∷ l₁) l₂ h-clock u =
@@ -1370,7 +1370,7 @@ module MergeSortPar (M : Comparable) where
     in
     let (l₁' , ≡₁' , _) = merge/clocked/correct k l₁₁ l₂₁ h₁ u in
     let (l₂' , ≡₂' , _) = merge/clocked/correct k l₁₂ l₂₂ h₂ u in
-    let open P≤-Reasoning in
+    let open ≤ₚ-Reasoning in
     begin
       (bind cost (splitMid (x ∷ l₁) (s≤s z≤n)) λ (l₁₁ , pivot , l₁₂) → splitMid/cost (x ∷ l₁) (s≤s z≤n) ⊕
         bind cost (splitBy l₂ pivot) λ (l₂₁ , l₂₂) → splitBy/cost/closed l₂ pivot ⊕
@@ -1582,7 +1582,7 @@ module MergeSortPar (M : Comparable) where
   sort/clocked/cost/closed : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
   sort/clocked/cost/closed k l = k * length l * ⌈log₂ suc ⌈ length l /2⌉ ⌉ , k * ⌈log₂ suc ⌈ length l /2⌉ ⌉ ²
 
-  sort/clocked/cost≤sort/clocked/cost/closed : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → ◯ (sort/clocked/cost k l P≤ sort/clocked/cost/closed k l)
+  sort/clocked/cost≤sort/clocked/cost/closed : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → ◯ (sort/clocked/cost k l ≤ₚ sort/clocked/cost/closed k l)
   sort/clocked/cost≤sort/clocked/cost/closed zero    l h u = z≤n , z≤n
   sort/clocked/cost≤sort/clocked/cost/closed (suc k) l h u =
     let (l₁ , l₂ , ≡ , length₁ , length₂ , ↭) = split/correct l u in
@@ -1612,7 +1612,7 @@ module MergeSortPar (M : Comparable) where
     in
     let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ h₁ u in
     let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ h₂ u in
-    let open P≤-Reasoning in
+    let open ≤ₚ-Reasoning in
     begin
       sort/clocked/cost (suc k) l
     ≡⟨⟩
