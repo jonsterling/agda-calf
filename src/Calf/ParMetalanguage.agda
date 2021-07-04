@@ -12,6 +12,7 @@ open import Calf.Prelude
 open import Calf.Metalanguage
 open import Relation.Binary.PropositionalEquality
 open import Calf.Step costMonoid
+open import Relation.Binary.PropositionalEquality
 open import Data.Product
 
 open import Calf.Eq
@@ -24,6 +25,11 @@ postulate
   &/par : ∀ {A₁ A₂} {v₁ v₂ p₁ p₂} →
     step (F A₁) p₁ (ret v₁) & step (F A₂) p₂ (ret v₂) ≡ step (F (Σ++ A₁ λ _ → A₂)) (p₁ ⊗ p₂) (ret (v₁ , v₂))
   {-# REWRITE &/par #-}
+
+&/par/𝟘 : ∀ {A₁ A₂} {v₁ v₂} → 
+  ret v₁ & ret v₂ ≡ step (F (Σ++ A₁ λ _ → A₂)) (𝟘 ⊗ 𝟘) (ret (v₁ , v₂))
+&/par/𝟘 = &/par {p₁ = 𝟘} {p₂ = 𝟘}
+{-# REWRITE &/par/𝟘 #-}
 
 bind/par : ∀ {A₁ A₂} {X} {v₁ v₂ f} (p₁ p₂ : ℂ) →
   bind {Σ++ A₁ λ _ → A₂} X (step (F A₁) p₁ (ret v₁) & step (F A₂) p₂ (ret v₂)) f ≡ step X (p₁ ⊗ p₂) (f (v₁ , v₂))

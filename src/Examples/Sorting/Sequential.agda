@@ -1,6 +1,6 @@
 {-# OPTIONS --prop --rewriting #-}
 
-module Examples.Sorting where
+module Examples.Sorting.Sequential where
 
 open import Calf.CostMonoid
 open import Calf.CostMonoids using (ℕ-CostMonoid)
@@ -22,11 +22,7 @@ open import Data.Sum using (inj₁; inj₂)
 open import Data.Empty
 open import Function
 open import Data.Nat as Nat using (ℕ; zero; suc; z≤n; s≤s; _+_; _*_; _^_; ⌊_/2⌋; ⌈_/2⌉)
-open import Data.Nat.Properties as N using (module ≤-Reasoning)
-
-private
-  variable
-    α : Set
+import Data.Nat.Properties as N
 
 record Comparable : Set₁ where
   field
@@ -587,7 +583,6 @@ module MergeSort (M : Comparable) where
     in
     let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ h₁ u in
     let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ h₂ u in
-    let (l' , ≡' , ↭' , sorted) = merge/correct l₁' l₂' sorted₁ sorted₂ u in
     let open ≡-Reasoning in
     begin
       sort/clocked/cost (suc k) l
