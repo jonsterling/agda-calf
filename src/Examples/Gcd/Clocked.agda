@@ -44,57 +44,40 @@ open import Axiom.UniquenessOfIdentityProofs.WithK using (uip)
 -}
 gcd/clocked : cmp (Π (U (meta ℕ)) λ _ → Π gcd/i λ _ → F nat)
 gcd/clocked zero (x , y , h) = ret x
-gcd/clocked (suc k) (x , y , h) = rec y (const (F nat)) (ret {nat} x)
-  (λ y' _ →
-    bind {mod-tp x (succ y') tt} (F nat) (mod x (succ y') tt)
-    λ { (z , eqn2) →
-    let h2 = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2) (m%n<n' (toℕ x) _ tt) in
-    gcd/clocked k (succ y' , z , h2) })
+gcd/clocked (suc k) (x , 0 , h) =  ret {nat} x
+gcd/clocked (suc k) (x , suc y , h) =
+  bind {mod-tp x (suc y) tt} (F nat) (mod x (suc y) tt)
+  λ { (z , eqn2) →
+  let h2 = P.subst (λ k → suc k ≤ toℕ (suc y)) (P.sym eqn2) (m%n<n' x _ tt) in
+  gcd/clocked k (suc y , z , h2) }
 
 gcd/code : cmp (Π gcd/i λ _ → F nat)
 gcd/code i = gcd/clocked (gcd/cost (to-ext i)) i
 
-gcd/i/eq : ∀ {x x' y y' h h'} →
-        (eqn : x ≡ x') →
-        (eqn2 : y ≡ y') →
-        _≡_ {A = m>n} (x , y , h) (x' , y' , h')
-gcd/i/eq {x} {x'} {y} {y'} {h} {h'} eqn eqn2 = Inverse.f Σ-≡,≡↔≡ (eqn , Inverse.f Σ-≡,≡↔≡ (P.trans (proj₁/subst eqn) eqn2 ,
-  <-irrelevant _ _))
+ub/step/suc : ∀ {A e} (p : ℕ) →
+  ub A e p →
+  ub A (step (F A) 1 e) (suc p)
+ub/step/suc {A} {e} p (ub/intro {q = q1} a h1 h2) =
+  ub/intro {q = suc q1} a (λ u → s≤s (h1 u)) (ret (eq/intro
+    (
+      begin
+      step (F A) 1 e ≡⟨ P.cong (step (F A) 1) (eq/ref h2) ⟩
+      step (F A) 1 (step (F A) q1 (ret a))
+      ∎
+    )
+  ))
+  where open ≡-Reasoning
 
--- cost of clocked gcd is bounded by for any instantiation of the clock
-gcd/clocked≤gcd/cost : ∀ k i → ub nat (gcd/clocked k i) (gcd/cost (to-ext i))
-gcd/clocked≤gcd/cost 0 i = ub/relax (λ _ → z≤n) ub/ret
-gcd/clocked≤gcd/cost (suc k) i@(x , y , z) rewrite gcd/cost-unfold' i =
-  ub/rec
-  (const nat)
-  y
-  (ret {nat} x)
-  (λ y' →
-    bind {mod-tp x (succ y') tt} (F nat) (mod x (succ y') tt)
-    λ { (z , eqn2)
-          → let h2
-                  = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2)
-                    (m%n<n' (toℕ x) _ tt)
-            in gcd/clocked k (succ y' , z , h2)
-      })
-  0
-  (λ n' → suc (gcd/cost (suc n' , toℕ x % suc n' , m%n<n (toℕ x) n')))
-  ub/ret
-  λ y' → ub/bind/suc {e = mod x (succ y') tt} {f = λ { (z , eqn2)
-          → let h2
-                  = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2)
-                    (m%n<n' (toℕ x) _ tt)
-            in gcd/clocked k (succ y' , z , h2)
-      }} (gcd/cost (suc (toℕ y') , toℕ x % suc (toℕ y') , m%n<n (toℕ x) (toℕ y')))
-  (ub/step 1 0 ub/ret)
-  λ {(z , eqn2) →
-  let h2 = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2) (m%n<n' (toℕ x) (toℕ (succ y')) tt) in
-  let g = gcd/clocked≤gcd/cost k (succ y' , z , h2) in
-  let h3 = to-ext-unfold (succ y' , z , h2) in
-  let h4 = P.subst (λ cost → ub nat (gcd/clocked k (succ y' , z , h2)) (gcd/cost cost)) h3 g in
-  let h5 = gcd/i/eq {h = h2} {h' = m%n<n (toℕ x) (toℕ y')} refl eqn2 in
-  let h6 = P.subst (λ cost → ub nat (gcd/clocked k (succ y' , z , h2)) (gcd/cost cost)) h5 h4 in
-  h6 }
+-- cost of clocked gcd is bounded by for any (not necessarily safe)
+-- instantiation of the clock
+gcd/clocked≤gcd/cost : ∀ k i → ub nat (gcd/clocked k i) (gcd/cost i)
+gcd/clocked≤gcd/cost Nat.zero i = ub/relax (λ _ → z≤n) ub/ret
+gcd/clocked≤gcd/cost (suc k) (x , Nat.zero , h) = ub/ret
+gcd/clocked≤gcd/cost (suc k) (x , suc y , h) rewrite gcd/cost-unfold-suc {x} {y} {h} =
+  ub/step/suc
+  {e = gcd/clocked k (suc y , x % suc y , m%n<n' x _ tt)}
+  (gcd/cost (suc y , x % suc y , m%n<n' x _ tt))
+  (gcd/clocked≤gcd/cost k (suc y , x % suc y , m%n<n' x _ tt))
 
 gcd : cmp (Ψ gcd/i (λ { _ → nat }) (gcd/cost ∘ to-ext))
 gcd = gcd/code ,
