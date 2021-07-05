@@ -12,78 +12,111 @@ open import Calf.Types.Nat
 open import Calf.Types.Unit
 open import Calf.Types.Sum
 
+open import Function
 open import Data.Nat
 open import Data.Nat.Properties
 import Data.Integer as Int
 import Data.Integer.Properties as IntP
-open import Data.List using (List; _∷_; []; length; tabulate) renaming (sum to lsum)
+open import Data.List renaming (sum to lsum)
 open import Data.Product
 open import Relation.Binary.PropositionalEquality as P
 
-record Queue : Set where
+record Queue (A : tp pos) : Set where
   field
     Q : tp pos
     emp : val Q
-    enq : cmp (Π Q λ _ → Π nat λ _ → F Q)
-    deq : cmp (Π Q λ _ → F (sum unit (Σ++ Q λ _ → nat)))
+    enq : cmp (Π Q λ _ → Π A λ _ → F Q)
+    deq : cmp (Π Q λ _ → F (sum unit (Σ++ Q λ _ → A)))
 
--- Suppose we want to implement the Queue signature above using lists.
--- One cost model is to count the number of times a cons node is inspected.
--- This is implemented by the following annotated list type:
--- destructing a cons node of type list n A consumes n steps.
-postulate
-  list : ∀ (n : ℕ) → tp pos → tp pos
-  nil : ∀ {A n} → val (list n A)
-  cons : ∀ {A n} → val A → val (list n A) → val (list n A)
+module CostList (A : tp pos) (n : ℕ) where
+  -- Suppose we want to implement the Queue signature above using lists.
+  -- One cost model is to count the number of times a cons node is inspected.
+  -- This is implemented by the following annotated list type:
+  -- destructing a cons node of type list n A consumes n steps.
+  postulate
+    list : tp pos
+    nil : val list
+    cons : val A → val list → val list
 
-  list/ind : ∀ {A n} → (l : val (list n A)) → (X : val (list n A) → tp neg) → cmp (X nil) →
-    ((a : val A) → (l : val (list n A)) → (r : val (U (X l))) →
-      cmp (X (cons a l))) →
+    list/ind : (l : val list) → (X : val list → tp neg) → cmp (X nil) →
+      ((a : val A) → (l : val list) → (r : val (U (X l))) →
+        cmp (X (cons a l))) →
+      cmp (X l)
+    list/ind/nil : ∀ {X} → (e0 : cmp (X nil)) →
+        (e1 : (a : val A) → (l : val list) → (r : val (U (X l))) →
+        cmp (X (cons a l))) →
+      list/ind nil X e0 e1 ≡ e0
+    {-# REWRITE list/ind/nil #-}
+    list/ind/cons : ∀ {X} → (a : val A) → (l : val list) → (e0 : cmp (X nil)) →
+        (e1 : (a : val A) → (l : val list) → (r : val (U (X l))) →
+        cmp (X (cons a l))) →
+      list/ind (cons a l) X e0 e1 ≡ step (X (cons a l)) n (e1 a l (list/ind l X e0 e1))
+    {-# REWRITE list/ind/cons #-}
+
+  list/match : (l : val list) → (X : val list → tp neg) → cmp (X nil) →
+    ((a : val A) → (l : val list) → cmp (X (cons a l))) →
     cmp (X l)
-  list/ind/nil : ∀ {A n X} → (e0 : cmp (X nil)) →
-      (e1 : (a : val A) → (l : val ((list n A))) → (r : val (U (X l))) →
-      cmp (X (cons a l))) →
-    list/ind nil X e0 e1 ≡ e0
-  {-# REWRITE list/ind/nil #-}
-  list/ind/cons : ∀ {A n X} → (a : val A) → (l : val ((list n A))) → (e0 : cmp (X nil)) →
-      (e1 : (a : val A) → (l : val ((list n A))) → (r : val (U (X l))) →
-      cmp (X (cons a l))) →
-    list/ind (cons a l) X e0 e1 ≡ step (X (cons a l)) n (e1 a l (list/ind l X e0 e1))
-  {-# REWRITE list/ind/cons #-}
+  list/match l X e0 e1 = list/ind l X e0 (λ a l _ → e1 a l)
 
-list/match : ∀ {A n} → (l : val (list n A)) → (X : val (list n A) → tp neg) → cmp (X nil) →
-  ((a : val A) → (l : val (list n A)) → cmp (X (cons a l))) →
-  cmp (X l)
-list/match l X e0 e1 = list/ind l X e0 (λ a l _ → e1 a l)
--- Version of annotated lists using ►. Not so nice to use since the induction principle is behind a tbind :(
--- ►/out : ∀ {A} → val (► A) → cmp (F A)
--- ►/out {A} v = ►/match (F A) v (λ v → ret v)
--- list/rec : ∀ {A} → (l : val (list A)) → (X : tp neg) → cmp X →
---   ((a : val A) → (►/l : val (► (list A))) → (r : val (U (X))) →
---     cmp (X)) →
---   cmp (X)
--- list/rec/nil : ∀ {A X} → (e0 : cmp (X)) →
---     (e1 : (a : val A) → (►/l : val (► (list A))) → (r : val (U X)) →
---     cmp (X)) →
---   list/rec nil X e0 e1 ≡ e0
--- {-# REWRITE list/rec/nil #-}
--- list/rec/cons : ∀ {A X} → (a : val A) → (►/l : val (► (list A))) → (e0 : cmp (X)) →
---     (e1 : (a : val A) → (►/l : val (► (list A))) → (r : val (U (X))) →
---     cmp (X)) →
---   list/rec (cons a ►/l) X e0 e1 ≡ e1 a ►/l (bind X (►/out ►/l) (λ l → list/rec l X e0 e1))
--- {-# REWRITE list/rec/cons #-}
+  ub/list/match : ∀ (l : val list) (X : val list → tp pos)
+    {e0 : val (U (F (X nil)))} {e1 : (a : val A) → (l : val list) → val (U (F (X (cons a l))))}
+    {p0 : val (U cost)} {p1 : (a : val A) → (l : val list) → val (U cost)} →
+    ub (X nil) e0 p0 →
+    ((a : val A) → (l : val list) → ub (X (cons a l)) (e1 a l) (p1 a l)) →
+    ub (X l) (list/match l (F ∘ X) e0 e1) (list/match l (λ _ → cost) p0 (λ a l → n + p1 a l))
+  ub/list/match l X {e0} {e1} {p0} {p1} ub0 ub1 =
+    list/match l (λ l → meta (ub (X l) (list/match l (F ∘ X) e0 e1) (list/match l (λ _ → cost) p0 (λ a l → n + p1 a l))))
+      ub0
+      λ a l → ub/circ n (ub/step n (p1 a l) (ub1 a l))
 
-ex : val (list 0 nat)
-ex = cons (tonat 0) ((cons (tonat 1) (nil)))
+  len : val list → ℕ
+  len l = list/ind l (λ _ → meta ℕ) 0 λ a l r → 1 + r
 
-len : ∀ {A n} → val (list n A) → ℕ
-len l = list/ind l (λ _ → meta ℕ) 0 λ a l r → 1 + r
+module Ex/CostList where
+  open CostList nat 0
+
+  ex : val list
+  ex = cons (tonat 0) ((cons (tonat 1) (nil)))
+
+module Rev (A : tp pos) where
+  open CostList A 1
+
+  rev/helper : cmp (Π list λ _ → Π list λ _ → F list)
+  rev/helper l =
+    list/ind l (λ _ → Π list λ _ → F list)
+      (λ l' → ret l')
+      λ a _ r → λ l' → r (cons a l')
+
+  rev/helper/cost : cmp (Π list λ _ → Π list λ _ → cost)
+  rev/helper/cost l l' = len l
+
+  rev/helper≤rev/helper/cost : ∀ l l' → ub list (rev/helper l l') (rev/helper/cost l l')
+  rev/helper≤rev/helper/cost l =
+    list/ind l (λ l → meta (∀ l' → ub list (rev/helper l l') (rev/helper/cost l l')))
+      (λ l' → ub/ret)
+      (λ a l r → λ l' → ub/circ 1 (ub/step 1 (len l) (r (cons a l'))))
+
+  rev : cmp (Π list λ _ → F list)
+  rev l = rev/helper l nil
+
+  rev/lemma/cons : ∀ x xs → ◯ (∃ λ y → ∃ λ ys → rev (cons x xs) ≡ ret (cons y ys))
+  rev/lemma/cons = {!   !}
+
+  rev/cost : cmp (Π list λ _ → cost)
+  rev/cost l = len l
+
+  rev≤rev/cost : ∀ l → ub list (rev l) (rev/cost l)
+  rev≤rev/cost l = rev/helper≤rev/helper/cost l nil
+
 
 -- Implement Queue with a pair of lists; (f , b) represents the queue f :: rev b.
-module FrontBack where
-
+module FrontBack (nat : tp pos) where
   -- For simplicity, we charge 1 step for each cons node destruction.
-  L = list 1 nat
+  open CostList nat 1
+  open Rev nat
+
+  private
+    L = list
 
   Q : tp pos
   Q = Σ++ L λ _ → L
@@ -94,137 +127,94 @@ module FrontBack where
   enq : cmp (Π Q λ _ → Π nat λ _ → F Q)
   enq (f , b) x = ret (f , cons x b)
 
-  enq≤0 : ∀ q x → ub Q (enq q x) 0
-  enq≤0 q x = ub/ret
+  enq/cost : cmp (Π Q λ _ → Π nat λ _ → cost)
+  enq/cost (f , b) x = 0
 
-  rev/helper : cmp (Π L λ _ → Π L λ _ → F L)
-  rev/helper l = list/ind l (λ _ → Π L λ _ → F L)
-    (λ a → ret a) λ a _ r → λ l → r (cons a l)
-
-  rev/helper/len : ∀ l → cmp (Π L λ a → meta (len a + len l ≡ bind (meta ℕ) (rev/helper l a) len))
-  rev/helper/len l = list/ind l (λ l → Π L λ a → meta (len a + len l ≡ bind (meta ℕ) (rev/helper l a) len))
-    (λ x →  +-identityʳ _) (λ x l r → λ a →
-    begin
-    len a + (1 + len l) ≡⟨ P.sym (+-assoc (len a) 1 (len l)) ⟩
-    len a + 1 + len l ≡⟨ P.cong (λ x → x + len l) (+-comm (len a) 1) ⟩
-    1 + len a + len l ≡⟨ r (cons x a) ⟩
-    bind (meta ℕ) (rev/helper (cons x l) a) len ≡⟨ refl ⟩
-    bind (meta ℕ) (rev/helper (cons x l) a) len
-    ∎
-    )
-    where open ≡-Reasoning
-
-  rev/helper/cost = len
-
-  rev/helper≤rev/helper/cost : ∀ l l' → ub L (rev/helper l l') (len l)
-  rev/helper≤rev/helper/cost l = list/ind l (λ l → meta (∀ l' → ub L (rev/helper l l') (len l)))
-    (λ l' → ub/ret)
-    (λ a l r → λ l' → ub/circ 1 (ub/step 1 (len l) (r (cons a l'))))
-
-  rev/cost = len
-
-  rev/helper/cons : ∀ l x r → Σ ℕ λ n → Σ (val nat) λ x' → Σ (val L) λ l' → (len l' ≡ len r + len l) × rev/helper (cons x l) r ≡ step (F L) n (ret (cons x' l'))
-  rev/helper/cons l = list/ind l
-    (λ l → meta (∀ x r → Σ ℕ λ n → Σ (val nat) λ x' → Σ (val L) λ l' → len l' ≡ len r + len l × rev/helper (cons x l) r ≡ step (F L) n (ret (cons x' l'))))
-    (λ x r → 1 , x , r , P.sym (+-identityʳ (len r)) , refl)
-    λ y ys ih → λ x r →
-    let (n , x' , l' , eqn1 , eqn2) = ih y (cons x r) in
-    1 + n , x' ,  l' ,
-    (
-      (
-      begin
-      len l' ≡⟨ eqn1 ⟩
-      (1 + len r) + len ys ≡⟨ P.cong (λ x → x + len ys) (+-comm 1 (len r)) ⟩
-      len r + 1 + len ys ≡⟨ +-assoc (len r) 1 (len ys) ⟩
-      len r + (1 + len ys) ≡⟨ refl ⟩
-      len r + (len (cons y ys))
-      ∎
-      ) ,
-     P.cong (λ x → step (F L) 1 x) {x = (rev/helper (cons y ys) (cons x r))} {y = step (F L) n (ret (cons x' l'))} eqn2
-    )
-    where open ≡-Reasoning
-
-  abstract
-    rev : cmp (Π L λ _ → F L)
-    rev l = rev/helper l nil
-
-    rev/unfold : ∀ l → rev l ≡ rev/helper l nil
-    rev/unfold l = refl
-
-    rev/pres/len : ∀ l → len l ≡ bind (meta ℕ) (rev l) len
-    rev/pres/len l = rev/helper/len l nil
-
-  rev≤rev/cost : ∀ l → ub L (rev l) (len l)
-  rev≤rev/cost l rewrite rev/unfold l = rev/helper≤rev/helper/cost l nil
-
-  rev/ret : ∀ l → Σ ℕ λ n → Σ (val L) λ a → rev l ≡ step (F L) n (ret a)
-  rev/ret l with rev≤rev/cost l
-  ... | ub/intro {q = q} a h eqn = q , a , eq/ref eqn
-
-  rev/cons : ∀ x l → Σ ℕ λ n → Σ (val nat) λ x' → Σ (val L) λ l' → len l' ≡ len l × rev (cons x l) ≡ step (F L) n (ret (cons x' l'))
-  rev/cons x l rewrite rev/unfold (cons x l) = rev/helper/cons l x nil
+  enq≤enq/cost : ∀ q x → ub Q (enq q x) (enq/cost q x)
+  enq≤enq/cost q x = ub/ret
 
   deq-tp = sum unit (Σ++ Q λ _ → nat)
 
-  deq/emp : val L → cmp (F deq-tp)
-  deq/emp = (λ l → list/match l (λ _ → F deq-tp) (ret (inj₁ triv)) λ a l' → ret (inj₂ ((l' , nil) , a)))
+  deq/emp : cmp (Π L λ _ → F deq-tp)
+  deq/emp l =
+    list/match l (λ _ → F deq-tp)
+      (ret (inj₁ triv))
+      λ a l' → ret (inj₂ ((l' , nil) , a))
+
+  deq/emp/cost : cmp (Π L λ _ → cost)
+  deq/emp/cost l =
+    list/match l (λ _ → cost)
+      0
+      λ a l' → 1 + 0
+
+  deq/emp≤deq/emp/cost : ∀ l → ub deq-tp (deq/emp l) (deq/emp/cost l)
+  deq/emp≤deq/emp/cost l =
+    ub/list/match l (λ _ → deq-tp)
+      ub/ret
+      λ a l' → ub/ret
 
   deq : cmp (Π Q λ _ → F deq-tp)
-  deq (f , b) = list/match f (λ _ → F deq-tp)
-    (bind (F deq-tp) (rev b) deq/emp)
-    λ a l → ret (inj₂ ((l , b) , a))
+  deq (f , b) =
+    list/match f (λ _ → F deq-tp)
+      (bind (F deq-tp) (rev b) (λ b' → deq/emp b'))
+      λ a l → ret (inj₂ ((l , b) , a))
 
-  deq/cost : val Q → ℕ
-  deq/cost (f , b) = list/match f (λ _ → meta ℕ) (list/match b (λ _ → meta ℕ) 0 (λ _ b' → 1 + len b)) (λ _ _ → 1)
+  deq/cost : cmp (Π Q λ _ → cost)
+  deq/cost (f , b) =
+    list/match f (λ _ → cost)
+      (bind cost (rev b) (λ b' → rev/cost b + deq/emp/cost b'))
+      λ a l → 1 + 0
+
+  deq/cost/closed : cmp (Π Q λ _ → cost)
+  deq/cost/closed (f , b) =
+    list/match f (λ _ → cost)
+      (list/match b (λ _ → cost) 0 (λ _ b' → 1 + len b))
+      λ _ _ → 1
+
+  deq/cost≤deq/cost/closed : ∀ q → ◯ (deq/cost q ≤ deq/cost/closed q)
+  deq/cost≤deq/cost/closed (f , b) u =
+    list/match f (λ f → meta (deq/cost (f , b) ≤ deq/cost/closed (f , b)))
+      (list/match b (λ b → meta (deq/cost (nil , b) ≤ deq/cost/closed (nil , b)))
+        ≤-refl
+        λ x xs →
+          let open ≤-Reasoning in
+          let (y , ys , ≡) = rev/lemma/cons x xs u in
+          begin
+            deq/cost (nil , cons x xs)
+          ≡⟨⟩
+            bind cost (rev (cons x xs)) (λ b' → rev/cost (cons x xs) + deq/emp/cost b')
+          ≡⟨⟩
+            bind cost (rev (cons x xs)) (λ b' → rev/cost (cons x xs) + deq/emp/cost b')
+          ≡⟨ cong (λ e → bind cost e (λ b' → rev/cost (cons x xs) + deq/emp/cost b')) (≡) ⟩
+            rev/cost (cons x xs) + deq/emp/cost (cons y ys)
+          ≡⟨⟩
+            step cost 1 (suc (len xs)) + step cost 1 1
+          ≡⟨ cong₂ _+_ (step/ext cost (suc (len xs)) 1 u) (step/ext cost 1 1 u) ⟩
+            suc (len xs) + 1
+          ≡⟨ +-comm (suc (len xs)) 1 ⟩
+            suc (suc (len xs))
+          ≡˘⟨ cong suc (step/ext cost _ 1 u) ⟩
+            suc (step cost 1 (suc (len xs)))
+          ≡⟨⟩
+            suc (len (cons x xs))
+          ≡˘⟨ step/ext cost _ 1 u ⟩
+            step cost 1 (suc (len (cons x xs)))
+          ≡⟨⟩
+            list/match (cons x xs) (λ _ → cost) 0 (λ _ b' → 1 + len (cons x xs))
+          ≡⟨⟩
+            deq/cost/closed (nil , cons x xs)
+          ∎
+      )
+      λ _ _ → ≤-refl
 
   deq≤deq/cost : ∀ q → ub deq-tp (deq q) (deq/cost q)
-  deq≤deq/cost (f , b) = list/match f (λ f → meta (ub deq-tp (deq (f , b)) (deq/cost (f , b))))
-    (list/match b
-      (λ b → meta (ub deq-tp (deq (nil , b)) (deq/cost (nil , b))))
-      emp/emp
-      (λ a l → let (n , rv , eqn) = rev/ret (cons a l) in
-      ( emp/cons a l)))
-      λ a l → cons/back a l b
+  deq≤deq/cost (f , b) =
+    ub/list/match f (λ _ → deq-tp)
+      (ub/bind (rev/cost b) _ (rev≤rev/cost b) λ b' → deq/emp≤deq/emp/cost b')
+      λ a l → ub/ret
 
-    where
-    emp/emp : ub deq-tp (deq (nil , nil)) (deq/cost (nil , nil))
-    emp/emp rewrite rev/unfold nil = ub/ret
-
-    emp/cons : ∀ a l → ub deq-tp (deq (nil , cons a l)) (deq/cost (nil , cons a l))
-    emp/cons a l with rev≤rev/cost (cons a l)
-    ... | ub/intro {q = n} rv h eqn rewrite rev/pres/len (cons a l)
-        | (eq/ref eqn) =
-        let g : ∀ rv → ◯ (n ≤ len rv) → ub deq-tp (bind (F deq-tp) (step (F L) n (ret rv)) deq/emp) (1 + len rv)
-            g l = list/ind l
-                  (λ l → meta (◯ (n ≤ len l) → ub deq-tp (bind (F deq-tp) (step (F L) n (ret l)) deq/emp) (1 + len l)))
-                  (λ h →
-                    ub/relax
-                      (λ u →
-                        begin
-                          n + 0
-                        ≡⟨ +-identityʳ n ⟩
-                          n
-                        ≡⟨ n≤0⇒n≡0 (h u) ⟩
-                          0
-                        ≤⟨ z≤n ⟩
-                          1
-                        ∎)
-                      (ub/step n 0 ub/ret))
-                  (λ a l ih → λ h → ub/intro {q = n + 1} (inj₂ ((l , nil) , a))
-                    (λ u → begin
-                    n + 1 ≤⟨ +-monoˡ-≤ 1 (h u)  ⟩
-                    len (cons a l) + 1 ≡⟨ +-comm (len (cons a l)) 1 ⟩
-                    1 + len (cons a l) ≤⟨ ≤-refl ⟩
-                    1 + len (cons a l)
-                    ∎
-                    )
-                    (ret (eq/intro refl)))
-        in
-        g rv h
-      where open ≤-Reasoning
-
-    cons/back : ∀ a l b → ub deq-tp (deq (cons a l , b)) (deq/cost (cons a l , b))
-    cons/back a l b = ub/intro {q = 1} (inj₂ ((l , b) , a)) (λ u → ≤-refl) (ret (eq/intro refl))
+  deq≤deq/cost/closed : ∀ q → ub deq-tp (deq q) (deq/cost/closed q)
+  deq≤deq/cost/closed q = ub/relax (deq/cost≤deq/cost/closed q) (deq≤deq/cost q)
 
   -- Amortized analysis for front-back queue.
   -- The goal is to bound the cost of a single-thread sequence of queue operations staring with an initial queue q0,
@@ -254,51 +244,54 @@ module FrontBack where
   (op/deq) operateϕ (f , b) = list/match f (λ _ → meta ℕ) (list/match b (λ _ → meta ℕ) 0 (λ _ b' → len b')) (λ _ f' → len f' + 2 * len b)
 
   operateϕ≡ϕ∘operate : ∀ o q → o operateϕ q ≡ bind (meta ℕ) (o operate q) ϕ
-  operateϕ≡ϕ∘operate (op/enq x) q = refl
+  operateϕ≡ϕ∘operate (op/enq x) q = {! refl !}
   operateϕ≡ϕ∘operate op/deq (f , b) = list/match f
         (λ f →
           meta
           ((op/deq operateϕ (f , b)) ≡
             bind (meta ℕ) (op/deq operate (f , b)) ϕ))
         (list/ind b (λ b → meta ((op/deq operateϕ (nil , b)) ≡ bind (meta ℕ) (op/deq operate (nil , b)) ϕ))
-        (P.subst (λ x → 0 ≡ bind (meta ℕ) (bind (F Q) (bind (F deq-tp) x deq/emp) λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ { (q , x) → ret q }))) ϕ)
-        (P.sym (rev/unfold nil)) refl)
+        -- (P.subst (λ x → 0 ≡ bind (meta ℕ) (bind (F Q) (bind (F deq-tp) x deq/emp) λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ { (q , x) → ret q }))) ϕ)
+        -- (P.sym (rev/unfold nil)) refl)
+        {!   !}
         λ a l ih → emp/cons a l)
         λ a l → refl
 
     where
     emp/cons : ∀ a l → op/deq operateϕ (nil , cons a l) ≡ bind (meta ℕ) (op/deq operate (nil , cons a l)) ϕ
-    emp/cons a l with rev/cons a l
-    ... | (n , x' , l' , eqn1 , eqn2 ) rewrite eqn2 =
-      begin
-      len l ≡⟨ P.sym eqn1 ⟩
-      len l' ≡⟨ P.sym (+-identityʳ (len l')) ⟩
-      len l' + 0 ≡⟨ refl ⟩
-      len l' + 0
-      ∎
-     where open ≡-Reasoning
+    emp/cons a l = {!   !}
+    -- with rev/cons a l
+    -- ... | (n , x' , l' , eqn1 , eqn2 ) rewrite eqn2 =
+    --   {!   !}
+    --   -- begin
+    --   -- len l ≡⟨ P.sym eqn1 ⟩
+    --   -- len l' ≡⟨ P.sym (+-identityʳ (len l')) ⟩
+    --   -- len l' + 0 ≡⟨ refl ⟩
+    --   -- len l' + 0
+    --   -- ∎
+    --  where open ≡-Reasoning
 
   -- op/cost o q is the cost of o operate q.
   op/cost : op → val Q → ℕ
   op/cost (op/enq x) q = 0
   op/cost (op/deq) (f , b) = list/match f (λ _ → meta ℕ) (list/match b (λ _ → meta ℕ) 0 (λ _ b' → 2 + len b')) (λ _ _ → 1)
 
-  deq/cost≡cost/deq : ∀ q → deq/cost q ≡ op/cost op/deq q
+  deq/cost≡cost/deq : ∀ q → deq/cost/closed q ≡ op/cost op/deq q
   deq/cost≡cost/deq (f , b) =
     P.cong (λ x → list/match f (λ _ → meta ℕ) x (λ _ _ → 1)) (list/match b
     (λ b →
       meta
         (list/match b (λ _ → meta ℕ) 0 (λ _ b' → 1 + len b) ≡
           list/match b (λ _ → meta ℕ) 0 (λ _ b' → 2 + len b')))
-      refl (λ a l → refl))
+      refl (λ a l → {! refl !}))
 
   -- cost o q upperbounds the cost of o operate q.
   op≤cost : ∀ o q → ub Q (o operate q) (op/cost o q)
-  op≤cost (op/enq x) q = enq≤0 q x
+  op≤cost (op/enq x) q = enq≤enq/cost q x
   op≤cost op/deq q rewrite P.sym (+-identityʳ (op/cost (op/deq) q)) = ub/bind/const {A = deq-tp} {e = deq q} {f = λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s
     (λ _ → ret (nil , nil))
     (λ { (q , x) → ret q }))} (op/cost op/deq q) 0
-    (P.subst (λ x → ub deq-tp (deq q) x) (deq/cost≡cost/deq q) (deq≤deq/cost q))
+    (P.subst (λ x → ub deq-tp (deq q) x) (deq/cost≡cost/deq q) (deq≤deq/cost/closed q))
     λ a → ub/sum/case/const/const unit ((Σ++ Q λ _ → nat)) (λ _ → Q) a ((λ _ → ret (nil , nil))) (λ { (q , x) → ret q }) 0
     (λ _ → ub/ret)
     (λ _ → ub/ret)
@@ -435,16 +428,17 @@ module FrontBack where
   -- Amortized cost for enq and deq on a front-back queue
   enq/acost : ∀ x → is/acost (op/enq x) 2
   enq/acost x (f , b)  =
-    begin
-    Int.0ℤ Int.+ ((len f + 2 * (1 + len b)) Int.⊖ (ϕ (f , b))) ≡⟨ IntP.+-identityˡ ((len f + 2 * (len (cons x b))) Int.⊖ (ϕ (f , b))) ⟩
-    len f + 2 * len (cons x b) Int.⊖ ϕ (f , b) ≡⟨ P.cong (λ x → (len f + x) Int.⊖ (ϕ (f , b))) (*-distribˡ-+ 2 1 (len b)) ⟩
-    len f + (2 * 1 + 2 * len b) Int.⊖ ϕ (f , b) ≡⟨ P.cong (λ x → (len f + x) Int.⊖ (ϕ (f , b)) ) (+-comm 2 (2 * len b)) ⟩
-    len f + (2 * len b + 2) Int.⊖ ϕ (f , b) ≡⟨ P.cong (λ x → x Int.⊖ (ϕ (f , b))) (P.sym (+-assoc (len f) (2 * len b) 2)) ⟩
-    len f + 2 * len b + 2 Int.⊖ ϕ (f , b) ≡⟨ P.cong (λ x → (len f + 2 * len b + 2) Int.⊖ x) (P.sym (+-identityʳ (ϕ (f , b)))) ⟩
-    len f + 2 * len b + 2 Int.⊖ (ϕ (f , b) + 0) ≡⟨ IntP.+-cancelˡ-⊖ (len f + 2 * len b) 2 0 ⟩
-    (Int.+ 2) ≤⟨ IntP.≤-refl ⟩
-    Int.+ 2
-    ∎
+    {!   !}
+    -- begin
+    -- Int.0ℤ Int.+ ((len f + 2 * (1 + len b)) Int.⊖ (ϕ (f , b))) ≡⟨ IntP.+-identityˡ ((len f + 2 * (len (cons x b))) Int.⊖ (ϕ (f , b))) ⟩
+    -- len f + 2 * len (cons x b) Int.⊖ ϕ (f , b) ≡⟨ P.cong (λ x → (len f + x) Int.⊖ (ϕ (f , b))) (*-distribˡ-+ 2 1 (len b)) ⟩
+    -- len f + (2 * 1 + 2 * len b) Int.⊖ ϕ (f , b) ≡⟨ P.cong (λ x → (len f + x) Int.⊖ (ϕ (f , b)) ) (+-comm 2 (2 * len b)) ⟩
+    -- len f + (2 * len b + 2) Int.⊖ ϕ (f , b) ≡⟨ P.cong (λ x → x Int.⊖ (ϕ (f , b))) (P.sym (+-assoc (len f) (2 * len b) 2)) ⟩
+    -- len f + 2 * len b + 2 Int.⊖ ϕ (f , b) ≡⟨ P.cong (λ x → (len f + 2 * len b + 2) Int.⊖ x) (P.sym (+-identityʳ (ϕ (f , b)))) ⟩
+    -- len f + 2 * len b + 2 Int.⊖ (ϕ (f , b) + 0) ≡⟨ IntP.+-cancelˡ-⊖ (len f + 2 * len b) 2 0 ⟩
+    -- (Int.+ 2) ≤⟨ IntP.≤-refl ⟩
+    -- Int.+ 2
+    -- ∎
     where open IntP.≤-Reasoning
 
   n+n≡2*n : ∀ n → n + n ≡ 2 * n
@@ -461,24 +455,26 @@ module FrontBack where
     list/match b (λ b → meta ((Int.+ (op/cost op/deq (nil , b))) Int.+ ((op/deq operateϕ (nil , b)) Int.⊖ (ϕ (nil , b))) Int.≤ Int.0ℤ))
     IntP.≤-refl
     λ a b' →
-    begin
-    Int.+ (2 + len b') Int.+ (len b' Int.⊖ (2 * (1 + len b'))) ≡⟨ IntP.distribʳ-⊖-+-pos (2 + len b') (len b') (2 * (1 + len b')) ⟩
-    2 + len b' + len b' Int.⊖ 2 * (1 + len b') ≡⟨ P.cong (λ x → x Int.⊖ 2 * (1 + len b')) (+-assoc 2 (len b') (len b')) ⟩
-    2 + (len b' + len b') Int.⊖ 2 * (1 + len b') ≡⟨ P.cong (λ x → 2 + (len b'  + len b') Int.⊖ x) (*-distribˡ-+ 2 1 (len b')) ⟩
-    2 + (len b' + len b') Int.⊖ (2 * 1 + 2 * len b') ≡⟨ P.cong (λ x → 2 + x Int.⊖ (2 + 2 * len b')) (n+n≡2*n (len b')) ⟩
-    2 + 2 * len b' Int.⊖ (2 + 2 * len b') ≡⟨ IntP.n⊖n≡0 (2 + 2 * len b') ⟩
-    Int.0ℤ ≤⟨ IntP.≤-refl ⟩
-    Int.0ℤ
-    ∎
+    {!   !}
+    -- begin
+    -- Int.+ (2 + len b') Int.+ (len b' Int.⊖ (2 * (1 + len b'))) ≡⟨ IntP.distribʳ-⊖-+-pos (2 + len b') (len b') (2 * (1 + len b')) ⟩
+    -- 2 + len b' + len b' Int.⊖ 2 * (1 + len b') ≡⟨ P.cong (λ x → x Int.⊖ 2 * (1 + len b')) (+-assoc 2 (len b') (len b')) ⟩
+    -- 2 + (len b' + len b') Int.⊖ 2 * (1 + len b') ≡⟨ P.cong (λ x → 2 + (len b'  + len b') Int.⊖ x) (*-distribˡ-+ 2 1 (len b')) ⟩
+    -- 2 + (len b' + len b') Int.⊖ (2 * 1 + 2 * len b') ≡⟨ P.cong (λ x → 2 + x Int.⊖ (2 + 2 * len b')) (n+n≡2*n (len b')) ⟩
+    -- 2 + 2 * len b' Int.⊖ (2 + 2 * len b') ≡⟨ IntP.n⊖n≡0 (2 + 2 * len b') ⟩
+    -- Int.0ℤ ≤⟨ IntP.≤-refl ⟩
+    -- Int.0ℤ
+    -- ∎
     )
     λ a f' →
-    begin
-    Int.+ 1 Int.+ ((len f' + 2 * len b) Int.⊖ (1 + len f' + 2 * len b)) ≡⟨ IntP.distribʳ-⊖-+-pos 1 (len f' + 2 * len b) (1 + len f' + 2 * len b) ⟩
-    1 + (len f' + 2 * len b) Int.⊖ (1 + len f' + 2 * len b) ≡⟨ P.cong (λ x → x Int.⊖ (1 + len f' + 2 * len b)) (P.sym (+-assoc 1 (len f') (2 * len b))) ⟩
-    1 + len f' + 2 * len b Int.⊖ (1 + len f' + 2 * len b) ≡⟨ IntP.n⊖n≡0 (1 + len f' + 2 * len b) ⟩
-    Int.0ℤ ≤⟨ IntP.≤-refl ⟩
-    Int.0ℤ
-    ∎
+    {!   !}
+    -- begin
+    -- Int.+ 1 Int.+ ((len f' + 2 * len b) Int.⊖ (1 + len f' + 2 * len b)) ≡⟨ IntP.distribʳ-⊖-+-pos 1 (len f' + 2 * len b) (1 + len f' + 2 * len b) ⟩
+    -- 1 + (len f' + 2 * len b) Int.⊖ (1 + len f' + 2 * len b) ≡⟨ P.cong (λ x → x Int.⊖ (1 + len f' + 2 * len b)) (P.sym (+-assoc 1 (len f') (2 * len b))) ⟩
+    -- 1 + len f' + 2 * len b Int.⊖ (1 + len f' + 2 * len b) ≡⟨ IntP.n⊖n≡0 (1 + len f' + 2 * len b) ⟩
+    -- Int.0ℤ ≤⟨ IntP.≤-refl ⟩
+    -- Int.0ℤ
+    -- ∎
     where open IntP.≤-Reasoning
 
   all2s : ℕ → List ℕ
