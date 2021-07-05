@@ -81,23 +81,43 @@ module Ex/CostList where
 module Rev (A : tp pos) where
   open CostList A 1
 
-  rev/helper : cmp (Π list λ _ → Π list λ _ → F list)
-  rev/helper l =
+  revAppend : cmp (Π list λ _ → Π list λ _ → F list)
+  revAppend l =
     list/ind l (λ _ → Π list λ _ → F list)
       (λ l' → ret l')
-      λ a _ r → λ l' → r (cons a l')
+      λ x _ r → λ l' → r (cons x l')
 
-  rev/helper/cost : cmp (Π list λ _ → Π list λ _ → cost)
-  rev/helper/cost l l' = len l
+  revAppend/lemma/cons : ∀ x xs l' → ◯ (∃ λ y → ∃ λ ys → revAppend (cons x xs) l' ≡ ret (cons y ys))
+  revAppend/lemma/cons x xs =
+    list/ind xs (λ xs → meta (∀ x l' → ◯ (∃ λ y → ∃ λ ys → revAppend (cons x xs) l' ≡ ret (cons y ys))))
+      (λ x l' u → (x , l' , step/ext (F list) (ret (cons x l')) 1 u))
+      (λ x' xs' ih x l' u →
+        let (y , ys , ≡) = ih x' (cons x l') u in
+        y , ys , (
+          let open ≡-Reasoning in
+          begin
+            revAppend (cons x (cons x' xs')) l'
+          ≡⟨⟩
+            step (F list) 1 (revAppend (cons x' xs') (cons x l'))
+          ≡⟨ step/ext (F list) _ 1 u ⟩
+            revAppend (cons x' xs') (cons x l')
+          ≡⟨ (≡) ⟩
+            ret (cons y ys)
+          ∎
+        ))
+      x
 
-  rev/helper≤rev/helper/cost : ∀ l l' → ub list (rev/helper l l') (rev/helper/cost l l')
-  rev/helper≤rev/helper/cost l =
-    list/ind l (λ l → meta (∀ l' → ub list (rev/helper l l') (rev/helper/cost l l')))
+  revAppend/cost : cmp (Π list λ _ → Π list λ _ → cost)
+  revAppend/cost l l' = len l
+
+  revAppend≤revAppend/cost : ∀ l l' → ub list (revAppend l l') (revAppend/cost l l')
+  revAppend≤revAppend/cost l =
+    list/ind l (λ l → meta (∀ l' → ub list (revAppend l l') (revAppend/cost l l')))
       (λ l' → ub/ret)
       (λ a l r → λ l' → ub/circ 1 (ub/step 1 (len l) (r (cons a l'))))
 
   rev : cmp (Π list λ _ → F list)
-  rev l = rev/helper l nil
+  rev l = revAppend l nil
 
   rev/lemma/cons : ∀ x xs → ◯ (∃ λ y → ∃ λ ys → rev (cons x xs) ≡ ret (cons y ys))
   rev/lemma/cons = {!   !}
@@ -106,7 +126,7 @@ module Rev (A : tp pos) where
   rev/cost l = len l
 
   rev≤rev/cost : ∀ l → ub list (rev l) (rev/cost l)
-  rev≤rev/cost l = rev/helper≤rev/helper/cost l nil
+  rev≤rev/cost l = revAppend≤revAppend/cost l nil
 
 
 -- Implement Queue with a pair of lists; (f , b) represents the queue f :: rev b.
