@@ -78,6 +78,92 @@ open import Relation.Binary.PropositionalEquality
       ∎
         where open ≡-Reasoning
 
+ResourceMonoid : CostMonoid
+ResourceMonoid = record
+  { ℂ = ℕ × ℕ
+  ; _+_ = _·_
+  ; zero = 0 , 0
+  ; _≤_ = _≤ᵣ_
+  ; isCostMonoid = record
+    { isMonoid = record
+      { isSemigroup = record
+        { isMagma = record
+          { isEquivalence = isEquivalence
+          ; ∙-cong = λ { refl refl → refl }
+          }
+        ; assoc = {!   !}
+        }
+      ; identity = identityˡ , identityʳ
+      }
+    ; isCancellative = record { ∙-cancel-≡ = ∙-cancelˡ-≡ , ∙-cancelʳ-≡ }
+    ; isPreorder = record
+      { isEquivalence = isEquivalence
+      ; reflexive = λ { refl → (≤-refl , ≤-refl) }
+      ; trans = λ (h₁ , h₂) (h₁' , h₂') → ≤-trans h₁ h₁' , ≤-trans h₂' h₂
+      }
+    ; isMonotone = record { ∙-mono-≤ = ∙-mono-≤ᵣ }
+    }
+  }
+  where
+    open import Data.Nat
+    open import Data.Nat.Properties
+
+    open import Data.Bool using (false; true)
+
+    open import Algebra.Definitions _≡_
+    open import Relation.Nullary
+    open import Relation.Binary
+
+    _·_ : ℕ × ℕ → ℕ × ℕ → ℕ × ℕ
+    (p , p') · (q , q') with p' ≤? q
+    ... | no ¬h = p , q' + (p' ∸ q)
+    ... | yes h = p + (q ∸ p') , q'
+
+    _≤ᵣ_ : ℕ × ℕ → ℕ × ℕ → Set
+    (p , p') ≤ᵣ (q , q') = (p ≤ q) × (q' ≤ p')
+
+    identityˡ : LeftIdentity (0 , 0) _·_
+    identityˡ (q , q') = cong₂ _,_ (+-identityˡ q) (+-identityˡ q')
+
+    identityʳ : RightIdentity (0 , 0) _·_
+    identityʳ (q , q') with q' ≤? 0
+    ... | no ¬h = refl
+    ... | yes z≤n = cong₂ _,_ (+-identityʳ q) refl
+
+    ∙-cancelˡ-≡ : LeftCancellative _·_
+    ∙-cancelˡ-≡ (p , p') {q , q'} {r , r'} h with p' ≤? q | p' ≤? r
+    ... | no ¬p₁ | no ¬p₂ = {!   !}
+    ... | no ¬p₁ | yes p₂ = {!   !}
+    ... | yes p₁ | no ¬p₂ =
+      let p₂ = ≰⇒≥ ¬p₂
+
+          h₁ : p' ≡ q
+          h₁ = ≤-antisym p₁ (m∸n≡0⇒m≤n (+-cancelˡ-≡ p (trans (cong proj₁ h) (sym (+-identityʳ p)))))
+
+          h₃ : q' ≡ r'
+          h₃ = {!   !}
+
+          h₂ : p' ≡ r
+          h₂ = ≤-antisym (m∸n≡0⇒m≤n (+-cancelˡ-≡ r' (trans (sym (cong proj₂ h)) (trans h₃ (sym (+-identityʳ r')))))) p₂
+      in
+      cong₂ _,_
+        (trans (sym h₁) h₂)
+        h₃
+    ... | yes p₁ | yes p₂ =
+      cong₂ _,_
+        (∸-cancelʳ-≡ p₁ p₂ (+-cancelˡ-≡ p (cong proj₁ h)))
+        (cong proj₂ h)
+
+    ∙-cancelʳ-≡ : RightCancellative _·_
+    ∙-cancelʳ-≡ = {!   !}
+
+    ∙-mono-≤ᵣ : _·_ Preserves₂ _≤ᵣ_ ⟶ _≤ᵣ_ ⟶ _≤ᵣ_
+    ∙-mono-≤ᵣ {p , p'} {q , q'} {r , r'} {s , s'} (h₁ , h₂) (h₁' , h₂') with p' ≤? r | q' ≤? s
+    ... | no ¬p₁ | no ¬p₂ = {!   !}
+    ... | no ¬p₁ | yes p₂ = {!   !}
+    ... | yes p₁ | no ¬p₂ = {!   !}
+    ... | yes p₁ | yes p₂ = +-mono-≤ h₁ (∸-mono h₁' h₂) , h₂'
+
 ℕ-Work-ParCostMonoid : ParCostMonoid
 ℕ-Work-ParCostMonoid = record
   { ℂ = ℕ
