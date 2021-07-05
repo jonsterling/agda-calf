@@ -1144,7 +1144,7 @@ module MergeSortPar (M : Comparable) where
   splitBy/clocked/cost≤splitBy/clocked/cost/closed (suc k) []       pivot h u = z≤n , z≤n
   splitBy/clocked/cost≤splitBy/clocked/cost/closed (suc k) (x ∷ xs) pivot (s≤s h) u with splitMid/correct (x ∷ xs) (s≤s z≤n) u
   ... | (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) with h-cost mid pivot
-  ... | ub/intro b _ h-eq =
+  ... | ub/intro {q = q} b _ h-eq =
     begin
       splitBy/clocked/cost (suc k) (x ∷ xs) pivot
     ≡⟨⟩
@@ -1158,7 +1158,7 @@ module MergeSortPar (M : Comparable) where
         bind cost (mid ≤ᵇ pivot) λ b → (1 , 1) ⊕ splitBy/clocked/cost/aux k pivot l₁ mid l₂ b)
     ≡⟨ ⊕-identityˡ _ ⟩
       (bind cost (mid ≤ᵇ pivot) λ b → (1 , 1) ⊕ splitBy/clocked/cost/aux k pivot l₁ mid l₂ b)
-    ≡⟨ Eq.cong (λ e → bind cost e λ b → (1 , 1) ⊕ splitBy/clocked/cost/aux k pivot l₁ mid l₂ b) (eq/ref h-eq) ⟩
+    ≡⟨ Eq.cong (λ e → bind cost e λ b → (1 , 1) ⊕ splitBy/clocked/cost/aux k pivot l₁ mid l₂ b) (Eq.trans (eq/ref h-eq) (step/ext (F bool) (ret b) q u)) ⟩
       (1 , 1) ⊕ splitBy/clocked/cost/aux k pivot l₁ mid l₂ b
     ≤⟨
       ⊕-monoʳ-≤ (1 , 1) (
