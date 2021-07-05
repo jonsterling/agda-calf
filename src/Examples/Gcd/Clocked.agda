@@ -52,7 +52,7 @@ gcd/clocked (suc k) (x , suc y , h) =
   gcd/clocked k (suc y , z , h2) }
 
 gcd/code : cmp (Π gcd/i λ _ → F nat)
-gcd/code i = gcd/clocked (gcd/cost (to-ext i)) i
+gcd/code i = gcd/clocked (gcd/cost i) i
 
 ub/step/suc : ∀ {A e} (p : ℕ) →
   ub A e p →
@@ -79,8 +79,8 @@ gcd/clocked≤gcd/cost (suc k) (x , suc y , h) rewrite gcd/cost-unfold-suc {x} {
   (gcd/cost (suc y , x % suc y , m%n<n' x _ tt))
   (gcd/clocked≤gcd/cost k (suc y , x % suc y , m%n<n' x _ tt))
 
-gcd : cmp (Ψ gcd/i (λ { _ → nat }) (gcd/cost ∘ to-ext))
+gcd : cmp (Ψ gcd/i (λ { _ → nat }) gcd/cost)
 gcd = gcd/code ,
       λ { (x , y , h) →
-          gcd/clocked≤gcd/cost (gcd/cost (to-ext (x , y , h))) ((x , y , h))
+          gcd/clocked≤gcd/cost (gcd/cost (x , y , h)) ((x , y , h))
       }

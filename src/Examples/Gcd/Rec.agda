@@ -101,7 +101,7 @@ gcd/rec zero (x , y , h) h1 with 1 ≤? y | 1 ≤? x
   case h1 of λ { () }
 gcd/rec (suc n) (x , y , h) h1 with y
 ... | zero = let g = n≤0⇒n≡0 h1 in case g of λ {()}
-... | suc y' rewrite gcd/cost-unfold {h = h} =
+... | suc y' rewrite gcd/cost-unfold-suc {x} {y'} {h} =
   let g : suc (gcd/cost (suc y' , x % suc y' , m%n<n x y')) ≥ 1 + (suc n)
       g = h1 in
   let g1 = +-cancelˡ-≤ 1 g in
@@ -137,5 +137,5 @@ gcd/cost/closed/ub i@(x , y , h) =
       g1 = fib-mono-< {1 + fib⁻¹ x} {2 + fib⁻¹ x} (+-monoˡ-< (fib⁻¹ x) (s≤s (s≤s z≤n))) in
   (<⇒≤ (gcd/cost/bound _ i (<-transˡ g g1) (<-trans h g)))
 
-gcd/closed : cmp (Ψ gcd/i (λ { _ → nat }) (gcd/cost/closed ∘ to-ext))
-gcd/closed = Ψ/relax gcd/i (const nat) (λ i → gcd/cost/closed/ub (to-ext i)) Clocked.gcd
+gcd/closed : cmp (Ψ gcd/i (λ { _ → nat }) gcd/cost/closed)
+gcd/closed = Ψ/relax gcd/i (const nat) (λ i → gcd/cost/closed/ub i) Clocked.gcd
