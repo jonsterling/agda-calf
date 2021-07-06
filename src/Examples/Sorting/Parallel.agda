@@ -1158,7 +1158,9 @@ module MergeSortPar (M : Comparable) where
         bind cost (mid ≤ᵇ pivot) λ b → (1 , 1) ⊕ splitBy/clocked/cost/aux k pivot l₁ mid l₂ b)
     ≡⟨ ⊕-identityˡ _ ⟩
       (bind cost (mid ≤ᵇ pivot) λ b → (1 , 1) ⊕ splitBy/clocked/cost/aux k pivot l₁ mid l₂ b)
-    ≡⟨ Eq.cong (λ e → bind cost e λ b → (1 , 1) ⊕ splitBy/clocked/cost/aux k pivot l₁ mid l₂ b) (Eq.trans (eq/ref h-eq) (step/ext (F bool) (ret b) q u)) ⟩
+    ≡⟨ Eq.cong (λ e → bind cost e λ b → (1 , 1) ⊕ splitBy/clocked/cost/aux k pivot l₁ mid l₂ b) (eq/ref h-eq) ⟩
+      step cost q ((1 , 1) ⊕ splitBy/clocked/cost/aux k pivot l₁ mid l₂ b)
+    ≡⟨ step/ext cost _ q u ⟩
       (1 , 1) ⊕ splitBy/clocked/cost/aux k pivot l₁ mid l₂ b
     ≤⟨
       ⊕-monoʳ-≤ (1 , 1) (
