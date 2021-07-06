@@ -11,7 +11,6 @@ open import Calf.Types.Nat as Nat
 open import Examples.Gcd.Euclid
 open import Examples.Gcd.Clocked as Clocked
 
-open import Data.Nat.GCD
 open import Data.Nat.DivMod
 open import Data.Nat
 open import Data.Nat.Induction
@@ -87,10 +86,10 @@ fib-mono-< {suc (suc x)} {suc (suc y)} (s≤s (s≤s h)) =
 -- test : ℕ
 -- test = gcd/cost (7 , 4 , s≤s (s≤s (s≤s (s≤s (s≤s z≤n)))))
 
-gcd/rec : ∀ (n : ℕ) (i@(x , y , h) : m>n) →
+gcd/fib : ∀ (n : ℕ) (i@(x , y , h) : m>n) →
           gcd/cost i ≥ 1 + n  →
           Σ (x ≥ fib (2 + n)) λ _ → (y ≥ fib (1 + n))
-gcd/rec zero (x , y , h) h1 with 1 ≤? y | 1 ≤? x
+gcd/fib zero (x , y , h) h1 with 1 ≤? y | 1 ≤? x
 ... | (true because (ofʸ py)) | (true because (ofʸ px)) = px , py
 ... | (true because _) | (false because (ofⁿ px)) =
   let g = ≰⇒> px in
@@ -99,13 +98,13 @@ gcd/rec zero (x , y , h) h1 with 1 ≤? y | 1 ≤? x
   case g2 of λ { () }
 ... | (false because (ofⁿ py)) | _ rewrite (n<1⇒n≡0 (≰⇒> py)) =
   case h1 of λ { () }
-gcd/rec (suc n) (x , y , h) h1 with y
+gcd/fib (suc n) (x , y , h) h1 with y
 ... | zero = let g = n≤0⇒n≡0 h1 in case g of λ {()}
 ... | suc y' rewrite gcd/cost-unfold-suc {x} {y'} {h} =
   let g : suc (gcd/cost (suc y' , x % suc y' , m%n<n x y')) ≥ 1 + (suc n)
       g = h1 in
   let g1 = +-cancelˡ-≤ 1 g in
-  let (r1 , r2) = gcd/rec n (suc y' , x % suc y' , m%n<n x y') g1 in
+  let (r1 , r2) = gcd/fib n (suc y' , x % suc y' , m%n<n x y') g1 in
   let r1' : fib n + fib (suc n) ≤ suc y'
       r1' = P.subst (λ n → n ≤ suc y') (+-comm (fib (suc n)) (fib n)) r1 in
   (let e1 = m≡m%n+[m/n]*n x y' in
@@ -124,18 +123,18 @@ gcd/rec (suc n) (x , y , h) h1 with y
 gcd/cost/bound : ∀ (n : ℕ) (i@(x , y , h) : m>n) →
                 x < fib (2 + n) → y < (fib (1 + n)) →
                 gcd/cost i < 1 + n
-gcd/cost/bound n i h1 h2 = ≰⇒> (contraposition (gcd/rec n i) (λ { (g1 , g2) → (<⇒≱ h1) g1}))
+gcd/cost/bound n i h1 h2 = ≰⇒> (contraposition (gcd/fib n i) (λ { (g1 , g2) → (<⇒≱ h1) g1}))
 
 gcd/cost/closed : m>n → ℕ
 gcd/cost/closed i@(x , y , h) = 1 + fib⁻¹ x
 
-gcd/cost/closed/ub : ∀ (i@(x , y , h) : m>n) → gcd/cost i ≤ gcd/cost/closed i
-gcd/cost/closed/ub i@(x , y , h) =
+gcd/cost≤gcd/cost/closed : ∀ (i@(x , y , h) : m>n) → gcd/cost i ≤ gcd/cost/closed i
+gcd/cost≤gcd/cost/closed i@(x , y , h) =
   let g : x < fib (1 + fib⁻¹ x)
       g = fib-fib⁻¹ x .proj₂ in
   let g1 : fib (1 + fib⁻¹ x) ≤ fib (2 + fib⁻¹ x)
       g1 = fib-mono-< {1 + fib⁻¹ x} {2 + fib⁻¹ x} (+-monoˡ-< (fib⁻¹ x) (s≤s (s≤s z≤n))) in
   (<⇒≤ (gcd/cost/bound _ i (<-transˡ g g1) (<-trans h g)))
 
-gcd/closed : cmp (Ψ gcd/i (λ { _ → nat }) gcd/cost/closed)
-gcd/closed = Ψ/relax gcd/i (const nat) (λ i → gcd/cost/closed/ub i) Clocked.gcd
+gcd≤gcd/cost/closed : ∀ i → ub nat (gcd i) (gcd/cost/closed i)
+gcd≤gcd/cost/closed i = ub/relax (λ _ → gcd/cost≤gcd/cost/closed i) (gcd≤gcd/cost i)

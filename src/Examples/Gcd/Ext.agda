@@ -11,7 +11,6 @@ open import Calf.Types.Nat as Nat
 open import Examples.Gcd.Euclid
 open import Examples.Gcd.Clocked
 
-open import Data.Nat.GCD
 open import Data.Nat.DivMod
 open import Data.Nat
 open import Data.Nat.Induction
@@ -60,13 +59,13 @@ gcd/clocked≡spec/suc (suc k) x y h h1 u =
   ∎
   where open ≡-Reasoning
 
-gcd/code≡spec/zero : ∀ x h → ◯ (gcd/code (x , 0 , h) ≡ ret {nat} x)
-gcd/code≡spec/zero x h = gcd/clocked≡spec/zero (gcd/cost (x , 0 , h)) x h ≤-refl
+gcd≡spec/zero : ∀ x h → ◯ (gcd (x , 0 , h) ≡ ret {nat} x)
+gcd≡spec/zero x h = gcd/clocked≡spec/zero (gcd/cost (x , 0 , h)) x h ≤-refl
 
-gcd/code/clocked≡spec/suc : ∀ x y h → ◯ (gcd/code (x , suc y , h) ≡ gcd/code (suc y , x % suc y , m%n<n x y))
-gcd/code/clocked≡spec/suc x y h u =
+gcd≡spec/suc : ∀ x y h → ◯ (gcd (x , suc y , h) ≡ gcd (suc y , x % suc y , m%n<n x y))
+gcd≡spec/suc x y h u =
   begin
-    gcd/code (x , suc y , h) ≡⟨ gcd/clocked≡spec/suc (gcd/cost (x , suc y , h)) x y h ≤-refl u ⟩
+    gcd (x , suc y , h) ≡⟨ gcd/clocked≡spec/suc (gcd/cost (x , suc y , h)) x y h ≤-refl u ⟩
     gcd/clocked (gcd/cost (x , suc y , h)) (suc y , x % suc y , m%n<n x y) ≡⟨
       cong (λ k → gcd/clocked k (suc y , x % suc y , m%n<n x y))
       (gcd/cost-unfold-suc {x} {y} {h}) ⟩
