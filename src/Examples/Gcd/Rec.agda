@@ -28,9 +28,6 @@ open import Relation.Nullary
 open import Relation.Nullary.Negation
 open import Relation.Binary
 
-open import Data.Nat.Solver using (module +-*-Solver)
-open +-*-Solver using (solve; _:*_; _:+_; con; var; _:=_)
-
 fib : ℕ → ℕ
 fib 0 = 0
 fib 1 = 1
