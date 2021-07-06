@@ -5,7 +5,7 @@ module Examples.Id where
 open import Calf.CostMonoids using (ℕ-CostMonoid)
 
 open import Calf ℕ-CostMonoid
-open import Calf.Types.Nat using (nat)
+open import Calf.Types.Nat
 
 open import Data.Nat
 open import Data.Nat.Properties

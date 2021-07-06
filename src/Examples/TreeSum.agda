@@ -10,14 +10,12 @@ open ParCostMonoid parCostMonoid
 
 open import Calf costMonoid
 open import Calf.ParMetalanguage parCostMonoid
+open import Calf.Types.Nat
 
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning)
 open import Data.Nat as Nat
 open import Data.Nat.Properties as N using (module ≤-Reasoning)
 open import Data.Product
-
-nat : tp pos
-nat = U (meta ℕ)
 
 add : cmp (Π nat λ _ → Π nat λ _ → F nat)
 add m n = step (F nat) (1 , 1) (ret (m + n))
@@ -70,7 +68,7 @@ sum/cost≡sum/cost/closed (node t₁ t₂) =
   ∎
     where open ≡-Reasoning
 
-sum≤sum/cost : ∀ t → ub (U (meta ℕ)) (sum t) (sum/cost t)
+sum≤sum/cost : ∀ t → ub nat (sum t) (sum/cost t)
 sum≤sum/cost (leaf x)     = ub/ret
 sum≤sum/cost (node t₁ t₂) =
   ub/bind/const (sum/cost t₁ ⊗ sum/cost t₂) (1 , 1) (ub/par (sum≤sum/cost t₁) (sum≤sum/cost t₂)) (λ (v₁ , v₂) → ub/add v₁ v₂)
