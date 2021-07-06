@@ -33,6 +33,3 @@ postulate
   bind/step : ∀ {A} {X} {e f n} → bind {A} X (step (F A) n e) f ≡ step X n (bind {A} X e f)
   dbind/step : ∀ {A} {X : val A → tp neg} {e f n} → dbind {A} X (step (F A) n e) f ≡ step (tbind {A} e X) n (dbind {A} X e f)
   {-# REWRITE bind/step dbind/step #-}
-
-  meta/step : ∀ {A n} → (e : cmp (meta A)) → step (meta A) n e ≡ e
-  {-# REWRITE meta/step #-}
