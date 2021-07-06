@@ -17,6 +17,7 @@ open ParCostMonoid parCostMonoid
 open import Calf costMonoid
 open import Calf.ParMetalanguage parCostMonoid
 open import Calf.Types.Bool
+open import Calf.Types.Nat
 open import Calf.Types.List as List
 
 open import Relation.Nullary
@@ -43,7 +44,7 @@ record Comparable : Set₁ where
 
 NatComparable : Comparable
 NatComparable = record
-  { A = U (meta ℕ)
+  { A = nat
   ; _≤_ = _≤_
   ; _≤ᵇ_ = λ x y → step (F bool) (1 , 1) (ret (x ≤ᵇ y))
   ; ≤ᵇ-reflects-≤ = reflects
@@ -309,7 +310,7 @@ module InsertionSort (M : Comparable) where
 module Ex/InsertionSort where
   module Sort = InsertionSort NatComparable
 
-  list' = list (U (meta ℕ))
+  list' = list nat
 
   ex/insert : cmp (F list')
   ex/insert = Sort.insert 3 (1 ∷ 2 ∷ 4 ∷ [])
@@ -389,7 +390,7 @@ module MergeSort (M : Comparable) where
 
   pair = Σ++ (list A) λ _ → (list A)
 
-  split/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → F pair)
+  split/clocked : cmp (Π nat λ _ → Π (list A) λ _ → F pair)
   split/clocked zero    l        = ret ([] , l)
   split/clocked (suc k) []       = ret ([] , [])
   split/clocked (suc k) (x ∷ xs) = bind (F pair) (split/clocked k xs) λ (l₁ , l₂) → ret (x ∷ l₁ , l₂)
@@ -401,7 +402,7 @@ module MergeSort (M : Comparable) where
     let (l₁ , l₂ , ≡ , h₁ , h₂ , ↭) = split/clocked/correct k k' xs (N.suc-injective h) u in
     x ∷ l₁ , l₂ , Eq.cong (λ e → bind (F pair) e _) ≡ , Eq.cong suc h₁ , h₂ , prep x ↭
 
-  split/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
+  split/clocked/cost : cmp (Π nat λ _ → Π (list A) λ _ → cost)
   split/clocked/cost _ _ = 𝟘
 
   split/clocked≤split/clocked/cost : ∀ k l → ub pair (split/clocked k l) (split/clocked/cost k l)
@@ -422,7 +423,7 @@ module MergeSort (M : Comparable) where
   split≤split/cost : ∀ l → ub pair (split l) (split/cost l)
   split≤split/cost l = split/clocked≤split/clocked/cost ⌊ length l /2⌋ l
 
-  merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F (list A))
+  merge/clocked : cmp (Π nat λ _ → Π pair λ _ → F (list A))
   merge/clocked zero    (l₁     , l₂    ) = ret (l₁ ++ l₂)
   merge/clocked (suc k) ([]     , l₂    ) = ret l₂
   merge/clocked (suc k) (x ∷ xs , []    ) = ret (x ∷ xs)
@@ -482,7 +483,7 @@ module MergeSort (M : Comparable) where
       ∎
     ) , prep x ↭ , All-resp-↭ (↭) (++⁺-All h₁ (p ∷ ≤-≤* p h₂)) ∷ sorted
 
-  merge/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → cost)
+  merge/clocked/cost : cmp (Π nat λ _ → Π pair λ _ → cost)
   merge/clocked/cost k _ = k , k
 
   merge/clocked≤merge/clocked/cost : ∀ k p → ub (list A) (merge/clocked k p) (merge/clocked/cost k p)
@@ -507,7 +508,7 @@ module MergeSort (M : Comparable) where
   merge≤merge/cost : ∀ p → ub (list A) (merge p) (merge/cost p)
   merge≤merge/cost (l₁ , l₂) = merge/clocked≤merge/clocked/cost (length l₁ + length l₂) (l₁ , l₂)
 
-  sort/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → F (list A))
+  sort/clocked : cmp (Π nat λ _ → Π (list A) λ _ → F (list A))
   sort/clocked zero    l = ret l
   sort/clocked (suc k) l =
     bind (F (list A)) (split l) λ (l₁ , l₂) →
@@ -567,14 +568,14 @@ module MergeSort (M : Comparable) where
       ∎
     ) , sorted
 
-  sort/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
+  sort/clocked/cost : cmp (Π nat λ _ → Π (list A) λ _ → cost)
   sort/clocked/cost zero    l = 𝟘
   sort/clocked/cost (suc k) l =
     bind cost (split l) λ (l₁ , l₂) → split/cost l ⊕
       bind cost (sort/clocked k l₁ & sort/clocked k l₂) λ (l₁' , l₂') → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
         merge/cost (l₁' , l₂')
 
-  sort/clocked/cost/closed : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
+  sort/clocked/cost/closed : cmp (Π nat λ _ → Π (list A) λ _ → cost)
   sort/clocked/cost/closed k l = k * length l , 2 * length l + k
 
   sort/clocked/cost≤sort/clocked/cost/closed : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → ◯ (sort/clocked/cost k l ≤ₚ sort/clocked/cost/closed k l)
@@ -754,7 +755,7 @@ module MergeSort (M : Comparable) where
 module Ex/MergeSort where
   module Sort = MergeSort NatComparable
 
-  list' = list (U (meta ℕ))
+  list' = list nat
 
   ex/split : cmp (F Sort.pair)
   ex/split = Sort.split (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ [])
@@ -903,7 +904,7 @@ module MergeSortPar (M : Comparable) where
 
   pair = Σ++ (list A) λ _ → (list A)
 
-  split/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → F pair)
+  split/clocked : cmp (Π nat λ _ → Π (list A) λ _ → F pair)
   split/clocked zero    l        = ret ([] , l)
   split/clocked (suc k) []       = ret ([] , [])
   split/clocked (suc k) (x ∷ xs) = bind (F pair) (split/clocked k xs) λ (l₁ , l₂) → ret (x ∷ l₁ , l₂)
@@ -915,7 +916,7 @@ module MergeSortPar (M : Comparable) where
     let (l₁ , l₂ , ≡ , h₁ , h₂ , ↭) = split/clocked/correct k k' xs (N.suc-injective h) u in
     x ∷ l₁ , l₂ , Eq.cong (λ e → bind (F pair) e _) ≡ , Eq.cong suc h₁ , h₂ , prep x ↭
 
-  split/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
+  split/clocked/cost : cmp (Π nat λ _ → Π (list A) λ _ → cost)
   split/clocked/cost _ _ = 𝟘
 
   split/clocked≤split/clocked/cost : ∀ k l → ub pair (split/clocked k l) (split/clocked/cost k l)
@@ -938,7 +939,7 @@ module MergeSortPar (M : Comparable) where
 
   triple = Σ++ (list A) λ _ → Σ++ A λ _ → (list A)
 
-  splitMid/clocked : cmp (Π (U (meta ℕ)) λ k → Π (list A) λ l → Π (U (meta (k Nat.< length l))) λ _ → F triple)
+  splitMid/clocked : cmp (Π nat λ k → Π (list A) λ l → Π (U (meta (k Nat.< length l))) λ _ → F triple)
   splitMid/clocked zero    (x ∷ xs) (s≤s h) = ret ([] , x , xs)
   splitMid/clocked (suc k) (x ∷ xs) (s≤s h) =
     bind (F triple) (splitMid/clocked k xs h) λ (l₁ , mid , l₂) → ret ((x ∷ l₁) , mid , l₂)
@@ -950,7 +951,7 @@ module MergeSortPar (M : Comparable) where
     let (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) = splitMid/clocked/correct k k' xs h (N.suc-injective h-length) u in
     x ∷ l₁ , mid , l₂ , Eq.cong (λ e → bind (F triple) e _) ≡ , Eq.cong suc h₁ , h₂ , Eq.cong (x ∷_) ≡-↭
 
-  splitMid/clocked/cost : cmp (Π (U (meta ℕ)) λ k → Π (list A) λ l → Π (U (meta (k Nat.< length l))) λ _ → cost)
+  splitMid/clocked/cost : cmp (Π nat λ k → Π (list A) λ l → Π (U (meta (k Nat.< length l))) λ _ → cost)
   splitMid/clocked/cost _ _ _ = 𝟘
 
   splitMid/clocked≤splitMid/clocked/cost : ∀ k l h → ub triple (splitMid/clocked k l h) (splitMid/clocked/cost k l h)
@@ -998,8 +999,8 @@ module MergeSortPar (M : Comparable) where
   splitMid≤splitMid/cost : ∀ l h → ub triple (splitMid l h) (splitMid/cost l h)
   splitMid≤splitMid/cost (x ∷ xs) (s≤s h) = splitMid/clocked≤splitMid/clocked/cost ⌊ length (x ∷ xs) /2⌋ (x ∷ xs) (N.⌊n/2⌋<n _)
 
-  splitBy/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → Π A λ _ → F pair)
-  splitBy/clocked/aux : cmp (Π (U (meta ℕ)) λ _ → Π A λ _ → Π (list A) λ _ → Π A λ _ → Π (list A) λ _ → Π bool λ _ → F pair)
+  splitBy/clocked : cmp (Π nat λ _ → Π (list A) λ _ → Π A λ _ → F pair)
+  splitBy/clocked/aux : cmp (Π nat λ _ → Π A λ _ → Π (list A) λ _ → Π A λ _ → Π (list A) λ _ → Π bool λ _ → F pair)
 
   splitBy/clocked zero    l        pivot = ret ([] , l)
   splitBy/clocked (suc k) []       pivot = ret ([] , [])
@@ -1118,8 +1119,8 @@ module MergeSortPar (M : Comparable) where
       ∎
     )
 
-  splitBy/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → Π A λ _ → cost)
-  splitBy/clocked/cost/aux : cmp (Π (U (meta ℕ)) λ _ → Π A λ _ → Π (list A) λ _ → Π A λ _ → Π (list A) λ _ → Π bool λ _ → cost)
+  splitBy/clocked/cost : cmp (Π nat λ _ → Π (list A) λ _ → Π A λ _ → cost)
+  splitBy/clocked/cost/aux : cmp (Π nat λ _ → Π A λ _ → Π (list A) λ _ → Π A λ _ → Π (list A) λ _ → Π bool λ _ → cost)
 
   splitBy/clocked/cost zero    l        pivot = 𝟘
   splitBy/clocked/cost (suc k) []       pivot = 𝟘
@@ -1132,7 +1133,7 @@ module MergeSortPar (M : Comparable) where
   splitBy/clocked/cost/aux k pivot l₁ mid l₂ true  =
     bind cost (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) → splitBy/clocked/cost k l₂ pivot ⊕ 𝟘
 
-  splitBy/clocked/cost/closed : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → Π A λ _ → cost)
+  splitBy/clocked/cost/closed : cmp (Π nat λ _ → Π (list A) λ _ → Π A λ _ → cost)
   splitBy/clocked/cost/closed k _ _ = k , k
 
   splitBy/clocked/cost≤splitBy/clocked/cost/closed : ∀ k l pivot → ⌈log₂ suc (length l) ⌉ Nat.≤ k →
@@ -1238,7 +1239,7 @@ module MergeSortPar (M : Comparable) where
   splitBy≤splitBy/cost/closed : ∀ l pivot → ub pair (splitBy l pivot) (splitBy/cost/closed l pivot)
   splitBy≤splitBy/cost/closed l pivot = splitBy/clocked≤splitBy/clocked/cost/closed ⌈log₂ suc (length l) ⌉ l pivot N.≤-refl
 
-  merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F (list A))
+  merge/clocked : cmp (Π nat λ _ → Π pair λ _ → F (list A))
   merge/clocked zero    (l₁     , l₂) = ret (l₁ ++ l₂)
   merge/clocked (suc k) ([]     , l₂) = ret l₂
   merge/clocked (suc k) (x ∷ l₁ , l₂) =
@@ -1329,7 +1330,7 @@ module MergeSortPar (M : Comparable) where
         (All-resp-↭ ↭₁' (++⁺-All (split-sorted₁ l₁₁ (++⁻ˡ (l₁₁ ∷ʳ pivot) (Eq.subst Sorted (Eq.sym (++-assoc l₁₁ [ pivot ] l₁₂)) sorted₁))) h₂₁))
         (All-resp-↭ ↭₂' (++⁺-All (uncons₁ (++⁻ʳ l₁₁ sorted₁)) h₂₂))
 
-  merge/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → cost)
+  merge/clocked/cost : cmp (Π nat λ _ → Π pair λ _ → cost)
   merge/clocked/cost zero    (l₁     , l₂) = 𝟘
   merge/clocked/cost (suc k) ([]     , l₂) = 𝟘
   merge/clocked/cost (suc k) (x ∷ l₁ , l₂) =
@@ -1338,7 +1339,7 @@ module MergeSortPar (M : Comparable) where
         bind cost (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
           𝟘
 
-  merge/clocked/cost/closed : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → cost)
+  merge/clocked/cost/closed : cmp (Π nat λ _ → Π pair λ _ → cost)
   merge/clocked/cost/closed k (l₁ , l₂) = pred[2^ k ] * ⌈log₂ suc (length l₂) ⌉ , k * ⌈log₂ suc (length l₂) ⌉
 
   merge/clocked/cost≤merge/clocked/cost/closed : ∀ k l₁ l₂ → ⌈log₂ suc (length l₁) ⌉ Nat.≤ k →
@@ -1512,7 +1513,7 @@ module MergeSortPar (M : Comparable) where
   merge≤merge/cost/closed : ∀ l₁ l₂ → ub (list A) (merge (l₁ , l₂)) (merge/cost/closed (l₁ , l₂))
   merge≤merge/cost/closed l₁ l₂ = merge/clocked≤merge/clocked/cost/closed ⌈log₂ suc (length l₁) ⌉ l₁ l₂ N.≤-refl
 
-  sort/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → F (list A))
+  sort/clocked : cmp (Π nat λ _ → Π (list A) λ _ → F (list A))
   sort/clocked zero    l = ret l
   sort/clocked (suc k) l =
     bind (F (list A)) (split l) λ (l₁ , l₂) →
@@ -1574,14 +1575,14 @@ module MergeSortPar (M : Comparable) where
       ∎
     ) , sorted
 
-  sort/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
+  sort/clocked/cost : cmp (Π nat λ _ → Π (list A) λ _ → cost)
   sort/clocked/cost zero    l = 𝟘
   sort/clocked/cost (suc k) l =
     bind cost (split l) λ (l₁ , l₂) → split/cost l ⊕
       bind cost (sort/clocked k l₁ & sort/clocked k l₂) λ (l₁' , l₂') → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
         merge/cost/closed (l₁' , l₂')
 
-  sort/clocked/cost/closed : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
+  sort/clocked/cost/closed : cmp (Π nat λ _ → Π (list A) λ _ → cost)
   sort/clocked/cost/closed k l = k * length l * ⌈log₂ suc ⌈ length l /2⌉ ⌉ , k * ⌈log₂ suc ⌈ length l /2⌉ ⌉ ²
 
   sort/clocked/cost≤sort/clocked/cost/closed : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → ◯ (sort/clocked/cost k l ≤ₚ sort/clocked/cost/closed k l)
@@ -1802,7 +1803,7 @@ module MergeSortPar (M : Comparable) where
 module Ex/MergeSortPar where
   module Sort = MergeSortPar NatComparable
 
-  list' = list (U (meta ℕ))
+  list' = list nat
 
   ex/split : cmp (F Sort.pair)
   ex/split = Sort.split (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ [])

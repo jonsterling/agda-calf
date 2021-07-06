@@ -12,6 +12,7 @@ open CostMonoid costMonoid
 
 open import Calf costMonoid
 open import Calf.Types.Bool
+open import Calf.Types.Nat
 open import Calf.Types.List as List
 
 open import Relation.Nullary
@@ -38,7 +39,7 @@ record Comparable : Set₁ where
 
 NatComparable : Comparable
 NatComparable = record
-  { A = U (meta ℕ)
+  { A = nat
   ; _≤_ = _≤_
   ; _≤ᵇ_ = λ x y → step (F bool) 1 (ret (x ≤ᵇ y))
   ; ≤ᵇ-reflects-≤ = reflects
@@ -275,7 +276,7 @@ module InsertionSort (M : Comparable) where
 module Ex/InsertionSort where
   module Sort = InsertionSort NatComparable
 
-  list' = list (U (meta ℕ))
+  list' = list nat
 
   ex/insert : cmp (F list')
   ex/insert = Sort.insert 3 (1 ∷ 2 ∷ 4 ∷ [])
@@ -355,7 +356,7 @@ module MergeSort (M : Comparable) where
 
   pair = Σ++ (list A) λ _ → (list A)
 
-  split/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → F pair)
+  split/clocked : cmp (Π nat λ _ → Π (list A) λ _ → F pair)
   split/clocked zero    l        = ret ([] , l)
   split/clocked (suc k) []       = ret ([] , [])
   split/clocked (suc k) (x ∷ xs) = bind (F pair) (split/clocked k xs) λ (l₁ , l₂) → ret (x ∷ l₁ , l₂)
@@ -367,7 +368,7 @@ module MergeSort (M : Comparable) where
     let (l₁ , l₂ , ≡ , h₁ , h₂ , ↭) = split/clocked/correct k k' xs (N.suc-injective h) u in
     x ∷ l₁ , l₂ , Eq.cong (λ e → bind (F pair) e _) ≡ , Eq.cong suc h₁ , h₂ , prep x ↭
 
-  split/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
+  split/clocked/cost : cmp (Π nat λ _ → Π (list A) λ _ → cost)
   split/clocked/cost _ _ = zero
 
   split/clocked≤split/clocked/cost : ∀ k l → ub pair (split/clocked k l) (split/clocked/cost k l)
@@ -388,7 +389,7 @@ module MergeSort (M : Comparable) where
   split≤split/cost : ∀ l → ub pair (split l) (split/cost l)
   split≤split/cost l = split/clocked≤split/clocked/cost ⌊ length l /2⌋ l
 
-  merge/clocked : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → F (list A))
+  merge/clocked : cmp (Π nat λ _ → Π pair λ _ → F (list A))
   merge/clocked zero    (l₁     , l₂    ) = ret (l₁ ++ l₂)
   merge/clocked (suc k) ([]     , l₂    ) = ret l₂
   merge/clocked (suc k) (x ∷ xs , []    ) = ret (x ∷ xs)
@@ -448,7 +449,7 @@ module MergeSort (M : Comparable) where
       ∎
     ) , prep x ↭ , All-resp-↭ (↭) (++⁺-All h₁ (p ∷ ≤-≤* p h₂)) ∷ sorted
 
-  merge/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π pair λ _ → cost)
+  merge/clocked/cost : cmp (Π nat λ _ → Π pair λ _ → cost)
   merge/clocked/cost k _ = k
 
   merge/clocked≤merge/clocked/cost : ∀ k p → ub (list A) (merge/clocked k p) (merge/clocked/cost k p)
@@ -473,7 +474,7 @@ module MergeSort (M : Comparable) where
   merge≤merge/cost : ∀ p → ub (list A) (merge p) (merge/cost p)
   merge≤merge/cost (l₁ , l₂) = merge/clocked≤merge/clocked/cost (length l₁ + length l₂) (l₁ , l₂)
 
-  sort/clocked : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → F (list A))
+  sort/clocked : cmp (Π nat λ _ → Π (list A) λ _ → F (list A))
   sort/clocked zero    l = ret l
   sort/clocked (suc k) l =
     bind (F (list A)) (split l) λ (l₁ , l₂) →
@@ -542,7 +543,7 @@ module MergeSort (M : Comparable) where
       ∎
     ) , sorted
 
-  sort/clocked/cost : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
+  sort/clocked/cost : cmp (Π nat λ _ → Π (list A) λ _ → cost)
   sort/clocked/cost zero    l = zero
   sort/clocked/cost (suc k) l =
     bind cost (split l) λ (l₁ , l₂) → split/cost l +
@@ -550,7 +551,7 @@ module MergeSort (M : Comparable) where
         bind cost (sort/clocked k l₂) λ l₂' → sort/clocked/cost k l₂ +
           merge/cost (l₁' , l₂')
 
-  sort/clocked/cost/closed : cmp (Π (U (meta ℕ)) λ _ → Π (list A) λ _ → cost)
+  sort/clocked/cost/closed : cmp (Π nat λ _ → Π (list A) λ _ → cost)
   sort/clocked/cost/closed k l = k * length l
 
   sort/clocked/cost≡sort/clocked/cost/closed : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → ◯ (sort/clocked/cost k l ≡ sort/clocked/cost/closed k l)
@@ -697,7 +698,7 @@ module MergeSort (M : Comparable) where
 module Ex/MergeSort where
   module Sort = MergeSort NatComparable
 
-  list' = list (U (meta ℕ))
+  list' = list nat
 
   ex/split : cmp (F Sort.pair)
   ex/split = Sort.split (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ [])

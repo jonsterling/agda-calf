@@ -42,7 +42,7 @@ open import Axiom.UniquenessOfIdentityProofs.WithK using (uip)
    means finding a clock computation that is simpler to compute
    than the "good" upperbound. For gcd, one can reuse the argument as the clock (see Gcd-Ext.agda)
 -}
-gcd/clocked : cmp (Π (U (meta ℕ)) λ _ → Π gcd/i λ _ → F nat)
+gcd/clocked : cmp (Π nat λ _ → Π gcd/i λ _ → F nat)
 gcd/clocked zero (x , y , h) = ret x
 gcd/clocked (suc k) (x , 0 , h) =  ret {nat} x
 gcd/clocked (suc k) (x , suc y , h) =
