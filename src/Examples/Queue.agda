@@ -157,11 +157,8 @@ module FrontBack (nat : tp pos) where
   open CostList nat 1
   open Rev nat
 
-  private
-    L = list
-
   Q : tp pos
-  Q = Σ++ L λ _ → L
+  Q = Σ++ list λ _ → list
 
   emp : val Q
   emp = (nil , nil)
@@ -177,13 +174,13 @@ module FrontBack (nat : tp pos) where
 
   deq-tp = sum unit (Σ++ Q λ _ → nat)
 
-  deq/emp : cmp (Π L λ _ → F deq-tp)
+  deq/emp : cmp (Π list λ _ → F deq-tp)
   deq/emp l =
     list/match l (λ _ → F deq-tp)
       (ret (inj₁ triv))
       λ a l' → ret (inj₂ ((l' , nil) , a))
 
-  deq/emp/cost : cmp (Π L λ _ → cost)
+  deq/emp/cost : cmp (Π list λ _ → cost)
   deq/emp/cost l =
     list/match l (λ _ → cost)
       0
