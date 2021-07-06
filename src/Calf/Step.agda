@@ -12,11 +12,11 @@ open import Calf.Prelude
 open import Calf.Metalanguage
 open import Relation.Binary.PropositionalEquality
 
-cost : tp neg
+cost : tp pos
 cost = meta ℂ
 
 postulate
-  step : ∀ (B : tp neg) → cmp cost → cmp B → cmp B
+  step : ∀ (B : tp neg) → val cost → cmp B → cmp B
   step/id : ∀ {B : tp neg} {e : cmp B} →
     step B zero e ≡ e
   {-# REWRITE step/id #-}

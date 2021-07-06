@@ -7,7 +7,7 @@ open import Calf.Metalanguage
 open import Data.Nat as Nat using (ℕ)
 
 nat : tp pos
-nat = U (meta ℕ)
+nat = meta ℕ
 
 zero : val nat
 zero = Nat.zero

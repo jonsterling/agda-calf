@@ -8,4 +8,4 @@ open import Calf.Metalanguage
 open import Data.Bool public using (Bool; true; false)
 
 bool : tp pos
-bool = U (meta Bool)
+bool = meta Bool

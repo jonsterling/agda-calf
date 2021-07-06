@@ -12,13 +12,13 @@ open import Calf.Step costMonoid
 open import Calf.PhaseDistinction costMonoid
 open import Calf.Eq
 
-data ub (A : tp pos) : cmp (F A) → cmp cost → □ where
+data ub (A : tp pos) : cmp (F A) → val cost → □ where
   ub/intro : ∀ {e p q} (a : val A) →
     ◯ (q ≤ p) →
     cmp (F (eq (U(F A)) e (step (F A) q (ret {A} a)))) →
     ub A e p
 
-ub⁻ : (A : tp pos) → cmp (F A) → cmp cost → tp neg
+ub⁻ : (A : tp pos) → cmp (F A) → val cost → tp pos
 ub⁻ A e p = meta (ub A e p)
 
 ub/relax : ∀ {A e p p'} → ◯ (p ≤ p') → ub A e p → ub A e p'

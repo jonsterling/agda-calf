@@ -7,6 +7,5 @@ open import Calf.Metalanguage
 
 open import Data.Unit public using (⊤) renaming (tt to triv)
 
-
 unit : tp pos
-unit = U (meta ⊤)
+unit = meta ⊤
