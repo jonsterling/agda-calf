@@ -152,10 +152,10 @@ module Rev (A : tp pos) where
 
 
 -- Implement Queue with a pair of lists; (f , b) represents the queue f :: rev b.
-module FrontBack (nat : tp pos) where
+module FrontBack (A : tp pos) where
   -- For simplicity, we charge 1 step for each cons node destruction.
-  open CostList nat 1
-  open Rev nat
+  open CostList A 1
+  open Rev A
 
   Q : tp pos
   Q = Σ++ list λ _ → list
@@ -163,16 +163,16 @@ module FrontBack (nat : tp pos) where
   emp : val Q
   emp = (nil , nil)
 
-  enq : cmp (Π Q λ _ → Π nat λ _ → F Q)
+  enq : cmp (Π Q λ _ → Π A λ _ → F Q)
   enq (f , b) x = ret (f , cons x b)
 
-  enq/cost : cmp (Π Q λ _ → Π nat λ _ → cost)
+  enq/cost : cmp (Π Q λ _ → Π A λ _ → cost)
   enq/cost (f , b) x = 0
 
   enq≤enq/cost : ∀ q x → ub Q (enq q x) (enq/cost q x)
   enq≤enq/cost q x = ub/ret
 
-  deq-tp = sum unit (Σ++ Q λ _ → nat)
+  deq-tp = sum unit (Σ++ Q λ _ → A)
 
   deq/emp : cmp (Π list λ _ → F deq-tp)
   deq/emp l =
@@ -259,7 +259,7 @@ module FrontBack (nat : tp pos) where
   -- The goal is to bound the cost of a single-thread sequence of queue operations staring with an initial queue q0,
   -- where an operation is either an enqueue or a dequeue.
   data op : Set where
-    op/enq : (x : val nat) → op
+    op/enq : (x : val A) → op
     op/deq : op
 
   -- Potential function
@@ -272,7 +272,7 @@ module FrontBack (nat : tp pos) where
   _operate_ : op → val Q → cmp (F Q)
   (op/enq x) operate q = enq q x
   (op/deq) operate q =
-    bind (F Q) (deq q) λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s
+    bind (F Q) (deq q) λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s
     (λ _ → ret (nil , nil))
     (λ (q , x) → ret q))
 
@@ -328,13 +328,13 @@ module FrontBack (nat : tp pos) where
           ϕ
       ≡⟨⟩
         bind cost
-          (bind (F Q) (step (F deq-tp) 1 (ret (inj₂ ((l' , nil) , x')))) λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s
+          (bind (F Q) (step (F deq-tp) 1 (ret (inj₂ ((l' , nil) , x')))) λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s
             (λ _ → ret (nil , nil))
             (λ (q , x) → ret q)))
           ϕ
       ≡⟨⟩
         bind cost
-          (bind (F Q) (deq/emp (cons x' l')) λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s
+          (bind (F Q) (deq/emp (cons x' l')) λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s
             (λ _ → ret (nil , nil))
             (λ (q , x) → ret q)))
           ϕ
@@ -343,7 +343,7 @@ module FrontBack (nat : tp pos) where
           (λ e →
             bind cost
               (bind (F Q) e λ l' →
-                bind (F Q) (deq/emp l') λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s
+                bind (F Q) (deq/emp l') λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s
                   (λ _ → ret (nil , nil))
                   (λ (q , x) → ret q)))
               ϕ
@@ -352,13 +352,13 @@ module FrontBack (nat : tp pos) where
       ⟩
         bind cost
           (bind (F Q) (rev (cons a l)) λ l' →
-            bind (F Q) (deq/emp l') λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s
+            bind (F Q) (deq/emp l') λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s
               (λ _ → ret (nil , nil))
               (λ (q , x) → ret q)))
           ϕ
       ≡⟨⟩
         bind cost
-          (bind (F Q) (deq (nil , cons a l)) λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s
+          (bind (F Q) (deq (nil , cons a l)) λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s
             (λ _ → ret (nil , nil))
             (λ (q , x) → ret q)))
           ϕ
@@ -405,11 +405,11 @@ module FrontBack (nat : tp pos) where
   op≤cost : ∀ o q → ub Q (o operate q) (op/cost o q)
   op≤cost (op/enq x) q = enq≤enq/cost q x
   op≤cost op/deq q rewrite P.sym (+-identityʳ (op/cost (op/deq) q)) =
-    ub/bind/const {A = deq-tp} {e = deq q} {f = λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ (q , x) → ret q))}
+    ub/bind/const {A = deq-tp} {e = deq q} {f = λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ (q , x) → ret q))}
       (op/cost op/deq q) 0
       (ub/relax (λ u → ≤-reflexive (deq/cost≡cost/deq q u)) (deq≤deq/cost/closed q))
       λ a →
-        ub/sum/case/const/const unit ((Σ++ Q λ _ → nat)) (λ _ → Q) a ((λ _ → ret (nil , nil))) (λ (q , x) → ret q) 0
+        ub/sum/case/const/const unit ((Σ++ Q λ _ → A)) (λ _ → Q) a ((λ _ → ret (nil , nil))) (λ (q , x) → ret q) 0
           (λ _ → ub/ret)
           (λ _ → ub/ret)
 
