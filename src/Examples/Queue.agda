@@ -89,24 +89,42 @@ module Rev (A : tp pos) where
       λ x _ r → λ l' → r (cons x l')
 
   revAppend/lemma/cons : ∀ x xs l' → ◯ (∃ λ y → ∃ λ ys → (len ys ≡ len xs + len l') × revAppend (cons x xs) l' ≡ ret (cons y ys))
-  revAppend/lemma/cons x xs = {!   !}
-    -- list/ind xs (λ xs → meta (∀ x l' → ◯ (∃ λ y → ∃ λ ys → revAppend (cons x xs) l' ≡ ret (cons y ys))))
-    --   (λ x l' u → (x , l' , step/ext (F list) (ret (cons x l')) 1 u))
-    --   (λ x' xs' ih x l' u →
-    --     let (y , ys , ≡) = ih x' (cons x l') u in
-    --     y , ys , (
-    --       let open ≡-Reasoning in
-    --       begin
-    --         revAppend (cons x (cons x' xs')) l'
-    --       ≡⟨⟩
-    --         step (F list) 1 (revAppend (cons x' xs') (cons x l'))
-    --       ≡⟨ step/ext (F list) _ 1 u ⟩
-    --         revAppend (cons x' xs') (cons x l')
-    --       ≡⟨ (≡) ⟩
-    --         ret (cons y ys)
-    --       ∎
-    --     ))
-    --   x
+  revAppend/lemma/cons x xs =
+    list/ind xs (λ xs → meta (∀ x l' → ◯ (∃ λ y → ∃ λ ys → (len ys ≡ len xs + len l') × revAppend (cons x xs) l' ≡ ret (cons y ys))))
+      (λ x l' u → (x , l' , refl , step/ext (F list) (ret (cons x l')) 1 u))
+      (λ x' xs' ih x l' u →
+        let (y , ys , h , ≡) = ih x' (cons x l') u in
+        let open ≡-Reasoning in
+        y , ys , (
+          begin
+            len ys
+          ≡⟨ h ⟩
+            len xs' + len (cons x l')
+          ≡⟨⟩
+            len xs' + step (meta ℕ) 1 (suc (len l'))
+          ≡⟨ cong (len xs' +_) (step/ext (meta ℕ) (suc (len l')) 1 u) ⟩
+            len xs' + suc (len l')
+          ≡⟨ +-suc (len xs') (len l') ⟩
+            suc (len xs' + len l')
+          ≡⟨⟩
+            suc (len xs') + len l'
+          ≡˘⟨ cong (_+ len l') (step/ext (meta ℕ) (suc (len xs')) 1 u) ⟩
+            step (meta ℕ) 1 (suc (len xs')) + len l'
+          ≡⟨⟩
+            len (cons x' xs') + len l'
+          ∎
+        ) , (
+          begin
+            revAppend (cons x (cons x' xs')) l'
+          ≡⟨⟩
+            step (F list) 1 (revAppend (cons x' xs') (cons x l'))
+          ≡⟨ step/ext (F list) _ 1 u ⟩
+            revAppend (cons x' xs') (cons x l')
+          ≡⟨ (≡) ⟩
+            ret (cons y ys)
+          ∎
+        ))
+      x
 
   revAppend/cost : cmp (Π list λ _ → Π list λ _ → cost)
   revAppend/cost l l' = len l
@@ -357,25 +375,46 @@ module FrontBack (nat : tp pos) where
   op/cost (op/enq x) q = 0
   op/cost (op/deq) (f , b) = list/match f (λ _ → cost) (list/match b (λ _ → cost) 0 (λ _ b' → 2 + len b')) (λ _ _ → 1)
 
-  deq/cost≡cost/deq : ∀ q → deq/cost/closed q ≡ op/cost op/deq q
-  deq/cost≡cost/deq (f , b) =
-    P.cong (λ x → list/match f (λ _ → cost) x (λ _ _ → 1)) (list/match b
-    (λ b →
-      meta
-        (list/match b (λ _ → cost) 0 (λ _ b' → 1 + len b) ≡
-          list/match b (λ _ → cost) 0 (λ _ b' → 2 + len b')))
-      refl (λ a l → {! refl !}))
+  deq/cost≡cost/deq : ∀ q → ◯ (deq/cost/closed q ≡ op/cost op/deq q)
+  deq/cost≡cost/deq (f , b) u =
+    P.cong (λ x → list/match f (λ _ → cost) x (λ _ _ → 1)) (
+      list/match b
+        (λ b →
+          meta
+            (list/match b (λ _ → cost) 0 (λ _ b' → 1 + len b) ≡
+              list/match b (λ _ → cost) 0 (λ _ b' → 2 + len b')))
+        refl
+        (λ a l →
+          let open ≡-Reasoning in
+          begin
+            list/match (cons a l) (λ _ → cost) 0 (λ _ b' → 1 + len (cons a l))
+          ≡⟨⟩
+            step cost 1 (1 + len (cons a l))
+          ≡⟨ step/ext cost (1 + len (cons a l)) 1 u ⟩
+            1 + len (cons a l)
+          ≡⟨⟩
+            1 + step cost 1 (suc (len l))
+          ≡⟨ cong (1 +_) (step/ext cost (suc (len l)) 1 u) ⟩
+            2 + len l
+          ≡˘⟨ step/ext cost (2 + len l) 1 u ⟩
+            step cost 1 (2 + len l)
+          ≡⟨⟩
+            list/match (cons a l) (λ _ → cost) 0 (λ _ b' → 2 + len b')
+          ∎
+        )
+    )
 
   -- cost o q upperbounds the cost of o operate q.
   op≤cost : ∀ o q → ub Q (o operate q) (op/cost o q)
   op≤cost (op/enq x) q = enq≤enq/cost q x
-  op≤cost op/deq q rewrite P.sym (+-identityʳ (op/cost (op/deq) q)) = ub/bind/const {A = deq-tp} {e = deq q} {f = λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s
-    (λ _ → ret (nil , nil))
-    (λ (q , x) → ret q))} (op/cost op/deq q) 0
-    (P.subst (λ x → ub deq-tp (deq q) x) (deq/cost≡cost/deq q) (deq≤deq/cost/closed q))
-    λ a → ub/sum/case/const/const unit ((Σ++ Q λ _ → nat)) (λ _ → Q) a ((λ _ → ret (nil , nil))) (λ (q , x) → ret q) 0
-    (λ _ → ub/ret)
-    (λ _ → ub/ret)
+  op≤cost op/deq q rewrite P.sym (+-identityʳ (op/cost (op/deq) q)) =
+    ub/bind/const {A = deq-tp} {e = deq q} {f = λ s → (sum/case unit (Σ++ Q λ _ → nat) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ (q , x) → ret q))}
+      (op/cost op/deq q) 0
+      (ub/relax (λ u → ≤-reflexive (deq/cost≡cost/deq q u)) (deq≤deq/cost/closed q))
+      λ a →
+        ub/sum/case/const/const unit ((Σ++ Q λ _ → nat)) (λ _ → Q) a ((λ _ → ret (nil , nil))) (λ (q , x) → ret q) 0
+          (λ _ → ub/ret)
+          (λ _ → ub/ret)
 
   -- is/acost o k when for any state q, k suffices for the cost of o on q and the difference in the potential.
   is/acost :  op → ℕ → Set
@@ -507,19 +546,25 @@ module FrontBack (nat : tp pos) where
    where open IntP.≤-Reasoning
 
   -- Amortized cost for enq and deq on a front-back queue
-  enq/acost : ∀ x → is/acost (op/enq x) 2
-  enq/acost x (f , b)  =
-    {!   !}
-    -- begin
-    -- Int.0ℤ Int.+ ((len f + 2 * (1 + len b)) Int.⊖ (ϕ (f , b))) ≡⟨ IntP.+-identityˡ ((len f + 2 * (len (cons x b))) Int.⊖ (ϕ (f , b))) ⟩
-    -- len f + 2 * len (cons x b) Int.⊖ ϕ (f , b) ≡⟨ P.cong (λ x → (len f + x) Int.⊖ (ϕ (f , b))) (*-distribˡ-+ 2 1 (len b)) ⟩
-    -- len f + (2 * 1 + 2 * len b) Int.⊖ ϕ (f , b) ≡⟨ P.cong (λ x → (len f + x) Int.⊖ (ϕ (f , b)) ) (+-comm 2 (2 * len b)) ⟩
-    -- len f + (2 * len b + 2) Int.⊖ ϕ (f , b) ≡⟨ P.cong (λ x → x Int.⊖ (ϕ (f , b))) (P.sym (+-assoc (len f) (2 * len b) 2)) ⟩
-    -- len f + 2 * len b + 2 Int.⊖ ϕ (f , b) ≡⟨ P.cong (λ x → (len f + 2 * len b + 2) Int.⊖ x) (P.sym (+-identityʳ (ϕ (f , b)))) ⟩
-    -- len f + 2 * len b + 2 Int.⊖ (ϕ (f , b) + 0) ≡⟨ IntP.+-cancelˡ-⊖ (len f + 2 * len b) 2 0 ⟩
-    -- (Int.+ 2) ≤⟨ IntP.≤-refl ⟩
-    -- Int.+ 2
-    -- ∎
+  enq/acost : ∀ x → ◯ (is/acost (op/enq x) 2)
+  enq/acost x u (f , b) =
+    begin
+      (Int.+ (op/cost (op/enq x) (f , b))) Int.+ (((op/enq x) operateϕ (f , b)) Int.⊖ (ϕ (f , b)))
+    ≡⟨⟩
+      Int.0ℤ Int.+ ((len f + 2 * (1 + len b)) Int.⊖ (ϕ (f , b)))
+    ≡⟨ IntP.+-identityˡ ((len f + 2 * (1 + len b)) Int.⊖ (ϕ (f , b))) ⟩
+      len f + 2 * (1 + len b) Int.⊖ ϕ (f , b)
+    ≡⟨ P.cong (λ x → (len f + x) Int.⊖ (ϕ (f , b))) (*-distribˡ-+ 2 1 (len b)) ⟩
+      len f + (2 * 1 + 2 * len b) Int.⊖ ϕ (f , b)
+    ≡⟨ P.cong (λ x → (len f + x) Int.⊖ (ϕ (f , b)) ) (+-comm 2 (2 * len b)) ⟩
+      len f + (2 * len b + 2) Int.⊖ ϕ (f , b)
+    ≡⟨ P.cong (λ x → x Int.⊖ (ϕ (f , b))) (P.sym (+-assoc (len f) (2 * len b) 2)) ⟩
+      len f + 2 * len b + 2 Int.⊖ ϕ (f , b)
+    ≡⟨ P.cong (λ x → (len f + 2 * len b + 2) Int.⊖ x) (P.sym (+-identityʳ (ϕ (f , b)))) ⟩
+      len f + 2 * len b + 2 Int.⊖ (ϕ (f , b) + 0)
+    ≡⟨ IntP.+-cancelˡ-⊖ (len f + 2 * len b) 2 0 ⟩
+      Int.+ 2
+    ∎
     where open IntP.≤-Reasoning
 
   n+n≡2*n : ∀ n → n + n ≡ 2 * n
@@ -529,33 +574,59 @@ module FrontBack (nat : tp pos) where
     2 * n ∎
     where open ≡-Reasoning
 
-  deq/acost : is/acost op/deq 0
-  deq/acost (f , b) =
+  deq/acost : ◯ (is/acost op/deq 0)
+  deq/acost u (f , b) =
     list/match f (λ f → meta ((Int.+ (op/cost op/deq (f , b))) Int.+ ((op/deq operateϕ (f , b)) Int.⊖ (ϕ (f , b))) Int.≤ Int.0ℤ))
     (
     list/match b (λ b → meta ((Int.+ (op/cost op/deq (nil , b))) Int.+ ((op/deq operateϕ (nil , b)) Int.⊖ (ϕ (nil , b))) Int.≤ Int.0ℤ))
     IntP.≤-refl
     λ a b' →
-    {!   !}
-    -- begin
-    -- Int.+ (2 + len b') Int.+ (len b' Int.⊖ (2 * (1 + len b'))) ≡⟨ IntP.distribʳ-⊖-+-pos (2 + len b') (len b') (2 * (1 + len b')) ⟩
-    -- 2 + len b' + len b' Int.⊖ 2 * (1 + len b') ≡⟨ P.cong (λ x → x Int.⊖ 2 * (1 + len b')) (+-assoc 2 (len b') (len b')) ⟩
-    -- 2 + (len b' + len b') Int.⊖ 2 * (1 + len b') ≡⟨ P.cong (λ x → 2 + (len b'  + len b') Int.⊖ x) (*-distribˡ-+ 2 1 (len b')) ⟩
-    -- 2 + (len b' + len b') Int.⊖ (2 * 1 + 2 * len b') ≡⟨ P.cong (λ x → 2 + x Int.⊖ (2 + 2 * len b')) (n+n≡2*n (len b')) ⟩
-    -- 2 + 2 * len b' Int.⊖ (2 + 2 * len b') ≡⟨ IntP.n⊖n≡0 (2 + 2 * len b') ⟩
-    -- Int.0ℤ ≤⟨ IntP.≤-refl ⟩
-    -- Int.0ℤ
-    -- ∎
+      begin
+        (Int.+ (op/cost op/deq (nil , cons a b'))) Int.+ ((op/deq operateϕ (nil , cons a b')) Int.⊖ (ϕ (nil , cons a b')))
+      ≡⟨⟩
+        Int.+ (step cost 1 (2 + len b')) Int.+ (step cost 1 (len b') Int.⊖ (2 * (step cost 1 (1 + len b'))))
+      ≡⟨
+        cong₂ Int._+_
+          (cong Int.+_ (step/ext cost (2 + len b') 1 u))
+          (cong₂ Int._⊖_
+            (step/ext cost (len b') 1 u)
+            (cong (2 *_) (step/ext cost (1 + len b') 1 u))
+          )
+      ⟩
+        Int.+ (2 + len b') Int.+ (len b' Int.⊖ (2 * (1 + len b')))
+      ≡⟨ IntP.distribʳ-⊖-+-pos (2 + len b') (len b') (2 * (1 + len b')) ⟩
+        2 + len b' + len b' Int.⊖ 2 * (1 + len b')
+      ≡⟨ P.cong (λ x → x Int.⊖ 2 * (1 + len b')) (+-assoc 2 (len b') (len b')) ⟩
+        2 + (len b' + len b') Int.⊖ 2 * (1 + len b')
+      ≡⟨ P.cong (λ x → 2 + (len b'  + len b') Int.⊖ x) (*-distribˡ-+ 2 1 (len b')) ⟩
+        2 + (len b' + len b') Int.⊖ (2 * 1 + 2 * len b')
+      ≡⟨ P.cong (λ x → 2 + x Int.⊖ (2 + 2 * len b')) (n+n≡2*n (len b')) ⟩
+        2 + 2 * len b' Int.⊖ (2 + 2 * len b')
+      ≡⟨ IntP.n⊖n≡0 (2 + 2 * len b') ⟩
+        Int.0ℤ
+      ∎
     )
     λ a f' →
-    {!   !}
-    -- begin
-    -- Int.+ 1 Int.+ ((len f' + 2 * len b) Int.⊖ (1 + len f' + 2 * len b)) ≡⟨ IntP.distribʳ-⊖-+-pos 1 (len f' + 2 * len b) (1 + len f' + 2 * len b) ⟩
-    -- 1 + (len f' + 2 * len b) Int.⊖ (1 + len f' + 2 * len b) ≡⟨ P.cong (λ x → x Int.⊖ (1 + len f' + 2 * len b)) (P.sym (+-assoc 1 (len f') (2 * len b))) ⟩
-    -- 1 + len f' + 2 * len b Int.⊖ (1 + len f' + 2 * len b) ≡⟨ IntP.n⊖n≡0 (1 + len f' + 2 * len b) ⟩
-    -- Int.0ℤ ≤⟨ IntP.≤-refl ⟩
-    -- Int.0ℤ
-    -- ∎
+      begin
+        (Int.+ (op/cost op/deq (cons a f' , b))) Int.+ ((op/deq operateϕ (cons a f' , b)) Int.⊖ (ϕ (cons a f' , b)))
+      ≡⟨⟩
+        Int.+ (step cost 1 1) Int.+ (step cost 1 (len f' + 2 * len b) Int.⊖ (step cost 1 (1 + len f') + 2 * len b))
+      ≡⟨
+        cong₂ Int._+_
+          (cong Int.+_ (step/ext cost 1 1 u))
+          (cong₂ Int._⊖_
+            (step/ext cost (len f' + 2 * len b) 1 u)
+            (cong (_+ 2 * len b) (step/ext cost (1 + len f') 1 u))
+          )
+      ⟩
+        Int.+ 1 Int.+ ((len f' + 2 * len b) Int.⊖ (1 + len f' + 2 * len b))
+      ≡⟨ IntP.distribʳ-⊖-+-pos 1 (len f' + 2 * len b) (1 + len f' + 2 * len b) ⟩
+        1 + (len f' + 2 * len b) Int.⊖ (1 + len f' + 2 * len b)
+      ≡⟨ P.cong (λ x → x Int.⊖ (1 + len f' + 2 * len b)) (P.sym (+-assoc 1 (len f') (2 * len b))) ⟩
+        1 + len f' + 2 * len b Int.⊖ (1 + len f' + 2 * len b)
+      ≡⟨ IntP.n⊖n≡0 (1 + len f' + 2 * len b) ⟩
+        Int.0ℤ
+      ∎
     where open IntP.≤-Reasoning
 
   all2s : ℕ → List ℕ
@@ -572,15 +643,15 @@ module FrontBack (nat : tp pos) where
     ∎
    where open ≡-Reasoning
 
-  all2s/is/acost : ∀ l → Amortized l (all2s (length l))
-  all2s/is/acost [] = a/emp
-  all2s/is/acost ((op/enq x) ∷ os) = a/cons (op/enq x) 2 os (all2s (length os)) (enq/acost x) (all2s/is/acost os)
-  all2s/is/acost (op/deq ∷ os) = a/cons op/deq 2 os (all2s (length os)) (acost/weaken z≤n deq/acost) (all2s/is/acost os)
+  all2s/is/acost : ∀ l → ◯ (Amortized l (all2s (length l)))
+  all2s/is/acost [] u = a/emp
+  all2s/is/acost ((op/enq x) ∷ os) u = a/cons (op/enq x) 2 os (all2s (length os)) (enq/acost x u) (all2s/is/acost os u)
+  all2s/is/acost (op/deq ∷ os) u = a/cons op/deq 2 os (all2s (length os)) (acost/weaken z≤n (deq/acost u)) (all2s/is/acost os u)
 
   fb/amortized : ∀ q l → ◯ (Int.+ (cost/seq l q) Int.≤  Int.+ (ϕ q + 2 * length l))
   fb/amortized q l u =
     begin
-    Int.+ (cost/seq l q) ≤⟨ amortized≥cost q l (all2s (length l)) (all2s/is/acost l) u ⟩
+    Int.+ (cost/seq l q) ≤⟨ amortized≥cost q l (all2s (length l)) (all2s/is/acost l u) u ⟩
     Int.+ (ϕ q + lsum (all2s (length l))) ≡⟨ P.cong (λ x → Int.+ (ϕ q + x)) (sum2s (length l)) ⟩
     Int.+ (ϕ q + 2 * length l) ≤⟨ IntP.≤-refl ⟩
     Int.+ (ϕ q + 2 * length l)
