@@ -23,18 +23,18 @@ postulate
   -- sadly the above cannot be made an Agda rewrite rule
 
 
-unique : ∀ {A} → (a : val (● A)) → (u : ext) → a ≡ * u
+unique : ∀ {A} → (a : val (● A)) → (u : ext) → a ≡ ∗ u
 unique {A} a u =
   eq/ref
-  (●/ind {A} a (λ a → F (eq (● A) a (* u)))
-  (λ a → ret (eq/intro (η≡* a u)))
+  (●/ind {A} a (λ a → F (eq (● A) a (∗ u)))
+  (λ a → ret (eq/intro (η≡∗ a u)))
   (λ u → ret (eq/intro refl))
   (λ a u → eq/uni _ _ u))
 
 noninterference : ∀ {A B} (f : val (● A) → val (◯⁺ B)) →
   Σ (val (◯⁺ B)) λ b → f ≡ λ _ → b
 noninterference f =
-  (λ u → f (* u) u) , funext (λ a → funext/Ω (λ u →
+  (λ u → f (∗ u) u) , funext (λ a → funext/Ω (λ u →
     P.cong (λ a → f a u) (unique a u)))
 
 optimization : ∀ {C B : tp pos} {A : val C → tp pos}
