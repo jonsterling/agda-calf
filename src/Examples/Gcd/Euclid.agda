@@ -79,13 +79,6 @@ module irr
                                     P.cong-app (P.cong-app g y') h'
                                   }))
 
-ub/bind/suc : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
-  (p : ℕ) →
-  ub A e 1 →
-  ((a : val A) → ub B (f a) p) →
-  ub B (bind {A} (F B) e f) (suc p)
-ub/bind/suc p h1 h2 = ub/bind/const' 1 p refl h1 h2
-
 gcd/cost-unfold-zero : ∀ {x h} → gcd/cost (x , 0 , h) ≡ 0
 gcd/cost-unfold-zero = refl
 
