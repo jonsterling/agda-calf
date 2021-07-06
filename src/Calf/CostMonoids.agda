@@ -91,11 +91,11 @@ ResourceMonoid = record
           { isEquivalence = isEquivalence
           ; ∙-cong = λ { refl refl → refl }
           }
-        ; assoc = {!   !}
+        ; assoc = assoc
         }
       ; identity = identityˡ , identityʳ
       }
-    ; isCancellative = record { ∙-cancel-≡ = ∙-cancelˡ-≡ , ∙-cancelʳ-≡ }
+    ; isCancellative = record { ∙-cancel-≡ = {!   !} }  -- not true!
     ; isPreorder = record
       { isEquivalence = isEquivalence
       ; reflexive = λ { refl → (≤-refl , ≤-refl) }
@@ -122,6 +122,57 @@ ResourceMonoid = record
     _≤ᵣ_ : ℕ × ℕ → ℕ × ℕ → Set
     (p , p') ≤ᵣ (q , q') = (p ≤ q) × (q' ≤ p')
 
+    m≤n⇒m≤n+o : ∀ {m n o} → m ≤ n → m ≤ n + o
+    m≤n⇒m≤n+o {m} {n} {o} h =
+      begin
+        m
+      ≡˘⟨ +-identityʳ m ⟩
+        m + 0
+      ≤⟨ +-mono-≤ h z≤n ⟩
+        n + o
+      ∎
+        where open ≤-Reasoning
+
+    assoc : Associative _·_
+    assoc (p , p') (q , q') (r , r') with q' ≤? r
+    assoc (p , p') (q , q') (r , r') | no ¬h₁ with p' ≤? q
+    assoc (p , p') (q , q') (r , r') | no ¬h₁ | no ¬h₂ with q' + (p' ∸ q) ≤? r
+    assoc (p , p') (q , q') (r , r') | no ¬h₁ | no ¬h₂ | no ¬h₃ =
+      let h₁ = ≰⇒≥ ¬h₁ in
+      cong (p ,_)
+        (begin
+          r' + (q' + (p' ∸ q) ∸ r)
+        ≡⟨ cong (r' +_) (+-∸-comm (p' ∸ q) h₁) ⟩
+          r' + ((q' ∸ r) + (p' ∸ q))
+        ≡˘⟨ +-assoc r' (q' ∸ r) (p' ∸ q) ⟩
+          r' + (q' ∸ r) + (p' ∸ q)
+        ∎)
+          where open ≡-Reasoning
+    assoc (p , p') (q , q') (r , r') | no ¬h₁ | no ¬h₂ | yes h₃ =
+      let h₁ = ≰⇒≥ ¬h₁ in
+      cong₂ _,_
+        (begin
+          p + (r ∸ (q' + (p' ∸ q)))
+        ≡⟨ cong (p +_) (subst (λ n → (r ∸ n) ≡ 0) (≤-antisym (m≤n⇒m≤n+o h₁) h₃) (n∸n≡0 r)) ⟩
+          p + 0
+        ≡⟨ +-identityʳ p ⟩
+          p
+        ∎)
+        (begin
+          r'
+        ≡˘⟨ +-identityʳ r' ⟩
+          r' + 0
+        ≡˘⟨ cong (r' +_) (subst (λ n → (n ∸ r) ≡ 0) (≤-antisym (m≤n⇒m≤n+o h₁) h₃) (n∸n≡0 r)) ⟩
+          r' + (q' + (p' ∸ q) ∸ r)
+        ≡⟨ cong (r' +_) (+-∸-comm (p' ∸ q) h₁) ⟩
+          r' + ((q' ∸ r) + (p' ∸ q))
+        ≡˘⟨ +-assoc r' (q' ∸ r) (p' ∸ q) ⟩
+          r' + (q' ∸ r) + (p' ∸ q)
+        ∎)
+          where open ≡-Reasoning
+    assoc (p , p') (q , q') (r , r') | no ¬h₁ | yes h₂ = {!   !}
+    assoc (p , p') (q , q') (r , r') | yes h₁ = {!   !}
+
     identityˡ : LeftIdentity (0 , 0) _·_
     identityˡ (q , q') = cong₂ _,_ (+-identityˡ q) (+-identityˡ q')
 
@@ -130,38 +181,65 @@ ResourceMonoid = record
     ... | no ¬h = refl
     ... | yes z≤n = cong₂ _,_ (+-identityʳ q) refl
 
-    ∙-cancelˡ-≡ : LeftCancellative _·_
-    ∙-cancelˡ-≡ (p , p') {q , q'} {r , r'} h with p' ≤? q | p' ≤? r
-    ... | no ¬p₁ | no ¬p₂ = {!   !}
-    ... | no ¬p₁ | yes p₂ = {!   !}
-    ... | yes p₁ | no ¬p₂ =
-      let p₂ = ≰⇒≥ ¬p₂
-
-          h₁ : p' ≡ q
-          h₁ = ≤-antisym p₁ (m∸n≡0⇒m≤n (+-cancelˡ-≡ p (trans (cong proj₁ h) (sym (+-identityʳ p)))))
-
-          h₃ : q' ≡ r'
-          h₃ = {!   !}
-
-          h₂ : p' ≡ r
-          h₂ = ≤-antisym (m∸n≡0⇒m≤n (+-cancelˡ-≡ r' (trans (sym (cong proj₂ h)) (trans h₃ (sym (+-identityʳ r')))))) p₂
-      in
-      cong₂ _,_
-        (trans (sym h₁) h₂)
-        h₃
-    ... | yes p₁ | yes p₂ =
-      cong₂ _,_
-        (∸-cancelʳ-≡ p₁ p₂ (+-cancelˡ-≡ p (cong proj₁ h)))
-        (cong proj₂ h)
-
-    ∙-cancelʳ-≡ : RightCancellative _·_
-    ∙-cancelʳ-≡ = {!   !}
-
     ∙-mono-≤ᵣ : _·_ Preserves₂ _≤ᵣ_ ⟶ _≤ᵣ_ ⟶ _≤ᵣ_
     ∙-mono-≤ᵣ {p , p'} {q , q'} {r , r'} {s , s'} (h₁ , h₂) (h₁' , h₂') with p' ≤? r | q' ≤? s
-    ... | no ¬p₁ | no ¬p₂ = {!   !}
-    ... | no ¬p₁ | yes p₂ = {!   !}
-    ... | yes p₁ | no ¬p₂ = {!   !}
+    ... | no ¬p₁ | no ¬p₂ = h₁ , +-mono-≤ h₂' (∸-mono h₂ h₁')
+    ... | no ¬p₁ | yes p₂ =
+      let p₁ = ≰⇒≥ ¬p₁ in
+      (
+        begin
+          p
+        ≤⟨ h₁ ⟩
+          q
+        ≡˘⟨ +-identityʳ q ⟩
+          q + 0
+        ≡˘⟨ cong (q +_) (m≤n⇒m∸n≡0 p₁) ⟩
+          q + (r ∸ p')
+        ≤⟨ +-monoʳ-≤ q (∸-mono h₁' h₂) ⟩
+          q + (s ∸ q')
+        ∎
+      ) , (
+        begin
+          s'
+        ≤⟨ h₂' ⟩
+          r'
+        ≡˘⟨ +-identityʳ r' ⟩
+          r' + 0
+        ≡˘⟨ cong (r' +_) (m≤n⇒m∸n≡0 p₂) ⟩
+          r' + (q' ∸ s)
+        ≤⟨ +-monoʳ-≤ r' (∸-mono h₂ h₁') ⟩
+          r' + (p' ∸ r)
+        ∎
+      )
+        where open ≤-Reasoning
+    ... | yes p₁ | no ¬p₂ =
+      let p₂ = ≰⇒≥ ¬p₂ in
+      (
+        begin
+          p + (r ∸ p')
+        ≤⟨ +-monoʳ-≤ p (∸-mono h₁' h₂) ⟩
+          p + (s ∸ q')
+        ≡⟨ cong (p +_) (m≤n⇒m∸n≡0 p₂) ⟩
+          p + 0
+        ≡⟨ +-identityʳ p ⟩
+          p
+        ≤⟨ h₁ ⟩
+          q
+        ∎
+      ) , (
+        begin
+          s' + (q' ∸ s)
+        ≤⟨ +-monoʳ-≤ s' (∸-mono h₂ h₁') ⟩
+          s' + (p' ∸ r)
+        ≡⟨ cong (s' +_) (m≤n⇒m∸n≡0 p₁) ⟩
+          s' + 0
+        ≡⟨ +-identityʳ s' ⟩
+          s'
+        ≤⟨ h₂' ⟩
+          r'
+        ∎
+      )
+        where open ≤-Reasoning
     ... | yes p₁ | yes p₂ = +-mono-≤ h₁ (∸-mono h₁' h₂) , h₂'
 
 ℕ-Work-ParCostMonoid : ParCostMonoid
