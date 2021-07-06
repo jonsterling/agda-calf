@@ -8,10 +8,11 @@ open CostMonoid costMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage
-open import Calf.Step costMonoid
-open import Calf.PhaseDistinction costMonoid
-open import Calf.Upper costMonoid
+open import Calf.PhaseDistinction
 open import Calf.Eq
+open import Calf.Step costMonoid
+open import Calf.ExtensionalFragment costMonoid
+open import Calf.Upper costMonoid
 
 open import Calf.Types.Sum
 
