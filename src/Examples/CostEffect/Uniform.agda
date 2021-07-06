@@ -8,7 +8,8 @@ open import Calf.Types.Bool
 open import Calf.Prelude
 open import Calf.Metalanguage
 open import Calf.Step CM.ℕ-CostMonoid
-open import Calf.PhaseDistinction CM.ℕ-CostMonoid
+open import Calf.PhaseDistinction
+open import Calf.ExtensionalFragment CM.ℕ-CostMonoid
 open import Examples.CostEffect.PhaseDistinction CM.ℕ-CostMonoid
 open import Examples.CostEffect.CostEffect CM.ℕ-CostMonoid
 
