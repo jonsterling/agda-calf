@@ -678,11 +678,11 @@ module MergeSort (M : Comparable) where
             k * ⌊ n /2⌋ + k * ⌈ n /2⌉ + n
           ≡⟨ N.+-comm _ n ⟩
             n + (k * ⌊ n /2⌋ + k * ⌈ n /2⌉)
-          ≡˘⟨ Eq.cong₂ (_+_) (N.*-identityˡ _) (N.*-distribˡ-+ k _ _) ⟩
-            1 * n + k * (⌊ n /2⌋ + ⌈ n /2⌉)
-          ≡⟨ Eq.cong (λ m → 1 * n + k * m) (N.⌊n/2⌋+⌈n/2⌉≡n n) ⟩
-            1 * n + k * n
-          ≡˘⟨ N.*-distribʳ-+ _ 1 k ⟩
+          ≡˘⟨ Eq.cong (n +_) (N.*-distribˡ-+ k _ _) ⟩
+            n + k * (⌊ n /2⌋ + ⌈ n /2⌉)
+          ≡⟨ Eq.cong (λ m → n + k * m) (N.⌊n/2⌋+⌈n/2⌉≡n n) ⟩
+            n + k * n
+          ≡⟨⟩
             suc k * n
           ∎
             where open ≤-Reasoning
@@ -1458,9 +1458,7 @@ module MergeSortPar (M : Comparable) where
             n + (pred[2^ k ] * n + pred[2^ k ] * n)
           ≡˘⟨ Eq.cong (n +_) (N.*-distribʳ-+ n (pred[2^ k ]) (pred[2^ k ])) ⟩
             n + (pred[2^ k ] + pred[2^ k ]) * n
-          ≡˘⟨ Eq.cong (_+ (pred[2^ k ] + pred[2^ k ]) * n) (N.*-identityˡ n) ⟩
-            1 * n + (pred[2^ k ] + pred[2^ k ]) * n
-          ≡˘⟨ N.*-distribʳ-+ n 1 (pred[2^ k ] + pred[2^ k ]) ⟩
+          ≡⟨⟩
             suc (pred[2^ k ] + pred[2^ k ]) * n
           ≡⟨ Eq.cong (_* n) (pred[2^suc[n]] k) ⟩
             pred[2^ suc k ] * n
@@ -1473,9 +1471,7 @@ module MergeSortPar (M : Comparable) where
             n + (k * n ⊔ k * n)
           ≡⟨ Eq.cong (n +_) (N.⊔-idem (k * n)) ⟩
             n + k * n
-          ≡˘⟨ Eq.cong (_+ k * n) (N.*-identityˡ n) ⟩
-            1 * n + k * n
-          ≡˘⟨ N.*-distribʳ-+ n 1 k ⟩
+          ≡⟨⟩
             suc k * n
           ∎
             where open ≡-Reasoning
@@ -1745,9 +1741,7 @@ module MergeSortPar (M : Comparable) where
             k * (n * ⌈log₂ suc ⌈ n /2⌉ ⌉) + n * ⌈log₂ suc ⌈ n /2⌉ ⌉
           ≡⟨ N.+-comm (k * (n * ⌈log₂ suc ⌈ n /2⌉ ⌉)) (n * ⌈log₂ suc ⌈ n /2⌉ ⌉) ⟩
             n * ⌈log₂ suc ⌈ n /2⌉ ⌉ + k * (n * ⌈log₂ suc ⌈ n /2⌉ ⌉)
-          ≡˘⟨ Eq.cong (_+ k * (n * ⌈log₂ suc ⌈ n /2⌉ ⌉)) (N.*-identityˡ _) ⟩
-            1 * (n * ⌈log₂ suc ⌈ n /2⌉ ⌉) + k * (n * ⌈log₂ suc ⌈ n /2⌉ ⌉)
-          ≡˘⟨ N.*-distribʳ-+ (n * ⌈log₂ suc ⌈ n /2⌉ ⌉) 1 k ⟩
+          ≡⟨⟩
             suc k * (n * ⌈log₂ suc ⌈ n /2⌉ ⌉)
           ≡˘⟨ N.*-assoc (suc k) n ⌈log₂ suc ⌈ n /2⌉ ⌉ ⟩
             suc k * n * ⌈log₂ suc ⌈ n /2⌉ ⌉
@@ -1762,9 +1756,7 @@ module MergeSortPar (M : Comparable) where
             k * n + n
           ≡⟨ N.+-comm (k * n) n ⟩
             n + k * n
-          ≡˘⟨ Eq.cong (_+ k * n) (N.*-identityˡ n) ⟩
-            1 * n + k * n
-          ≡˘⟨ N.*-distribʳ-+ n 1 k ⟩
+          ≡⟨⟩
             suc k * n
           ∎
             where open ≡-Reasoning

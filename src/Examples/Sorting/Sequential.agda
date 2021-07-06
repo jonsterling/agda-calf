@@ -655,9 +655,9 @@ module MergeSort (M : Comparable) where
       (k * ⌊ length l /2⌋ + k * ⌈ length l /2⌉) + (⌊ length l /2⌋ + ⌈ length l /2⌉)
     ≡⟨ N.+-comm _ (⌊ length l /2⌋ + ⌈ length l /2⌉) ⟩
       (⌊ length l /2⌋ + ⌈ length l /2⌉) + (k * ⌊ length l /2⌋ + k * ⌈ length l /2⌉)
-    ≡˘⟨ Eq.cong₂ (_+_) (N.*-identityˡ _) (N.*-distribˡ-+ k _ _) ⟩
-      1 * (⌊ length l /2⌋ + ⌈ length l /2⌉) + k * (⌊ length l /2⌋ + ⌈ length l /2⌉)
-    ≡˘⟨ N.*-distribʳ-+ _ 1 k ⟩
+    ≡˘⟨ Eq.cong ((⌊ length l /2⌋ + ⌈ length l /2⌉) +_) (N.*-distribˡ-+ k _ _) ⟩
+      (⌊ length l /2⌋ + ⌈ length l /2⌉) + k * (⌊ length l /2⌋ + ⌈ length l /2⌉)
+    ≡⟨⟩
       suc k * (⌊ length l /2⌋ + ⌈ length l /2⌉)
     ≡⟨ Eq.cong (suc k *_) (N.⌊n/2⌋+⌈n/2⌉≡n (length l)) ⟩
       suc k * length l
