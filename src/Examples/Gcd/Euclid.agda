@@ -8,7 +8,7 @@ import Calf.CostMonoids as CM
 {- This file defines the parameters of the analysis of Euclid's algorithm for gcd
    and its cost recurrence relation. -}
 open import Calf CM.ℕ-CostMonoid
-open import Calf.Types.Nat as Nat
+open import Calf.Types.Nat
 open import Data.Nat
 open import Function
 open import Relation.Binary.PropositionalEquality as P
@@ -30,15 +30,15 @@ open import Relation.Unary using (Pred; _⊆′_)
 open import Data.Nat.DivMod.Core
 open import Axiom.UniquenessOfIdentityProofs.WithK using (uip)
 
-mod-tp : (x y : val nat) → cmp (meta (False (toℕ y ≟ 0))) → tp pos
-mod-tp x y h = Σ++ nat λ z → (U (meta (toℕ z ≡ _%_ (toℕ x) (toℕ y) {h})))
+mod-tp : (x y : val nat) → cmp (meta (False (y ≟ 0))) → tp pos
+mod-tp x y h = Σ++ nat λ z → (U (meta (z ≡ _%_ x y {h})))
 
 mod : cmp (
         Π nat λ x →
         Π nat λ y →
-        Π (U (meta (False (toℕ y ≟ 0)))) λ h →
+        Π (U (meta (False (y ≟ 0)))) λ h →
         F (mod-tp x y h))
-mod x y h = step (F (mod-tp x y h)) 1 (ret {mod-tp x y h} (tonat (_%_ (toℕ x) (toℕ y) {h}) , refl))
+mod x y h = step (F (mod-tp x y h)) 1 (ret {mod-tp x y h} (_%_  x y {h} , refl))
 
 
 gcd/cost/helper : ∀ n → ((m : ℕ) → m < n → (k : ℕ) → (k > m) → ℕ) → (m : ℕ) → (m > n) → ℕ
@@ -108,7 +108,7 @@ gcd/cost-unfold-suc {x} {y} {h} = P.cong suc
     refl
   )
 
-gcd/i = Σ++ nat λ x → Σ++ nat λ y → U (meta (toℕ x > toℕ y))
+gcd/i = Σ++ nat λ x → Σ++ nat λ y → U (meta (x > y))
 
 m%n<n' : ∀ m n h → _%_ m n {h} < n
 m%n<n' m (suc n) h = m%n<n m n
