@@ -61,6 +61,14 @@ ub/bind/const : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
 ub/bind/const {e = e} {f = f} p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
 ... | refl = ub/circ' q1 (ub/bind {e = e} p (λ _ → q) (ub/intro {q = q1} a h1 h2) h3)
 
+ub/bool : ∀ {A : tp pos} {e0 e1} {p : val bool → cmp cost} →
+  (b : val bool) →
+  ub A e0 (p false) →
+  ub A e1 (p true ) →
+  ub A (if b then e1 else e0) (p b)
+ub/bool false h0 h1 = h0
+ub/bool true  h0 h1 = h1
+
 ub/sum/case/const/const : ∀ A B (C : val (sum A B) → tp pos) →
   (s : val (sum A B)) →
   (e0 : (a : val A) → cmp (F (C (inj₁ a)))) →
