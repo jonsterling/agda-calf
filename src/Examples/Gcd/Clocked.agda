@@ -48,7 +48,7 @@ gcd/clocked (suc k) (x , 0 , h) =  ret {nat} x
 gcd/clocked (suc k) (x , suc y , h) =
   bind {mod-tp x (suc y) tt} (F nat) (mod x (suc y) tt)
   λ { (z , eqn2) →
-  let h2 = P.subst (λ k → suc k ≤ toℕ (suc y)) (P.sym eqn2) (m%n<n' x _ tt) in
+  let h2 = P.subst (λ k → suc k ≤ suc y) (P.sym eqn2) (m%n<n' x _ tt) in
   gcd/clocked k (suc y , z , h2) }
 
 gcd : cmp (Π gcd/i λ _ → F nat)

@@ -77,7 +77,7 @@ module Ex/CostList where
   open CostList nat 0
 
   ex : val list
-  ex = cons (tonat 0) ((cons (tonat 1) (nil)))
+  ex = cons 0 (cons 1 nil)
 
 module Rev (A : tp pos) where
   open CostList A 1
