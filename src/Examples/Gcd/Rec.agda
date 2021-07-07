@@ -133,5 +133,5 @@ gcd/cost≤gcd/cost/closed i@(x , y , h) =
       g1 = fib-mono-< {1 + fib⁻¹ x} {2 + fib⁻¹ x} (+-monoˡ-< (fib⁻¹ x) (s≤s (s≤s z≤n))) in
   (<⇒≤ (gcd/cost/bound _ i (<-transˡ g g1) (<-trans h g)))
 
-gcd≤gcd/cost/closed : ∀ i → ub nat (gcd i) (gcd/cost/closed i)
-gcd≤gcd/cost/closed i = ub/relax (λ _ → gcd/cost≤gcd/cost/closed i) (gcd≤gcd/cost i)
+gcd≤gcd/cost/closed : ∀ i → IsBounded nat (gcd i) (gcd/cost/closed i)
+gcd≤gcd/cost/closed i = bound/relax (λ _ → gcd/cost≤gcd/cost/closed i) (gcd≤gcd/cost i)

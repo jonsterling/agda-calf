@@ -59,16 +59,16 @@ module CostList (A : tp pos) (n : ℕ) where
     cmp (X l)
   list/match l X e0 e1 = list/ind l X e0 (λ a l _ → e1 a l)
 
-  ub/list/match : ∀ (l : val list) (X : val list → tp pos)
+  bound/list/match : ∀ (l : val list) (X : val list → tp pos)
     {e0 : val (U (F (X nil)))} {e1 : (a : val A) → (l : val list) → val (U (F (X (cons a l))))}
     {p0 : val (U cost)} {p1 : (a : val A) → (l : val list) → val (U cost)} →
-    ub (X nil) e0 p0 →
-    ((a : val A) → (l : val list) → ub (X (cons a l)) (e1 a l) (p1 a l)) →
-    ub (X l) (list/match l (F ∘ X) e0 e1) (list/match l (λ _ → cost) p0 (λ a l → n + p1 a l))
-  ub/list/match l X {e0} {e1} {p0} {p1} ub0 ub1 =
-    list/match l (λ l → meta (ub (X l) (list/match l (F ∘ X) e0 e1) (list/match l (λ _ → cost) p0 (λ a l → n + p1 a l))))
+    IsBounded (X nil) e0 p0 →
+    ((a : val A) → (l : val list) → IsBounded (X (cons a l)) (e1 a l) (p1 a l)) →
+    IsBounded (X l) (list/match l (F ∘ X) e0 e1) (list/match l (λ _ → cost) p0 (λ a l → n + p1 a l))
+  bound/list/match l X {e0} {e1} {p0} {p1} ub0 ub1 =
+    list/match l (λ l → meta (IsBounded (X l) (list/match l (F ∘ X) e0 e1) (list/match l (λ _ → cost) p0 (λ a l → n + p1 a l))))
       ub0
-      λ a l → ub/circ n (ub/step n (p1 a l) (ub1 a l))
+      λ a l → bound/circ n (bound/step n (p1 a l) (ub1 a l))
 
   len : val list → ℕ
   len l = list/ind l (λ _ → meta ℕ) 0 λ a l r → 1 + r
@@ -129,11 +129,11 @@ module Rev (A : tp pos) where
   revAppend/cost : cmp (Π list λ _ → Π list λ _ → cost)
   revAppend/cost l l' = len l
 
-  revAppend≤revAppend/cost : ∀ l l' → ub list (revAppend l l') (revAppend/cost l l')
+  revAppend≤revAppend/cost : ∀ l l' → IsBounded list (revAppend l l') (revAppend/cost l l')
   revAppend≤revAppend/cost l =
-    list/ind l (λ l → meta (∀ l' → ub list (revAppend l l') (revAppend/cost l l')))
-      (λ l' → ub/ret)
-      (λ a l r → λ l' → ub/circ 1 (ub/step 1 (len l) (r (cons a l'))))
+    list/ind l (λ l → meta (∀ l' → IsBounded list (revAppend l l') (revAppend/cost l l')))
+      (λ l' → bound/ret)
+      (λ a l r → λ l' → bound/circ 1 (bound/step 1 (len l) (r (cons a l'))))
 
   rev : cmp (Π list λ _ → F list)
   rev l = revAppend l nil
@@ -147,7 +147,7 @@ module Rev (A : tp pos) where
   rev/cost : cmp (Π list λ _ → cost)
   rev/cost l = len l
 
-  rev≤rev/cost : ∀ l → ub list (rev l) (rev/cost l)
+  rev≤rev/cost : ∀ l → IsBounded list (rev l) (rev/cost l)
   rev≤rev/cost l = revAppend≤revAppend/cost l nil
 
 
@@ -169,8 +169,8 @@ module FrontBack (A : tp pos) where
   enq/cost : cmp (Π Q λ _ → Π A λ _ → cost)
   enq/cost (f , b) x = 0
 
-  enq≤enq/cost : ∀ q x → ub Q (enq q x) (enq/cost q x)
-  enq≤enq/cost q x = ub/ret
+  enq≤enq/cost : ∀ q x → IsBounded Q (enq q x) (enq/cost q x)
+  enq≤enq/cost q x = bound/ret
 
   deq-tp = sum unit (Σ++ Q λ _ → A)
 
@@ -186,11 +186,11 @@ module FrontBack (A : tp pos) where
       0
       λ a l' → 1 + 0
 
-  deq/emp≤deq/emp/cost : ∀ l → ub deq-tp (deq/emp l) (deq/emp/cost l)
+  deq/emp≤deq/emp/cost : ∀ l → IsBounded deq-tp (deq/emp l) (deq/emp/cost l)
   deq/emp≤deq/emp/cost l =
-    ub/list/match l (λ _ → deq-tp)
-      ub/ret
-      λ a l' → ub/ret
+    bound/list/match l (λ _ → deq-tp)
+      bound/ret
+      λ a l' → bound/ret
 
   deq : cmp (Π Q λ _ → F deq-tp)
   deq (f , b) =
@@ -246,14 +246,14 @@ module FrontBack (A : tp pos) where
       )
       λ _ _ → ≤-refl
 
-  deq≤deq/cost : ∀ q → ub deq-tp (deq q) (deq/cost q)
+  deq≤deq/cost : ∀ q → IsBounded deq-tp (deq q) (deq/cost q)
   deq≤deq/cost (f , b) =
-    ub/list/match f (λ _ → deq-tp)
-      (ub/bind (rev/cost b) _ (rev≤rev/cost b) λ b' → deq/emp≤deq/emp/cost b')
-      λ a l → ub/ret
+    bound/list/match f (λ _ → deq-tp)
+      (bound/bind (rev/cost b) _ (rev≤rev/cost b) λ b' → deq/emp≤deq/emp/cost b')
+      λ a l → bound/ret
 
-  deq≤deq/cost/closed : ∀ q → ub deq-tp (deq q) (deq/cost/closed q)
-  deq≤deq/cost/closed q = ub/relax (deq/cost≤deq/cost/closed q) (deq≤deq/cost q)
+  deq≤deq/cost/closed : ∀ q → IsBounded deq-tp (deq q) (deq/cost/closed q)
+  deq≤deq/cost/closed q = bound/relax (deq/cost≤deq/cost/closed q) (deq≤deq/cost q)
 
   -- Amortized analysis for front-back queue.
   -- The goal is to bound the cost of a single-thread sequence of queue operations staring with an initial queue q0,
@@ -402,16 +402,16 @@ module FrontBack (A : tp pos) where
     )
 
   -- cost o q upperbounds the cost of o operate q.
-  op≤cost : ∀ o q → ub Q (o operate q) (op/cost o q)
+  op≤cost : ∀ o q → IsBounded Q (o operate q) (op/cost o q)
   op≤cost (op/enq x) q = enq≤enq/cost q x
   op≤cost op/deq q rewrite P.sym (+-identityʳ (op/cost (op/deq) q)) =
-    ub/bind/const {A = deq-tp} {e = deq q} {f = λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ (q , x) → ret q))}
+    bound/bind/const {A = deq-tp} {e = deq q} {f = λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ (q , x) → ret q))}
       (op/cost op/deq q) 0
-      (ub/relax (λ u → ≤-reflexive (deq/cost≡cost/deq q u)) (deq≤deq/cost/closed q))
+      (bound/relax (λ u → ≤-reflexive (deq/cost≡cost/deq q u)) (deq≤deq/cost/closed q))
       λ a →
-        ub/sum/case/const/const unit ((Σ++ Q λ _ → A)) (λ _ → Q) a ((λ _ → ret (nil , nil))) (λ (q , x) → ret q) 0
-          (λ _ → ub/ret)
-          (λ _ → ub/ret)
+        bound/sum/case/const/const unit ((Σ++ Q λ _ → A)) (λ _ → Q) a ((λ _ → ret (nil , nil))) (λ (q , x) → ret q) 0
+          (λ _ → bound/ret)
+          (λ _ → bound/ret)
 
   -- is/acost o k when for any state q, k suffices for the cost of o on q and the difference in the potential.
   is/acost :  op → ℕ → Set
@@ -430,9 +430,9 @@ module FrontBack (A : tp pos) where
   cost/seq (o ∷ os) q = bind cost (o operate q) λ q' → op/cost o q + cost/seq os q'
 
   -- Cost of a sequence computation is bounded by the sum of cost of the constituents.
-  operate/seq≤cost/seq : ∀ l q → ub Q (l operate/seq q) (cost/seq l q)
-  operate/seq≤cost/seq [] q0 = ub/ret
-  operate/seq≤cost/seq (o ∷ os) q = ub/bind {A = Q} {e = o operate q} {f = λ q → os operate/seq q}
+  operate/seq≤cost/seq : ∀ l q → IsBounded Q (l operate/seq q) (cost/seq l q)
+  operate/seq≤cost/seq [] q0 = bound/ret
+  operate/seq≤cost/seq (o ∷ os) q = bound/bind {A = Q} {e = o operate q} {f = λ q → os operate/seq q}
    (op/cost o q) (cost/seq os) (op≤cost o q) λ q → operate/seq≤cost/seq os q
 
   -- Telescoping the potential.
@@ -656,5 +656,5 @@ module FrontBack (A : tp pos) where
    where open IntP.≤-Reasoning
 
   -- Starting with an empty queue, a sequence of n operations costs at most 2 * n
-  fb≤2*|l| : ∀ l → ub Q (l operate/seq emp) (2 * length l)
-  fb≤2*|l| l = ub/relax (λ u → IntP.drop‿+≤+ (fb/amortized emp l u)) (operate/seq≤cost/seq l emp)
+  fb≤2*|l| : ∀ l → IsBounded Q (l operate/seq emp) (2 * length l)
+  fb≤2*|l| l = bound/relax (λ u → IntP.drop‿+≤+ (fb/amortized emp l u)) (operate/seq≤cost/seq l emp)

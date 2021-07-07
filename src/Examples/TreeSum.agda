@@ -20,8 +20,8 @@ open import Data.Product
 add : cmp (Π nat λ _ → Π nat λ _ → F nat)
 add m n = step (F nat) (1 , 1) (ret (m + n))
 
-ub/add : ∀ m n → ub nat (add m n) (1 , 1)
-ub/add m n = ub/intro (m + n) (λ _ → ≤-refl) (ret (eq/intro refl))
+bound/add : ∀ m n → IsBounded nat (add m n) (1 , 1)
+bound/add m n = bound/step (1 , 1) 𝟘 bound/ret
 
 data Tree : Set where
   leaf : val nat → Tree
@@ -68,7 +68,7 @@ sum/cost≡sum/cost/closed (node t₁ t₂) =
   ∎
     where open ≡-Reasoning
 
-sum≤sum/cost : ∀ t → ub nat (sum t) (sum/cost t)
-sum≤sum/cost (leaf x)     = ub/ret
+sum≤sum/cost : ∀ t → IsBounded nat (sum t) (sum/cost t)
+sum≤sum/cost (leaf x)     = bound/ret
 sum≤sum/cost (node t₁ t₂) =
-  ub/bind/const (sum/cost t₁ ⊗ sum/cost t₂) (1 , 1) (ub/par (sum≤sum/cost t₁) (sum≤sum/cost t₂)) (λ (v₁ , v₂) → ub/add v₁ v₂)
+  bound/bind/const (sum/cost t₁ ⊗ sum/cost t₂) (1 , 1) (bound/par (sum≤sum/cost t₁) (sum≤sum/cost t₂)) (λ (v₁ , v₂) → bound/add v₁ v₂)

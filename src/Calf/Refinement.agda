@@ -29,10 +29,10 @@ bound/circ d {c} (⇓ a withCost c' [ h-bounded , h-≡ ]) =
 bound/ret : {A : tp pos} {a : val A} → IsBounded A (ret {A} a) zero
 bound/ret {a = a} = ⇓ a withCost zero [ (λ u → ≤-refl) , ret (eq/intro refl) ]
 
-bound/step : ∀ {A e} (c d : ℂ) →
+bound/step : ∀ {A e} (d c : ℂ) →
   IsBounded A e c →
   IsBounded A (step (F A) d e) (d + c)
-bound/step c d (⇓ a withCost c' [ h-bounded , h-≡ ]) with eq/ref h-≡
+bound/step d c (⇓ a withCost c' [ h-bounded , h-≡ ]) with eq/ref h-≡
 ... | refl = ⇓ a withCost d + c' [ (λ u → +-monoʳ-≤ d (h-bounded u)) , ret (eq/intro refl) ]
 
 bound/bind : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
