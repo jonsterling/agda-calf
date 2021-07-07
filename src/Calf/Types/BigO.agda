@@ -33,3 +33,6 @@ record BigO
 
 taking_measured-via_,_∈O_ : (A : tp pos) {B : tp pos} (∣_∣ : val A → val nat) (f : cmp (Π A λ _ → F B)) (g : ℕ → ℂ) → □
 taking A measured-via size , f ∈O g = BigO A size f g
+
+_≤n⇒f[n]≤g[n]via_ : ∀ {A B f ∣_∣ g} → (n' : val nat) → (∀ x → n' Nat.≤ ∣ x ∣ → IsBounded B (f x) (g ∣ x ∣)) → BigO A ∣_∣ f g
+n' ≤n⇒f[n]≤g[n]via h = n' ≤n⇒f[n]≤ 1 g[n]via (λ x h≤ → Eq.subst (IsBounded _ _) (Eq.sym (+-identityʳ _)) (h x h≤))
