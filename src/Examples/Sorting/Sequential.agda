@@ -14,6 +14,8 @@ open import Calf costMonoid
 open import Calf.Types.Bool
 open import Calf.Types.Nat
 open import Calf.Types.List
+open import Calf.Types.Eq
+open import Calf.Types.Bounded costMonoid
 
 open import Relation.Nullary
 open import Relation.Binary

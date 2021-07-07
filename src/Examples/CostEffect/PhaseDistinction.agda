@@ -13,7 +13,6 @@ open import Calf.Metalanguage
 open import Calf.Step costMonoid
 open import Examples.CostEffect.CostEffect costMonoid
 open import Calf.PhaseDistinction
-open import Calf.ExtensionalFragment costMonoid
 
 open import Relation.Binary.PropositionalEquality as P
 

@@ -7,6 +7,8 @@ import Calf.CostMonoids as CM
 
 open import Calf CM.ℕ-CostMonoid
 open import Calf.Types.Nat
+open import Calf.Types.Bounded CM.ℕ-CostMonoid
+open import Calf.Types.BoundedFunction CM.ℕ-CostMonoid
 
 open import Data.Nat as Nat
 open import Function

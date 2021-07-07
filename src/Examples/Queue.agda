@@ -12,6 +12,7 @@ open import Calf costMonoid
 open import Calf.Types.Nat
 open import Calf.Types.Unit
 open import Calf.Types.Sum
+open import Calf.Types.Bounded costMonoid
 
 open import Function
 open import Data.Nat
