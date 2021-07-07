@@ -2,14 +2,14 @@
 
 open import Calf.CostMonoid
 
-module Calf.BoundedFunction (costMonoid : CostMonoid) where
+module Calf.Types.BoundedFunction (costMonoid : CostMonoid) where
 
 open CostMonoid costMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage
 open import Calf.Step costMonoid
-open import Calf.Bounded costMonoid
+open import Calf.Types.Bounded costMonoid
 
 open import Level using (_⊔_)
 open import Relation.Binary

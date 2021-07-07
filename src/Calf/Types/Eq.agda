@@ -2,7 +2,7 @@
 
 open import Calf.CostMonoid
 
-module Calf.Eq where
+module Calf.Types.Eq where
 
 open import Calf.Prelude
 open import Calf.Metalanguage

@@ -12,6 +12,7 @@ open import Calf costMonoid
 open import Calf.ParMetalanguage parCostMonoid
 open import Calf.Types.Bool
 open import Calf.Types.Nat
+open import Calf.Types.Bounded costMonoid
 
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning)
 open import Data.Nat as Nat

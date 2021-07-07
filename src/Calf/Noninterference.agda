@@ -2,15 +2,12 @@
 
 -- Extensional fragment.
 
-open import Calf.CostMonoid
-
 module Calf.Noninterference where
-
 
 open import Calf.Prelude
 open import Calf.Metalanguage
 open import Calf.PhaseDistinction
-open import Calf.Eq
+open import Calf.Types.Eq
 
 open import Data.Product
 open import Relation.Binary.PropositionalEquality as P

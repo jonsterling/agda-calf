@@ -12,8 +12,8 @@ open import Calf.Prelude
 open import Calf.Metalanguage
 open import Calf.Step costMonoid
 
-open import Calf.Eq
-open import Calf.Bounded costMonoid
+open import Calf.Types.Eq
+open import Calf.Types.Bounded costMonoid
 
 open import Data.Product
 open import Relation.Binary.PropositionalEquality

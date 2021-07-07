@@ -2,16 +2,15 @@
 
 open import Calf.CostMonoid
 
-module Calf.Bounded (costMonoid : CostMonoid) where
+module Calf.Types.Bounded (costMonoid : CostMonoid) where
 
 open CostMonoid costMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage
 open import Calf.PhaseDistinction
-open import Calf.Eq
+open import Calf.Types.Eq
 open import Calf.Step costMonoid
-open import Calf.ExtensionalFragment costMonoid
 
 open import Calf.Types.Bool
 open import Calf.Types.Sum

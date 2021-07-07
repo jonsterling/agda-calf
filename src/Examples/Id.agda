@@ -2,13 +2,15 @@
 
 module Examples.Id where
 
+open import Calf.CostMonoid
 open import Calf.CostMonoids using (ℕ-CostMonoid)
 
-open import Calf ℕ-CostMonoid
-open import Calf.Types.Nat
+costMonoid = ℕ-CostMonoid
+open CostMonoid costMonoid
 
-open import Data.Nat
-open import Data.Nat.Properties
+open import Calf costMonoid
+open import Calf.Types.Nat
+open import Calf.Types.Bounded costMonoid
 
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
 
@@ -27,7 +29,7 @@ module Easy where
 
 module Hard where
   id : cmp (Π nat λ _ → F nat)
-  id zero = ret zero
+  id zero = ret 0
   id (suc n) =
     step (F nat) 1 (
       bind (F nat) (id n) λ n' →
@@ -73,17 +75,12 @@ module Hard where
         bind cost (id n) λ n' → id/cost n +
           0
       )
-    ≡⟨⟩
-      suc (
-        bind cost (id n) λ n' → id/cost n +
-          0
-      )
-    ≡⟨ Eq.cong (λ e → suc (bind cost e λ n' → id/cost n + 0)) (id/correct n u) ⟩
-      suc (id/cost n + 0)
+    ≡⟨ Eq.cong (λ e → 1 + bind cost e λ n' → id/cost n + 0) (id/correct n u) ⟩
+      1 + (id/cost n + 0)
     ≡⟨ Eq.cong suc (+-identityʳ _) ⟩
-      suc (id/cost n)
-    ≤⟨ s≤s (id/cost≤id/cost/closed n u) ⟩
-      suc (id/cost/closed n)
+      1 + id/cost n
+    ≤⟨ +-monoʳ-≤ 1 (id/cost≤id/cost/closed n u) ⟩
+      1 + id/cost/closed n
     ≡⟨⟩
       suc n
     ≡⟨⟩
