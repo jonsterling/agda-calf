@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --without-K --rewriting #-}
+{-# OPTIONS --prop --rewriting #-}
 
 module Examples.Id where
 
