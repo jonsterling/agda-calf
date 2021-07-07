@@ -22,8 +22,8 @@ module Easy where
   id/cost : cmp (Π nat λ _ → cost)
   id/cost n = 0
 
-  id≤id/cost : ∀ n → ub nat (id n) (id/cost n)
-  id≤id/cost n = ub/ret
+  id≤id/cost : ∀ n → IsBounded nat (id n) (id/cost n)
+  id≤id/cost n = bound/ret
 
 module Hard where
   id : cmp (Π nat λ _ → F nat)
@@ -91,16 +91,16 @@ module Hard where
     ∎
       where open ≤-Reasoning
 
-  id≤id/cost : ∀ n → ub nat (id n) (id/cost n)
-  id≤id/cost zero    = ub/ret
+  id≤id/cost : ∀ n → IsBounded nat (id n) (id/cost n)
+  id≤id/cost zero    = bound/ret
   id≤id/cost (suc n) =
-    ub/step 1 _ (
-      ub/bind (id/cost n) _ (id≤id/cost n) λ n →
-        ub/ret
+    bound/step 1 _ (
+      bound/bind (id/cost n) _ (id≤id/cost n) λ n →
+        bound/ret
     )
 
-  id≤id/cost/closed : ∀ n → ub nat (id n) (id/cost/closed n)
-  id≤id/cost/closed n = ub/relax (id/cost≤id/cost/closed n) (id≤id/cost n)
+  id≤id/cost/closed : ∀ n → IsBounded nat (id n) (id/cost/closed n)
+  id≤id/cost/closed n = bound/relax (id/cost≤id/cost/closed n) (id≤id/cost n)
 
 easy≡hard : ◯ (Easy.id ≡ Hard.id)
 easy≡hard u =

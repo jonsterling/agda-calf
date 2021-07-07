@@ -14,6 +14,5 @@ open import Calf.Eq public
 open import Calf.Step costMonoid public
 open import Calf.ExtensionalFragment costMonoid public
 
-open import Calf.Upper costMonoid public
-open import Calf.Refinement costMonoid public
+open import Calf.Bounded costMonoid public
 open import Calf.BoundedFunction costMonoid public

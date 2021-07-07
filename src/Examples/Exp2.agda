@@ -130,11 +130,11 @@ module Slow where
         lemma/pred-+ zero    n m≢zero = ⊥-elim (m≢zero refl)
         lemma/pred-+ (suc m) n m≢zero = refl
 
-  exp₂≤exp₂/cost : ∀ n → ub nat (exp₂ n) (exp₂/cost n)
-  exp₂≤exp₂/cost zero    = ub/ret
+  exp₂≤exp₂/cost : ∀ n → IsBounded nat (exp₂ n) (exp₂/cost n)
+  exp₂≤exp₂/cost zero    = bound/ret
   exp₂≤exp₂/cost (suc n) =
-    ub/bind/const (exp₂/cost n ⊗ exp₂/cost n) ((1 , 1) ⊕ 𝟘) (ub/par (exp₂≤exp₂/cost n) (exp₂≤exp₂/cost n)) λ (r₁ , r₂) →
-      ub/step (1 , 1) 𝟘 ub/ret
+    bound/bind/const (exp₂/cost n ⊗ exp₂/cost n) ((1 , 1) ⊕ 𝟘) (bound/par (exp₂≤exp₂/cost n) (exp₂≤exp₂/cost n)) λ (r₁ , r₂) →
+      bound/step (1 , 1) 𝟘 bound/ret
 
 module Fast where
 
@@ -188,11 +188,11 @@ module Fast where
     ∎
       where open ≡-Reasoning
 
-  exp₂≤exp₂/cost : ∀ n → ub nat (exp₂ n) (exp₂/cost n)
-  exp₂≤exp₂/cost zero    = ub/ret
+  exp₂≤exp₂/cost : ∀ n → IsBounded nat (exp₂ n) (exp₂/cost n)
+  exp₂≤exp₂/cost zero    = bound/ret
   exp₂≤exp₂/cost (suc n) =
-    ub/bind/const (exp₂/cost n) ((1 , 1) ⊕ 𝟘) (exp₂≤exp₂/cost n) λ r →
-      ub/step (1 , 1) 𝟘 ub/ret
+    bound/bind/const (exp₂/cost n) ((1 , 1) ⊕ 𝟘) (exp₂≤exp₂/cost n) λ r →
+      bound/step (1 , 1) 𝟘 bound/ret
 
 slow≡fast : ◯ (Slow.exp₂ ≡ Fast.exp₂)
 slow≡fast u = funext λ n →

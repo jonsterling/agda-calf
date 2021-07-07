@@ -54,32 +54,15 @@ gcd/clocked (suc k) (x , suc y , h) =
 gcd : cmp (Π gcd/i λ _ → F nat)
 gcd i = gcd/clocked (gcd/cost i) i
 
-ub/step/suc : ∀ {A e} (p : ℕ) →
-  ub A e p →
-  ub A (step (F A) 1 e) (suc p)
-ub/step/suc {A} {e} p (ub/intro {q = q1} a h1 h2) =
-  ub/intro {q = suc q1} a (λ u → s≤s (h1 u)) (ret (eq/intro
-    (
-      begin
-      step (F A) 1 e ≡⟨ P.cong (step (F A) 1) (eq/ref h2) ⟩
-      step (F A) 1 (step (F A) q1 (ret a))
-      ∎
-    )
-  ))
-  where open ≡-Reasoning
-
 -- cost of clocked gcd is bounded by for any (not necessarily safe)
 -- instantiation of the clock
-gcd/clocked≤gcd/cost : ∀ k i → ub nat (gcd/clocked k i) (gcd/cost i)
-gcd/clocked≤gcd/cost Nat.zero i = ub/relax (λ _ → z≤n) ub/ret
-gcd/clocked≤gcd/cost (suc k) (x , Nat.zero , h) = ub/ret
+gcd/clocked≤gcd/cost : ∀ k i → IsBounded nat (gcd/clocked k i) (gcd/cost i)
+gcd/clocked≤gcd/cost Nat.zero i = bound/relax (λ _ → z≤n) bound/ret
+gcd/clocked≤gcd/cost (suc k) (x , Nat.zero , h) = bound/ret
 gcd/clocked≤gcd/cost (suc k) (x , suc y , h) rewrite gcd/cost-unfold-suc {x} {y} {h} =
-  ub/step/suc
-  {e = gcd/clocked k (suc y , x % suc y , m%n<n' x _ tt)}
-  (gcd/cost (suc y , x % suc y , m%n<n' x _ tt))
-  (gcd/clocked≤gcd/cost k (suc y , x % suc y , m%n<n' x _ tt))
+  bound/step 1 _ (gcd/clocked≤gcd/cost k (suc y , x % suc y , m%n<n' x _ tt))
 
-gcd≤gcd/cost : ∀ i → ub nat (gcd i) (gcd/cost i)
+gcd≤gcd/cost : ∀ i → IsBounded nat (gcd i) (gcd/cost i)
 gcd≤gcd/cost i = gcd/clocked≤gcd/cost (gcd/cost i) i
 
 gcd/bounded : cmp (Ψ gcd/i (λ { _ → nat }) gcd/cost)
