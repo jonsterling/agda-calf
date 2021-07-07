@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --rewriting #-}
+{-# OPTIONS --prop --without-K --rewriting #-}
 
 module Examples.Gcd.Rec where
 

@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --rewriting #-}
+{-# OPTIONS --prop --without-K --rewriting #-}
 
 module Examples.Gcd.Clocked where
 
@@ -24,13 +24,11 @@ open import Data.Unit using (tt)
 open import Function.Base using (_on_)
 open import Data.Product
 open import Data.Product.Properties
-open import Relation.Binary.HeterogeneousEquality as H
 open import Agda.Builtin.Nat using (div-helper; mod-helper)
 import Level as L
 open import Relation.Binary using (Rel)
 open import Relation.Unary using (Pred; _⊆′_)
 open import Data.Nat.DivMod.Core
-open import Axiom.UniquenessOfIdentityProofs.WithK using (uip)
 
 {- Alternative definition of gcd with an explicit clock parameter.
    It is easier to see the computational behavior of the code in this version:
