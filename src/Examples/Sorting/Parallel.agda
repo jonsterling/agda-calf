@@ -313,7 +313,7 @@ module InsertionSort (M : Comparable) where
   sort≤sort/cost/closed : ∀ l → IsBounded (list A) (sort l) (sort/cost/closed l)
   sort≤sort/cost/closed l = bound/relax (sort/cost≤sort/cost/closed l) (sort≤sort/cost l)
 
-  sort/asymptotic : taking (list A) measured-via length , sort ∈O(λ n → n ^ 2 , n ^ 2)
+  sort/asymptotic : taking (list A) measured-via length , sort ∈𝓞(λ n → n ^ 2 , n ^ 2)
   sort/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ l _ → sort≤sort/cost/closed l
 
 module Ex/InsertionSort where
@@ -853,7 +853,7 @@ module MergeSort (M : Comparable) where
   sort≤sort/cost/closed : ∀ l → IsBounded (list A) (sort l) (sort/cost/closed l)
   sort≤sort/cost/closed l = sort/clocked≤sort/clocked/cost/closed (sort/depth l) l N.≤-refl
 
-  sort/asymptotic : taking (list A) measured-via length , sort ∈O(λ n → n * ⌈log₂ n ⌉ , n)
+  sort/asymptotic : taking (list A) measured-via length , sort ∈𝓞(λ n → n * ⌈log₂ n ⌉ , n)
   sort/asymptotic = 0 ≤n⇒f[n]≤ 3 g[n]via λ l _ →
     bound/relax
       (λ u → let open ≤-Reasoning in
@@ -1917,7 +1917,7 @@ module MergeSortPar (M : Comparable) where
   sort≤sort/cost/closed : ∀ l → IsBounded (list A) (sort l) (sort/cost/closed l)
   sort≤sort/cost/closed l = sort/clocked≤sort/clocked/cost/closed (sort/depth l) l N.≤-refl
 
-  sort/asymptotic : taking (list A) measured-via length , sort ∈O(λ n → n * ⌈log₂ n ⌉ ² , ⌈log₂ n ⌉ ^ 3)
+  sort/asymptotic : taking (list A) measured-via length , sort ∈𝓞(λ n → n * ⌈log₂ n ⌉ ² , ⌈log₂ n ⌉ ^ 3)
   sort/asymptotic = 2 ≤n⇒f[n]≤g[n]via λ l h →
     bound/relax
       (λ u → let open ≤-Reasoning in

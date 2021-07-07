@@ -28,7 +28,7 @@ module Easy where
   id≤id/cost : ∀ n → IsBounded nat (id n) (id/cost n)
   id≤id/cost n = bound/ret
 
-  id/asymptotic : taking nat measured-via (λ n → n) , id ∈O(λ n → 0)
+  id/asymptotic : taking nat measured-via (λ n → n) , id ∈𝓞(λ n → 0)
   id/asymptotic = 0 ≤n⇒f[n]≤ 0 g[n]via λ n _ → id≤id/cost n
 
 module Hard where
@@ -103,7 +103,7 @@ module Hard where
   id≤id/cost/closed : ∀ n → IsBounded nat (id n) (id/cost/closed n)
   id≤id/cost/closed n = bound/relax (id/cost≤id/cost/closed n) (id≤id/cost n)
 
-  id/asymptotic : taking nat measured-via (λ n → n) , id ∈O(λ n → n)
+  id/asymptotic : taking nat measured-via (λ n → n) , id ∈𝓞(λ n → n)
   id/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ n _ → id≤id/cost/closed n
 
 easy≡hard : ◯ (Easy.id ≡ Hard.id)
