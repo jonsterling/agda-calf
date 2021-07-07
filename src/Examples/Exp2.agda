@@ -152,7 +152,7 @@ module Slow where
   exp₂≤exp₂/cost/closed : ∀ n → IsBounded nat (exp₂ n) (exp₂/cost/closed n)
   exp₂≤exp₂/cost/closed n = bound/relax (exp₂/cost≤exp₂/cost/closed n) (exp₂≤exp₂/cost n)
 
-  exp₂/asymptotic : taking nat measured-via (λ n → n) , exp₂ ∈𝓞(λ n → 2 ^ n , n)
+  exp₂/asymptotic : given nat measured-via (λ n → n) , exp₂ ∈𝓞(λ n → 2 ^ n , n)
   exp₂/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ n _ → bound/relax (λ u → N.pred[n]≤n , N.≤-refl) (exp₂≤exp₂/cost/closed n)
 
 module Fast where
@@ -216,7 +216,7 @@ module Fast where
   exp₂≤exp₂/cost/closed : ∀ n → IsBounded nat (exp₂ n) (exp₂/cost/closed n)
   exp₂≤exp₂/cost/closed n = bound/relax (λ u → ≤-reflexive (exp₂/cost≡exp₂/cost/closed n)) (exp₂≤exp₂/cost n)
 
-  exp₂/asymptotic : taking nat measured-via (λ n → n) , exp₂ ∈𝓞(λ n → n , n)
+  exp₂/asymptotic : given nat measured-via (λ n → n) , exp₂ ∈𝓞(λ n → n , n)
   exp₂/asymptotic = 0 ≤n⇒f[n]≤ 1 g[n]via λ n _ → Eq.subst (IsBounded _ _) (Eq.sym (⊕-identityʳ _)) (exp₂≤exp₂/cost/closed n)
 
 slow≡fast : ◯ (Slow.exp₂ ≡ Fast.exp₂)
