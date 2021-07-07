@@ -9,7 +9,7 @@ open CostMonoid costMonoid
 open import Calf.Prelude
 open import Calf.Metalanguage
 open import Calf.Step costMonoid
-open import Calf.Upper costMonoid
+open import Calf.Bounded costMonoid
 
 open import Level using (_⊔_)
 open import Relation.Binary

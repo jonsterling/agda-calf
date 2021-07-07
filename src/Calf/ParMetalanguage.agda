@@ -10,13 +10,13 @@ open ParCostMonoid parCostMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage
-open import Relation.Binary.PropositionalEquality
 open import Calf.Step costMonoid
-open import Relation.Binary.PropositionalEquality
-open import Data.Product
 
 open import Calf.Eq
-open import Calf.Upper costMonoid
+open import Calf.Bounded costMonoid
+
+open import Data.Product
+open import Relation.Binary.PropositionalEquality
 
 postulate
   -- negative product

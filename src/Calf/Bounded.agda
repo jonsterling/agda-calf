@@ -1,8 +1,8 @@
-{-# OPTIONS --prop --rewriting #-}
+{-# OPTIONS --prop --without-K --rewriting #-}
 
 open import Calf.CostMonoid
 
-module Calf.Refinement (costMonoid : CostMonoid) where
+module Calf.Bounded (costMonoid : CostMonoid) where
 
 open CostMonoid costMonoid
 
@@ -12,19 +12,33 @@ open import Calf.PhaseDistinction
 open import Calf.Eq
 open import Calf.Step costMonoid
 open import Calf.ExtensionalFragment costMonoid
-open import Calf.Upper costMonoid
 
 open import Calf.Types.Bool
 open import Calf.Types.Sum
 
 open import Relation.Binary.PropositionalEquality as Eq
 
+
+record IsBounded (A : tp pos) (e : cmp (F A)) (c : cmp cost) : □ where
+  constructor ⇓_withCost_[_,_]
+  field
+    result : val A
+    c' : ℂ
+    h-bounded : ◯ (c' ≤ c)
+    h-≡ : cmp (F (eq (U (F A)) e (step (F A) c' (ret result))))
+
+IsBounded⁻ : (A : tp pos) → cmp (F A) → cmp cost → tp neg
+IsBounded⁻ A e p = meta (IsBounded A e p)
+
+bound/relax : ∀ {A e p p'} → ◯ (p ≤ p') → IsBounded A e p → IsBounded A e p'
+bound/relax h (⇓ result withCost c' [ h-bounded , h-≡ ]) = ⇓ result withCost c' [ (λ u → ≤-trans (h-bounded u) (h u)) , h-≡ ]
+
+
 bound/circ : ∀ {A e} d {c} →
   IsBounded A e c →
   IsBounded A e (step (meta ℂ) d c)
 bound/circ d {c} (⇓ a withCost c' [ h-bounded , h-≡ ]) =
   ⇓ a withCost c' [ (λ u → subst (c' ≤_) (sym (step/ext cost c d u)) (h-bounded u)) , h-≡ ]
-
 
 bound/ret : {A : tp pos} {a : val A} → IsBounded A (ret {A} a) zero
 bound/ret {a = a} = ⇓ a withCost zero [ (λ u → ≤-refl) , ret (eq/intro refl) ]
