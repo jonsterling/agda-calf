@@ -1,6 +1,6 @@
 {-# OPTIONS --prop --rewriting #-}
 
-module Examples.Gcd.CostRefinement where
+module Examples.Gcd.Refine where
 
 open import Calf.CostMonoid
 import Calf.CostMonoids as CM
