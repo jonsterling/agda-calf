@@ -41,22 +41,22 @@ mod : cmp (
 mod x y h = step (F (mod-tp x y h)) 1 (ret {mod-tp x y h} (_%_  x y {h} , refl))
 
 
-gcd/cost/helper : ∀ n → ((m : ℕ) → m < n → (k : ℕ) → (k > m) → ℕ) → (m : ℕ) → (m > n) → ℕ
-gcd/cost/helper zero h m h' = 0
-gcd/cost/helper n@(suc n') h m h' = suc (h (m % n) (m%n<n m n') n (m%n<n m n'))
+gcd/depth/helper : ∀ n → ((m : ℕ) → m < n → (k : ℕ) → (k > m) → ℕ) → (m : ℕ) → (m > n) → ℕ
+gcd/depth/helper zero h m h' = 0
+gcd/depth/helper n@(suc n') h m h' = suc (h (m % n) (m%n<n m n') n (m%n<n m n'))
 
 m>n = Σ ℕ λ m → Σ ℕ λ n → (m > n)
 
-gcd/cost : m>n → ℕ
-gcd/cost (x , (y , g)) = All.wfRec <-wellFounded _ (λ y → (x : ℕ) → x > y → ℕ)
-  gcd/cost/helper y x g
+gcd/depth : m>n → ℕ
+gcd/depth (x , (y , g)) = All.wfRec <-wellFounded _ (λ y → (x : ℕ) → x > y → ℕ)
+  gcd/depth/helper y x g
 
-gcd/cost/helper-ext : (x₁ : ℕ)
+gcd/depth/helper-ext : (x₁ : ℕ)
     {IH IH′ : WfRec _<_ (λ y₁ → (x₂ : ℕ) → x₂ > y₁ → ℕ) x₁} →
     ({y = y₁ : ℕ} (y<x : y₁ < x₁) → IH y₁ y<x ≡ IH′ y₁ y<x) →
-    gcd/cost/helper x₁ IH ≡ gcd/cost/helper x₁ IH′
-gcd/cost/helper-ext zero h = refl
-gcd/cost/helper-ext (suc x) h =
+    gcd/depth/helper x₁ IH ≡ gcd/depth/helper x₁ IH′
+gcd/depth/helper-ext zero h = refl
+gcd/depth/helper-ext (suc x) h =
   funext λ m → funext λ h1 → P.cong suc (
     let g = h {m % suc x} (m%n<n m x) in
     P.cong-app (P.cong-app g _) _
@@ -79,21 +79,21 @@ module irr
                                     P.cong-app (P.cong-app g y') h'
                                   }))
 
-gcd/cost-unfold-zero : ∀ {x h} → gcd/cost (x , 0 , h) ≡ 0
-gcd/cost-unfold-zero = refl
+gcd/depth-unfold-zero : ∀ {x h} → gcd/depth (x , 0 , h) ≡ 0
+gcd/depth-unfold-zero = refl
 
-gcd/cost-unfold-suc : ∀ {x y h} → gcd/cost (x , suc y , h) ≡
-                              suc (gcd/cost (suc y , x % suc y , m%n<n x y))
-gcd/cost-unfold-suc {x} {y} {h} = P.cong suc
+gcd/depth-unfold-suc : ∀ {x y h} → gcd/depth (x , suc y , h) ≡
+                              suc (gcd/depth (suc y , x % suc y , m%n<n x y))
+gcd/depth-unfold-suc {x} {y} {h} = P.cong suc
   ( P.subst (λ  ih →
-      gcd/cost/helper (mod-helper 0 y x y) (ih) (suc y) (m%n<n x y) ≡
-        gcd/cost/helper (mod-helper 0 y x y)
+      gcd/depth/helper (mod-helper 0 y x y) (ih) (suc y) (m%n<n x y) ≡
+        gcd/depth/helper (mod-helper 0 y x y)
         (All.wfRecBuilder <-wellFounded L.zero
-        (λ y₁ → (x₁ : ℕ) → x₁ > y₁ → ℕ) gcd/cost/helper
+        (λ y₁ → (x₁ : ℕ) → x₁ > y₁ → ℕ) gcd/depth/helper
         (mod-helper 0 y x y))
         (suc y) (m%n<n x y))
     (irr.some-wfRecBuilder-irrelevant <-wellFounded (λ y → (x : ℕ) → x > y → ℕ)
-      gcd/cost/helper (gcd/cost/helper-ext) (x % suc y)
+      gcd/depth/helper (gcd/depth/helper-ext) (x % suc y)
       (<-wellFounded (mod-helper 0 y x y))
       (Subrelation.accessible ≤⇒≤′
      (Data.Nat.Induction.<′-wellFounded′ (suc y)

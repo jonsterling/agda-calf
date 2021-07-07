@@ -54,18 +54,18 @@ gcd/clocked (suc k) (x , suc y , h) =
   gcd/clocked k (suc y , z , h2) }
 
 gcd : cmp (Π gcd/i λ _ → F nat)
-gcd i = gcd/clocked (gcd/cost i) i
+gcd i = gcd/clocked (gcd/depth i) i
 
 -- cost of clocked gcd is bounded by for any (not necessarily safe)
 -- instantiation of the clock
-gcd/clocked≤gcd/cost : ∀ k i → IsBounded nat (gcd/clocked k i) (gcd/cost i)
-gcd/clocked≤gcd/cost Nat.zero i = bound/relax (λ _ → z≤n) bound/ret
-gcd/clocked≤gcd/cost (suc k) (x , Nat.zero , h) = bound/ret
-gcd/clocked≤gcd/cost (suc k) (x , suc y , h) rewrite gcd/cost-unfold-suc {x} {y} {h} =
-  bound/step 1 _ (gcd/clocked≤gcd/cost k (suc y , x % suc y , m%n<n' x _ tt))
+gcd/clocked≤gcd/depth : ∀ k i → IsBounded nat (gcd/clocked k i) (gcd/depth i)
+gcd/clocked≤gcd/depth Nat.zero i = bound/relax (λ _ → z≤n) bound/ret
+gcd/clocked≤gcd/depth (suc k) (x , Nat.zero , h) = bound/ret
+gcd/clocked≤gcd/depth (suc k) (x , suc y , h) rewrite gcd/depth-unfold-suc {x} {y} {h} =
+  bound/step 1 _ (gcd/clocked≤gcd/depth k (suc y , x % suc y , m%n<n' x _ tt))
 
-gcd≤gcd/cost : ∀ i → IsBounded nat (gcd i) (gcd/cost i)
-gcd≤gcd/cost i = gcd/clocked≤gcd/cost (gcd/cost i) i
+gcd≤gcd/depth : ∀ i → IsBounded nat (gcd i) (gcd/depth i)
+gcd≤gcd/depth i = gcd/clocked≤gcd/depth (gcd/depth i) i
 
-gcd/bounded : cmp (Ψ gcd/i (λ { _ → nat }) gcd/cost)
-gcd/bounded = gcd , gcd≤gcd/cost
+gcd/bounded : cmp (Ψ gcd/i (λ { _ → nat }) gcd/depth)
+gcd/bounded = gcd , gcd≤gcd/depth

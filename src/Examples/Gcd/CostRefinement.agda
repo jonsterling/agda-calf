@@ -1,6 +1,6 @@
 {-# OPTIONS --prop --rewriting #-}
 
-module Examples.Gcd.Rec where
+module Examples.Gcd.CostRefinement where
 
 open import Calf.CostMonoid
 import Calf.CostMonoids as CM
@@ -82,10 +82,10 @@ fib-mono-< {suc (suc x)} {suc (suc y)} (s≤s (s≤s h)) =
   +-mono-≤ g1 g
 
 -- test : ℕ
--- test = gcd/cost (7 , 4 , s≤s (s≤s (s≤s (s≤s (s≤s z≤n)))))
+-- test = gcd/depth (7 , 4 , s≤s (s≤s (s≤s (s≤s (s≤s z≤n)))))
 
 gcd/fib : ∀ (n : ℕ) (i@(x , y , h) : m>n) →
-          gcd/cost i ≥ 1 + n  →
+          gcd/depth i ≥ 1 + n  →
           Σ (x ≥ fib (2 + n)) λ _ → (y ≥ fib (1 + n))
 gcd/fib zero (x , y , h) h1 with 1 ≤? y | 1 ≤? x
 ... | (true because (ofʸ py)) | (true because (ofʸ px)) = px , py
@@ -98,8 +98,8 @@ gcd/fib zero (x , y , h) h1 with 1 ≤? y | 1 ≤? x
   case h1 of λ { () }
 gcd/fib (suc n) (x , y , h) h1 with y
 ... | zero = let g = n≤0⇒n≡0 h1 in case g of λ {()}
-... | suc y' rewrite gcd/cost-unfold-suc {x} {y'} {h} =
-  let g : suc (gcd/cost (suc y' , x % suc y' , m%n<n x y')) ≥ 1 + (suc n)
+... | suc y' rewrite gcd/depth-unfold-suc {x} {y'} {h} =
+  let g : suc (gcd/depth (suc y' , x % suc y' , m%n<n x y')) ≥ 1 + (suc n)
       g = h1 in
   let g1 = +-cancelˡ-≤ 1 g in
   let (r1 , r2) = gcd/fib n (suc y' , x % suc y' , m%n<n x y') g1 in
@@ -118,21 +118,21 @@ gcd/fib (suc n) (x , y , h) h1 with y
     r2 (≤-trans r1' e5))
   )), r1
 
-gcd/cost/bound : ∀ (n : ℕ) (i@(x , y , h) : m>n) →
+gcd/depth/bound : ∀ (n : ℕ) (i@(x , y , h) : m>n) →
                 x < fib (2 + n) → y < (fib (1 + n)) →
-                gcd/cost i < 1 + n
-gcd/cost/bound n i h1 h2 = ≰⇒> (contraposition (gcd/fib n i) (λ { (g1 , g2) → (<⇒≱ h1) g1}))
+                gcd/depth i < 1 + n
+gcd/depth/bound n i h1 h2 = ≰⇒> (contraposition (gcd/fib n i) (λ { (g1 , g2) → (<⇒≱ h1) g1}))
 
-gcd/cost/closed : m>n → ℕ
-gcd/cost/closed i@(x , y , h) = 1 + fib⁻¹ x
+gcd/depth/closed : m>n → ℕ
+gcd/depth/closed i@(x , y , h) = 1 + fib⁻¹ x
 
-gcd/cost≤gcd/cost/closed : ∀ (i@(x , y , h) : m>n) → gcd/cost i ≤ gcd/cost/closed i
-gcd/cost≤gcd/cost/closed i@(x , y , h) =
+gcd/depth≤gcd/depth/closed : ∀ (i@(x , y , h) : m>n) → gcd/depth i ≤ gcd/depth/closed i
+gcd/depth≤gcd/depth/closed i@(x , y , h) =
   let g : x < fib (1 + fib⁻¹ x)
       g = fib-fib⁻¹ x .proj₂ in
   let g1 : fib (1 + fib⁻¹ x) ≤ fib (2 + fib⁻¹ x)
       g1 = fib-mono-< {1 + fib⁻¹ x} {2 + fib⁻¹ x} (+-monoˡ-< (fib⁻¹ x) (s≤s (s≤s z≤n))) in
-  (<⇒≤ (gcd/cost/bound _ i (<-transˡ g g1) (<-trans h g)))
+  (<⇒≤ (gcd/depth/bound _ i (<-transˡ g g1) (<-trans h g)))
 
-gcd≤gcd/cost/closed : ∀ i → IsBounded nat (gcd i) (gcd/cost/closed i)
-gcd≤gcd/cost/closed i = bound/relax (λ _ → gcd/cost≤gcd/cost/closed i) (gcd≤gcd/cost i)
+gcd≤gcd/depth/closed : ∀ i → IsBounded nat (gcd i) (gcd/depth/closed i)
+gcd≤gcd/depth/closed i = bound/relax (λ _ → gcd/depth≤gcd/depth/closed i) (gcd≤gcd/depth i)
