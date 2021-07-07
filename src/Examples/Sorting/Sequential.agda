@@ -16,6 +16,7 @@ open import Calf.Types.Nat
 open import Calf.Types.List
 open import Calf.Types.Eq
 open import Calf.Types.Bounded costMonoid
+open import Calf.Types.BigO costMonoid
 
 open import Relation.Nullary
 open import Relation.Binary
@@ -274,6 +275,9 @@ module InsertionSort (M : Comparable) where
 
   sort≤sort/cost/closed : ∀ l → IsBounded (list A) (sort l) (sort/cost/closed l)
   sort≤sort/cost/closed l = bound/relax (sort/cost≤sort/cost/closed l) (sort≤sort/cost l)
+
+  sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n ^ 2)
+  sort/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ l _ → sort≤sort/cost/closed l
 
 module Ex/InsertionSort where
   module Sort = InsertionSort NatComparable
@@ -774,6 +778,12 @@ module MergeSort (M : Comparable) where
 
   sort≤sort/cost/closed : ∀ l → IsBounded (list A) (sort l) (sort/cost/closed l)
   sort≤sort/cost/closed l = sort/clocked≤sort/clocked/cost/closed (sort/depth l) l N.≤-refl
+
+  sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n * ⌈log₂ n ⌉)
+  sort/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ l _ →
+    bound/relax
+      (λ u → ≤-reflexive (N.*-comm ⌈log₂ length l ⌉ (length l)))
+      (sort≤sort/cost/closed l)
 
 module Ex/MergeSort where
   module Sort = MergeSort NatComparable

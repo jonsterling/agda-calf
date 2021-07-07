@@ -21,6 +21,7 @@ open import Calf.Types.Nat
 open import Calf.Types.List
 open import Calf.Types.Eq
 open import Calf.Types.Bounded costMonoid
+open import Calf.Types.BigO costMonoid
 
 open import Relation.Nullary
 open import Relation.Binary
@@ -312,6 +313,9 @@ module InsertionSort (M : Comparable) where
   sort≤sort/cost/closed : ∀ l → IsBounded (list A) (sort l) (sort/cost/closed l)
   sort≤sort/cost/closed l = bound/relax (sort/cost≤sort/cost/closed l) (sort≤sort/cost l)
 
+  sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n ^ 2 , n ^ 2)
+  sort/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ l _ → sort≤sort/cost/closed l
+
 module Ex/InsertionSort where
   module Sort = InsertionSort NatComparable
 
@@ -367,6 +371,24 @@ module Log2 where
       (λ { n₁ ih (suc (suc n₂)) (s≤s (s≤s h)) → s≤s (ih ⌈ suc (suc n₂) /2⌉ (N.⌈n/2⌉-mono (s≤s (s≤s h))))})
       n₁
       n₂
+
+  ⌈log₂n⌉≤n : ∀ n → ⌈log₂ n ⌉ Nat.≤ n
+  ⌈log₂n⌉≤n n = strong-induction' n n N.≤-refl
+    where
+      strong-induction' : (n m : ℕ) → m Nat.≤ n → ⌈log₂ m ⌉ Nat.≤ m
+      strong-induction' n zero    h = z≤n
+      strong-induction' n (suc zero) h = z≤n
+      strong-induction' (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
+        s≤s (
+          let open ≤-Reasoning in
+          begin
+            ⌈log₂ suc ⌈ m /2⌉ ⌉
+          ≤⟨ strong-induction' (suc n) (suc ⌈ m /2⌉) (s≤s (N.≤-trans (N.⌈n/2⌉≤n m) h)) ⟩
+            suc ⌈ m /2⌉
+          ≤⟨ s≤s (N.⌈n/2⌉≤n m) ⟩
+            suc m
+          ∎
+        )
 
   log₂-suc : ∀ n {k} → ⌈log₂ n ⌉ Nat.≤ suc k → ⌈log₂ ⌈ n /2⌉ ⌉ Nat.≤ k
   log₂-suc zero h = z≤n
@@ -830,6 +852,30 @@ module MergeSort (M : Comparable) where
 
   sort≤sort/cost/closed : ∀ l → IsBounded (list A) (sort l) (sort/cost/closed l)
   sort≤sort/cost/closed l = sort/clocked≤sort/clocked/cost/closed (sort/depth l) l N.≤-refl
+
+  sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n * ⌈log₂ n ⌉ , n)
+  sort/asymptotic = 0 ≤n⇒f[n]≤ 3 g[n]via λ l _ →
+    bound/relax
+      (λ u → let open ≤-Reasoning in
+        (
+          begin
+            ⌈log₂ length l ⌉ * length l
+          ≡⟨ N.*-comm ⌈log₂ length l ⌉ (length l) ⟩
+            length l * ⌈log₂ length l ⌉
+          ≤⟨ N.m≤m+n (length l * ⌈log₂ length l ⌉) _ ⟩
+            3 * (length l * ⌈log₂ length l ⌉)
+          ∎
+        ) , (
+          begin
+            2 * length l + ⌈log₂ length l ⌉
+          ≤⟨ N.+-monoʳ-≤ (2 * length l) (⌈log₂n⌉≤n (length l)) ⟩
+            2 * length l + length l
+          ≡⟨ N.+-comm (2 * length l) (length l) ⟩
+            3 * length l
+          ∎
+        )
+      )
+      (sort≤sort/cost/closed l)
 
 module Ex/MergeSort where
   module Sort = MergeSort NatComparable
@@ -1870,6 +1916,41 @@ module MergeSortPar (M : Comparable) where
 
   sort≤sort/cost/closed : ∀ l → IsBounded (list A) (sort l) (sort/cost/closed l)
   sort≤sort/cost/closed l = sort/clocked≤sort/clocked/cost/closed (sort/depth l) l N.≤-refl
+
+  sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n * ⌈log₂ n ⌉ ² , ⌈log₂ n ⌉ ^ 3)
+  sort/asymptotic = 2 ≤n⇒f[n]≤g[n]via λ l h →
+    bound/relax
+      (λ u → let open ≤-Reasoning in
+        (
+          begin
+            ⌈log₂ length l ⌉ * length l * ⌈log₂ suc ⌈ length l /2⌉ ⌉
+          ≤⟨ N.*-monoʳ-≤ (⌈log₂ length l ⌉ * length l) (lemma (length l) h) ⟩
+            ⌈log₂ length l ⌉ * length l * ⌈log₂ length l ⌉
+          ≡⟨ N.*-assoc ⌈log₂ length l ⌉ (length l) ⌈log₂ length l ⌉ ⟩
+            ⌈log₂ length l ⌉ * (length l * ⌈log₂ length l ⌉)
+          ≡⟨ N.*-comm ⌈log₂ length l ⌉ (length l * ⌈log₂ length l ⌉) ⟩
+            length l * ⌈log₂ length l ⌉ * ⌈log₂ length l ⌉
+          ≡⟨ N.*-assoc (length l) ⌈log₂ length l ⌉ ⌈log₂ length l ⌉ ⟩
+            length l * ⌈log₂ length l ⌉ ²
+          ∎
+        ) , (
+          begin
+            ⌈log₂ length l ⌉ * ⌈log₂ suc ⌈ length l /2⌉ ⌉ ²
+          ≤⟨ N.*-monoʳ-≤ ⌈log₂ length l ⌉ (²-mono (lemma (length l) h)) ⟩
+            ⌈log₂ length l ⌉ * ⌈log₂ length l ⌉ ²
+          ≡⟨⟩
+            ⌈log₂ length l ⌉ * (⌈log₂ length l ⌉ * ⌈log₂ length l ⌉)
+          ≡˘⟨ Eq.cong (λ n → ⌈log₂ length l ⌉ * (⌈log₂ length l ⌉ * n)) (N.*-identityʳ _) ⟩
+            ⌈log₂ length l ⌉ * (⌈log₂ length l ⌉ * (⌈log₂ length l ⌉ * 1))
+          ≡⟨⟩
+            ⌈log₂ length l ⌉ ^ 3
+          ∎
+        )
+      )
+      (sort≤sort/cost/closed l)
+    where
+      lemma : ∀ n → 2 Nat.≤ n → ⌈log₂ suc ⌈ n /2⌉ ⌉ Nat.≤ ⌈log₂ n ⌉
+      lemma (suc (suc n)) (s≤s (s≤s h)) = log₂-mono (s≤s (s≤s (N.⌈n/2⌉≤n n)))
 
 module Ex/MergeSortPar where
   module Sort = MergeSortPar NatComparable

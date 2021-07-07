@@ -11,6 +11,7 @@ open CostMonoid costMonoid
 open import Calf costMonoid
 open import Calf.Types.Nat
 open import Calf.Types.Bounded costMonoid
+open import Calf.Types.BigO costMonoid
 
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
 
@@ -26,6 +27,9 @@ module Easy where
 
   id≤id/cost : ∀ n → IsBounded nat (id n) (id/cost n)
   id≤id/cost n = bound/ret
+
+  id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → 0)
+  id/asymptotic = 0 ≤n⇒f[n]≤ 0 g[n]via λ n _ → id≤id/cost n
 
 module Hard where
   id : cmp (Π nat λ _ → F nat)
@@ -98,6 +102,9 @@ module Hard where
 
   id≤id/cost/closed : ∀ n → IsBounded nat (id n) (id/cost/closed n)
   id≤id/cost/closed n = bound/relax (id/cost≤id/cost/closed n) (id≤id/cost n)
+
+  id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → n)
+  id/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ n _ → id≤id/cost/closed n
 
 easy≡hard : ◯ (Easy.id ≡ Hard.id)
 easy≡hard u =
