@@ -1,27 +1,31 @@
 # Cost Refinement Lab
 
+## Parameters
+- CostMonoid
+- CostMonoids
+
 ## Core
 - Prelude
 - Metalanguage
-- CostEffect
 - PhaseDistinction
-- Eq
-- Upper
-- BoundedFunction
+- Noninterference
+- Step
 
 ### Types
 - Nat
 - Unit
-- Sum
 - Bool
+- Sum
 - List
-
-### Lemmas
-- Refinement
+- Eq
+- Bounded
+- BoundedFunction
 
 ## Examples
-- Example
-- Gcd
 - Id
+- Gcd
 - Queue
+- TreeSum
+- Exp2
 - Sorting
+- CostEffect
