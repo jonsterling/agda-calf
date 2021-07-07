@@ -19,64 +19,62 @@ open import Calf.Types.Sum
 
 open import Relation.Binary.PropositionalEquality as Eq
 
-ub/circ : ∀ {A e} p {q} →
-  ub A e q →
-  ub A e (step (meta ℂ) p q)
-ub/circ p {q = q₁} (ub/intro {q = q} a h1 h2) =
-  ub/intro {q = q} a (λ u → subst (q ≤_) (sym (step/ext (meta ℂ) q₁ p u)) (h1 u)) h2
-
-ub/circ' : ∀ {A e} p {q} →
-  ub A e (step (meta ℂ) p q) →
-  ub A e q
-ub/circ' p {q = q₁} (ub/intro {q = q} a h1 h2) =
-  ub/intro {q = q} a (λ u → subst (q ≤_) (step/ext (meta ℂ) q₁ p u) (h1 u)) h2
+bound/circ : ∀ {A e} d {c} →
+  IsBounded A e c →
+  IsBounded A e (step (meta ℂ) d c)
+bound/circ d {c} (⇓ a withCost c' [ h-bounded , h-≡ ]) =
+  ⇓ a withCost c' [ (λ u → subst (c' ≤_) (sym (step/ext cost c d u)) (h-bounded u)) , h-≡ ]
 
 
-ub/ret : ∀ {A a} → ub A (ret {A} a) zero
-ub/ret {A} {a} = ub/intro a (λ _ → ≤-refl) (ret (eq/intro refl))
+bound/ret : {A : tp pos} {a : val A} → IsBounded A (ret {A} a) zero
+bound/ret {a = a} = ⇓ a withCost zero [ (λ u → ≤-refl) , ret (eq/intro refl) ]
 
-ub/step : ∀ {A e} (p q : ℂ) →
-  ub A e q →
-  ub A (step (F A) p e) (p + q)
-ub/step p q (ub/intro {q = q1} a h1 h2) with eq/ref h2
-...                                              | refl =
-   ub/intro {q = p + q1} a (λ u → +-monoʳ-≤ p (h1 u)) (ret (eq/intro refl))
+bound/step : ∀ {A e} (c d : ℂ) →
+  IsBounded A e c →
+  IsBounded A (step (F A) d e) (d + c)
+bound/step c d (⇓ a withCost c' [ h-bounded , h-≡ ]) with eq/ref h-≡
+... | refl = ⇓ a withCost d + c' [ (λ u → +-monoʳ-≤ d (h-bounded u)) , ret (eq/intro refl) ]
 
-ub/bind : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
-  (p : ℂ) (q : val A → ℂ) →
-  ub A e p →
-  ((a : val A) → ub B (f a) (q a)) →
-  ub B (bind {A} (F B) e f)
-       (bind {A} (meta ℂ) e (λ a → p + q a))
-ub/bind {f = f} p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
-... | refl with h3 a
-... | ub/intro {q = q2} b h4 h5 with f a | eq/ref h5
-... | _ | refl =
-  ub/circ q1 (ub/intro b (λ u → +-mono-≤ (h1 u) (h4 u)) (ret (eq/intro refl)))
+bound/bind : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
+  (c : ℂ) (d : val A → ℂ) →
+  IsBounded A e c →
+  ((a : val A) → IsBounded B (f a) (d a)) →
+  IsBounded B (bind {A} (F B) e f)
+              (bind {A} cost e (λ a → c + d a))
+bound/bind {f = f} c d (⇓ a withCost c' [ h-bounded₁ , h-≡₁ ]) h with eq/ref h-≡₁
+... | refl with h a
+... | ⇓ b withCost d' [ h-bounded₂ , h-≡₂ ] with f a | eq/ref h-≡₂
+... | _ | refl = bound/circ c' (⇓ b withCost c' + d' [ (λ u → +-mono-≤ (h-bounded₁ u) (h-bounded₂ u)) , ret (eq/intro refl) ])
 
-ub/bind/const : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
-  (p q : ℂ) →
-  ub A e p →
-  ((a : val A) → ub B (f a) q) →
-  ub B (bind {A} (F B) e f) (p + q)
-ub/bind/const {e = e} {f = f} p q (ub/intro {q = q1} a h1 h2) h3 with eq/ref h2
-... | refl = ub/circ' q1 (ub/bind {e = e} p (λ _ → q) (ub/intro {q = q1} a h1 h2) h3)
+bound/bind/const : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
+  (c d : ℂ) →
+  IsBounded A e c →
+  ((a : val A) → IsBounded B (f a) d) →
+  IsBounded B (bind {A} (F B) e f) (c + d)
+bound/bind/const c d (⇓ a withCost c' [ h-bounded , h-≡ ]) h with eq/ref h-≡
+... | refl = bound/circ' c' (bound/bind c (λ _ → d) (⇓ a withCost c' [ h-bounded , h-≡ ]) h)
+  where
+    bound/circ' : ∀ {A e} d {c} →
+      IsBounded A e (step (meta ℂ) d c) →
+      IsBounded A e c
+    bound/circ' d {c} (⇓ a withCost c' [ h-bounded , h-≡ ]) =
+      ⇓ a withCost c' [ (λ u → subst (c' ≤_) (step/ext cost c d u) (h-bounded u)) , h-≡ ]
 
-ub/bool : ∀ {A : tp pos} {e0 e1} {p : val bool → cmp cost} →
+bound/bool : ∀ {A : tp pos} {e0 e1} {p : val bool → cmp cost} →
   (b : val bool) →
-  ub A e0 (p false) →
-  ub A e1 (p true ) →
-  ub A (if b then e1 else e0) (p b)
-ub/bool false h0 h1 = h0
-ub/bool true  h0 h1 = h1
+  IsBounded A e0 (p false) →
+  IsBounded A e1 (p true ) →
+  IsBounded A (if b then e1 else e0) (p b)
+bound/bool false h0 h1 = h0
+bound/bool true  h0 h1 = h1
 
-ub/sum/case/const/const : ∀ A B (C : val (sum A B) → tp pos) →
+bound/sum/case/const/const : ∀ A B (C : val (sum A B) → tp pos) →
   (s : val (sum A B)) →
   (e0 : (a : val A) → cmp (F (C (inj₁ a)))) →
   (e1 : (b : val B) → cmp (F (C (inj₂ b)))) →
   (p : ℂ) →
-  ((a : val A) → ub (C (inj₁ a)) (e0 a) p) →
-  ((b : val B) → ub (C (inj₂ b)) (e1 b) p) →
-  ub (C s) (sum/case A B (λ s → F (C s)) s e0 e1) p
-ub/sum/case/const/const A B C s e0 e1 p h1 h2 = sum/case A B
-  (λ s → meta (ub (C s) (sum/case A B (λ s₁ → F (C s₁)) s e0 e1) p)) s h1 h2
+  ((a : val A) → IsBounded (C (inj₁ a)) (e0 a) p) →
+  ((b : val B) → IsBounded (C (inj₂ b)) (e1 b) p) →
+  IsBounded (C s) (sum/case A B (λ s → F (C s)) s e0 e1) p
+bound/sum/case/const/const A B C s e0 e1 p h1 h2 = sum/case A B
+  (λ s → meta (IsBounded (C s) (sum/case A B (λ s₁ → F (C s₁)) s e0 e1) p)) s h1 h2

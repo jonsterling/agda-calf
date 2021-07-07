@@ -12,14 +12,16 @@ open import Calf.PhaseDistinction
 open import Calf.Eq
 open import Calf.Step costMonoid
 
-data ub (A : tp pos) : cmp (F A) → cmp cost → □ where
-  ub/intro : ∀ {e p q} (a : val A) →
-    ◯ (q ≤ p) →
-    cmp (F (eq (U(F A)) e (step (F A) q (ret {A} a)))) →
-    ub A e p
+record IsBounded (A : tp pos) (e : cmp (F A)) (c : cmp cost) : □ where
+  constructor ⇓_withCost_[_,_]
+  field
+    result : val A
+    c' : ℂ
+    h-bounded : ◯ (c' ≤ c)
+    h-≡ : cmp (F (eq (U (F A)) e (step (F A) c' (ret result))))
 
-ub⁻ : (A : tp pos) → cmp (F A) → cmp cost → tp neg
-ub⁻ A e p = meta (ub A e p)
+IsBounded⁻ : (A : tp pos) → cmp (F A) → cmp cost → tp neg
+IsBounded⁻ A e p = meta (IsBounded A e p)
 
-ub/relax : ∀ {A e p p'} → ◯ (p ≤ p') → ub A e p → ub A e p'
-ub/relax h (ub/intro {q = q} a h1 eqn) = ub/intro {q = q} a (λ u → ≤-trans (h1 u) (h u)) eqn
+bound/relax : ∀ {A e p p'} → ◯ (p ≤ p') → IsBounded A e p → IsBounded A e p'
+bound/relax h (⇓ result withCost c' [ h-bounded , h-≡ ]) = ⇓ result withCost c' [ (λ u → ≤-trans (h-bounded u) (h u)) , h-≡ ]
