@@ -27,40 +27,7 @@ open import Data.Nat.Square
 open import Data.Nat.Log2
 
 
-pair = Σ++ (list A) λ _ → (list A)
-
-split/clocked : cmp (Π nat λ _ → Π (list A) λ _ → F pair)
-split/clocked zero    l        = ret ([] , l)
-split/clocked (suc k) []       = ret ([] , [])
-split/clocked (suc k) (x ∷ xs) = bind (F pair) (split/clocked k xs) λ (l₁ , l₂) → ret (x ∷ l₁ , l₂)
-
-split/clocked/correct : ∀ k k' l → k + k' ≡ length l →
-  ◯ (∃ λ l₁ → ∃ λ l₂ → split/clocked k l ≡ ret (l₁ , l₂) × length l₁ ≡ k × length l₂ ≡ k' × l ↭ (l₁ ++ l₂))
-split/clocked/correct zero    k' l        refl u = [] , l , refl , refl , refl , refl
-split/clocked/correct (suc k) k' (x ∷ xs) h    u =
-  let (l₁ , l₂ , ≡ , h₁ , h₂ , ↭) = split/clocked/correct k k' xs (N.suc-injective h) u in
-  x ∷ l₁ , l₂ , Eq.cong (λ e → bind (F pair) e _) ≡ , Eq.cong suc h₁ , h₂ , prep x ↭
-
-split/clocked/cost : cmp (Π nat λ _ → Π (list A) λ _ → cost)
-split/clocked/cost _ _ = zero
-
-split/clocked≤split/clocked/cost : ∀ k l → IsBounded pair (split/clocked k l) (split/clocked/cost k l)
-split/clocked≤split/clocked/cost zero    l        = bound/ret
-split/clocked≤split/clocked/cost (suc k) []       = bound/ret
-split/clocked≤split/clocked/cost (suc k) (x ∷ xs) = bound/bind/const zero zero (split/clocked≤split/clocked/cost k xs) λ _ → bound/ret
-
-split : cmp (Π (list A) λ _ → F pair)
-split l = split/clocked ⌊ length l /2⌋ l
-
-split/correct : ∀ l →
-  ◯ (∃ λ l₁ → ∃ λ l₂ → split l ≡ ret (l₁ , l₂) × length l₁ ≡ ⌊ length l /2⌋ × length l₂ ≡ ⌈ length l /2⌉ × l ↭ (l₁ ++ l₂))
-split/correct l = split/clocked/correct ⌊ length l /2⌋ ⌈ length l /2⌉ l (N.⌊n/2⌋+⌈n/2⌉≡n (length l))
-
-split/cost : cmp (Π (list A) λ _ → cost)
-split/cost l = split/clocked/cost ⌊ length l /2⌋ l
-
-split≤split/cost : ∀ l → IsBounded pair (split l) (split/cost l)
-split≤split/cost l = split/clocked≤split/clocked/cost ⌊ length l /2⌋ l
+open import Examples.Sorting.Sequential.MergeSort.Split M
 
 merge/clocked : cmp (Π nat λ _ → Π pair λ _ → F (list A))
 merge/clocked zero    (l₁     , l₂    ) = ret (l₁ ++ l₂)
