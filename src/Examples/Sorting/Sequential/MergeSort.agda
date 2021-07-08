@@ -17,7 +17,6 @@ open import Calf.Types.BigO costMonoid
 
 open import Relation.Nullary
 open import Relation.Nullary.Negation
-open import Relation.Binary
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
 open import Data.Product using (_×_; _,_; ∃)
 open import Data.Sum using (inj₁; inj₂)
@@ -27,17 +26,6 @@ import Data.Nat.Properties as N
 open import Data.Nat.Square
 open import Data.Nat.Log2
 
-
-_≥_ : val A → val A → Set
-x ≥ y = y ≤ x
-
-_≰_ : val A → val A → Set
-x ≰ y = ¬ x ≤ y
-
-≰⇒≥ : _≰_ ⇒ _≥_
-≰⇒≥ {x} {y} h with ≤-total x y
-... | inj₁ h₁ = contradiction h₁ h
-... | inj₂ h₂ = h₂
 
 pair = Σ++ (list A) λ _ → (list A)
 

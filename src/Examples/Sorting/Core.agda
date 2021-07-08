@@ -14,9 +14,12 @@ open Comparable M
 open import Calf costMonoid
 open import Calf.Types.List
 
+open import Relation.Nullary
 open import Relation.Nullary.Negation
+open import Relation.Binary
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
 open import Data.Product using (_×_; _,_; ∃; proj₁; proj₂)
+open import Data.Sum using (inj₁; inj₂)
 open import Data.Nat as Nat using (ℕ; zero; suc; z≤n; s≤s; _+_; _*_; _^_; ⌊_/2⌋; ⌈_/2⌉)
 import Data.Nat.Properties as N
 
@@ -30,6 +33,18 @@ open import Data.List.Relation.Binary.Permutation.Propositional.Properties
 open import Data.List.Relation.Unary.All using (All; []; _∷_; map; lookup) public
 open import Data.List.Relation.Unary.All.Properties as AllP using () renaming (++⁺ to ++⁺-All) public
 open import Data.List.Relation.Unary.Any using (Any; here; there)
+
+_≥_ : val A → val A → Set
+x ≥ y = y ≤ x
+
+_≰_ : val A → val A → Set
+x ≰ y = ¬ x ≤ y
+
+≰⇒≥ : _≰_ ⇒ _≥_
+≰⇒≥ {x} {y} h with ≤-total x y
+... | inj₁ h₁ = contradiction h₁ h
+... | inj₂ h₂ = h₂
+
 
 _≤*_ : val A → val (list A) → Set
 _≤*_ x = All (x ≤_)

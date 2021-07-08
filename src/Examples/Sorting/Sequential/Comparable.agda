@@ -6,9 +6,9 @@ open import Calf.CostMonoid
 open import Calf.CostMonoids
 
 costMonoid = ℕ-CostMonoid
-open CostMonoid costMonoid hiding (zero; _+_; _≤_; ≤-refl; ≤-trans) public
 
 open import Data.Nat using (ℕ)
+open CostMonoid costMonoid using (ℂ)
 
 fromℕ : ℕ → ℂ
 fromℕ n = n
