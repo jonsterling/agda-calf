@@ -48,7 +48,7 @@ The following modules are parameterized by a `CostMonoid`:
 - [`Calf.Step`](./src/Calf/Step.agda) defines the `step` effect and gives the associated laws via rewrite rules.
 
 The following modules are parameterized by a `ParCostMonoid`:
-- [`Calf.ParMetalanguage`](./src/Calf/ParMetalanguage.agda) the (negative) parallel product `_&_`, whose cost is the `ParCostMonoid` product (i.e., `_⊗_`) of its components, as well as associated laws and lemmas.
+- [`Calf.ParMetalanguage`](./src/Calf/ParMetalanguage.agda) the parallel pairing operation `_&_`, whose cost is the `ParCostMonoid` product (i.e., `_⊗_`) of its components, as well as associated laws and lemmas.
 
 ### Types
 
