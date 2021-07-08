@@ -15,22 +15,22 @@ open import Data.Nat.Log2 using (⌈log₂_⌉)
 pred[2^_] : ℕ → ℕ
 pred[2^ n ] = pred (2 ^ n)
 
-private
-  lemma/2^suc : ∀ n → 2 ^ n + 2 ^ n ≡ 2 ^ suc n
-  lemma/2^suc n =
-    begin
-      2 ^ n + 2 ^ n
-    ≡˘⟨ Eq.cong ((2 ^ n) +_) (*-identityˡ (2 ^ n)) ⟩
-      2 ^ n + (2 ^ n + 0)
-    ≡⟨⟩
-      2 ^ n + (2 ^ n + 0 * (2 ^ n))
-    ≡⟨⟩
-      2 * (2 ^ n)
-    ≡⟨⟩
-      2 ^ suc n
-    ∎
-      where open ≡-Reasoning
+lemma/2^suc : ∀ n → 2 ^ n + 2 ^ n ≡ 2 ^ suc n
+lemma/2^suc n =
+  begin
+    2 ^ n + 2 ^ n
+  ≡˘⟨ Eq.cong ((2 ^ n) +_) (*-identityˡ (2 ^ n)) ⟩
+    2 ^ n + (2 ^ n + 0)
+  ≡⟨⟩
+    2 ^ n + (2 ^ n + 0 * (2 ^ n))
+  ≡⟨⟩
+    2 * (2 ^ n)
+  ≡⟨⟩
+    2 ^ suc n
+  ∎
+    where open ≡-Reasoning
 
+private
   lemma/1≤2^n : ∀ n → 1 ≤ 2 ^ n
   lemma/1≤2^n zero    = ≤-refl {1}
   lemma/1≤2^n (suc n) =
@@ -48,10 +48,6 @@ private
   lemma/2^n≢0 : ∀ n → 2 ^ n ≢ zero
   lemma/2^n≢0 n 2^n≡0 with 2 ^ n | lemma/1≤2^n n
   ... | zero | ()
-
-  lemma/pred-+ : ∀ m n → m ≢ zero → pred m + n ≡ pred (m + n)
-  lemma/pred-+ zero    n m≢zero = contradiction refl m≢zero
-  lemma/pred-+ (suc m) n m≢zero = refl
 
 pred[2^]-mono : pred[2^_] Preserves _≤_ ⟶ _≤_
 pred[2^]-mono m≤n = pred-mono (2^-mono m≤n)
@@ -77,7 +73,12 @@ pred[2^suc[n]] n =
   ≡⟨⟩
     pred[2^ suc n ]
   ∎
-    where open ≡-Reasoning
+    where
+      open ≡-Reasoning
+
+      lemma/pred-+ : ∀ m n → m ≢ zero → pred m + n ≡ pred (m + n)
+      lemma/pred-+ zero    n m≢zero = contradiction refl m≢zero
+      lemma/pred-+ (suc m) n m≢zero = refl
 
 pred[2^log₂] : (n : ℕ) → pred[2^ ⌈log₂ suc ⌈ n /2⌉ ⌉ ] ≤ n
 pred[2^log₂] n = strong-induction n n ≤-refl

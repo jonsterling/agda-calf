@@ -113,6 +113,7 @@ test/shuffled = 4 ∷ 8 ∷ 12 ∷ 16 ∷ 13 ∷ 3 ∷ 5 ∷ 14 ∷ 9 ∷ 6 ∷ 
 module InsertionSort (M : Comparable) where
   open Comparable M
   open Core M
+  open import Data.Nat.Square
 
   insert : cmp (Π A λ _ → Π (list A) λ _ → F (list A))
   insert x []       = ret [ x ]
@@ -223,7 +224,7 @@ module InsertionSort (M : Comparable) where
   sort/cost (x ∷ xs) = bind cost (sort xs) (λ xs' → sort/cost xs + insert/cost/closed x xs')
 
   sort/cost/closed : cmp (Π (list A) λ _ → cost)
-  sort/cost/closed l = length l ^ 2
+  sort/cost/closed l = length l ²
 
   sort/cost≤sort/cost/closed : ∀ l → ◯ (sort/cost l Nat.≤ sort/cost/closed l)
   sort/cost≤sort/cost/closed []       u = N.≤-refl
@@ -240,22 +241,22 @@ module InsertionSort (M : Comparable) where
     ≤⟨ +-monoˡ-≤ (insert/cost/closed x xs) (sort/cost≤sort/cost/closed xs u) ⟩
       sort/cost/closed xs + insert/cost/closed x xs
     ≡⟨⟩
-      length xs ^ 2 + length xs
+      length xs ² + length xs
     ≤⟨ lemma/arithmetic (length xs) ⟩
-      length (x ∷ xs) ^ 2
+      length (x ∷ xs) ²
     ≡⟨⟩
       sort/cost/closed (x ∷ xs)
     ∎
       where
         open ≤-Reasoning
 
-        lemma/arithmetic : ∀ n → n ^ 2 + n Nat.≤ suc n ^ 2
+        lemma/arithmetic : ∀ n → n ² + n Nat.≤ suc n ²
         lemma/arithmetic n =
           begin
-            n ^ 2 + n
-          ≡⟨ N.+-comm (n ^ 2) n ⟩
-            n + n ^ 2
-          ≡⟨ Eq.cong (λ m → n + n * m) (N.*-identityʳ n) ⟩
+            n ² + n
+          ≡⟨ N.+-comm (n ²) n ⟩
+            n + n ²
+          ≡⟨⟩
             n + n * n
           ≤⟨ N.m≤n+m (n + n * n) (suc n) ⟩
             suc n + (n + n * n)
@@ -263,10 +264,8 @@ module InsertionSort (M : Comparable) where
             suc (n + (n + n * n))
           ≡˘⟨ Eq.cong (λ m → suc (n + m)) (N.*-suc n n) ⟩
             suc (n + n * suc n)
-          ≡˘⟨ Eq.cong (λ m → suc (m + n * suc m)) (N.*-identityʳ n) ⟩
-            suc (n * 1 + n * suc (n * 1))
           ≡⟨⟩
-            suc n ^ 2
+            suc n ²
           ∎
 
   sort≤sort/cost : ∀ l → IsBounded (list A) (sort l) (sort/cost l)
@@ -276,7 +275,7 @@ module InsertionSort (M : Comparable) where
   sort≤sort/cost/closed : ∀ l → IsBounded (list A) (sort l) (sort/cost/closed l)
   sort≤sort/cost/closed l = bound/relax (sort/cost≤sort/cost/closed l) (sort≤sort/cost l)
 
-  sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n ^ 2)
+  sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n ²)
   sort/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ l _ → sort≤sort/cost/closed l
 
 module Ex/InsertionSort where

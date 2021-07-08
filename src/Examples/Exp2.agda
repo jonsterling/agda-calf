@@ -18,26 +18,12 @@ open import Calf.Types.BigO costMonoid
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning)
 open import Data.Nat as Nat using (_+_; pred; _*_; _^_; _⊔_)
 import Data.Nat.Properties as N
+open import Data.Nat.PredExp2
 open import Data.Product
 open import Data.Empty
 
 Correct : cmp (Π nat λ _ → F nat) → Set
 Correct exp₂ = (n : ℕ) → ◯ (exp₂ n ≡ ret (2 ^ n))
-
-lemma/2^suc : ∀ n → 2 ^ n + 2 ^ n ≡ 2 ^ suc n
-lemma/2^suc n =
-  begin
-    2 ^ n + 2 ^ n
-  ≡˘⟨ Eq.cong ((2 ^ n) +_) (N.*-identityˡ (2 ^ n)) ⟩
-    2 ^ n + (2 ^ n + 0)
-  ≡⟨⟩
-    2 ^ n + (2 ^ n + 0 * (2 ^ n))
-  ≡⟨⟩
-    2 * (2 ^ n)
-  ≡⟨⟩
-    2 ^ suc n
-  ∎
-    where open ≡-Reasoning
 
 module Slow where
   exp₂ : cmp (Π nat λ _ → F nat)
@@ -73,7 +59,7 @@ module Slow where
       ((1 , 1) ⊕ 𝟘)
 
   exp₂/cost/closed : cmp (Π nat λ _ → cost)
-  exp₂/cost/closed n = pred (2 ^ n) , n
+  exp₂/cost/closed n = pred[2^ n ] , n
 
   exp₂/cost≤exp₂/cost/closed : ∀ n → ◯ (exp₂/cost n ≤ exp₂/cost/closed n)
   exp₂/cost≤exp₂/cost/closed zero    u = ≤-refl
@@ -95,14 +81,6 @@ module Slow where
         exp₂/cost/closed (suc n)
       ∎
       where
-        lemma/2^n≢0 : ∀ n → 2 ^ n ≢ zero
-        lemma/2^n≢0 n 2^n≡0 with N.m^n≡0⇒m≡0 2 n 2^n≡0
-        ... | ()
-
-        lemma/pred-+ : ∀ m n → m ≢ zero → pred m + n ≡ pred (m + n)
-        lemma/pred-+ zero    n m≢zero = ⊥-elim (m≢zero refl)
-        lemma/pred-+ (suc m) n m≢zero = refl
-
         arithmetic/work : proj₁ (exp₂/cost/closed n ⊗ exp₂/cost/closed n ⊕ (1 , 1)) ≡ proj₁ (exp₂/cost/closed (suc n))
         arithmetic/work =
           begin
@@ -112,15 +90,9 @@ module Slow where
           ≡⟨ N.+-comm _ 1 ⟩
             suc (proj₁ (exp₂/cost/closed n) + proj₁ (exp₂/cost/closed n))
           ≡⟨⟩
-            suc (pred (2 ^ n) + pred (2 ^ n))
-          ≡˘⟨ N.+-suc (pred (2 ^ n)) (pred (2 ^ n)) ⟩
-            pred (2 ^ n) + suc (pred (2 ^ n))
-          ≡⟨ Eq.cong (pred (2 ^ n) +_) (N.suc[pred[n]]≡n (lemma/2^n≢0 n)) ⟩
-            pred (2 ^ n) + 2 ^ n
-          ≡⟨ lemma/pred-+ (2 ^ n) (2 ^ n) (lemma/2^n≢0 n) ⟩
-            pred (2 ^ n + 2 ^ n)
-          ≡⟨ Eq.cong pred (lemma/2^suc n) ⟩
-            pred (2 ^ suc n)
+            suc (pred[2^ n ] + pred[2^ n ])
+          ≡⟨ pred[2^suc[n]] n ⟩
+            pred[2^ suc n ]
           ≡⟨⟩
             proj₁ (exp₂/cost/closed (suc n))
           ∎
