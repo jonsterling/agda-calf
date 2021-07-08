@@ -113,6 +113,7 @@ We provide a variety of case studies in [`src/Examples`](./src/Examples).
 ## Hybrid
 
 ### [`Examples.Sorting`](./src/Examples/Sorting.agda)
+First, we develop a common collection of definitions and theorems used in both sequential and parallel sorting.
 - [`Examples.Sorting.Comparable`](./src/Examples/Sorting/Comparable.agda)
   - Record `Comparable` describing the requirements for a type to be comparable, including `h-cost`, a hypothesis that each comparison is bounded by unit cost.
     This serves as the cost model for sorting.
@@ -120,12 +121,15 @@ We provide a variety of case studies in [`src/Examples`](./src/Examples).
   - Predicates for correctness of sorting, based on `Sorted` and the permutation relation `↭` from `agda-stdlib`.
     The predicate `IsSort sort` states that `sort` is a correct sorting algorithm.
   - Theorem `IsSort⇒≡`, which states that any two correct sorting algorithms are extensionally equivalent.
-- [`Examples.Sorting.Sequential`](./src/Examples/Sorting/Sequential.agda)
-  - [`Examples.Sorting.Sequential.InsertionSort`](./src/Examples/Sorting/Sequential/InsertionSort.agda)
-    - Definition of the program `sort` implementing insertion sort.
-    - Theorem `sort/correct : IsSort sort` verifying the correctness of `sort`.
-    - Theorem `sort≤sort/cost/closed` stating that the cost of `sort l` is bounded by `sort/cost/closed l = length l ²`.
-    - Theorem `sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n ²)` stating that `sort` is in `𝓞(n ²)`, where `n` is the length of the input list.
+
+#### [`Examples.Sorting.Sequential`](./src/Examples/Sorting/Sequential.agda)
+Here, we use cost monoid `ℕ-CostMonoid`, tracking the total number of sequential steps incurred.
+
+- [`Examples.Sorting.Sequential.InsertionSort`](./src/Examples/Sorting/Sequential/InsertionSort.agda)
+  - Definition of the program `sort` implementing insertion sort.
+  - Theorem `sort/correct : IsSort sort` verifying the correctness of `sort`.
+  - Theorem `sort≤sort/cost/closed` stating that the cost of `sort l` is bounded by `sort/cost/closed l = length l ²`.
+  - Theorem `sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n ²)` stating that `sort` is in `𝓞(n ²)`, where `n` is the length of the input list.
 - [`Examples.Sorting.Sequential.MergeSort`](./src/Examples/Sorting/Sequential/MergeSort.agda)
     - [`Examples.Sorting.Sequential.MergeSort.Split`](./src/Examples/Sorting/Sequential/MergeSort/Split.agda)
       - Definition of the program `split`, which splits a list in halves.
@@ -139,5 +143,40 @@ We provide a variety of case studies in [`src/Examples`](./src/Examples).
   - Theorem `sort/correct : IsSort sort` verifying the correctness of `sort`.
   - Theorem `sort≤sort/cost/closed` stating that the cost of `sort l` is bounded by `sort/cost/closed l = ⌈log₂ length l ⌉ * length l`.
   - Theorem `sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n * ⌈log₂ n ⌉)` stating that `sort` is in `𝓞(n * ⌈log₂ n ⌉)`, where `n` is the length of the input list.
-- [`Examples.Sorting.Parallel`](./src/Examples/Sorting/Parallel.agda)
-  - todo
+
+Theorem `isort≡msort : ◯ (ISort.sort ≡ MSort.sort)` states that `InsertionSort.sort` and `MergeSort.sort` are extensionally equivalent.
+
+#### [`Examples.Sorting.Parallel`](./src/Examples/Sorting/Parallel.agda)
+Here, we use *parallel* cost monoid `ℕ²-ParCostMonoid`, tracking a pair of natural numbers corresponding to the work (sequential cost) and span (idealized parallel cost), respectively.
+
+- [`Examples.Sorting.Parallel.InsertionSort`](./src/Examples/Sorting/Parallel/InsertionSort.agda)
+  - Definition of the program `sort` implementing insertion sort.
+  - Theorem `sort/correct : IsSort sort` verifying the correctness of `sort`.
+  - Theorem `sort≤sort/cost/closed` stating that the cost of `sort l` is bounded by `sort/cost/closed l = (length l ² , length l ²)`.
+  - Theorem `sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n  ² , n  ²)` stating that `sort` is in `𝓞(n  ²)` work and `𝓞(n  ²)` span, where `n` is the length of the input list.
+- [`Examples.Sorting.Parallel.MergeSort`](./src/Examples/Sorting/Parallel/MergeSort.agda)
+    - [`Examples.Sorting.Parallel.MergeSort.Split`](./src/Examples/Sorting/Parallel/MergeSort/Split.agda)
+      - Definition of the program `split`, which splits a list in halves.
+      - Theorem `split/correct` verifying correctness properties of `split`.
+      - Theorem `split≤split/cost` stating that the cost of `split l` is bounded by `𝟘 = (zero , zero)`, since splitting a list into halves requires no comparisons.
+    - [`Examples.Sorting.Parallel.MergeSort.Merge`](./src/Examples/Sorting/Parallel/MergeSort/Merge.agda)
+      - Definition of the program `merge`, which *sequentially* merges a pair of sorted lists.
+      - Theorem `merge/correct` verifying correctness properties of `merge`.
+      - Theorem `merge≤merge/cost/closed` stating that the cost of `merge (l₁ , l₂)` is bounded by `(length l₁ + length l₂ , length l₁ + length l₂)`, since this implementation of `merge` is sequential.
+  - Definition of the program `sort` implementing merge sort, where both recursive calls to `sort` are performed in parallel (via the parallel pairing operation `_&_`).
+  - Theorem `sort/correct : IsSort sort` verifying the correctness of `sort`.
+  - Theorem `sort≤sort/cost/closed` stating that the cost of `sort l` is bounded by `sort/cost/closed l = (⌈log₂ length l ⌉ * length l , 2 * length l + ⌈log₂ length l ⌉)`.
+  - Theorem `sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n * ⌈log₂ n ⌉ , n)` stating that `sort` is in `𝓞(n * ⌈log₂ n ⌉)` work and `𝓞(n)` span, where `n` is the length of the input list.
+- [`Examples.Sorting.Parallel.MergeSortPar`](./src/Examples/Sorting/Parallel/MergeSortPar.agda)
+    - [`Examples.Sorting.Parallel.MergeSortPar.Merge`](./src/Examples/Sorting/Parallel/MergeSortPar/Merge.agda)
+      - Definition of the program `merge`, which merges a pair of sorted lists *in parallel* using auxiliary functions `splitMid` and `splitBy`.
+      - Theorem `merge/correct` verifying correctness properties of `merge`.
+      - Theorem `merge≤merge/cost/closed` stating that the cost of `merge (l₁ , l₂)` is bounded by `(pred[2^ ⌈log₂ suc (length l₁) ⌉ ] * ⌈log₂ suc (length l₂) ⌉ , ⌈log₂ suc (length l₁) ⌉ * ⌈log₂ suc (length l₂) ⌉)`, where `pred[2^ n ] = (2 ^ n) - 1`.
+  - Definition of the program `sort` implementing merge sort, where both recursive calls to `sort` are performed in parallel.
+    This is identical to `MergeSort.sort`, but using the parallel merge operation `MergeSortPar.Merge.Merge`.
+  - Theorem `sort/correct : IsSort sort` verifying the correctness of `sort`.
+  - Theorem `sort≤sort/cost/closed` stating that the cost of `sort l` is bounded by `sort/cost/closed l = (⌈log₂ length l ⌉ * length l * ⌈log₂ suc ⌈ length l /2⌉ ⌉ , ⌈log₂ length l ⌉ * ⌈log₂ suc ⌈ length l /2⌉ ⌉ ²)`.
+  - Theorem `sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n * ⌈log₂ n ⌉ ² , ⌈log₂ n ⌉ ^ 3)` stating that `sort` is in `𝓞(n * ⌈log₂ n ⌉ ²)` work and `𝓞(⌈log₂ n ⌉ ^ 3)` span, where `n` is the length of the input list.
+
+Theorem `isort≡msort : ◯ (ISort.sort ≡ MSort.sort)` states that `InsertionSort.sort` and `MergeSort.sort` are extensionally equivalent.
+Similarly, `msort≡psort : ◯ (MSort.sort ≡ PSort.sort)` states that `MergeSort.sort` and `MergeSortPar.sort` are extensionally equivalent.
