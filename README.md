@@ -74,8 +74,16 @@ We provide a variety of case studies in [`src/Examples`](./src/Examples).
 ## Sequential
 
 ### [`Examples.Id`](./src/Examples/Id.agda)
-- The identity function on natural numbers, trivially (`Easy`) and via recursion (`Hard`).
-- Upper bound and big-O proofs about `Easy.id` and `Hard.id`.
+- `module Easy`
+  - Definition of the program `id` which trivially returns its input.
+  - Theorem `id/correct` stating the (trivially true) correctness of `id`.
+  - Theorem `id≤id/cost` stating that the cost of `id n` is bounded by `id/cost n = 0`.
+  - Theorem `id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → 0)` stating that `id` is in `𝓞(0)`.
+- `module Hard`
+  - Definition of the program `id` which recomputes its input via induction.
+  - Theorem `id/correct` stating the correctness of `id`.
+  - Theorem `id≤id/cost/closed` stating that the cost of `id n` is bounded by `id/cost/closed n = n`.
+  - Theorem `id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → n)` stating that `id` is in `𝓞(n)`, where `n` is the input number.
 - A proof that `Easy.id` and `Hard.id` are extensionally equivalent, `easy≡hard : ◯ (Easy.id ≡ Hard.id)`.
 
 ### [`Examples.Gcd`](./src/Examples/Gcd.agda)
@@ -106,9 +114,10 @@ We provide a variety of case studies in [`src/Examples`](./src/Examples).
 
 ### [`Examples.Exp2`](./src/Examples/Exp2.agda)
 - Two implementations of exponentiation by two: one which performs two identical recursive calls, and one which performs a single recursive call.
-- Proofs of correctness of each implementation.
+- Proofs of correctness of each implementation, `exp₂/correct : Correct exp₂`.
 - Upper bounds on the sequential and parallel costs of each implementation.
   While the sequential cost is severely affected in the version with two recursive calls, the parallel cost is the same.
+- A proof that `Slow.exp₂` and `Fast.exp₂` are extensionally equivalent, `slow≡fast : ◯ (Slow.exp₂ ≡ Fast.exp₂)`.
 
 ## Hybrid
 
