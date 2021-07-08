@@ -2,6 +2,8 @@
 
 open import Calf.CostMonoid
 
+-- Upper bound on the cost of a computation.
+
 module Calf.Types.Bounded (costMonoid : CostMonoid) where
 
 open CostMonoid costMonoid
