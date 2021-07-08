@@ -2,16 +2,28 @@
 
 -- Extensional fragment.
 
-module Calf.Noninterference where
+open import Calf.CostMonoid
+
+module Calf.Noninterference (costMonoid : CostMonoid) where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
+open import Calf.Step costMonoid
 open import Calf.PhaseDistinction
 open import Calf.Types.Eq
 
 open import Data.Product
 open import Relation.Binary.PropositionalEquality as P
 
+oblivious : ∀ {A B} (f : cmp (F A) → val (◯⁺ B)) →
+      ∀ c e → f (step (F A) c e) ≡ f e
+oblivious {A} {B} f c e = funext/Ω (λ u →
+  begin
+  f (step (F A) c e) u ≡⟨ cong (λ e → f e u) (step/ext (F A) e c u) ⟩
+  f e u
+  ∎
+  )
+  where open ≡-Reasoning
 
 unique : ∀ {A} → (a : val (● A)) → (u : ext) → a ≡ ∗ u
 unique {A} a u =
@@ -21,9 +33,9 @@ unique {A} a u =
   (λ u → ret (eq/intro refl))
   (λ a u → eq/uni _ _ u))
 
-noninterference : ∀ {A B} (f : val (● A) → val (◯⁺ B)) →
+constant : ∀ {A B} (f : val (● A) → val (◯⁺ B)) →
   Σ (val (◯⁺ B)) λ b → f ≡ λ _ → b
-noninterference f =
+constant f =
   (λ u → f (∗ u) u) , funext (λ a → funext/Ω (λ u →
     P.cong (λ a → f a u) (unique a u)))
 
@@ -34,10 +46,10 @@ optimization {C} {B} {A} f =
   (λ c →
     let g : val (● (A c)) → val (◯⁺ B)
         g a = f (c , a) in
-    let (b , h) = noninterference {A c} {B} g in
+    let (b , h) = constant {A c} {B} g in
     b) ,
     λ c a →
     let g : val (● (A c)) → val (◯⁺ B)
         g a = f (c , a) in
-    let (b , h) = noninterference {A c} {B} g in
+    let (b , h) = constant {A c} {B} g in
     P.cong-app h a
