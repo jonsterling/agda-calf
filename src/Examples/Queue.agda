@@ -657,5 +657,5 @@ module FrontBack (A : tp pos) where
    where open IntP.≤-Reasoning
 
   -- Starting with an empty queue, a sequence of n operations costs at most 2 * n
-  acost≤2*|l| : ∀ l → IsBounded Q (l op/seq emp) (2 * length l)
-  acost≤2*|l| l = bound/relax (λ u → IntP.drop‿+≤+ (acost≤ϕ₀+2*|l| emp l u)) (op/seq≤op/seq/cost l emp)
+  op/seq≤2*|l| : ∀ l → IsBounded Q (l op/seq emp) (2 * length l)
+  op/seq≤2*|l| l = bound/relax (λ u → IntP.drop‿+≤+ (acost≤ϕ₀+2*|l| emp l u)) (op/seq≤op/seq/cost l emp)
