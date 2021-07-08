@@ -45,7 +45,8 @@ gcd/depth/helper : ∀ n → ((m : ℕ) → m < n → (k : ℕ) → (k > m) → 
 gcd/depth/helper zero h m h' = 0
 gcd/depth/helper n@(suc n') h m h' = suc (h (m % n) (m%n<n m n') n (m%n<n m n'))
 
-m>n = Σ ℕ λ m → Σ ℕ λ n → (m > n)
+gcd/i = Σ++ nat λ x → Σ++ nat λ y → U (meta (x > y))
+m>n = val gcd/i
 
 gcd/depth : m>n → ℕ
 gcd/depth (x , (y , g)) = All.wfRec <-wellFounded _ (λ y → (x : ℕ) → x > y → ℕ)
@@ -101,7 +102,6 @@ gcd/depth-unfold-suc {x} {y} {h} = P.cong suc
     refl
   )
 
-gcd/i = Σ++ nat λ x → Σ++ nat λ y → U (meta (x > y))
 
 m%n<n' : ∀ m n h → _%_ m n {h} < n
 m%n<n' m (suc n) h = m%n<n m n
