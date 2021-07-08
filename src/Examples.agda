@@ -11,7 +11,7 @@ import Examples.Queue
 import Examples.TreeSum
 import Examples.Exp2
 
--- Complex
+-- Hybrid
 import Examples.Sorting
 
 -- Miscellaneous

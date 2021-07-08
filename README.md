@@ -55,10 +55,45 @@ The following modules are parameterized by a `CostMonoid`:
 - [`Calf.Types.BigO`](./src/Calf/Types/BoundedFunction.agda) gives a definition of "big-O" asymptic bounds as a relaxation of `IsBounded`.
 
 ## Examples
-- Id
-- Gcd
-- Queue
-- TreeSum
-- Exp2
-- Sorting
-- CostEffect
+
+We provide a variety of case studies in [`src/Examples`](./src/Examples).
+
+## Sequential
+
+### [`Id`](./src/Examples/Id.agda)
+- The identity function on natural numbers, trivially (`Easy`) and via recursion (`Hard`).
+- Upper bound and big-O proofs about `Easy.id` and `Hard.id`.
+- A proof that `Easy.id` and `Hard.id` are extensionally equivalent, `easy≡hard : ◯ (Easy.id ≡ Hard.id)`.
+
+### [`Gcd`](./src/Examples/Gcd.agda)
+todo
+
+### [`Queue`](./src/Examples/Queue.agda)
+- An implementation of [front-back queues](https://en.wikipedia.org/wiki/Queue_(abstract_data_type)#Amortized_queue).
+- Upper bounds on the cost of individual enqueue and dequeue operations.
+- Amortized analysis of sequences of enqueue and dequeue operations.
+
+## Parallel
+
+### [`TreeSum`](./src/Examples/TreeSum.agda)
+- A simple algorithm to sum the elements of a tree, incurring unit cost when performing each addition operation.
+  At each node, the recursive calls are computed in parallel.
+- Upper bounds on the cost of summing the elements of a tree, sequentially and in parallel (`size t` and `depth t`, respectively).
+
+### [`Exp2`](./src/Examples/Exp2.agda)
+- Two implementations of exponentiation by two: one which performs two identical recursive calls, and one which performs a single recursive call.
+- Proofs of correctness of each implementation.
+- Upper bounds on the sequential and parallel costs of each implementation.
+  While the sequential cost is severely affected in the version with two recursive calls, the parallel cost is the same.
+
+## Hybrid
+
+### [`Sorting`](./src/Examples/Sorting.agda)
+- In [`Examples.Sorting.Sequential`](./src/Examples/Sorting/Sequential.agda), we provide sequential implementations of insertion sort (`InsertionSort`) and merge sort (`MergeSort`), as well as a proof that they are equivalent, `isort≡msort : ◯ (ISort.sort ≡ MSort.sort)`.
+- In [`Examples.Sorting.Parallel`](./src/Examples/Sorting/Parallel.agda), we provide three sorting algorithms: insertion sort (`InsertionSort`), a naïve parallelization of merge sort (`MergeSort`), and a sublinear parallel merge sort algorithm (`MergeSortPar`).
+- In both cases, we give formal cost analyses `sort≤sort/cost/closed` which verify the expected (asymptotically tight) upper bounds on cost. These are relaxed to the more readable asymptotic bounds, `sort/asymptotic`.
+
+## Miscellaneous
+
+### [`CostEffect`](./src/Examples/CostEffect.agda)
+todo?
