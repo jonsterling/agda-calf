@@ -1,0 +1,101 @@
+name: Compile Agda and Deploy HTML
+on:
+  push:
+    branches:
+      - main
+
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        agda-ref: ["v2.6.2"]
+        ghc-ver: ["8.10.2"]
+        cabal-ver: ["3.4.0.0"]
+    steps:
+    - uses: actions/cache@v2
+      name: Cache cabal packages
+      id: cache-cabal
+      with:
+        path: |
+          ~/.cabal/packages
+          ~/.cabal/store
+          ~/.cabal/bin
+          dist-newstyle
+        key: ${{ runner.os }}-${{ matrix.ghc-ver }}-${{ matrix.cabal-ver }}-${{ matrix.agda-ref }}
+    - name: Install cabal
+      if: steps.cache-cabal.outputs.cache-hit != 'true'
+      uses: actions/setup-haskell@v1.1.3
+      with:
+        ghc-version: ${{ matrix.ghc-ver }}
+        cabal-version: ${{ matrix.cabal-ver }}
+    - name: Put cabal programs in PATH
+      run: echo "~/.cabal/bin" >> $GITHUB_PATH
+    - name: Download Agda from github
+      if: steps.cache-cabal.outputs.cache-hit != 'true'
+      uses: actions/checkout@v2
+      with:
+        repository: agda/agda
+        path: agda
+        ref: ${{ matrix.agda-ref }}
+
+    - name: Install Agda
+      if: steps.cache-cabal.outputs.cache-hit != 'true'
+      run: |
+        cabal update
+        cabal install --overwrite-policy=always --ghc-options='-O2 +RTS -M6G -RTS' alex-3.2.5
+        cabal install --overwrite-policy=always --ghc-options='-O2 +RTS -M6G -RTS' happy-1.19.12
+        cd agda
+        mkdir -p doc
+        touch doc/user-manual.pdf
+        cabal install --overwrite-policy=always --ghc-options='-O1 +RTS -M6G -RTS'
+    - name: Checkout main
+      uses: actions/checkout@v2
+      with:
+        path: main
+
+    - uses: actions/cache@v2
+      name: Cache main library
+      id: cache-main
+      with:
+        path: ~/main-build
+        key: html-and-tex-${{ runner.os }}-${{ matrix.agda-ver }}-${{ matrix.cubical-ref }}-${{ hashFiles('main/**') }}
+        restore-keys: |
+          html-and-tex-${{ runner.os }}-${{ matrix.agda-ver }}-${{ matrix.cubical-ref }}-
+          html-and-tex-${{ runner.os }}-${{ matrix.agda-ver }}-
+
+    - name: Retrieve main library
+      if: steps.cache-main.outputs.cache-hit == 'true'
+      run: cp -f -R ~/main-build/* $GITHUB_WORKSPACE/main
+    - name: Compile main library
+      if: steps.cache-main.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p ~/main-build/_build
+        cp -f -R ~/main-build/_build $GITHUB_WORKSPACE/main/_build
+        rm -r ~/main-build
+        cd main
+        find . -type f \( -name "*.agda" -o -name "*.lagda" \) > FileList
+        sort -o FileList FileList
+        echo "" >> Everything.agda
+        echo "module Everything where" >> Everything.agda
+        echo "" >> Everything.agda
+        echo "-- This file imports every module in the project. Click on" >> Everything.agda
+        echo "-- a module name to go to its source." >> Everything.agda
+        echo "" >> Everything.agda
+        cat FileList | cut -c 3-               \
+                     | cut -f1 -d'.'           \
+                     | sed 's/\//\./g'         \
+                     | sed 's/^/open import /' \
+                     >> Everything.agda
+        rm FileList
+        agda --html --html-dir=docs Everything.agda
+        rm Everything.agda
+        cd ..
+        cp -f -R main/ ~/main-build/
+    - name: Deploy html to github pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: main/docs
+
