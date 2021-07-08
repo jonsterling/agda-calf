@@ -108,15 +108,20 @@ We provide a variety of case studies in [`src/Examples`](./src/Examples).
 ## Parallel
 
 ### [`Examples.TreeSum`](./src/Examples/TreeSum.agda)
-- A simple algorithm to sum the elements of a tree, incurring unit cost when performing each addition operation.
+- Definition of the program `sum` which sums the elements of a tree, incurring unit cost when performing each addition operation.
   At each node, the recursive calls are computed in parallel.
-- Upper bounds on the cost of summing the elements of a tree, sequentially and in parallel (`size t` and `depth t`, respectively).
+- Theorem `sum≤sum/cost/closed` stating that the cost of `sum t` is bounded by `sum/cost/closed t = size t , depth t`.
 
 ### [`Examples.Exp2`](./src/Examples/Exp2.agda)
-- Two implementations of exponentiation by two: one which performs two identical recursive calls, and one which performs a single recursive call.
-- Proofs of correctness of each implementation, `exp₂/correct : Correct exp₂`.
-- Upper bounds on the sequential and parallel costs of each implementation.
-  While the sequential cost is severely affected in the version with two recursive calls, the parallel cost is the same.
+- `module Slow`
+  - Definition of the program `exp₂` which computes the exponentation of two by its input by performing two identical recursive calls.
+  - Theorem `exp₂/correct` stating the correctness of `exp₂`.
+  - Theorem `exp₂≤exp₂/cost/closed` stating that the cost of `exp₂ n` is bounded by `exp₂/cost/closed n = (pred[2^ n ] , n)`, where `pred[2^ n ] = (2 ^ n) - 1`.
+    Since two identical recursive calls are made, the work is exponential, but the span is still linear.
+- `module Fast`
+  - Definition of the program `exp₂` which computes the exponentation of two by its input via a standard recursive algorithm.
+  - Theorem `exp₂/correct` stating the correctness of `exp₂`.
+  - Theorem `exp₂≤exp₂/cost/closed` stating that the cost of `exp₂ n` is bounded by `exp₂/cost/closed n = (n , n)`.
 - A proof that `Slow.exp₂` and `Fast.exp₂` are extensionally equivalent, `slow≡fast : ◯ (Slow.exp₂ ≡ Fast.exp₂)`.
 
 ## Hybrid
