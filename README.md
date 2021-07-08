@@ -73,12 +73,12 @@ We provide a variety of case studies in [`src/Examples`](./src/Examples).
 
 ## Sequential
 
-### [`Id`](./src/Examples/Id.agda)
+### [`Examples.Id`](./src/Examples/Id.agda)
 - The identity function on natural numbers, trivially (`Easy`) and via recursion (`Hard`).
 - Upper bound and big-O proofs about `Easy.id` and `Hard.id`.
 - A proof that `Easy.id` and `Hard.id` are extensionally equivalent, `easy≡hard : ◯ (Easy.id ≡ Hard.id)`.
 
-### [`Gcd`](./src/Examples/Gcd.agda)
+### [`Examples.Gcd`](./src/Examples/Gcd.agda)
 - [`Examples.Gcd.Euclid`](./src/Examples/Gcd/Euclid.agda)
   - Specification of the cost model via the instrumented operation `mod`.
   - Definition of the type `gcd/i`, which specifies that inputs to Euclid's algorithm should be ordered (first is greater than second).
@@ -92,19 +92,19 @@ We provide a variety of case studies in [`src/Examples`](./src/Examples).
 - [`Examples.Gcd.Refine`](./src/Examples/Gcd/Refine.agda)
   - Refinement of the bound `gcd/depth` -- the theorem `gcd/depth≤gcd/depth/closed` states that the cost of `gcd` is bounded by `suc ∘ fib⁻¹`.
 
-### [`Queue`](./src/Examples/Queue.agda)
+### [`Examples.Queue`](./src/Examples/Queue.agda)
 - An implementation of [front-back queues](https://en.wikipedia.org/wiki/Queue_(abstract_data_type)#Amortized_queue).
 - Upper bounds on the cost of individual enqueue and dequeue operations.
 - Amortized analysis of sequences of enqueue and dequeue operations.
 
 ## Parallel
 
-### [`TreeSum`](./src/Examples/TreeSum.agda)
+### [`Examples.TreeSum`](./src/Examples/TreeSum.agda)
 - A simple algorithm to sum the elements of a tree, incurring unit cost when performing each addition operation.
   At each node, the recursive calls are computed in parallel.
 - Upper bounds on the cost of summing the elements of a tree, sequentially and in parallel (`size t` and `depth t`, respectively).
 
-### [`Exp2`](./src/Examples/Exp2.agda)
+### [`Examples.Exp2`](./src/Examples/Exp2.agda)
 - Two implementations of exponentiation by two: one which performs two identical recursive calls, and one which performs a single recursive call.
 - Proofs of correctness of each implementation.
 - Upper bounds on the sequential and parallel costs of each implementation.
@@ -112,7 +112,32 @@ We provide a variety of case studies in [`src/Examples`](./src/Examples).
 
 ## Hybrid
 
-### [`Sorting`](./src/Examples/Sorting.agda)
-- In [`Examples.Sorting.Sequential`](./src/Examples/Sorting/Sequential.agda), we provide sequential implementations of insertion sort (`InsertionSort`) and merge sort (`MergeSort`), as well as a proof that they are equivalent, `isort≡msort : ◯ (ISort.sort ≡ MSort.sort)`.
-- In [`Examples.Sorting.Parallel`](./src/Examples/Sorting/Parallel.agda), we provide three sorting algorithms: insertion sort (`InsertionSort`), a naïve parallelization of merge sort (`MergeSort`), and a sublinear parallel merge sort algorithm (`MergeSortPar`).
-- In both cases, we give formal cost analyses `sort≤sort/cost/closed` which verify the expected (asymptotically tight) upper bounds on cost. These are relaxed to the more readable asymptotic bounds, `sort/asymptotic`.
+### [`Examples.Sorting`](./src/Examples/Sorting.agda)
+- [`Examples.Sorting.Comparable`](./src/Examples/Sorting/Comparable.agda)
+  - Record `Comparable` describing the requirements for a type to be comparable, including `h-cost`, a hypothesis that each comparison is bounded by unit cost.
+    This serves as the cost model for sorting.
+- [`Examples.Sorting.Core`](./src/Examples/Sorting/Core.agda)
+  - Predicates for correctness of sorting, based on `Sorted` and the permutation relation `↭` from `agda-stdlib`.
+    The predicate `IsSort sort` states that `sort` is a correct sorting algorithm.
+  - Theorem `IsSort⇒≡`, which states that any two correct sorting algorithms are extensionally equivalent.
+- [`Examples.Sorting.Sequential`](./src/Examples/Sorting/Sequential.agda)
+  - [`Examples.Sorting.Sequential.InsertionSort`](./src/Examples/Sorting/Sequential/InsertionSort.agda)
+    - Definition of the program `sort` implementing insertion sort.
+    - Theorem `sort/correct : IsSort sort` verifying the correctness of `sort`.
+    - Theorem `sort≤sort/cost/closed` stating that the cost of `sort l` is bounded by `sort/cost/closed l = length l ²`.
+    - Theorem `sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n ²)` stating that `sort` is in `𝓞(n ²)`, where `n` is the length of the input list.
+- [`Examples.Sorting.Sequential.MergeSort`](./src/Examples/Sorting/Sequential/MergeSort.agda)
+    - [`Examples.Sorting.Sequential.MergeSort.Split`](./src/Examples/Sorting/Sequential/MergeSort/Split.agda)
+      - Definition of the program `split`, which splits a list in halves.
+      - Theorem `split/correct` verifying correctness properties of `split`.
+      - Theorem `split≤split/cost` stating that the cost of `split l` is bounded by `zero`, since splitting a list into halves requires no comparisons.
+    - [`Examples.Sorting.Sequential.MergeSort.Merge`](./src/Examples/Sorting/Sequential/MergeSort/Merge.agda)
+      - Definition of the program `merge`, which merges a pair of sorted lists.
+      - Theorem `merge/correct` verifying correctness properties of `merge`.
+      - Theorem `merge≤merge/cost/closed` stating that the cost of `merge (l₁ , l₂)` is bounded by `length l₁ + length l₂`.
+  - Definition of the program `sort` implementing merge sort.
+  - Theorem `sort/correct : IsSort sort` verifying the correctness of `sort`.
+  - Theorem `sort≤sort/cost/closed` stating that the cost of `sort l` is bounded by `sort/cost/closed l = ⌈log₂ length l ⌉ * length l`.
+  - Theorem `sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n * ⌈log₂ n ⌉)` stating that `sort` is in `𝓞(n * ⌈log₂ n ⌉)`, where `n` is the length of the input list.
+- [`Examples.Sorting.Parallel`](./src/Examples/Sorting/Parallel.agda)
+  - todo
