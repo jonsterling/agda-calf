@@ -10,13 +10,13 @@ open import Calf.Metalanguage
 open import Relation.Binary.PropositionalEquality as P
 
 
--- Extensional open.
+-- Extensional phase.
 
 postulate
   ext : Ω
 
 
--- Open modality.
+-- Open/extensional modality.
 
 ◯ : □ → □
 ◯ A = ext → A
@@ -38,7 +38,7 @@ postulate
 ◯⁻ A = ext/cmp (λ _ → A)
 
 
--- Closed modality.
+-- Closed/intensional modality.
 
 postulate
   ● : tp pos → tp pos
