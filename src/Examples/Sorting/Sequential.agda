@@ -302,6 +302,7 @@ module Ex/InsertionSort where
 module MergeSort (M : Comparable) where
   open Comparable M
   open Core M
+  open import Data.Nat.Log2
 
   _≥_ : val A → val A → Set
   x ≥ y = y ≤ x
@@ -313,52 +314,6 @@ module MergeSort (M : Comparable) where
   ≰⇒≥ {x} {y} h with ≤-total x y
   ... | inj₁ h₁ = ⊥-elim (h h₁)
   ... | inj₂ h₂ = h₂
-
-  module _ where
-
-    private
-      aux : (P : ℕ → Set) → P zero → P (suc zero) → ((n : ℕ) → P ⌈ suc (suc n) /2⌉ → P (suc (suc n))) →
-        (n : ℕ) → (m : ℕ) → m Nat.≤ n → P m
-      aux P bc₀ bc₁ is n zero h = bc₀
-      aux P bc₀ bc₁ is n (suc zero) h = bc₁
-      aux P bc₀ bc₁ is (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
-        is m (aux P bc₀ bc₁ is (suc n) ⌈ suc (suc m) /2⌉ (s≤s (N.≤-trans (N.⌈n/2⌉≤n m) h)))
-
-    strong-induction : (P : ℕ → Set) → P zero → P (suc zero) → ((n : ℕ) → P ⌈ suc (suc n) /2⌉ → P (suc (suc n))) → (n : ℕ) → P n
-    strong-induction P bc₀ bc₁ is n = aux P bc₀ bc₁ is n n N.≤-refl
-
-    private
-      strong-induction/is : ∀ {P bc₀ bc₁ is n} →
-        aux P bc₀ bc₁ is (suc n) ⌈ suc (suc n) /2⌉ (s≤s (N.≤-trans (N.⌈n/2⌉≤n n) N.≤-refl)) ≡
-        strong-induction P bc₀ bc₁ is ⌈ suc (suc n) /2⌉
-      strong-induction/is {P} {bc₀} {bc₁} {is} {n} = aux/unique
-        where
-          aux/unique : ∀ {m n₁ n₂ h₁ h₂} → aux P bc₀ bc₁ is n₁ m h₁ ≡ aux P bc₀ bc₁ is n₂ m h₂
-          aux/unique {zero} = refl
-          aux/unique {suc zero} = refl
-          aux/unique {suc (suc m)} {h₁ = s≤s (s≤s h₁)} {h₂ = s≤s (s≤s h₂)} = Eq.cong (is m) aux/unique
-      {-# REWRITE strong-induction/is #-}
-
-    ⌈log₂_⌉ : ℕ → ℕ
-    ⌈log₂_⌉ = strong-induction (λ _ → ℕ) zero zero (λ _ → suc)
-
-    log₂-mono : ⌈log₂_⌉ Preserves Nat._≤_ ⟶ Nat._≤_
-    log₂-mono {n₁} {n₂} =
-      strong-induction (λ n₁ → ∀ n₂ → n₁ Nat.≤ n₂ → ⌈log₂ n₁ ⌉ Nat.≤ ⌈log₂ n₂ ⌉)
-        (λ _ _ → z≤n)
-        (λ _ _ → z≤n)
-        (λ { n₁ ih (suc (suc n₂)) (s≤s (s≤s h)) → s≤s (ih ⌈ suc (suc n₂) /2⌉ (N.⌈n/2⌉-mono (s≤s (s≤s h))))})
-        n₁
-        n₂
-
-    log₂-suc : ∀ n {k} → ⌈log₂ n ⌉ Nat.≤ suc k → ⌈log₂ ⌈ n /2⌉ ⌉ Nat.≤ k
-    log₂-suc zero h = z≤n
-    log₂-suc (suc zero) h = z≤n
-    log₂-suc (suc (suc n)) (s≤s h) = h
-
-    ⌈log₂n⌉≡0⇒n≤1 : {n : ℕ} → ⌈log₂ n ⌉ ≡ 0 → n Nat.≤ 1
-    ⌈log₂n⌉≡0⇒n≤1 {zero} refl = z≤n
-    ⌈log₂n⌉≡0⇒n≤1 {suc zero} refl = s≤s z≤n
 
   pair = Σ++ (list A) λ _ → (list A)
 
