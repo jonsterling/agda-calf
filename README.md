@@ -116,8 +116,3 @@ We provide a variety of case studies in [`src/Examples`](./src/Examples).
 - In [`Examples.Sorting.Sequential`](./src/Examples/Sorting/Sequential.agda), we provide sequential implementations of insertion sort (`InsertionSort`) and merge sort (`MergeSort`), as well as a proof that they are equivalent, `isort≡msort : ◯ (ISort.sort ≡ MSort.sort)`.
 - In [`Examples.Sorting.Parallel`](./src/Examples/Sorting/Parallel.agda), we provide three sorting algorithms: insertion sort (`InsertionSort`), a naïve parallelization of merge sort (`MergeSort`), and a sublinear parallel merge sort algorithm (`MergeSortPar`).
 - In both cases, we give formal cost analyses `sort≤sort/cost/closed` which verify the expected (asymptotically tight) upper bounds on cost. These are relaxed to the more readable asymptotic bounds, `sort/asymptotic`.
-
-## Miscellaneous
-
-### [`CostEffect`](./src/Examples/CostEffect.agda)
-todo?

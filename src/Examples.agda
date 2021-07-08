@@ -13,6 +13,3 @@ import Examples.Exp2
 
 -- Hybrid
 import Examples.Sorting
-
--- Miscellaneous
-import Examples.CostEffect
