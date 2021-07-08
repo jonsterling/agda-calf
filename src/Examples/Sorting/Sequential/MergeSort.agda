@@ -27,8 +27,8 @@ open import Data.Nat.Square
 open import Data.Nat.Log2
 
 
-open import Examples.Sorting.Sequential.MergeSort.Split M
-open import Examples.Sorting.Sequential.MergeSort.Merge M
+open import Examples.Sorting.Sequential.MergeSort.Split M public
+open import Examples.Sorting.Sequential.MergeSort.Merge M public
 
 sort/clocked : cmp (Π nat λ _ → Π (list A) λ _ → F (list A))
 sort/clocked zero    l = ret l

@@ -21,8 +21,8 @@ open import Data.Nat.Properties as N using (module ≤-Reasoning)
 open import Data.Nat.Log2
 
 
-open import Examples.Sorting.Parallel.MergeSort.Split M
-open import Examples.Sorting.Parallel.MergeSort.Merge M
+open import Examples.Sorting.Parallel.MergeSort.Split M public
+open import Examples.Sorting.Parallel.MergeSort.Merge M public
 
 sort/clocked : cmp (Π nat λ _ → Π (list A) λ _ → F (list A))
 sort/clocked zero    l = ret l
