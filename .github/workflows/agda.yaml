@@ -2,7 +2,7 @@ name: Compile Agda and Deploy HTML
 on:
   push:
     branches:
-      - master
+      - main
 
 
 jobs:
