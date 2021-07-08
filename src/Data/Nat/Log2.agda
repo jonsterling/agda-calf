@@ -7,7 +7,7 @@ open import Data.Nat.Properties
 
 open import Relation.Nullary
 open import Relation.Binary
-open import Relation.Binary.PropositionalEquality as Eq
+open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl)
 
 open import Agda.Builtin.Equality.Rewrite
 

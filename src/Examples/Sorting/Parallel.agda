@@ -837,123 +837,12 @@ module Ex/MergeSort where
   ex/sort/shuffled : cmp (F list')
   ex/sort/shuffled = Sort.sort test/shuffled  -- cost: 47, 26
 
-module Square where
-  _² : ℕ → ℕ
-  n ² = n * n
-
-  ²-mono : _² Preserves Nat._≤_ ⟶ Nat._≤_
-  ²-mono m≤n = N.*-mono-≤ m≤n m≤n
-
-module PredExp2 where
-  import Data.Nat.Log2 as Log2
-
-  pred[2^_] : ℕ → ℕ
-  pred[2^ n ] = pred (2 ^ n)
-
-  private
-    lemma/2^suc : ∀ n → 2 ^ n + 2 ^ n ≡ 2 ^ suc n
-    lemma/2^suc n =
-      begin
-        2 ^ n + 2 ^ n
-      ≡˘⟨ Eq.cong ((2 ^ n) +_) (N.*-identityˡ (2 ^ n)) ⟩
-        2 ^ n + (2 ^ n + 0)
-      ≡⟨⟩
-        2 ^ n + (2 ^ n + 0 * (2 ^ n))
-      ≡⟨⟩
-        2 * (2 ^ n)
-      ≡⟨⟩
-        2 ^ suc n
-      ∎
-        where open ≡-Reasoning
-
-    lemma/1≤2^n : ∀ n → 1 Nat.≤ 2 ^ n
-    lemma/1≤2^n zero    = N.≤-refl {1}
-    lemma/1≤2^n (suc n) =
-      begin
-        1
-      ≤⟨ s≤s z≤n ⟩
-        1 + 1
-      ≤⟨ N.+-mono-≤ (lemma/1≤2^n n) (lemma/1≤2^n n) ⟩
-        2 ^ n + 2 ^ n
-      ≡⟨ lemma/2^suc n ⟩
-        2 ^ suc n
-      ∎
-        where open ≤-Reasoning
-
-    lemma/2^n≢0 : ∀ n → 2 ^ n ≢ zero
-    lemma/2^n≢0 n 2^n≡0 with 2 ^ n | lemma/1≤2^n n
-    ... | zero | ()
-
-    lemma/pred-+ : ∀ m n → m ≢ zero → pred m + n ≡ pred (m + n)
-    lemma/pred-+ zero    n m≢zero = ⊥-elim (m≢zero refl)
-    lemma/pred-+ (suc m) n m≢zero = refl
-
-  pred[2^]-mono : pred[2^_] Preserves Nat._≤_ ⟶ Nat._≤_
-  pred[2^]-mono m≤n = N.pred-mono (2^-mono m≤n)
-    where
-      2^-mono : (2 ^_) Preserves Nat._≤_ ⟶ Nat._≤_
-      2^-mono {y = y} z≤n = lemma/1≤2^n y
-      2^-mono (s≤s m≤n) = N.*-monoʳ-≤ 2 (2^-mono m≤n)
-
-  pred[2^suc[n]] : (n : ℕ) → suc (pred[2^ n ] + pred[2^ n ]) ≡ pred[2^ suc n ]
-  pred[2^suc[n]] n =
-    begin
-      suc (pred[2^ n ] + pred[2^ n ])
-    ≡⟨⟩
-      suc (pred (2 ^ n) + pred (2 ^ n))
-    ≡˘⟨ N.+-suc (pred (2 ^ n)) (pred (2 ^ n)) ⟩
-      pred (2 ^ n) + suc (pred (2 ^ n))
-    ≡⟨ Eq.cong (pred (2 ^ n) +_) (N.suc[pred[n]]≡n (lemma/2^n≢0 n)) ⟩
-      pred (2 ^ n) + 2 ^ n
-    ≡⟨ lemma/pred-+ (2 ^ n) (2 ^ n) (lemma/2^n≢0 n) ⟩
-      pred (2 ^ n + 2 ^ n)
-    ≡⟨ Eq.cong pred (lemma/2^suc n) ⟩
-      pred (2 ^ suc n)
-    ≡⟨⟩
-      pred[2^ suc n ]
-    ∎
-      where open ≡-Reasoning
-
-  pred[2^log₂] : (n : ℕ) → pred[2^ Log2.⌈log₂ suc ⌈ n /2⌉ ⌉ ] Nat.≤ n
-  pred[2^log₂] n = strong-induction n n N.≤-refl
-    where
-      strong-induction : (n m : ℕ) → m Nat.≤ n → pred[2^ Log2.⌈log₂ suc ⌈ m /2⌉ ⌉ ] Nat.≤ m
-      strong-induction n zero    h = z≤n
-      strong-induction n (suc zero) h = s≤s z≤n
-      strong-induction (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
-        begin
-          pred[2^ Log2.⌈log₂ suc ⌈ suc (suc m) /2⌉ ⌉ ]
-        ≡⟨⟩
-          pred[2^ suc Log2.⌈log₂ ⌈ suc ⌈ suc (suc m) /2⌉ /2⌉ ⌉ ]
-        ≡˘⟨ pred[2^suc[n]] Log2.⌈log₂ ⌈ suc ⌈ suc (suc m) /2⌉ /2⌉ ⌉ ⟩
-          suc (pred[2^ Log2.⌈log₂ ⌈ suc ⌈ suc (suc m) /2⌉ /2⌉ ⌉ ] + pred[2^ Log2.⌈log₂ ⌈ suc ⌈ suc (suc m) /2⌉ /2⌉ ⌉ ])
-        ≡⟨⟩
-          suc (pred[2^ Log2.⌈log₂ ⌈ suc (suc ⌈ m /2⌉) /2⌉ ⌉ ] + pred[2^ Log2.⌈log₂ ⌈ suc (suc ⌈ m /2⌉) /2⌉ ⌉ ])
-        ≡⟨⟩
-          suc (pred[2^ Log2.⌈log₂ suc ⌈ ⌈ m /2⌉ /2⌉ ⌉ ] + pred[2^ Log2.⌈log₂ suc ⌈ ⌈ m /2⌉ /2⌉ ⌉ ])
-        ≤⟨
-          s≤s (
-            N.+-mono-≤
-              (strong-induction (suc n) ⌈ m /2⌉ (N.≤-trans (N.⌊n/2⌋≤n (suc m)) (s≤s h)))
-              (strong-induction (suc n) ⌈ m /2⌉ (N.≤-trans (N.⌊n/2⌋≤n (suc m)) (s≤s h)))
-          )
-        ⟩
-          suc (⌈ m /2⌉ + ⌈ m /2⌉)
-        ≡⟨⟩
-          suc (⌊ suc m /2⌋ + ⌈ m /2⌉)
-        ≤⟨ s≤s (N.+-monoʳ-≤ ⌊ suc m /2⌋ (N.⌈n/2⌉-mono (N.n≤1+n m))) ⟩
-          suc (⌊ suc m /2⌋ + ⌈ suc m /2⌉)
-        ≡⟨ Eq.cong suc (N.⌊n/2⌋+⌈n/2⌉≡n (suc m)) ⟩
-          suc (suc m)
-        ∎
-          where open ≤-Reasoning
-
 module MergeSortPar (M : Comparable) where
   open Comparable M
   open Core M
   open import Data.Nat.Log2
-  open Square
-  open PredExp2
+  open import Data.Nat.Square
+  open import Data.Nat.PredExp2
 
   _≥_ : val A → val A → Set
   x ≥ y = y ≤ x
