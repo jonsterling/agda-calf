@@ -41,14 +41,14 @@ The language itself is implemented via the following files, which are given in a
 The following modules are not parameterized:
 - [`Calf.Prelude`](./src/Calf/Prelude.agda) contains commonly-used definitions.
 - [`Calf.Metalanguage`](./src/Calf/Metalanguage.agda) defines the basic Call-By-Push-Value (CBPV) language, using Agda `postulate`s and rewrite rules.
-- [`Calf.PhaseDistinction`](./src/Calf/PhaseDistinction.agda) defines the phase distinction for extension, including the extensional open `ext`, the open modality `◯`, and the closed modality `●`.
+- [`Calf.PhaseDistinction`](./src/Calf/PhaseDistinction.agda) defines the phase distinction for extension, including the extensional phase `ext`, the open/extensional modality `◯`, and the closed/intensional modality `●`.
 - [`Calf.Noninterference`](./src/Calf/Noninterference.agda) gives theorems related to the phase distinction/noninterference.
 
 The following modules are parameterized by a `CostMonoid`:
 - [`Calf.Step`](./src/Calf/Step.agda) defines the `step` effect and gives the associated laws via rewrite rules.
 
 The following modules are parameterized by a `ParCostMonoid`:
-- [`Calf.ParMetalanguage`](./src/Calf/ParMetalanguage.agda) the (negative) parallel product `_&_`, whose cost is the `ParCostMonoid` product (i.e., `_⊗_`) of its components, as well as associated laws and lemmas.
+- [`Calf.ParMetalanguage`](./src/Calf/ParMetalanguage.agda) the parallel pairing operation `_&_`, whose cost is the `ParCostMonoid` product (i.e., `_⊗_`) of its components, as well as associated laws and lemmas.
 
 ### Types
 
@@ -77,7 +77,18 @@ We provide a variety of case studies in [`src/Examples`](./src/Examples).
 - A proof that `Easy.id` and `Hard.id` are extensionally equivalent, `easy≡hard : ◯ (Easy.id ≡ Hard.id)`.
 
 ### [`Gcd`](./src/Examples/Gcd.agda)
-todo
+- [`Examples.Gcd.Euclid`](./src/Examples/Gcd/Euclid.agda)
+  - Specification of the cost model via the instrumented operation `mod`.
+  - Definition of the type `gcd/i`, which specifies that inputs to Euclid's algorithm should be ordered (first is greater than second).
+  - Definition of the program `gcd/depth` that computes the recursion depth of Euclid's algorithm.
+- [`Examples.Gcd.Clocked`](./src/Examples/Gcd/Clocked.agda)
+  - The clocked version of Euclid's algorithm `gcd/clocked` in which the first parameter is used to justify recursive calls.
+  - The actual algorithm `gcd`, obtained by instantiating the clock parameter by `gcd/depth`.
+  - The theorem `gcd≤gcd/depth` stating that the cost of Euclid's algorithm is bounded by the recursion depth `gcd/depth`.
+- [`Examples.Gcd.Spec`](./src/Examples/Gcd/Spec.agda)
+  - Theorems `gcd≡spec/zero` and `gcd≡spec/suc` stating the behavioral correctness of `gcd` in terms of the defining equations of Euclid's algorithm.
+- [`Examples.Gcd.Refine`](./src/Examples/Gcd/Refine.agda)
+  - Refinement of the bound `gcd/depth` -- the theorem `gcd/depth≤gcd/depth/closed` states that the cost of `gcd` is bounded by `suc ∘ fib⁻¹`.
 
 ### [`Queue`](./src/Examples/Queue.agda)
 - An implementation of [front-back queues](https://en.wikipedia.org/wiki/Queue_(abstract_data_type)#Amortized_queue).
