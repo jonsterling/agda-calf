@@ -19,7 +19,6 @@ open import Data.Product
 open import Relation.Binary.PropositionalEquality
 
 postulate
-  -- negative product
   _&_ : {A₁ A₂ : tp pos} → cmp (F A₁) → cmp (F A₂) → cmp (F (Σ++ A₁ (λ _ → A₂)))
 
   &/join : ∀ {A₁ A₂} {v₁ v₂ p₁ p₂} →

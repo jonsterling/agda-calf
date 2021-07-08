@@ -646,8 +646,8 @@ module FrontBack (A : tp pos) where
   all2s/is/acost ((op/enq x) ∷ os) u = a/cons (op/enq x) 2 os (all2s (length os)) (enq/acost x u) (all2s/is/acost os u)
   all2s/is/acost (op/deq ∷ os) u = a/cons op/deq 2 os (all2s (length os)) (acost/weaken z≤n (deq/acost u)) (all2s/is/acost os u)
 
-  fb/amortized : ∀ q l → ◯ (Int.+ (cost/seq l q) Int.≤  Int.+ (ϕ q + 2 * length l))
-  fb/amortized q l u =
+  acost≤ϕ₀+2*|l| : ∀ q l → ◯ (Int.+ (cost/seq l q) Int.≤  Int.+ (ϕ q + 2 * length l))
+  acost≤ϕ₀+2*|l| q l u =
     begin
     Int.+ (cost/seq l q) ≤⟨ amortized≥cost q l (all2s (length l)) (all2s/is/acost l u) u ⟩
     Int.+ (ϕ q + lsum (all2s (length l))) ≡⟨ P.cong (λ x → Int.+ (ϕ q + x)) (sum2s (length l)) ⟩
@@ -657,5 +657,5 @@ module FrontBack (A : tp pos) where
    where open IntP.≤-Reasoning
 
   -- Starting with an empty queue, a sequence of n operations costs at most 2 * n
-  fb≤2*|l| : ∀ l → IsBounded Q (l operate/seq emp) (2 * length l)
-  fb≤2*|l| l = bound/relax (λ u → IntP.drop‿+≤+ (fb/amortized emp l u)) (operate/seq≤cost/seq l emp)
+  acost≤2*|l| : ∀ l → IsBounded Q (l operate/seq emp) (2 * length l)
+  acost≤2*|l| l = bound/relax (λ u → IntP.drop‿+≤+ (acost≤ϕ₀+2*|l| emp l u)) (operate/seq≤cost/seq l emp)
