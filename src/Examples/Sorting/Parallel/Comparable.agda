@@ -14,5 +14,10 @@ open ParCostMonoid parCostMonoid
     module ≤-Reasoning to ≤ₚ-Reasoning
   ) public
 
+open import Data.Nat using (ℕ)
 open import Data.Product using (_,_)
-open import Examples.Sorting.Comparable costMonoid (λ n → n , n) public
+
+fromℕ : ℕ → ℂ
+fromℕ n = n , n
+
+open import Examples.Sorting.Comparable costMonoid fromℕ public

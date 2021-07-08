@@ -8,4 +8,9 @@ open import Calf.CostMonoids
 costMonoid = ℕ-CostMonoid
 open CostMonoid costMonoid hiding (zero; _+_; _≤_; ≤-refl; ≤-trans) public
 
-open import Examples.Sorting.Comparable costMonoid (λ n → n) public
+open import Data.Nat using (ℕ)
+
+fromℕ : ℕ → ℂ
+fromℕ n = n
+
+open import Examples.Sorting.Comparable costMonoid fromℕ public

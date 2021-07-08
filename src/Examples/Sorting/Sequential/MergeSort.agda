@@ -111,11 +111,11 @@ merge/clocked/correct (suc k) (x ∷ xs) (y ∷ ys) u | ⇓ false withCost q [ _
         let open PermutationReasoning in
         begin
           (x ∷ xs ++ y ∷ ys)
-        ↭⟨ ++-comm (x ∷ xs) (y ∷ ys) ⟩
+        ↭⟨ ++-comm-↭ (x ∷ xs) (y ∷ ys) ⟩
           (y ∷ ys ++ x ∷ xs)
         ≡⟨⟩
           y ∷ (ys ++ x ∷ xs)
-        <⟨ ++-comm ys (x ∷ xs) ⟩
+        <⟨ ++-comm-↭ ys (x ∷ xs) ⟩
           y ∷ (x ∷ xs ++ ys)
         <⟨ ↭ ⟩
           y ∷ l
