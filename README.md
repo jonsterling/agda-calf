@@ -41,7 +41,7 @@ The language itself is implemented via the following files, which are given in a
 The following modules are not parameterized:
 - [`Calf.Prelude`](./src/Calf/Prelude.agda) contains commonly-used definitions.
 - [`Calf.Metalanguage`](./src/Calf/Metalanguage.agda) defines the basic Call-By-Push-Value (CBPV) language, using Agda `postulate`s and rewrite rules.
-- [`Calf.PhaseDistinction`](./src/Calf/PhaseDistinction.agda) defines the phase distinction for extension, including the extensional open `ext`, the open modality `◯`, and the closed modality `●`.
+- [`Calf.PhaseDistinction`](./src/Calf/PhaseDistinction.agda) defines the phase distinction for extension, including the extensional phase `ext`, the open/extensional modality `◯`, and the closed/intensional modality `●`.
 - [`Calf.Noninterference`](./src/Calf/Noninterference.agda) gives theorems related to the phase distinction/noninterference.
 
 The following modules are parameterized by a `CostMonoid`:
