@@ -64,7 +64,7 @@ jobs:
       run: |
         mkdir -p ~/.agda/
         touch ~/.agda/libraries
-        echo "$GITHUB_WORKSPACE/stdlib/stdlib.agda-lib" > ~/.agda/libraries
+        echo "$GITHUB_WORKSPACE/stdlib/standard-library.agda-lib" > ~/.agda/libraries
 
 
     - name: Checkout main
