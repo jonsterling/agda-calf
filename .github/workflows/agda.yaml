@@ -73,21 +73,7 @@ jobs:
       with:
         path: main
 
-    - uses: actions/cache@v2
-      name: Cache main library
-      id: cache-main
-      with:
-        path: ~/main-build
-        key: html-and-tex-${{ runner.os }}-${{ matrix.agda-ver }}-${{ matrix.cubical-ref }}-${{ hashFiles('main/**') }}
-        restore-keys: |
-          html-and-tex-${{ runner.os }}-${{ matrix.agda-ver }}-${{ matrix.cubical-ref }}-
-          html-and-tex-${{ runner.os }}-${{ matrix.agda-ver }}-
-
-    - name: Retrieve main library
-      if: steps.cache-main.outputs.cache-hit == 'true'
-      run: cp -f -R ~/main-build/* $GITHUB_WORKSPACE/main
     - name: Compile main library
-      if: steps.cache-main.outputs.cache-hit != 'true'
       run: |
         mkdir -p ~/main-build/_build
         cp -f -R ~/main-build/_build $GITHUB_WORKSPACE/main/_build
