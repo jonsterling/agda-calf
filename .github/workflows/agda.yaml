@@ -11,6 +11,7 @@ jobs:
     strategy:
       matrix:
         agda-ref: ["v2.6.2"]
+        stdlib-ref: ["v1.7"]
         ghc-ver: ["8.10.2"]
         cabal-ver: ["3.4.0.0"]
     steps:
@@ -50,6 +51,23 @@ jobs:
         mkdir -p doc
         touch doc/user-manual.pdf
         cabal install --overwrite-policy=always --ghc-options='-O1 +RTS -M6G -RTS'
+
+
+    - name: Checkout standard library
+      uses: actions/checkout@v2
+      with:
+        repository: agda/agda-stdlib
+        path: stdlib
+        ref: ${{ matrix.stdlib-ref }}
+
+    - name: Put standard library in Agda library list
+      run: |
+        mkdir -p ~/.agda/
+        touch ~/.agda/libraries
+        echo "$GITHUB_WORKSPACE/stdlib/stdlib.agda-lib" > ~/.agda/libraries
+
+
+
     - name: Checkout main
       uses: actions/checkout@v2
       with:
