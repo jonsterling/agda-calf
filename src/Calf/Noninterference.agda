@@ -1,6 +1,6 @@
 {-# OPTIONS --prop --without-K --rewriting #-}
 
--- Extensional fragment.
+-- Theorems about noninterference.
 
 open import Calf.CostMonoid
 

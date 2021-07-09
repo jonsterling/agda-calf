@@ -158,35 +158,40 @@ module Fast where
 
   exp₂/cost : cmp (Π nat λ _ → cost)
   exp₂/cost zero    = 𝟘
-  exp₂/cost (suc n) = exp₂/cost n ⊕ ((1 , 1) ⊕ 𝟘)
+  exp₂/cost (suc n) =
+    bind cost (exp₂ n) λ r → exp₂/cost n ⊕
+      ((1 , 1) ⊕ 𝟘)
 
   exp₂/cost/closed : cmp (Π nat λ _ → cost)
   exp₂/cost/closed n = n , n
 
-  exp₂/cost≡exp₂/cost/closed : ∀ n → exp₂/cost n ≡ exp₂/cost/closed n
-  exp₂/cost≡exp₂/cost/closed zero    = refl
-  exp₂/cost≡exp₂/cost/closed (suc n) =
+  exp₂/cost≤exp₂/cost/closed : ∀ n → ◯ (exp₂/cost n ≤ exp₂/cost/closed n)
+  exp₂/cost≤exp₂/cost/closed zero    u = ≤-refl
+  exp₂/cost≤exp₂/cost/closed (suc n) u =
+    let open ≤-Reasoning in
     begin
       exp₂/cost (suc n)
     ≡⟨⟩
+      (bind cost (exp₂ n) λ r → exp₂/cost n ⊕
+        ((1 , 1) ⊕ 𝟘))
+    ≡⟨ Eq.cong (λ e → bind cost e λ r → exp₂/cost n ⊕ _) (exp₂/correct n u) ⟩
       exp₂/cost n ⊕ ((1 , 1) ⊕ 𝟘)
-    ≡⟨ Eq.cong (λ c → c ⊕ ((1 , 1) ⊕ 𝟘)) (exp₂/cost≡exp₂/cost/closed n) ⟩
+    ≤⟨ ⊕-monoˡ-≤ ((1 , 1) ⊕ 𝟘) (exp₂/cost≤exp₂/cost/closed n u) ⟩
       exp₂/cost/closed n ⊕ ((1 , 1) ⊕ 𝟘)
     ≡⟨ Eq.cong (exp₂/cost/closed n ⊕_) (⊕-identityʳ _) ⟩
       exp₂/cost/closed n ⊕ (1 , 1)
     ≡⟨ Eq.cong₂ _,_ (N.+-comm _ 1) (N.+-comm _ 1) ⟩
       exp₂/cost/closed (suc n)
     ∎
-      where open ≡-Reasoning
 
   exp₂≤exp₂/cost : ∀ n → IsBounded nat (exp₂ n) (exp₂/cost n)
   exp₂≤exp₂/cost zero    = bound/ret
   exp₂≤exp₂/cost (suc n) =
-    bound/bind/const (exp₂/cost n) ((1 , 1) ⊕ 𝟘) (exp₂≤exp₂/cost n) λ r →
+    bound/bind (exp₂/cost n) _ (exp₂≤exp₂/cost n) λ r →
       bound/step (1 , 1) 𝟘 bound/ret
 
   exp₂≤exp₂/cost/closed : ∀ n → IsBounded nat (exp₂ n) (exp₂/cost/closed n)
-  exp₂≤exp₂/cost/closed n = bound/relax (λ u → ≤-reflexive (exp₂/cost≡exp₂/cost/closed n)) (exp₂≤exp₂/cost n)
+  exp₂≤exp₂/cost/closed n = bound/relax (exp₂/cost≤exp₂/cost/closed n) (exp₂≤exp₂/cost n)
 
   exp₂/asymptotic : given nat measured-via (λ n → n) , exp₂ ∈𝓞(λ n → n , n)
   exp₂/asymptotic = 0 ≤n⇒f[n]≤ 1 g[n]via λ n _ → Eq.subst (IsBounded _ _) (Eq.sym (⊕-identityʳ _)) (exp₂≤exp₂/cost/closed n)

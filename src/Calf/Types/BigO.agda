@@ -1,5 +1,7 @@
 {-# OPTIONS --prop --without-K --rewriting #-}
 
+-- Big-O bound on the cost of a computation.
+
 open import Calf.CostMonoid
 
 module Calf.Types.BigO (costMonoid : CostMonoid) where
