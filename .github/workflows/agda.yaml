@@ -79,6 +79,7 @@ jobs:
         rm -r ~/main-build
         cd main
         agda --html --html-dir=docs src/index.agda
+        cp Agda.css docs/
         cd ..
         cp -f -R main/ ~/main-build/
 
