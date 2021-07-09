@@ -66,6 +66,7 @@ The following modules are parameterized by a `CostMonoid`:
   Additionally, it provides lemmas for proving the boundedness of common forms of computations.
 - [`Calf.Types.BoundedFunction`](./src/Calf/Types/BoundedFunction.agda) defines cost-bounded functions using `IsBounded`.
 - [`Calf.Types.BigO`](./src/Calf/Types/BoundedFunction.agda) gives a definition of "big-O" asymptic bounds as a relaxation of `IsBounded`.
+  In particular, an element of the type `given A measured-via size , f ∈𝓞(g)` (i.e., "given an input of type `A` and a size measure `size` on `A`, `f` is in `𝓞(g)`) is a lower bound on input sizes `n'` and a constant multiplier `k` along with a proof `h` that for all inputs `x` with `n' ≤ size x`, `f x` is bounded by `k` multiples of `g (size x)`, denoted `n' ≤n⇒f[n]≤ k g[n]via h`.
 
 ## Examples
 
