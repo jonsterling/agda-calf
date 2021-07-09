@@ -22,7 +22,7 @@ open import Relation.Binary.PropositionalEquality as Eq using (_≡_)
 [ ℕ.zero  ]* c = zero
 [ ℕ.suc k ]* c = c + [ k ]* c
 
-record BigO
+record given_measured-via_,_∈𝓞_
   (A : tp pos) {B : tp pos}
   (∣_∣ : val A → val nat)
   (f : cmp (Π A λ _ → F B)) (g : ℕ → ℂ) : □
@@ -33,8 +33,5 @@ record BigO
       k : val nat
       h : ∀ x → n' Nat.≤ ∣ x ∣ → IsBounded B (f x) ([ k ]* g ∣ x ∣)
 
-given_measured-via_,_∈𝓞_ : (A : tp pos) {B : tp pos} (∣_∣ : val A → val nat) (f : cmp (Π A λ _ → F B)) (g : ℕ → ℂ) → □
-given A measured-via size , f ∈𝓞 g = BigO A size f g
-
-_≤n⇒f[n]≤g[n]via_ : ∀ {A B f ∣_∣ g} → (n' : val nat) → (∀ x → n' Nat.≤ ∣ x ∣ → IsBounded B (f x) (g ∣ x ∣)) → BigO A ∣_∣ f g
+_≤n⇒f[n]≤g[n]via_ : ∀ {A B f ∣_∣ g} → (n' : val nat) → (∀ x → n' Nat.≤ ∣ x ∣ → IsBounded B (f x) (g ∣ x ∣)) → given A measured-via ∣_∣ , f ∈𝓞 g
 n' ≤n⇒f[n]≤g[n]via h = n' ≤n⇒f[n]≤ 1 g[n]via (λ x h≤ → Eq.subst (IsBounded _ _) (Eq.sym (+-identityʳ _)) (h x h≤))
