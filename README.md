@@ -34,7 +34,7 @@ The formal definition, `CostMonoid`, is given in [`Calf.CostMonoid`](./src/Calf/
 The definition of a *parallel cost monoid* `(ℂ, ⊕, 𝟘, ⊗, 𝟙, ≤)` is given, as well, as `ParCostMonoid`.
 
 Some common cost monoids and parallel cost monoids are given in [`Calf.CostMonoids`](./src/Calf/CostMonoids.agda); for example, `ℕ-CostMonoid` simply tracks sequential cost.
-Note that every `ParCostMonoid` induces a `CostMonoid` via the additive structure, `(ℂ, ⊕, 𝟘, ≤)`.
+Note that every `ParCostMonoid` induces a `CostMonoid` via the additive substructure `(ℂ, ⊕, 𝟘, ≤)`.
 
 ### Core Language
 
@@ -82,11 +82,12 @@ We provide a variety of case studies in [`src/Examples`](./src/Examples).
 - `module Hard`
   - Definition of the program `id` which recomputes its input via induction.
   - Theorem `id/correct` stating the correctness of `id`.
-  - Theorem `id≤id/cost/closed` stating that the cost of `id n` is bounded by `id/cost/closed n = n`.
+  - Theorem `id≤id/cost/closed` stating that the cost of `id n` is bounded by `n`.
   - Theorem `id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → n)` stating that `id` is in `𝓞(n)`, where `n` is the input number.
 - A proof that `Easy.id` and `Hard.id` are extensionally equivalent, `easy≡hard : ◯ (Easy.id ≡ Hard.id)`.
 
 ### [`Examples.Gcd`](./src/Examples/Gcd.agda)
+- A **calf** implementation of Euclid's algorithm for gcd.
 - [`Examples.Gcd.Euclid`](./src/Examples/Gcd/Euclid.agda)
   - Specification of the cost model via the instrumented operation `mod`.
   - Definition of the type `gcd/i`, which specifies that inputs to Euclid's algorithm should be ordered (first is greater than second).
@@ -101,9 +102,13 @@ We provide a variety of case studies in [`src/Examples`](./src/Examples).
   - Refinement of the bound `gcd/depth` -- the theorem `gcd/depth≤gcd/depth/closed` states that the cost of `gcd` is bounded by `suc ∘ fib⁻¹`.
 
 ### [`Examples.Queue`](./src/Examples/Queue.agda)
-- An implementation of [front-back queues](https://en.wikipedia.org/wiki/Queue_(abstract_data_type)#Amortized_queue).
-- Upper bounds on the cost of individual enqueue and dequeue operations.
-- Amortized analysis of sequences of enqueue and dequeue operations.
+- A **calf** implementation of [Batched queues](https://en.wikipedia.org/wiki/Queue_(abstract_data_type)#Amortized_queue).
+- Specification of the cost model as the number of list iterations via the axiom `list/ind/cons`.
+- Upper bounds on the cost of individual enqueue and dequeue operations:
+  - The theorem `enq≤enq/cost` stating that enqueue has zero cost.
+  - The theorem `deq≤deq/cost` stating that dequeue has linear cost.
+- Amortized analysis of sequences of enqueue and dequeue operations:
+  - The theorem `acost≤2*|l|` stating that the amortized cost of a sequence of queue operations is at most twice the length of the sequence.
 
 ## Parallel
 
