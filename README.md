@@ -42,15 +42,15 @@ The language itself is implemented via the following files, which are given in a
 
 The following modules are not parameterized:
 - [`Calf.Prelude`](./src/Calf/Prelude.agda) contains commonly-used definitions.
-- [`Calf.Metalanguage`](./src/Calf/Metalanguage.agda) defines the basic Call-By-Push-Value (CBPV) language, using Agda `postulate`s and rewrite rules.
-- [`Calf.PhaseDistinction`](./src/Calf/PhaseDistinction.agda) defines the phase distinction for extension, including the extensional phase `ext`, the open/extensional modality `◯`, and the closed/intensional modality `●`.
-- [`Calf.Noninterference`](./src/Calf/Noninterference.agda) gives theorems related to the phase distinction/noninterference.
+- [`Calf.Metalanguage`](./src/Calf/Metalanguage.agda) defines the basic dependent Call-By-Push-Value (CBPV) language, using Agda `postulate`s and rewrite rules.
+- [`Calf.PhaseDistinction`](./src/Calf/PhaseDistinction.agda) defines the phase distinction of extension and intension, including the extensional phase `ext`, the open/extensional modality `◯`, and the closed/intensional modality `●`.
+- [`Calf.Noninterference`](./src/Calf/Noninterference.agda) contains theorems related to the phase distinction/noninterference.
 
 The following modules are parameterized by a `CostMonoid`:
-- [`Calf.Step`](./src/Calf/Step.agda) defines the `step` effect and gives the associated laws via rewrite rules.
+- [`Calf.Step`](./src/Calf/Step.agda) defines the computational effect `step` and the associated coherence laws via rewrite rules.
 
 The following modules are parameterized by a `ParCostMonoid`:
-- [`Calf.ParMetalanguage`](./src/Calf/ParMetalanguage.agda) the parallel pairing operation `_&_`, whose cost is the `ParCostMonoid` product (i.e., `_⊗_`) of its components, as well as associated laws and lemmas.
+- [`Calf.ParMetalanguage`](./src/Calf/ParMetalanguage.agda) defines the parallel pairing operation `_&_` whose cost structure is given by the product operation of a `ParCostMonoid` (i.e., `_⊗_`).
 
 ### Types
 
@@ -80,7 +80,7 @@ We provide a variety of case studies in [`src/Examples`](./src/Examples).
   - Theorem `id≤id/cost` stating that the cost of `id n` is bounded by `id/cost n = 0`.
   - Theorem `id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → 0)` stating that `id` is in `𝓞(0)`.
 - `module Hard`
-  - Definition of the program `id` which recomputes its input via induction.
+  - Definition of the program `id` which reconstructs its input via induction.
   - Theorem `id/correct` stating the correctness of `id`.
   - Theorem `id≤id/cost/closed` stating that the cost of `id n` is bounded by `n`.
   - Theorem `id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → n)` stating that `id` is in `𝓞(n)`, where `n` is the input number.
