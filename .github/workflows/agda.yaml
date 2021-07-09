@@ -68,24 +68,24 @@ jobs:
 
 
 
-    - name: Checkout main
-      uses: actions/checkout@v2
-      with:
-        path: main
-
-    - name: Compile main library
-      run: |
-        mkdir -p ~/main-build/_build
-        cp -f -R ~/main-build/_build $GITHUB_WORKSPACE/main/_build
-        rm -r ~/main-build
-        cd main
-        agda --html --html-dir=docs index.agda
-        cd ..
-        cp -f -R main/ ~/main-build/
-
-    - name: Deploy html to github pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: main/docs
-
+        #     - name: Checkout main
+        #       uses: actions/checkout@v2
+        #       with:
+        #         path: main
+        #
+        #     - name: Compile main library
+        #       run: |
+        #         mkdir -p ~/main-build/_build
+        #         cp -f -R ~/main-build/_build $GITHUB_WORKSPACE/main/_build
+        #         rm -r ~/main-build
+        #         cd main
+        #         agda --html --html-dir=docs index.agda
+        #         cd ..
+        #         cp -f -R main/ ~/main-build/
+        #
+        #     - name: Deploy html to github pages
+        #       uses: peaceiris/actions-gh-pages@v3
+        #       with:
+        #         github_token: ${{ secrets.GITHUB_TOKEN }}
+        #         publish_dir: main/docs
+        #
