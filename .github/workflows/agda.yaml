@@ -78,7 +78,7 @@ jobs:
         cp -f -R ~/main-build/_build $GITHUB_WORKSPACE/main/_build
         rm -r ~/main-build
         cd main
-        agda --html --html-dir=docs index.agda
+        agda --html --html-dir=docs src/index.agda
         cd ..
         cp -f -R main/ ~/main-build/
 
