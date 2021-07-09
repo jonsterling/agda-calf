@@ -15,7 +15,7 @@ agda --html --html-dir=html src/index.agda
 You may want to start by opening [`html/index.html`](./html/index.html).
 
 To view a specific module `M`, open `html/M.html` in a web browser.
-For example, open [`html/Examples.Sorting.Parallel.html`](./html/Examples.Sorting.Parallel.html) to view module `Examples.Sorting.Parallel`.
+For example, open [`html/Examples.Sorting.Parallel.html`](./html/Examples.Sorting.Parallel.html) to view the module `Examples.Sorting.Parallel`.
 
 ## Installation
 
