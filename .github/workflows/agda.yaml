@@ -93,24 +93,10 @@ jobs:
         cp -f -R ~/main-build/_build $GITHUB_WORKSPACE/main/_build
         rm -r ~/main-build
         cd main
-        find . -type f \( -name "*.agda" -o -name "*.lagda" \) > FileList
-        sort -o FileList FileList
-        echo "" >> Everything.agda
-        echo "module Everything where" >> Everything.agda
-        echo "" >> Everything.agda
-        echo "-- This file imports every module in the project. Click on" >> Everything.agda
-        echo "-- a module name to go to its source." >> Everything.agda
-        echo "" >> Everything.agda
-        cat FileList | cut -c 3-               \
-                     | cut -f1 -d'.'           \
-                     | sed 's/\//\./g'         \
-                     | sed 's/^/open import /' \
-                     >> Everything.agda
-        rm FileList
-        agda --html --html-dir=docs Everything.agda
-        rm Everything.agda
+        agda --html --html-dir=docs index.agda
         cd ..
         cp -f -R main/ ~/main-build/
+
     - name: Deploy html to github pages
       uses: peaceiris/actions-gh-pages@v3
       with:
