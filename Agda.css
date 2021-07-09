@@ -1,3 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Mono&display=swap');
+
+pre {
+  font-family: 'Fira Mono', monospace;
+  font-size: 10pt;
+}
+
 /* Aspects. */
 .Agda .Comment       { color: #B22222 }
 .Agda .Background    {}
@@ -39,3 +46,5 @@
 .Agda a { text-decoration: none }
 .Agda a[href]:hover { background-color: #B4EEB4 }
 .Agda [href].hover-highlight { background-color: #B4EEB4; }
+
+
