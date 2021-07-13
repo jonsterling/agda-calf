@@ -13,16 +13,9 @@ open import Examples.Gcd.Clocked
 
 open import Data.Nat.DivMod
 open import Data.Nat
-open import Data.Nat.Induction
 open import Relation.Binary.PropositionalEquality as P
-open import Induction.WellFounded
-open import Relation.Binary.Construct.On as On
-open import Function.Base using (_on_)
-open import Function
 open import Data.Nat.Properties
-open import Data.Unit using (tt)
 open import Data.Product
-open import Data.Product.Properties
 
 gcd/clocked≡spec/zero : ∀ k x h → k ≥ gcd/depth (x , ℕ.zero , h) →
   ◯ (gcd/clocked k (x , ℕ.zero , h) ≡ ret {nat} x)

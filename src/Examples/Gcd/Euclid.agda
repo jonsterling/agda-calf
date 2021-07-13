@@ -10,25 +10,17 @@ import Calf.CostMonoids as CM
 open import Calf CM.ℕ-CostMonoid
 open import Calf.Types.Nat
 open import Data.Nat
-open import Function
 open import Relation.Binary.PropositionalEquality as P
 open import Induction.WellFounded
 open import Induction
 open import Data.Nat.Properties
 open import Data.Nat.DivMod
-open import Relation.Nullary.Decidable using (False; toWitnessFalse)
+open import Relation.Nullary.Decidable using (False)
 open import Data.Nat.Induction using (<-wellFounded)
-open import Data.Unit using (tt)
-open import Function.Base using (_on_)
 open import Data.Product
-open import Data.Product.Properties
-open import Relation.Binary.HeterogeneousEquality as H
 open import Agda.Builtin.Nat using (div-helper; mod-helper)
-import Level as L
 open import Relation.Binary using (Rel)
 open import Relation.Unary using (Pred; _⊆′_)
-open import Data.Nat.DivMod.Core
-open import Axiom.UniquenessOfIdentityProofs.WithK using (uip)
 
 mod-tp : (x y : val nat) → cmp (meta (False (y ≟ 0))) → tp pos
 mod-tp x y h = Σ++ nat λ z → (U (meta (z ≡ _%_ x y {h})))
@@ -89,7 +81,7 @@ gcd/depth-unfold-suc {x} {y} {h} = P.cong suc
   ( P.subst (λ  ih →
       gcd/depth/helper (mod-helper 0 y x y) (ih) (suc y) (m%n<n x y) ≡
         gcd/depth/helper (mod-helper 0 y x y)
-        (All.wfRecBuilder <-wellFounded L.zero
+        (All.wfRecBuilder <-wellFounded _
         (λ y₁ → (x₁ : ℕ) → x₁ > y₁ → ℕ) gcd/depth/helper
         (mod-helper 0 y x y))
         (suc y) (m%n<n x y))
