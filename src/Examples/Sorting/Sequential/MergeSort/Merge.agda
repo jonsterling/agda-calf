@@ -153,8 +153,8 @@ merge/clocked/cost≤merge/clocked/cost/closed (suc k) (x ∷ xs , y ∷ ys) u w
 
 merge/clocked≤merge/clocked/cost : ∀ k p → IsBounded (list A) (merge/clocked k p) (merge/clocked/cost k p)
 merge/clocked≤merge/clocked/cost zero    (l₁     , l₂    ) = bound/ret
-merge/clocked≤merge/clocked/cost (suc k) ([]     , l₂    ) = bound/relax (λ u → z≤n) bound/ret
-merge/clocked≤merge/clocked/cost (suc k) (x ∷ xs , []    ) = bound/relax (λ u → z≤n) bound/ret
+merge/clocked≤merge/clocked/cost (suc k) ([]     , l₂    ) = bound/ret
+merge/clocked≤merge/clocked/cost (suc k) (x ∷ xs , []    ) = bound/ret
 merge/clocked≤merge/clocked/cost (suc k) (x ∷ xs , y ∷ ys) =
   bound/bind 1 _ (h-cost x y) λ b →
     bound/bool {p = λ b → if_then_else_ b _ _} b
