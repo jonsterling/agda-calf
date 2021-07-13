@@ -38,11 +38,11 @@ open import Axiom.UniquenessOfIdentityProofs.WithK using (uip)
    2) clock is zero: algorithm terminates
    Crucially, if the recursor is by-name, then the value of the clock does not
    affect asymptotic behavior of the algorithm.
-   Two things one can do in sqtt:
-   1) give a good characterization of the clock in terms of the input by refining the raw recurrence (see Gcd-Rec.agda)
+   Two things one can do in calf:
+   1) give a good characterization of the clock in terms of the input by refining the raw recurrence (see Refine.agda)
    2) give a good characterization for of the clock for running the code; this usually
    means finding a clock computation that is simpler to compute
-   than the "good" upperbound. For gcd, one can reuse the argument as the clock (see Gcd-Ext.agda)
+   than the "good" upperbound. For gcd, one can reuse the argument as the clock (see Spec.agda)
 -}
 gcd/clocked : cmp (Π nat λ _ → Π gcd/i λ _ → F nat)
 gcd/clocked zero (x , y , h) = ret x
