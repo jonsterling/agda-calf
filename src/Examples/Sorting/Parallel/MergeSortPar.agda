@@ -35,7 +35,7 @@ sort/clocked (suc k) l =
 sort/clocked/correct : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → SortResult (sort/clocked k) l
 sort/clocked/correct zero    l h u = l , refl , refl , short-sorted (⌈log₂n⌉≡0⇒n≤1 (N.n≤0⇒n≡0 h))
 sort/clocked/correct (suc k) l h u =
-  let (l₁ , l₂ , ≡ , length₁ , length₂ , ↭) = split/correct l u in
+  let (l₁ , l₂ , ≡ , length₁ , length₂ , h-++) = split/correct l u in
   let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ (
                                     let open ≤-Reasoning in
                                     begin
@@ -79,7 +79,7 @@ sort/clocked/correct (suc k) l h u =
     let open PermutationReasoning in
     begin
       l
-    ↭⟨ ↭ ⟩
+    ≡⟨ h-++ ⟩
       l₁ ++ l₂
     ↭⟨ ++⁺-↭ ↭₁ ↭₂ ⟩
       l₁' ++ l₂'
@@ -101,7 +101,7 @@ sort/clocked/cost/closed k l = k * length l * ⌈log₂ suc ⌈ length l /2⌉ �
 sort/clocked/cost≤sort/clocked/cost/closed : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → ◯ (sort/clocked/cost k l ≤ₚ sort/clocked/cost/closed k l)
 sort/clocked/cost≤sort/clocked/cost/closed zero    l h u = z≤n , z≤n
 sort/clocked/cost≤sort/clocked/cost/closed (suc k) l h u =
-  let (l₁ , l₂ , ≡ , length₁ , length₂ , ↭) = split/correct l u in
+  let (l₁ , l₂ , ≡ , length₁ , length₂ , _) = split/correct l u in
   let h₁ : ⌈log₂ length l₁ ⌉ Nat.≤ k
       h₁ =
         let open ≤-Reasoning in

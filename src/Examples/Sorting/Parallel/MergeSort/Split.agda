@@ -27,11 +27,11 @@ split/clocked (suc k) []       = ret ([] , [])
 split/clocked (suc k) (x ∷ xs) = bind (F pair) (split/clocked k xs) λ (l₁ , l₂) → ret (x ∷ l₁ , l₂)
 
 split/clocked/correct : ∀ k k' l → k + k' ≡ length l →
-  ◯ (∃ λ l₁ → ∃ λ l₂ → split/clocked k l ≡ ret (l₁ , l₂) × length l₁ ≡ k × length l₂ ≡ k' × l ↭ (l₁ ++ l₂))
+  ◯ (∃ λ l₁ → ∃ λ l₂ → split/clocked k l ≡ ret (l₁ , l₂) × length l₁ ≡ k × length l₂ ≡ k' × l ≡ (l₁ ++ l₂))
 split/clocked/correct zero    k' l        refl u = [] , l , refl , refl , refl , refl
 split/clocked/correct (suc k) k' (x ∷ xs) h    u =
-  let (l₁ , l₂ , ≡ , h₁ , h₂ , ↭) = split/clocked/correct k k' xs (N.suc-injective h) u in
-  x ∷ l₁ , l₂ , Eq.cong (λ e → bind (F pair) e _) ≡ , Eq.cong suc h₁ , h₂ , prep x ↭
+  let (l₁ , l₂ , ≡ , h₁ , h₂ , ++) = split/clocked/correct k k' xs (N.suc-injective h) u in
+  x ∷ l₁ , l₂ , Eq.cong (λ e → bind (F pair) e _) ≡ , Eq.cong suc h₁ , h₂ , Eq.cong (x ∷_) ++
 
 split/clocked/cost : cmp (Π nat λ _ → Π (list A) λ _ → cost)
 split/clocked/cost _ _ = 𝟘
@@ -45,7 +45,7 @@ split : cmp (Π (list A) λ _ → F pair)
 split l = split/clocked ⌊ length l /2⌋ l
 
 split/correct : ∀ l →
-  ◯ (∃ λ l₁ → ∃ λ l₂ → split l ≡ ret (l₁ , l₂) × length l₁ ≡ ⌊ length l /2⌋ × length l₂ ≡ ⌈ length l /2⌉ × l ↭ (l₁ ++ l₂))
+  ◯ (∃ λ l₁ → ∃ λ l₂ → split l ≡ ret (l₁ , l₂) × length l₁ ≡ ⌊ length l /2⌋ × length l₂ ≡ ⌈ length l /2⌉ × l ≡ (l₁ ++ l₂))
 split/correct l = split/clocked/correct ⌊ length l /2⌋ ⌈ length l /2⌉ l (N.⌊n/2⌋+⌈n/2⌉≡n (length l))
 
 split/cost : cmp (Π (list A) λ _ → cost)
