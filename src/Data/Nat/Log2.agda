@@ -11,30 +11,49 @@ open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl)
 
 open import Agda.Builtin.Equality.Rewrite
 
-private
-  aux : (P : ℕ → Set) → P zero → P (suc zero) → ((n : ℕ) → P ⌈ suc (suc n) /2⌉ → P (suc (suc n))) →
-    (n : ℕ) → (m : ℕ) → m ≤ n → P m
-  aux P bc₀ bc₁ is n zero h = bc₀
-  aux P bc₀ bc₁ is n (suc zero) h = bc₁
-  aux P bc₀ bc₁ is (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
-    is m (aux P bc₀ bc₁ is (suc n) ⌈ suc (suc m) /2⌉ (s≤s (≤-trans (⌈n/2⌉≤n m) h)))
+abstract
+  private
+    private
+      aux : (P : ℕ → Set) → P zero → P (suc zero) → ((n : ℕ) → P ⌈ suc (suc n) /2⌉ → P (suc (suc n))) →
+        (n : ℕ) → (m : ℕ) → m ≤ n → P m
+      aux P bc₀ bc₁ is n zero h = bc₀
+      aux P bc₀ bc₁ is n (suc zero) h = bc₁
+      aux P bc₀ bc₁ is (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
+        is m (aux P bc₀ bc₁ is (suc n) ⌈ suc (suc m) /2⌉ (s≤s (≤-trans (⌈n/2⌉≤n m) h)))
 
-strong-induction : (P : ℕ → Set) → P zero → P (suc zero) → ((n : ℕ) → P ⌈ suc (suc n) /2⌉ → P (suc (suc n))) → (n : ℕ) → P n
-strong-induction P bc₀ bc₁ is n = aux P bc₀ bc₁ is n n ≤-refl
+    strong-induction : (P : ℕ → Set) → P zero → P (suc zero) → ((n : ℕ) → P ⌈ suc (suc n) /2⌉ → P (suc (suc n))) → (n : ℕ) → P n
+    strong-induction P bc₀ bc₁ is n = aux P bc₀ bc₁ is n n ≤-refl
 
-strong-induction/is : ∀ {P bc₀ bc₁ is n} →
-  aux P bc₀ bc₁ is (suc n) ⌈ suc (suc n) /2⌉ (s≤s (≤-trans (⌈n/2⌉≤n n) ≤-refl)) ≡
-  strong-induction P bc₀ bc₁ is ⌈ suc (suc n) /2⌉
-strong-induction/is {P} {bc₀} {bc₁} {is} {n} = aux/unique
-  where
-    aux/unique : ∀ {m n₁ n₂ h₁ h₂} → aux P bc₀ bc₁ is n₁ m h₁ ≡ aux P bc₀ bc₁ is n₂ m h₂
-    aux/unique {zero} = refl
-    aux/unique {suc zero} = refl
-    aux/unique {suc (suc m)} {h₁ = s≤s (s≤s h₁)} {h₂ = s≤s (s≤s h₂)} = Eq.cong (is m) aux/unique
-{-# REWRITE strong-induction/is #-}
+    strong-induction/bc₀ : ∀ {P bc₀ bc₁ is} →
+      strong-induction P bc₀ bc₁ is zero ≡ bc₀
+    strong-induction/bc₀ = refl
 
-⌈log₂_⌉ : ℕ → ℕ
-⌈log₂_⌉ = strong-induction (λ _ → ℕ) zero zero (λ _ → suc)
+    strong-induction/bc₁ : ∀ {P bc₀ bc₁ is} →
+      strong-induction P bc₀ bc₁ is (suc zero) ≡ bc₁
+    strong-induction/bc₁ = refl
+
+    strong-induction/is : ∀ {P bc₀ bc₁ is n} →
+      strong-induction P bc₀ bc₁ is (suc (suc n)) ≡ is n (strong-induction P bc₀ bc₁ is ⌈ suc (suc n) /2⌉)
+    strong-induction/is {P} {bc₀} {bc₁} {is} {n} = Eq.cong (is n) aux/unique
+      where
+        aux/unique : ∀ {m n₁ n₂ h₁ h₂} → aux P bc₀ bc₁ is n₁ m h₁ ≡ aux P bc₀ bc₁ is n₂ m h₂
+        aux/unique {zero} = refl
+        aux/unique {suc zero} = refl
+        aux/unique {suc (suc m)} {h₁ = s≤s (s≤s h₁)} {h₂ = s≤s (s≤s h₂)} = Eq.cong (is m) aux/unique
+
+  ⌈log₂_⌉ : ℕ → ℕ
+  ⌈log₂_⌉ = strong-induction (λ _ → ℕ) zero zero (λ _ → suc)
+
+  log₂/bc₀ : ⌈log₂ zero ⌉ ≡ zero
+  log₂/bc₀ = refl
+
+  log₂/bc₁ : ⌈log₂ suc zero ⌉ ≡ zero
+  log₂/bc₁ = refl
+
+  log₂/is : ∀ {n} → ⌈log₂ suc (suc n) ⌉ ≡ suc ⌈log₂ ⌈ suc (suc n) /2⌉ ⌉
+  log₂/is {n} = strong-induction/is {λ _ → ℕ} {zero} {zero} {λ _ → suc} {n}
+
+{-# REWRITE log₂/bc₀ log₂/bc₁ log₂/is #-}
 
 log₂-mono : ⌈log₂_⌉ Preserves _≤_ ⟶ _≤_
 log₂-mono {n₁} {n₂} =
