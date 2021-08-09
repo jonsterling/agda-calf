@@ -506,6 +506,30 @@ bisplit/clocked≤bisplit/clocked/cost/closed k p n =
   bound/relax (bisplit/clocked/cost≤bisplit/clocked/cost/closed k p n) (bisplit/clocked≤bisplit/clocked/cost k p n)
 
 
+bisplit : cmp (Π pair λ _ → Π nat λ _ → F pairs)
+bisplit (a , b) = bisplit/clocked (⌈log₂ suc (length a) ⌉ + ⌈log₂ suc (length b) ⌉) (a , b)
+
+bisplit/correct : ∀ p n →
+  n N.≤ length (proj₁ p) + length (proj₂ p) →
+  Sorted (proj₁ p) →
+  Sorted (proj₂ p) →
+  ◯ (∃ λ splitters → bisplit p n ≡ ret splitters × NSplitters p n splitters)
+bisplit/correct (a , b) n h sorted-a sorted-b =
+  bisplit/clocked/correct (⌈log₂ suc (length a) ⌉ + ⌈log₂ suc (length b) ⌉) (a , b) n h N.≤-refl sorted-a sorted-b
+
+bisplit/cost : cmp (Π pair λ _ → Π nat λ _ → cost)
+bisplit/cost (a , b) = bisplit/clocked/cost (⌈log₂ suc (length a) ⌉ + ⌈log₂ suc (length b) ⌉) (a , b)
+
+bisplit/cost/closed : cmp (Π pair λ _ → Π nat λ _ → cost)
+bisplit/cost/closed (a , b) = bisplit/clocked/cost/closed (⌈log₂ suc (length a) ⌉ + ⌈log₂ suc (length b) ⌉) (a , b)
+
+bisplit≤bisplit/cost : ∀ p n → IsBounded pairs (bisplit p n) (bisplit/cost p n)
+bisplit≤bisplit/cost (a , b) = bisplit/clocked≤bisplit/clocked/cost (⌈log₂ suc (length a) ⌉ + ⌈log₂ suc (length b) ⌉) (a , b)
+
+bisplit≤bisplit/cost/closed : ∀ p n → IsBounded pairs (bisplit p n) (bisplit/cost/closed p n)
+bisplit≤bisplit/cost/closed (a , b) = bisplit/clocked≤bisplit/clocked/cost/closed (⌈log₂ suc (length a) ⌉ + ⌈log₂ suc (length b) ⌉) (a , b)
+
+
 merge : cmp (Π pair λ _ → F (list A))
 merge = {!   !}
 
