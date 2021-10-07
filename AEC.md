@@ -25,6 +25,9 @@
 8. Section 4.2 | Theorem 4.8 | [src/Examples/Queue.agda](./src/Examples/Queue.agda) | `enq/acost`, `deq/acost`
 9. Section 4.2 | Theorem 4.9 | [src/Examples/Queue.agda](./src/Examples/Queue.agda) | `op/seq/cost≤ϕ₀+2*|l|`
 9. Section 4.2 | Corollary 4.10 | [src/Examples/Queue.agda](./src/Examples/Queue.agda) | `op/seq≤2*|l|`
+10. Section 6 | Theorem 6.1 | [src/Examples/Sorting/Parallel/InsertionSort.agda](./src/Examples/Sorting/Parallel/InsertionSort.agda) | `sort≤sort/cost/closed`
+10. Section 6 | Theorem 6.2 | [src/Examples/Sorting/Parallel/MergeSort.agda](./src/Examples/Sorting/Parallel/MergeSort.agda) | `sort≤sort/cost/closed`
+11. Section 6 | Theorem 6.3 | [src/Examples/Sorting/Parallel/MergeSortPar.agda](./src/Examples/Sorting/Parallel/MergeSortPar.agda) | `sort≤sort/cost/closed`
 
 # Download, installation, and sanity-testing
 
@@ -106,6 +109,10 @@ For convenience, we have define a root file called `[src/index.agda](./src/index
 # Artifact Description
 
 For an overview of of the core implementation of agda-calf, please see the **Language Implementation** section in the top-level README.md. We also provide a listing of the case studies on cost verification in agda-calf in the **Examples** section. We recommend the interested reader to begin with the example `Examples.Id`.
+
+One can also view agda-calf online here:
+
+http://www.jonmsterling.com/agda-calf/
 
 For writing and verifying new programs in agda-calf, we recommend using vscode with the agda-mode extension.
 
