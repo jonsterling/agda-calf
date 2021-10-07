@@ -5,26 +5,26 @@
 * Claims are listed in order of appearance.
 * Evaluation of claims are explained in section [Evaluation](#Evaluation).
 
-1. Section 2.4 | Theorem 2.1 | src/Examples/Id.agda | Easy.id≤id/cost
-2. Section 2.4 | Theorem 2.2 | src/Examples/Id.agda | Hard.id≤id/cost/closed
-3. Section 2.5 | Theorem 2.3 | src/Examples/Id.agda | easy≡hard
-4. Section 2.7 | Theorem 2.4 | src/Calf/Noninterference.agda | oblivious
-5. Section 2.7 | Theorem 2.5 | src/Calf/Noninterference.agda | constant
-5. Section 2.7 | Theorem 2.6 | src/Calf/Noninterference.agda | optimization
-6. Section 3.1 | Figure 4. (Return) | src/Calf/Types/Bounded.agda | bound/ret
-6. Section 3.1 | Figure 4. (Step) | src/Calf/Types/Bounded.agda | bound/step
-6. Section 3.1 | Figure 4. (Bind) | src/Calf/Types/Bounded.agda | bound/bind
-6. Section 3.1 | Figure 4. (Relax) | src/Calf/Types/Bounded.agda | bound/relax
-7. Section 4.1 | Theorem 4.1 | src/Examples/Gcd/Spec.agda | gcd≡spec/zero, gcd≡spec/suc
-7. Section 4.1 | Theorem 4.2 | src/Examples/Gcd/Clocked.agda | gcd≤gcd/depth |
-7. Section 4.1 | Theorem 4.3 | src/Examples/Gcd/Refine.agda | gcd/depth≤gcd/depth/closed
-7. Section 4.1 | Corollary 4.4 | src/Examples/Gcd/Refine.agda | gcd≤gcd/depth/closed
-8. Section 4.2 | Theorem 4.5 | src/Examples/Queue.agda | enq≤enq/cost, deq≤deq/cost/closed
-8. Section 4.2 | Corollary 4.6 | src/Examples/Queue.agda | op≤op/cost
-8. Section 4.2 | Lemma 4.7 | src/Examples/Queue.agda | op/seq≤op/seq/cost
-8. Section 4.2 | Theorem 4.8 | src/Examples/Queue.agda | enq/acost, deq/acost
-9. Section 4.2 | Theorem 4.9 | src/Examples/Queue.agda | op/seq/cost≤ϕ₀+2*|l|
-9. Section 4.2 | Corollary 4.10 | src/Examples/Queue.agda | op/seq≤2*|l|
+1. Section 2.4 | Theorem 2.1 | [src/Examples/Id.agda](./src/Examples/Id.agda) | `Easy.id≤id/cost`
+2. Section 2.4 | Theorem 2.2 | [src/Examples/Id.agda](./src/Examples/Id.agda) | `Hard.id≤id/cost/closed`
+3. Section 2.5 | Theorem 2.3 | [src/Examples/Id.agda](./src/Examples/Id.agda) | `easy≡hard`
+4. Section 2.7 | Theorem 2.4 | [src/Calf/Noninterference.agda](./src/Calf/Noninterference.agda) | `oblivious`
+5. Section 2.7 | Theorem 2.5 | [src/Calf/Noninterference.agda](./src/Calf/Noninterference.agda) | `constant`
+5. Section 2.7 | Theorem 2.6 | [src/Calf/Noninterference.agda](./src/Calf/Noninterference.agda) | `optimization`
+6. Section 3.1 | Figure 4. (Return) | [src/Calf/Types/Bounded.agda](./src/Calf/Types/Bounded.agda) | `bound/ret`
+6. Section 3.1 | Figure 4. (Step) | [src/Calf/Types/Bounded.agda](./src/Calf/Types/Bounded.agda) | `bound/step`
+6. Section 3.1 | Figure 4. (Bind) | [src/Calf/Types/Bounded.agda](./src/Calf/Types/Bounded.agda) | `bound/bind`
+6. Section 3.1 | Figure 4. (Relax) | [src/Calf/Types/Bounded.agda](./src/Calf/Types/Bounded.agda) | `bound/relax`
+7. Section 4.1 | Theorem 4.1 | [src/Examples/Gcd/Spec.agda](./src/Examples/Gcd/Spec.agda) | `gcd≡spec/zero`, `gcd≡spec/suc`
+7. Section 4.1 | Theorem 4.2 | [src/Examples/Gcd/Clocked.agda](./src/Examples/Gcd/Clocked.agda) | `gcd≤gcd/depth`
+7. Section 4.1 | Theorem 4.3 | [src/Examples/Gcd/Refine.agda](./src/Examples/Gcd/Refine.agda) | `gcd/depth≤gcd/depth/closed`
+7. Section 4.1 | Corollary 4.4 | [src/Examples/Gcd/Refine.agda](./src/Examples/Gcd/Refine.agda) | `gcd≤gcd/depth/closed`
+8. Section 4.2 | Theorem 4.5 | [src/Examples/Queue.agda](./src/Examples/Queue.agda) | `enq≤enq/cost`, `deq≤deq/cost/closed`
+8. Section 4.2 | Corollary 4.6 | [src/Examples/Queue.agda](./src/Examples/Queue.agda) | `op≤op/cost`
+8. Section 4.2 | Lemma 4.7 | [src/Examples/Queue.agda](./src/Examples/Queue.agda) | `op/seq≤op/seq/cost`
+8. Section 4.2 | Theorem 4.8 | [src/Examples/Queue.agda](./src/Examples/Queue.agda) | `enq/acost`, `deq/acost`
+9. Section 4.2 | Theorem 4.9 | [src/Examples/Queue.agda](./src/Examples/Queue.agda) | `op/seq/cost≤ϕ₀+2*|l|`
+9. Section 4.2 | Corollary 4.10 | [src/Examples/Queue.agda](./src/Examples/Queue.agda) | `op/seq≤2*|l|`
 
 # Download, installation, and sanity-testing
 
@@ -101,7 +101,7 @@ Note that the files relevant to the claims are all located in the `src` director
 
 To evaluate a single claim, navigate to the directory containing the file associated with that claim and run `agda filename` on the command line. Because the validity of each claim is equivalent to agda being able to typecheck the function with no errors, the expected output is that agda will finish running with no output.
 
-For convenience, we have define a root file called `src/index.agda` that includes all the files contained in agda-calf, so running `agda index.agda` in the directory `src` will effectively evaluate all claims at once. Again the expected output is that agda finishes typechecking with no errors or textual outputs. Note that running `agda index.agda` should not take more than a minute.
+For convenience, we have define a root file called `[src/index.agda](./src/index.agda)` that includes all the files contained in agda-calf, so running `agda index.agda` in the directory `src` will effectively evaluate all claims at once. Again the expected output is that agda finishes typechecking with no errors or textual outputs. Note that running `agda index.agda` should not take more than a minute.
 
 # Artifact Description
 
@@ -116,5 +116,3 @@ https://code.visualstudio.com/
 The documentation for agda-mode in vscode can be found here:
 
 https://github.com/banacorn/agda-mode-vscode
-
-
