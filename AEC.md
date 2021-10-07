@@ -83,7 +83,7 @@ Now we need to register the library with Agda.
 
 ### Installing agda-calf
 
-First, clone the repository to a convenient directory:
+Clone the repository to a convenient directory:
 
 > `git clone https://github.com/jonsterling/agda-calf.git`
 
@@ -104,11 +104,14 @@ Note that the files relevant to the claims are all located in the `src` director
 
 To evaluate a single claim, navigate to the directory containing the file associated with that claim and run `agda filename` on the command line. Because the validity of each claim is equivalent to agda being able to typecheck the function with no errors, the expected output is that agda will finish running with no output.
 
-For convenience, we have define a root file called `[src/index.agda](./src/index.agda)` that includes all the files contained in agda-calf, so running `agda index.agda` in the directory `src` will effectively evaluate all claims at once. Again the expected output is that agda finishes typechecking with no errors or textual outputs. Note that running `agda index.agda` should not take more than a minute.
+For convenience, we have define a root file [src/index.agda](./src/index.agda) that includes all the files contained in agda-calf, so running `agda index.agda` in the directory `src` will effectively evaluate all claims at once. Again the expected output is that agda finishes typechecking with no errors or textual outputs. Note that running `agda index.agda` should not take more than a minute.
 
 # Artifact Description
 
-For an overview of of the core implementation of agda-calf, please see the **Language Implementation** section in the top-level README.md. We also provide a listing of the case studies on cost verification in agda-calf in the **Examples** section. We recommend the interested reader to begin with the example `Examples.Id`.
+For an overview of of the core implementation of agda-calf, please see the **Language Implementation** section in the top-level README.md.
+The paper definition of calf found in Figure 3 of Section 2.8 is spread across three core files in agda-calf: [src/Calf/Metalanguage.agda](Calf/../src/Calf/Metalanguage.agda), [src/Calf/PhaseDistinction.agda](src/Calf/PhaseDistinction.agda), and [src/Calf/Step.agda](src/Calf/Step.agda). Appendix A of the paper also gives a brief overview of agda-calf and explains some of the design decisions made in the implementation.
+
+We also provide a listing of the case studies on cost verification in agda-calf in the **Examples** section. We recommend the interested reader to begin with the example `Examples.Id`.
 
 One can also view agda-calf online here:
 
