@@ -44,13 +44,13 @@ record SEQUENCE_CORE : Set₁ where
     singleton : cmp (Π A λ _ → F (Seq A))
     empty : cmp (F (Seq A))
     append : cmp (Π (Seq A) λ _ → Π (Seq A) λ _ → F (Seq A))
-    isMonoid : A.IsMonoid (_≅_ {F (Seq A)}) (lift₂ {X = F (Seq A)} append) empty
+    isMonoid : ◯ (A.IsMonoid (_≅_ {F (Seq A)}) (lift₂ {X = F (Seq A)} append) empty)
 
     mapreduce :
       cmp (Π A λ _ → X)
       → (z : cmp X)
       → (g : cmp (Π (U X) λ _ → Π (U X) λ _ → X))
-      → A.IsMonoid (_≅_ {X}) g z
+      → ◯ (A.IsMonoid (_≅_ {X}) g z)
       → val (Seq A)
       → cmp X
     mapreduce/singleton : ∀ {f z g h a}     → ◯ (cmp (tbind (singleton {A} a ) (λ s → meta (mapreduce {X = X} f z g h s ≡ f a))))
