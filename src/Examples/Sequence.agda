@@ -13,10 +13,12 @@ open import Calf.ParMetalanguage parCostMonoid
 open import Calf.Types.Eq
 open import Calf.Types.Nat
 open import Data.Nat as N using (_+_)
+open import Data.Nat.Properties as N
 open import Calf.Types.Bounded costMonoid
 
 open import Function
 
+open import Data.Product using (_,_)
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning)
 
 
@@ -69,12 +71,15 @@ record SEQUENCE_CORE : Set₁ where
       → ◯ (A.IsMonoid (_≅_ {X}) g z)
       → val (Seq A)
       → cmp X
+
     mapreduce/singleton : ∀ {f z g h a}     → ◯ (bind X (singleton {A} a ) (mapreduce {X = X} f z g h) ≡ f a)
     mapreduce/empty     : ∀ {f z g h}       → ◯ (bind X (empty {A}       ) (mapreduce {X = X} f z g h) ≡ z)
     mapreduce/append    : ∀ {f z g h s₁ s₂} → ◯ (bind X (append {A} s₁ s₂) (mapreduce {X = X} f z g h) ≡ g (mapreduce {X = X} f z g h s₁) (mapreduce {X = X} f z g h s₂))
+
     mapreduce/singleton' : ∀ {f z g h a}     → (u : ext) → mapreduce {X = X} f z g h (singleton' {A} u a ) ≡ f a
     mapreduce/empty'     : ∀ {f z g h}       → (u : ext) → mapreduce {X = X} f z g h (empty' {A} u       ) ≡ z
     mapreduce/append'    : ∀ {f z g h s₁ s₂} → (u : ext) → mapreduce {X = X} f z g h (append' {A} u s₁ s₂) ≡ g (mapreduce {X = X} f z g h s₁) (mapreduce {X = X} f z g h s₂)
+
     mapreduce/singleton'' : ∀ {f z g h a}     → ◯ (cmp (tbind (singleton {A} a ) (λ s → meta (mapreduce {X = X} f z g h s ≡ f a))))
     mapreduce/empty''     : ∀ {f z g h}       → ◯ (cmp (tbind (empty {A}       ) (λ s → meta (mapreduce {X = X} f z g h s ≡ z))))
     mapreduce/append''    : ∀ {f z g h s₁ s₂} → ◯ (cmp (tbind (append {A} s₁ s₂) (λ s → meta (mapreduce {X = X} f z g h s ≡ g (mapreduce {X = X} f z g h s₁) (mapreduce {X = X} f z g h s₂)))))
@@ -147,7 +152,21 @@ module Example (S : SEQUENCE_CORE) where
       ret
       (ret 0)
       (lift₂ {X = F nat} λ n₁ n₂ → ret (n₁ + n₂))
-      {!   !}
+      λ u →
+        record
+          { isSemigroup =
+              record
+                { isMagma =
+                  record { isEquivalence =
+                      record
+                        { refl = λ u → refl
+                        ; sym = λ h u → Eq.sym (h u)
+                        ; trans = λ h₁ h₂ u → Eq.trans (h₁ u) (h₂ u)
+                        }
+                    ; ∙-cong = λ h₁ h₂ u → Eq.cong₂ (lift₂ (λ n₁ n₂ → ret (n₁ + n₂))) (h₁ u) (h₂ u)
+                    }
+                  ; assoc = λ n₁ n₂ n₃ u → Eq.cong (bind (F (U (meta ℕ))) n₁) (funext (λ v₁ → Eq.cong (bind (F nat) n₂) (funext (λ v₂ → Eq.cong (bind (F nat) n₃) (funext (λ v₃ → Eq.cong ret (+-assoc v₁ v₂ v₃))))))) }
+                  ; identity = (λ n u → {!   !}) , λ n u → {!   !} }
 
   reverse : cmp (Π (Seq A) λ _ → F (Seq A))
   reverse {A = A} =
