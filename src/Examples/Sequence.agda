@@ -41,7 +41,7 @@ lift₂ {X = X} f e₁ e₂ = bind X e₁ λ v₁ → bind X e₂ λ v₂ → f 
 
 record SEQUENCE_CORE : Set₁ where
   field
-    Seq : tp pos → tp pos  -- should this be tp neg?
+    Seq : tp pos → tp pos
 
     -- data Seq (A : Set) : Set where
     --   singleton : A → Seq A
@@ -54,7 +54,7 @@ record SEQUENCE_CORE : Set₁ where
     singleton : cmp (Π A λ _ → F (Seq A))
     empty : cmp (F (Seq A))
     append : cmp (Π (Seq A) λ _ → Π (Seq A) λ _ → F (Seq A))
-    isMonoid : ◯ (A.IsMonoid (_≅_ {F (Seq A)}) (lift₂ {X = F (Seq A)} append) empty)
+    isMonoid : A.IsMonoid (_≅_ {F (Seq A)}) (lift₂ {X = F (Seq A)} append) empty
 
     singleton' : ◯ (val A → val (Seq A))
     singleton'/match : (u : ext) (a : val A) → singleton {A} a ≡ ret (singleton' u a)
@@ -65,10 +65,10 @@ record SEQUENCE_CORE : Set₁ where
 
     mapreduce :
       {X : tp neg}
-      → cmp (Π A λ _ → X)
+      → (f : cmp (Π A λ _ → X))
       → (z : cmp X)
       → (g : cmp (Π (U X) λ _ → Π (U X) λ _ → X))
-      → ◯ (A.IsMonoid (_≅_ {X}) g z)
+      → A.IsMonoid (_≅_ {X}) g z
       → val (Seq A)
       → cmp X
 
@@ -89,7 +89,7 @@ record SEQUENCE_CORE : Set₁ where
       → cmp (Π A λ a → tbind (singleton a) P)
       → (z : cmp (tbind empty P))
       → (g : cmp (Π (Seq A) λ s₁ → Π (Seq A) λ s₂ → Π (U (P s₁)) λ _ → Π (U (P s₂)) λ _ → tbind (append s₁ s₂) P))
-      → ◯ (A.IsMonoid (_≅_ {{!   !}}) {!   !} {!   !})
+      → A.IsMonoid (_≅_ {{!   !}}) {!   !} {!   !}
       → (s : val (Seq A))
       → cmp (P s)
     induction/singleton : ∀ {P f z g h a}     → ◯ (dbind P (singleton {A} a ) (induction {P = P} f z g h) ≡ f a)
@@ -152,21 +152,20 @@ module Example (S : SEQUENCE_CORE) where
       ret
       (ret 0)
       (lift₂ {X = F nat} λ n₁ n₂ → ret (n₁ + n₂))
-      λ u →
-        record
-          { isSemigroup =
-              record
-                { isMagma =
-                  record { isEquivalence =
-                      record
-                        { refl = λ u → refl
-                        ; sym = λ h u → Eq.sym (h u)
-                        ; trans = λ h₁ h₂ u → Eq.trans (h₁ u) (h₂ u)
-                        }
-                    ; ∙-cong = λ h₁ h₂ u → Eq.cong₂ (lift₂ (λ n₁ n₂ → ret (n₁ + n₂))) (h₁ u) (h₂ u)
-                    }
-                  ; assoc = λ n₁ n₂ n₃ u → Eq.cong (bind (F (U (meta ℕ))) n₁) (funext (λ v₁ → Eq.cong (bind (F nat) n₂) (funext (λ v₂ → Eq.cong (bind (F nat) n₃) (funext (λ v₃ → Eq.cong ret (+-assoc v₁ v₂ v₃))))))) }
-                  ; identity = (λ n u → {!   !}) , λ n u → {!   !} }
+      record
+        { isSemigroup =
+            record
+              { isMagma =
+                record { isEquivalence =
+                    record
+                      { refl = λ u → refl
+                      ; sym = λ h u → Eq.sym (h u)
+                      ; trans = λ h₁ h₂ u → Eq.trans (h₁ u) (h₂ u)
+                      }
+                  ; ∙-cong = λ h₁ h₂ u → Eq.cong₂ (lift₂ (λ n₁ n₂ → ret (n₁ + n₂))) (h₁ u) (h₂ u)
+                  }
+                ; assoc = λ n₁ n₂ n₃ u → Eq.cong (bind (F (U (meta ℕ))) n₁) (funext (λ v₁ → Eq.cong (bind (F nat) n₂) (funext (λ v₂ → Eq.cong (bind (F nat) n₃) (funext (λ v₃ → Eq.cong ret (+-assoc v₁ v₂ v₃))))))) }
+                ; identity = (λ n u → {!   !}) , λ n u → {!   !} }
 
   reverse : cmp (Π (Seq A) λ _ → F (Seq A))
   reverse {A = A} =
