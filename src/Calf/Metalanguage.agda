@@ -28,8 +28,8 @@ cmp X = val (U X)
 postulate
   ret : ∀ {A} → val A → cmp (F A)
   tbind : ∀ {A} → cmp (F A) → (val A → tp neg) → tp neg
-  tbind_ret : ∀ {A} {X : val A → tp neg} {v : val A} → tbind (ret v) X ≡ X v
-  {-# REWRITE tbind_ret #-}
+  tbind/beta : ∀ {A} {X : val A → tp neg} {v : val A} → tbind (ret v) X ≡ X v
+  {-# REWRITE tbind/beta #-}
 
   dbind : ∀ {A} (X : val A → tp neg) (e : cmp (F A)) (f : (x : val A) → cmp (X x)) → cmp (tbind e X)
 
@@ -38,9 +38,10 @@ postulate
   -- to assume that.
   bind : ∀ {A} X → cmp (F A) → (val A → cmp X) → cmp X
 
-  bind/ret : ∀ {A X} {v : val A} {f : (x : val A) → cmp X} → bind X (ret v) f ≡ f v
-  dbind/ret : ∀ {A} {X : val A → tp neg} {v : val A} {f : (x : val A) → cmp (X x)} → dbind X (ret v) f ≡ f v
-  {-# REWRITE bind/ret dbind/ret #-}
+  bind/beta : ∀ {A X} {v : val A} {f : (x : val A) → cmp X} → bind X (ret v) f ≡ f v
+  dbind/beta : ∀ {A} {X : val A → tp neg} {v : val A} {f : (x : val A) → cmp (X x)} → dbind X (ret v) f ≡ f v
+  bind/eta : ∀ {A} {e : cmp (F A)} → bind (F A) e ret ≡ e
+  {-# REWRITE bind/beta dbind/beta bind/eta #-}
 
   tbind/assoc : ∀ {A B X} {e : cmp (F A)} {f : val A → cmp (F B)} →
     tbind {B} (bind (F B) e f) X ≡ tbind {A} e (λ v → tbind {B} (f v) X)

@@ -6,6 +6,7 @@ module Calf.PhaseDistinction where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
+open import Data.Product
 
 open import Relation.Binary.PropositionalEquality as P
 
@@ -62,3 +63,8 @@ postulate
     (h : (a : val A) → (u : ext) → P.subst (λ a → cmp (X a)) (η≡∗ a u) (x0 a) ≡ x1 u ) →
     ●/ind (∗ u) X x0 x1 h ≡ x1 u
   {-# REWRITE ●/ind/β₂ #-}
+
+postulate
+  [_∣_↪_] : (X : tp neg) → (φ : Ω) → (e : (u : φ) → cmp X) → tp neg
+  [∣↪]/decode : ∀ {X φ e} → val (U [ X ∣ φ ↪ e ]) ≡ Σ (cmp X) (λ e' → (u : φ) → e' ≡ e u)
+  {-# REWRITE [∣↪]/decode #-}
