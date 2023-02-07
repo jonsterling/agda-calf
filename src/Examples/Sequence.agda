@@ -11,7 +11,7 @@ open ParCostMonoid parCostMonoid
 open import Calf costMonoid
 open import Calf.ParMetalanguage parCostMonoid
 open import Calf.Types.Unit
-open import Calf.Types.Sum
+open import Calf.Types.Sum using (inj₁; inj₂) renaming (sum to _⊎_)
 open import Calf.Types.Eq
 open import Calf.Types.Nat
 open import Data.Nat as N using (_+_)
@@ -230,18 +230,18 @@ module Example (S : SEQUENCE_CORE) where
           ; identity = h₁ u , h₂ u
           }
 
-  head : cmp (Π (Seq A) λ s → F (sum A unit))
-  head {A = A} = mapreduce {X = F (sum A unit)} (ret ∘ inj₁) z g h
+  head : cmp (Π (Seq A) λ s → F (A ⊎ unit))
+  head {A = A} = mapreduce {X = F (A ⊎ unit)} (ret ∘ inj₁) z g h
     where
-      z : cmp (F (sum A unit))
+      z : cmp (F (A ⊎ unit))
       z = ret (inj₂ triv)
 
-      g-aux : cmp (Π (sum A unit) λ _ → Π (U (F (sum A unit))) λ _ → F (sum A unit))
+      g-aux : cmp (Π (A ⊎ unit) λ _ → Π (U (F (A ⊎ unit))) λ _ → F (A ⊎ unit))
       g-aux (inj₁ a   ) e₂ = ret (inj₁ a)
       g-aux (inj₂ triv) e₂ = e₂
 
-      g : cmp (Π (U (F (sum A unit))) λ _ → Π (U (F (sum A unit))) λ _ → F (sum A unit))
-      g e₁ e₂ = bind (F (sum A unit)) e₁ λ v₁ → g-aux v₁ e₂
+      g : cmp (Π (U (F (A ⊎ unit))) λ _ → Π (U (F (A ⊎ unit))) λ _ → F (A ⊎ unit))
+      g e₁ e₂ = bind (F (A ⊎ unit)) e₁ λ v₁ → g-aux v₁ e₂
 
       h : ◯ (A.IsMonoid _≡_ g z)
       h u =
@@ -255,9 +255,9 @@ module Example (S : SEQUENCE_CORE) where
                       }
                 ; assoc = λ e₁ e₂ e₃ →
                     Eq.cong
-                      (bind (F (sum A unit)) e₁)
-                      {x = λ v₁ → bind (F (sum A unit)) (g-aux v₁ e₂) λ v₂ → g-aux v₂ e₃}
-                      {y = λ v₁ → g-aux v₁ (bind (F (sum A unit)) e₂ λ v₂ → g-aux v₂ e₃)}
+                      (bind (F (A ⊎ unit)) e₁)
+                      {x = λ v₁ → bind (F (A ⊎ unit)) (g-aux v₁ e₂) λ v₂ → g-aux v₂ e₃}
+                      {y = λ v₁ → g-aux v₁ (bind (F (A ⊎ unit)) e₂ λ v₂ → g-aux v₂ e₃)}
                       (funext λ
                         { (inj₁ a   ) → refl
                         ; (inj₂ triv) → refl})
@@ -266,7 +266,7 @@ module Example (S : SEQUENCE_CORE) where
               (λ e → refl) ,
               (λ e →
                 Eq.cong
-                  (bind (F (sum A unit)) e)
+                  (bind (F (A ⊎ unit)) e)
                   {x = λ v₁ → g-aux v₁ (ret (inj₂ triv))}
                   {y = ret}
                   (funext λ
@@ -356,26 +356,39 @@ module Example (S : SEQUENCE_CORE) where
 --   --     (lift₂ {X = F (Seq B)} append)
 --   --     (isMonoid S)
 
---   -- sum : cmp (Π (Seq nat) λ _ → F nat)
---   -- sum =
---   --   mapreduce {X = F nat}
---   --     ret
---   --     (ret 0)
---   --     (lift₂ {X = F nat} λ n₁ n₂ → ret (n₁ + n₂))
---   --     record
---   --       { isSemigroup =
---   --           record
---   --             { isMagma =
---   --               record { isEquivalence =
---   --                   record
---   --                     { refl = λ u → refl
---   --                     ; sym = λ h u → Eq.sym (h u)
---   --                     ; trans = λ h₁ h₂ u → Eq.trans (h₁ u) (h₂ u)
---   --                     }
---   --                 ; ∙-cong = λ h₁ h₂ u → Eq.cong₂ (lift₂ (λ n₁ n₂ → ret (n₁ + n₂))) (h₁ u) (h₂ u)
---   --                 }
---   --               ; assoc = λ n₁ n₂ n₃ u → Eq.cong (bind (F (U (meta ℕ))) n₁) (funext (λ v₁ → Eq.cong (bind (F nat) n₂) (funext (λ v₂ → Eq.cong (bind (F nat) n₃) (funext (λ v₃ → Eq.cong ret (+-assoc v₁ v₂ v₃))))))) }
---   --               ; identity = (λ n u → {!   !}) , λ n u → {!   !} }
+  sum : cmp (Π (Seq nat) λ _ → F nat)
+  sum = mapreduce {X = F nat} ret z g h
+    where
+      z : cmp (F nat)
+      z = ret 0
+
+      g : cmp (Π (U (F nat)) λ _ → Π (U (F nat)) λ _ → F nat)
+      g = lift₂ {X = F nat} λ n₁ n₂ → ret (n₁ + n₂)
+
+      h : ◯ (A.IsMonoid _≡_ g z)
+      h u =
+        record
+          { isSemigroup =
+              record
+                { isMagma =
+                    record
+                      { isEquivalence = Eq.isEquivalence
+                      ; ∙-cong = Eq.cong₂ g
+                      }
+                ; assoc = λ e₁ e₂ e₃ →
+                    Eq.cong (bind (F nat) e₁) (funext λ n₁ →
+                    Eq.cong (bind (F nat) e₂) (funext λ n₂ →
+                    Eq.cong (bind (F nat) e₃) (funext λ n₃ →
+                    Eq.cong ret (+-assoc n₁ n₂ n₃))))
+                }
+          ; identity =
+              (λ e →
+                Eq.cong (bind (F nat) e) (funext λ n →
+                Eq.cong ret (+-identityˡ n))) ,
+              (λ e →
+                Eq.cong (bind (F nat) e) (funext λ n →
+                Eq.cong ret (+-identityʳ n)))
+          }
 
 --   -- reverse : cmp (Π (Seq A) λ _ → F (Seq A))
 --   -- reverse {A = A} =
