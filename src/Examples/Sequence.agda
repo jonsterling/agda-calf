@@ -10,6 +10,8 @@ open ParCostMonoid parCostMonoid
 
 open import Calf costMonoid
 open import Calf.ParMetalanguage parCostMonoid
+open import Calf.Types.Unit
+open import Calf.Types.Sum
 open import Calf.Types.Eq
 open import Calf.Types.Nat
 open import Data.Nat as N using (_+_)
@@ -227,6 +229,51 @@ module Example (S : SEQUENCE_CORE) where
                 }
           ; identity = h₁ u , h₂ u
           }
+
+  head : cmp (Π (Seq A) λ s → F (sum A unit))
+  head {A = A} = mapreduce {X = F (sum A unit)} (ret ∘ inj₁) z g h
+    where
+      z : cmp (F (sum A unit))
+      z = ret (inj₂ triv)
+
+      g-aux : cmp (Π (sum A unit) λ _ → Π (U (F (sum A unit))) λ _ → F (sum A unit))
+      g-aux (inj₁ a   ) e₂ = ret (inj₁ a)
+      g-aux (inj₂ triv) e₂ = e₂
+
+      g : cmp (Π (U (F (sum A unit))) λ _ → Π (U (F (sum A unit))) λ _ → F (sum A unit))
+      g e₁ e₂ = bind (F (sum A unit)) e₁ λ v₁ → g-aux v₁ e₂
+
+      h : ◯ (A.IsMonoid _≡_ g z)
+      h u =
+        record
+          { isSemigroup =
+              record
+                { isMagma =
+                    record
+                      { isEquivalence = Eq.isEquivalence
+                      ; ∙-cong = Eq.cong₂ g
+                      }
+                ; assoc = λ e₁ e₂ e₃ →
+                    Eq.cong
+                      (bind (F (sum A unit)) e₁)
+                      {x = λ v₁ → bind (F (sum A unit)) (g-aux v₁ e₂) λ v₂ → g-aux v₂ e₃}
+                      {y = λ v₁ → g-aux v₁ (bind (F (sum A unit)) e₂ λ v₂ → g-aux v₂ e₃)}
+                      (funext λ
+                        { (inj₁ a   ) → refl
+                        ; (inj₂ triv) → refl})
+                }
+          ; identity =
+              (λ e → refl) ,
+              (λ e →
+                Eq.cong
+                  (bind (F (sum A unit)) e)
+                  {x = λ v₁ → g-aux v₁ (ret (inj₂ triv))}
+                  {y = ret}
+                  (funext λ
+                    { (inj₁ a   ) → refl
+                    ; (inj₂ triv) → refl }))
+          }
+
 
 --   example₀ : ◯ (id-traverse {A = A} ≡ ret)
 --   example₀ {A = A} u = funext λ s →
