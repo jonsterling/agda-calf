@@ -20,12 +20,16 @@ open import Calf.Types.Bounded costMonoid
 
 open import Function
 
-open import Data.Product using (_,_; proj₁; proj₂)
+open import Data.Product using (_,_)
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning)
 
 
 example : cmp [ F nat ∣ ext ↪ (λ _ → ret 3) ]
-example = step (F nat) (1 , 1) (ret 3) , step/ext (F nat) (ret 3) (1 , 1)
+example =
+  record
+    { out = step (F nat) (1 , 1) (ret 3)
+    ; law = step/ext (F nat) (ret 3) (1 , 1)
+    }
 
 
 import Algebra.Structures as A
@@ -104,26 +108,26 @@ module Example (S : SEQUENCE_CORE) where
   id-traverse {A = A} =
     mapreduce
       {X = F (Seq A)}
-      (proj₁ ∘ singleton)
+      (out ∘ singleton)
       z
       g
       h
     where
       z : cmp (F (Seq A))
-      z = proj₁ empty
+      z = out empty
 
       g : cmp (Π (U (F (Seq A))) λ _ → Π (U (F (Seq A))) λ _ → F (Seq A))
-      g = lift₂ {X = F (Seq A)} λ s₁ s₂ → proj₁ (append s₁ s₂)
+      g = lift₂ {X = F (Seq A)} λ s₁ s₂ → out (append s₁ s₂)
 
       h₁ : ◯ ((s : cmp (F (Seq A))) → g z s ≡ s)
-      h₁ u s rewrite proj₂ (empty {A}) u =
+      h₁ u s rewrite law (empty {A}) u =
         begin
-          (bind (F (Seq A)) s λ v₂ → proj₁ (append (empty/spec u) v₂))
+          (bind (F (Seq A)) s λ v₂ → out (append (empty/spec u) v₂))
         ≡⟨
           Eq.cong (bind (F (Seq A)) s) (funext λ v₂ →
             begin
-              proj₁ (append (empty/spec u) v₂)
-            ≡⟨ proj₂ (append (empty/spec u) v₂) u ⟩
+              out (append (empty/spec u) v₂)
+            ≡⟨ law (append (empty/spec u) v₂) u ⟩
               ret (append/spec u (empty/spec u) v₂)
             ≡⟨ Eq.cong ret (A.IsMonoid.identityˡ (isMonoid S u) v₂) ⟩
               ret v₂
@@ -137,14 +141,14 @@ module Example (S : SEQUENCE_CORE) where
           where open ≡-Reasoning
 
       h₂ : ◯ ((s : cmp (F (Seq A))) → g s z ≡ s)
-      h₂ u s rewrite proj₂ (empty {A}) u =
+      h₂ u s rewrite law (empty {A}) u =
         begin
-          (bind (F (Seq A)) s λ v₁ → proj₁ (append v₁ (empty/spec u)))
+          (bind (F (Seq A)) s λ v₁ → out (append v₁ (empty/spec u)))
         ≡⟨
           Eq.cong (bind (F (Seq A)) s) (funext λ v₁ →
             begin
-              proj₁ (append v₁ (empty/spec u))
-            ≡⟨ proj₂ (append v₁ (empty/spec u)) u ⟩
+              out (append v₁ (empty/spec u))
+            ≡⟨ law (append v₁ (empty/spec u)) u ⟩
               ret (append/spec u v₁ (empty/spec u))
             ≡⟨ Eq.cong ret (A.IsMonoid.identityʳ (isMonoid S u) v₁) ⟩
               ret v₁
@@ -174,55 +178,55 @@ module Example (S : SEQUENCE_CORE) where
                     ≡⟨⟩
                       ( bind (F (Seq A)) s₁ λ v₁ →
                         bind (F (Seq A)) s₂ λ v₂ →
-                        bind (F (Seq A)) (proj₁ (append v₁ v₂)) λ v₁₂ →
+                        bind (F (Seq A)) (out (append v₁ v₂)) λ v₁₂ →
                         bind (F (Seq A)) s₃ λ v₃ →
-                        proj₁ (append v₁₂ v₃))
+                        out (append v₁₂ v₃))
                     ≡⟨
                       Eq.cong (bind (F (Seq A)) s₁) (funext λ v₁ →
                       Eq.cong (bind (F (Seq A)) s₂) (funext λ v₂ →
                       begin
-                        ( bind (F (Seq A)) (proj₁ (append v₁ v₂)) λ v₁₂ →
+                        ( bind (F (Seq A)) (out (append v₁ v₂)) λ v₁₂ →
                           bind (F (Seq A)) s₃ λ v₃ →
-                          proj₁ (append v₁₂ v₃))
+                          out (append v₁₂ v₃))
                       ≡⟨
                         Eq.cong
                           (λ e →
                             bind (F (Seq A)) e λ v₁₂ →
                             bind (F (Seq A)) s₃ λ v₃ →
-                            proj₁ (append v₁₂ v₃))
-                          (proj₂ (append v₁ v₂) u)
+                            out (append v₁₂ v₃))
+                          (law (append v₁ v₂) u)
                       ⟩
                         ( bind (F (Seq A)) s₃ λ v₃ →
-                          proj₁ (append (append/spec u v₁ v₂) v₃))
+                          out (append (append/spec u v₁ v₂) v₃))
                       ≡⟨
                         Eq.cong (bind (F (Seq A)) s₃) (funext λ v₃ →
                         begin
-                          proj₁ (append (append/spec u v₁ v₂) v₃)
-                        ≡⟨ proj₂ (append _ v₃) u ⟩
+                          out (append (append/spec u v₁ v₂) v₃)
+                        ≡⟨ law (append _ v₃) u ⟩
                           ret (append/spec u (append/spec u v₁ v₂) v₃)
                         ≡⟨ Eq.cong ret (A.IsMonoid.assoc (isMonoid S u) v₁ v₂ v₃) ⟩
                           ret (append/spec u v₁ (append/spec u v₂ v₃))
-                        ≡˘⟨ proj₂ (append v₁ _) u ⟩
-                          proj₁ (append v₁ (append/spec u v₂ v₃))
+                        ≡˘⟨ law (append v₁ _) u ⟩
+                          out (append v₁ (append/spec u v₂ v₃))
                         ≡˘⟨
                           Eq.cong
-                            (λ e → bind (F (Seq A)) e λ v₂₃ → proj₁ (append v₁ v₂₃))
-                            (proj₂ (append v₂ v₃) u)
+                            (λ e → bind (F (Seq A)) e λ v₂₃ → out (append v₁ v₂₃))
+                            (law (append v₂ v₃) u)
                         ⟩
-                          ( bind (F (Seq A)) (proj₁ (append v₂ v₃)) λ v₂₃ →
-                            proj₁ (append v₁ v₂₃))
+                          ( bind (F (Seq A)) (out (append v₂ v₃)) λ v₂₃ →
+                            out (append v₁ v₂₃))
                         ∎)
                       ⟩
                         ( bind (F (Seq A)) s₃ λ v₃ →
-                          bind (F (Seq A)) (proj₁ (append v₂ v₃)) λ v₂₃ →
-                          proj₁ (append v₁ v₂₃))
+                          bind (F (Seq A)) (out (append v₂ v₃)) λ v₂₃ →
+                          out (append v₁ v₂₃))
                       ∎))
                     ⟩
                       ( bind (F (Seq A)) s₁ λ v₁ →
                         bind (F (Seq A)) s₂ λ v₂ →
                         bind (F (Seq A)) s₃ λ v₃ →
-                        bind (F (Seq A)) (proj₁ (append v₂ v₃)) λ v₂₃ →
-                        proj₁ (append v₁ v₂₃))
+                        bind (F (Seq A)) (out (append v₂ v₃)) λ v₂₃ →
+                        out (append v₁ v₂₃))
                     ≡⟨⟩
                       g s₁ (g s₂ s₃)
                     ∎

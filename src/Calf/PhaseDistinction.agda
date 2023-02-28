@@ -64,7 +64,13 @@ postulate
     ●/ind (∗ u) X x0 x1 h ≡ x1 u
   {-# REWRITE ●/ind/β₂ #-}
 
+record Extension (X : tp neg) (φ : Ω) (e : (u : φ) → cmp X) : Set where
+  field
+    out : cmp X
+    law : (u : φ) → out ≡ e u
+open Extension public
+
 postulate
   [_∣_↪_] : (X : tp neg) → (φ : Ω) → (e : (u : φ) → cmp X) → tp neg
-  [∣↪]/decode : ∀ {X φ e} → val (U [ X ∣ φ ↪ e ]) ≡ Σ (cmp X) (λ e' → (u : φ) → e' ≡ e u)
+  [∣↪]/decode : ∀ {X φ e} → val (U [ X ∣ φ ↪ e ]) ≡ Extension X φ e
   {-# REWRITE [∣↪]/decode #-}
