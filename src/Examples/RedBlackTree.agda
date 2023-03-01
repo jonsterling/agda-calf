@@ -15,12 +15,13 @@ open import Calf.ParMetalanguage parCostMonoid
 open import Calf.Types.Bool
 open import Calf.Types.Product
 open import Calf.Types.Nat
--- open import Data.Nat as Nat using (_+_)
-open import Data.Nat.Properties as Nat
+open import Data.String using (String)
+open import Data.Nat as Nat using (_+_; _<_)
+import Data.Nat.Properties as Nat
 
 open import Relation.Nullary
 open import Relation.Binary
--- open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning)
+open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning)
 
 
 module RedBlackTree (STO : StrictTotalOrder 0ℓ 0ℓ 0ℓ) where
@@ -67,7 +68,7 @@ module RedBlackTree (STO : StrictTotalOrder 0ℓ 0ℓ 0ℓ) where
   find t a = bind (F bool) (split t a) λ { (b , _) → ret b }
 
 
-module _ where
+module Ex/NatSet where
   open RedBlackTree Nat.<-strictTotalOrder
 
   example : cmp (F (prod bool (prod rbt rbt)))
@@ -80,4 +81,40 @@ module _ where
     split t₃ 2
 
   -- run Ctrl-C Ctrl-N here
+  compute : cmp (F (prod bool (prod rbt rbt)))
+  compute = {! example  !}
+
+module Ex/NatStringDict where
+  strictTotalOrder : StrictTotalOrder 0ℓ 0ℓ 0ℓ
+  strictTotalOrder =
+    record
+      { Carrier = ℕ × String
+      ; _≈_ = λ (n₁ , _) (n₂ , _) → n₁ ≡ n₂
+      ; _<_ = λ (n₁ , _) (n₂ , _) → n₁ < n₂
+      ; isStrictTotalOrder =
+          record
+            { isEquivalence =
+                record
+                  { refl = Eq.refl
+                  ; sym = Eq.sym
+                  ; trans = Eq.trans
+                  }
+            ; trans = Nat.<-trans
+            ; compare = λ (n₁ , _) (n₂ , _) → Nat.<-cmp n₁ n₂
+            }
+      }
+
+  open RedBlackTree strictTotalOrder
+
+  example : cmp (F (prod bool (prod rbt rbt)))
+  example =
+    bind (F (prod bool (prod rbt rbt))) (singleton (1 , "red")) λ t₁ →
+    bind (F (prod bool (prod rbt rbt))) (singleton (2 , "blue")) λ t₂ →
+    bind (F (prod bool (prod rbt rbt))) (singleton (3 , "green")) λ t₃ →
+    bind (F (prod bool (prod rbt rbt))) (join t₁ t₂) λ t₁₂ →
+    bind (F (prod bool (prod rbt rbt))) (join t₁₂ t₃) λ t₃ →
+    split t₃ (2 , "")
+
+  -- run Ctrl-C Ctrl-N here
+  compute : cmp (F (prod bool (prod rbt rbt)))
   compute = {! example  !}
