@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        agda-ref: ["v2.6.2"]
-        stdlib-ref: ["v1.7"]
+        agda-ref: ["v2.6.3"]
+        stdlib-ref: ["v1.7.1"]
         ghc-ver: ["8.10.2"]
         cabal-ver: ["3.4.0.0"]
     steps:
