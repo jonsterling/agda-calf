@@ -108,7 +108,7 @@ RedBlackBST Key =
     -- Just Join for Parallel Ordered Sets (Blelloch, Ferizovic, and Sun)
     -- https://diderot.one/courses/121/books/492/chapter/6843
     joinMid : cmp (Π rbt λ _ → Π 𝕂 λ _ → Π rbt λ _ → F rbt)
-    joinMid k t₁ t₂ = {!   !}
+    joinMid t₁ k t₂ = {!   !}
 
     rec : {X : tp neg} →
       cmp
@@ -117,7 +117,7 @@ RedBlackBST Key =
           Π rbt λ _ → X
         )
     rec {X} z f leaf = z
-    rec {X} z f (red t₁ k t₂) = f t₁ (rec {X} z f t₁) k t₂ (rec {X} z f t₂)
+    rec {X} z f (red   t₁ k t₂) = f t₁ (rec {X} z f t₁) k t₂ (rec {X} z f t₂)
     rec {X} z f (black t₁ k t₂) = f t₁ (rec {X} z f t₁) k t₂ (rec {X} z f t₂)
 
 
