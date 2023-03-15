@@ -64,43 +64,34 @@ record ParametricBST (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) : Set₁ where
     bind (F bst) empty λ t →
     node t k t
 
-  record %Split : Set where
-    constructor ⦅_,_,_⦆
-    field
-      left : cmp (F bst)
-      value : cmp (F (maybe 𝕂))
-      right : cmp (F bst)
-  open %Split
-  -- (left : F bst) × (value : F (maybe 𝕂)) × (right : F bst)
   Split : tp neg
-  Split = meta %Split
-  postulate
-    Split/step : ∀ {c t₁ k? t₂} →
-      step Split c ⦅ t₁ , k? , t₂ ⦆ ≡ ⦅ (step (F bst) c t₁) , (step (F (maybe 𝕂)) c k?) , (step (F bst) c t₂) ⦆
-  {-# REWRITE Split/step #-}
+  Split = F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))
 
   split : cmp (Π bst λ _ → Π 𝕂 λ _ → Split)
   split t k =
     rec
-      {X = Split}
-      ⦅ empty , ret nothing , empty ⦆
+      {X = F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))}
+      (bind Split empty λ t →
+        ret (t , nothing , t))
       (λ t₁ ih₁ k' t₂ ih₂ →
         case compare k k' of λ
           { (tri< k<k' ¬k≡k' ¬k>k') →
-              ⦅ left ih₁ , value ih₁ , bind (F bst) (right ih₁) (λ t → node t k' t₂) ⦆
-          ; (tri≈ ¬k<k' k≡k' ¬k>k') → ⦅ ret t₁ , ret (just k') , ret t₂ ⦆
+              bind Split ih₁ λ ( t₁₁ , k? , t₁₂ ) →
+              bind Split (node t₁₂ k' t₂) λ t →
+              ret (t₁₁ , k? , t)
+          ; (tri≈ ¬k<k' k≡k' ¬k>k') → ret (t₁ , just k' , t₂)
           ; (tri> ¬k<k' ¬k≡k' k>k') →
-              ⦅ bind (F bst) (left ih₂) (λ t → node t₁ k' t) , value ih₂ , right ih₂ ⦆
+              bind Split ih₂ λ ( t₂₁ , k? , t₂₂ ) →
+              bind Split (node t₁ k' t₂₁) λ t →
+              ret (t , k? , t₂₂)
           })
       t
 
   find : cmp (Π bst λ _ → Π 𝕂 λ _ → F (maybe 𝕂))
-  find t k = value (split t k)
+  find t k = bind (F (maybe 𝕂)) (split t k) λ { (_ , k? , _) → ret k? }
 
   insert : cmp (Π bst λ _ → Π 𝕂 λ _ → F bst)
-  insert t k =
-    bind (F bst) (left (split t k) & right (split t k)) λ (t₁ , t₂) →
-    node t₁ k t₂
+  insert t k = bind (F bst) (split t k) λ { (t₁ , _ , t₂) → node t₁ k t₂ }
 
 
 ListBST : (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) → ParametricBST Key
