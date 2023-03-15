@@ -15,9 +15,10 @@ open import Calf.ParMetalanguage parCostMonoid
 open import Calf.Types.Unit
 open import Calf.Types.Product
 open import Calf.Types.Sum
+open import Calf.Types.Bool
 open import Calf.Types.Maybe
 open import Calf.Types.Nat
-open import Calf.Types.Bool
+open import Calf.Types.List
 open import Data.String using (String)
 open import Data.Nat as Nat using (_+_; _*_; _<_; _>_; _≤ᵇ_; _<ᵇ_; ⌊_/2⌋; _≡ᵇ_; _≥_)
 open import Data.Bool as Bool using (not; _∧_)
@@ -102,6 +103,28 @@ record ParametricBST (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) : Set₁ where
     node t₁ k t₂
 
 
+ListBST : (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) → ParametricBST Key
+ListBST Key =
+  record
+    { bst = list 𝕂
+    ; leaf = ret []
+    ; node = λ l₁ k l₂ → ret (l₁ ++ [ k ] ++ l₂)
+    ; rec = λ {X} → rec {X}
+    }
+  where
+    𝕂 : tp pos
+    𝕂 = U (meta (StrictTotalOrder.Carrier Key))
+
+    rec : {X : tp neg} →
+      cmp
+        ( Π (U X) λ _ →
+          Π (U (Π (list 𝕂) λ _ → Π (U X) λ _ → Π 𝕂 λ _ → Π (list 𝕂) λ _ → Π (U X) λ _ → X)) λ _ →
+          Π (list 𝕂) λ _ → X
+        )
+    rec {X} z f []      = z
+    rec {X} z f (x ∷ l) = step X (1 , 1) (f [] z x l (rec {X} z f l))
+
+
 RedBlackBST' : (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) → ParametricBST Key
 RedBlackBST' Key =
   record
@@ -111,10 +134,8 @@ RedBlackBST' Key =
     ; rec = λ {X} → rec {X}
     }
   where
-    open StrictTotalOrder Key
-
     𝕂 : tp pos
-    𝕂 = U (meta Carrier)
+    𝕂 = U (meta (StrictTotalOrder.Carrier Key))
 
     data RBT : Set where
       leaf  : RBT
@@ -393,6 +414,21 @@ RedBlackBST Key =
         (λ _ _ t₁ ih₁ k _ _ t₂ ih₂ → f ⟪ t₁ ⟫ ih₁ k ⟪ t₂ ⟫ ih₂)
         _ _ t
 
+
+module Ex/NatSet-List where
+  open ParametricBST (ListBST Nat.<-strictTotalOrder)
+
+  example : cmp Split
+  example =
+    bind Split (singleton 1) λ t₁ →
+    bind Split (insert t₁ 2) λ t₁ →
+    bind Split (singleton 4) λ t₂ →
+    bind Split (node t₁ 3 t₂) λ t →
+    split t 2
+
+  -- run Ctrl-C Ctrl-N here
+  compute : cmp Split
+  compute = {! example  !}
 
 module Ex/NatSet where
   open ParametricBST (RedBlackBST Nat.<-strictTotalOrder)
