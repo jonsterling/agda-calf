@@ -64,7 +64,7 @@ record ParametricBST (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) : Set₁ where
     node t k t
 
   record %Split : Set where
-    constructor [_,_,_]
+    constructor ⦅_,_,_⦆
     field
       left : cmp (F bst)
       value : cmp (F (maybe 𝕂))
@@ -73,19 +73,23 @@ record ParametricBST (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) : Set₁ where
   -- (left : F bst) × (value : F (maybe 𝕂)) × (right : F bst)
   Split : tp neg
   Split = meta %Split
+  postulate
+    Split/step : ∀ {c t₁ k? t₂} →
+      step Split c ⦅ t₁ , k? , t₂ ⦆ ≡ ⦅ (step (F bst) c t₁) , (step (F (maybe 𝕂)) c k?) , (step (F bst) c t₂) ⦆
+  {-# REWRITE Split/step #-}
 
   split : cmp (Π bst λ _ → Π 𝕂 λ _ → Split)
   split t k =
     rec
       {X = Split}
-      [ empty , ret nothing , empty ]
+      ⦅ empty , ret nothing , empty ⦆
       (λ t₁ ih₁ k' t₂ ih₂ →
         case compare k k' of λ
           { (tri< k<k' ¬k≡k' ¬k>k') →
-              [ left ih₁ , value ih₁ , bind (F bst) (right ih₁) (λ t → node t k' t₂) ]
-          ; (tri≈ ¬k<k' k≡k' ¬k>k') → [ ret t₁ , ret (just k') , ret t₂ ]
+              ⦅ left ih₁ , value ih₁ , bind (F bst) (right ih₁) (λ t → node t k' t₂) ⦆
+          ; (tri≈ ¬k<k' k≡k' ¬k>k') → ⦅ ret t₁ , ret (just k') , ret t₂ ⦆
           ; (tri> ¬k<k' ¬k≡k' k>k') →
-              [ bind (F bst) (left ih₂) (λ t → node t₁ k' t) , value ih₂ , right ih₂ ]
+              ⦅ bind (F bst) (left ih₂) (λ t → node t₁ k' t) , value ih₂ , right ih₂ ⦆
           })
       t
 
