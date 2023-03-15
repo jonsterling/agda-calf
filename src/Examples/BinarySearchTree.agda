@@ -19,13 +19,14 @@ open import Calf.Types.Maybe
 open import Calf.Types.Nat
 open import Calf.Types.Bool
 open import Data.String using (String)
-open import Data.Nat as Nat using (_+_; _*_; _<_; _>_; _≤ᵇ_; _<ᵇ_; ⌊_/2⌋; _≡ᵇ_)
+open import Data.Nat as Nat using (_+_; _*_; _<_; _>_; _≤ᵇ_; _<ᵇ_; ⌊_/2⌋; _≡ᵇ_; _≥_)
 open import Data.Bool as Bool using (not; _∧_)
 import Data.Nat.Properties as Nat
 
 open import Function
 
 open import Relation.Nullary
+open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning)
 
@@ -97,8 +98,8 @@ record ParametricBST (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) : Set₁ where
     node t₁ k t₂
 
 
-RedBlackBST : (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) → ParametricBST Key
-RedBlackBST Key =
+RedBlackBST' : (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) → ParametricBST Key
+RedBlackBST' Key =
   record
     { bst = rbt
     ; leaf = ret leaf
@@ -176,7 +177,8 @@ RedBlackBST Key =
                         then ret (red t₁ k t₂)
                         else bind (F rbt) (expose t₁) (λ (l' , k' , r') →
                              bind (F rbt) (isRed t₁) (λ b →
-                             bind (F rbt) (joinRight r' k t₂) (λ r'' →
+                            --  bind (F rbt) (joinRight r' k t₂) (λ r'' →
+                             bind {A = rbt} (F rbt) {!   !} (λ r'' →  -- placate termination checking
                              if b
                              then (bind (F rbt) (redT' l' k' r'') (λ t' →
                                    bind (F rbt) (rightChild t') (λ rt' →
@@ -268,6 +270,124 @@ RedBlackBST Key =
     rec {X} z f leaf = z
     rec {X} z f (red   t₁ k t₂) = f t₁ (rec {X} z f t₁) k t₂ (rec {X} z f t₂)
     rec {X} z f (black t₁ k t₂) = f t₁ (rec {X} z f t₁) k t₂ (rec {X} z f t₂)
+
+
+RedBlackBST : (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) → ParametricBST Key
+RedBlackBST Key =
+  record
+    { bst = rbt
+    ; leaf = ret ⟪ leaf ⟫
+    ; node = joinMid
+    ; rec = λ {X} → rec {X}
+    }
+  where
+    𝕂 : tp pos
+    𝕂 = U (meta (StrictTotalOrder.Carrier Key))
+
+    data Color : Set where
+      red : Color
+      black : Color
+    color : tp pos
+    color = U (meta Color)
+
+    -- Indexed Red Black Tree
+    data IRBT : val color → val nat → Set where
+      leaf  : IRBT black zero
+      red   : {n : val nat}
+        (t₁ : IRBT black n) (k : val 𝕂) (t₂ : IRBT black n)
+        → IRBT red n
+      black : {n : val nat} {y₁ y₂ : val color}
+        (t₁ : IRBT y₁ n) (k : val 𝕂) (t₂ : IRBT y₂ n)
+        → IRBT black (suc n)
+    irbt : val color → val nat → tp pos
+    irbt y n = U (meta (IRBT y n))
+
+    record RBT : Set where
+      pattern
+      constructor ⟪_⟫
+      field
+        {y} : val color
+        {n} : val nat
+        t : val (irbt y n)
+    rbt : tp pos
+    rbt = U (meta RBT)
+
+    -- Just Join for Parallel Ordered Sets (Blelloch, Ferizovic, and Sun)
+    -- https://diderot.one/courses/121/books/492/chapter/6843
+
+    i-joinRight :
+      cmp
+        ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
+          Π 𝕂 λ _ →
+          Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+          Π (U (meta (n₁ ≥ n₂))) λ _ →
+          F (irbt y₁ n₁)  -- TODO: is this correct?
+        )
+    i-joinRight y₁ n₁ t₁ k y₂ n₂ t₂ n₁≥n₂ with n₁ Nat.≟ n₂
+    ... | yes refl = ret {!  red !}
+    i-joinRight .black .zero leaf k y₂ .zero t₂ Nat.z≤n | no n₁≢n₂ = contradiction refl n₁≢n₂
+    i-joinRight .red n₁ (red t₁₁ k₁ t₁₂) k y₂ n₂ t₂ n₁≥n₂ | no n₁≢n₂ =
+      bind (F {!   !}) (i-joinRight _ _ t₁₂ k _ _ t₂ {!     !}) λ t₂' →
+      ret (red t₁₁ k₁ t₂')
+    i-joinRight .black .(suc _) (black t₁₁ k₁ t₁₂) k y₂ n₂ t₂ n₁≥n₂ | no n₁≢n₂ =
+      {!   !}
+
+    i-joinMid :
+      cmp
+        ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
+          Π 𝕂 λ _ →
+          Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+          F rbt
+        )
+    i-joinMid y₁ n₁ t₁ k y₂ n₂ t₂ with Nat.<-cmp n₁ n₂
+    i-joinMid red n₁ t₁ k y₂ n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
+    i-joinMid black n₁ t₁ k red n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
+    i-joinMid black n₁ t₁ k black n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (red t₁ k t₂) ⟫
+    ... | tri< n₁<n₂ n₁≢n₂ ¬n₁>n₂ = {!   !}
+    ... | tri> ¬n₁<n₂ n₁≢n₂ n₁>n₂ =
+      bind (F rbt) (i-joinRight _ _ t₁ k _ _ t₂ (Nat.<⇒≤ n₁>n₂)) λ t →
+      {!   !}
+
+    joinMid : cmp (Π rbt λ _ → Π 𝕂 λ _ → Π rbt λ _ → F rbt)
+    joinMid ⟪ t₁ ⟫ k ⟪ t₂ ⟫ = i-joinMid _ _ t₁ k _ _ t₂
+
+    i-rec : {X : tp neg} →
+      cmp
+        ( Π (U X) λ _ →
+          Π
+            ( U
+              ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ → Π (U X) λ _ →
+                Π 𝕂 λ _ →
+                Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ → Π (U X) λ _ →
+                X
+              )
+            ) λ _ →
+          Π color λ y → Π nat λ n → Π (irbt y n) λ _ →
+          X
+        )
+    i-rec {X} z f .black .zero    leaf            = z
+    i-rec {X} z f .red   n        (red   t₁ k t₂) =
+      f
+        _ _ t₁ (i-rec {X} z f _ _ t₁)
+        k
+        _ _ t₂ (i-rec {X} z f _ _ t₂)
+    i-rec {X} z f .black .(suc _) (black t₁ k t₂) =
+      f
+        _ _ t₁ (i-rec {X} z f _ _ t₁)
+        k
+        _ _ t₂ (i-rec {X} z f _ _ t₂)
+
+    rec : {X : tp neg} →
+      cmp
+        ( Π (U X) λ _ →
+          Π (U (Π rbt λ _ → Π (U X) λ _ → Π 𝕂 λ _ → Π rbt λ _ → Π (U X) λ _ → X)) λ _ →
+          Π rbt λ _ → X
+        )
+    rec {X} z f ⟪ t ⟫ =
+      i-rec {X}
+        z
+        (λ _ _ t₁ ih₁ k _ _ t₂ ih₂ → f ⟪ t₁ ⟫ ih₁ k ⟪ t₂ ⟫ ih₂)
+        _ _ t
 
 
 module Ex/NatSet where
