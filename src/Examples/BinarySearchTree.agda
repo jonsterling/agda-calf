@@ -99,7 +99,10 @@ ListBST Key =
   record
     { bst = list 𝕂
     ; leaf = ret []
-    ; node = λ l₁ k l₂ → ret (l₁ ++ [ k ] ++ l₂)
+    ; node =
+        λ l₁ k l₂ →
+          let n = length l₁ + 1 + length l₂ in
+          step (F (list 𝕂)) (n , n) (ret (l₁ ++ [ k ] ++ l₂))
     ; rec = λ {X} → rec {X}
     }
   where
@@ -406,23 +409,8 @@ RedBlackBST Key =
         _ _ t
 
 
-module Ex/NatSet-List where
-  open ParametricBST (ListBST Nat.<-strictTotalOrder)
-
-  example : cmp Split
-  example =
-    bind Split (singleton 1) λ t₁ →
-    bind Split (insert t₁ 2) λ t₁ →
-    bind Split (singleton 4) λ t₂ →
-    bind Split (node t₁ 3 t₂) λ t →
-    split t 2
-
-  -- run Ctrl-C Ctrl-N here
-  compute : cmp Split
-  compute = {! example  !}
-
 module Ex/NatSet where
-  open ParametricBST (RedBlackBST Nat.<-strictTotalOrder)
+  open ParametricBST (ListBST Nat.<-strictTotalOrder)
 
   example : cmp Split
   example =
@@ -456,7 +444,7 @@ module Ex/NatStringDict where
             }
       }
 
-  open ParametricBST (RedBlackBST strictTotalOrder)
+  open ParametricBST (ListBST strictTotalOrder)
 
   example : cmp Split
   example =
