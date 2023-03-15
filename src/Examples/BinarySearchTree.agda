@@ -62,22 +62,22 @@ record ParametricBST (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) : Set₁ where
     bind (F bst) empty λ t →
     node t k t
 
-  split : cmp (Π bst λ _ → Π 𝕂 λ _ → F (prod bst (prod (maybe 𝕂) bst)))
+  split : cmp (Π bst λ _ → Π 𝕂 λ _ → F (prod⁺ bst (prod⁺ (maybe 𝕂) bst)))
   split t k =
     rec
-      {X = F (prod bst (prod (maybe 𝕂) bst))}
-      (bind (F (prod bst (prod (maybe 𝕂) bst))) empty λ t →
+      {X = F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))}
+      (bind (F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))) empty λ t →
         ret (t , nothing , t))
       (λ t₁ ih₁ k' t₂ ih₂ →
         case compare k k' of λ
           { (tri< k<k' ¬k≡k' ¬k>k') →
-              bind (F (prod bst (prod (maybe 𝕂) bst))) ih₁ λ ( t₁₁ , k? , t₁₂ ) →
-              bind (F (prod bst (prod (maybe 𝕂) bst))) (node t₁₂ k' t₂) λ t →
+              bind (F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))) ih₁ λ ( t₁₁ , k? , t₁₂ ) →
+              bind (F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))) (node t₁₂ k' t₂) λ t →
               ret (t₁₁ , k? , t)
           ; (tri≈ ¬k<k' k≡k' ¬k>k') → ret (t₁ , just k' , t₂)
           ; (tri> ¬k<k' ¬k≡k' k>k') →
-              bind ((F (prod bst (prod (maybe 𝕂) bst)))) ih₂ (λ ( t₂₁ , k? , t₂₂ ) →
-              bind ((F (prod bst (prod (maybe 𝕂) bst)))) (node t₁ k' t₂₁) λ t →
+              bind ((F (prod⁺ bst (prod⁺ (maybe 𝕂) bst)))) ih₂ (λ ( t₂₁ , k? , t₂₂ ) →
+              bind ((F (prod⁺ bst (prod⁺ (maybe 𝕂) bst)))) (node t₁ k' t₂₁) λ t →
               ret ((t , k? , t₂₂)))
           })
       t
@@ -159,7 +159,7 @@ RedBlackBST Key =
     rotateLeft : cmp (Π rbt λ _ → F rbt)
     rotateLeft t = {!   !}
 
-   -- {-# NON_TERMINATING #-}
+    -- {-# NON_TERMINATING #-}
     joinRight : cmp (Π rbt λ _ → Π 𝕂 λ _ → Π rbt λ _ → F rbt)
     joinRight t₁ k t₂ = bind (F rbt) (rank t₁) (λ r₁ →
                         bind (F rbt) (rank t₂) (λ r₂ →
@@ -193,7 +193,7 @@ RedBlackBST Key =
                                         bind (F rbt) (rotateLeft t) (λ t'' → ret t''))))
                                    else ret t')))))))))))
       where
-        expose : cmp (Π rbt λ _ → F (prod rbt (prod 𝕂 rbt)))
+        expose : cmp (Π rbt λ _ → F (prod⁺ rbt (prod⁺ 𝕂 rbt)))
         expose leaf = {!   !} -- TODO: maintian invariant
         expose (red t₁ k t₂) = ret (t₁ , k , t₂ )
         expose (black t₁ k t₂) = ret (t₁ , k , t₂ )
@@ -265,16 +265,16 @@ RedBlackBST Key =
 module Ex/NatSet where
   open ParametricBST (RedBlackBST Nat.<-strictTotalOrder)
 
-  example : cmp (F (prod bst (prod (maybe 𝕂) bst)))
+  example : cmp (F (prod⁺ bst (prod⁺ (maybe 𝕂) bst)))
   example =
-    bind (F (prod bst (prod (maybe 𝕂) bst))) (singleton 1) λ t₁ →
-    bind (F (prod bst (prod (maybe 𝕂) bst))) (insert t₁ 2) λ t₁ →
-    bind (F (prod bst (prod (maybe 𝕂) bst))) (singleton 4) λ t₂ →
-    bind (F (prod bst (prod (maybe 𝕂) bst))) (node t₁ 3 t₂) λ t →
+    bind (F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))) (singleton 1) λ t₁ →
+    bind (F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))) (insert t₁ 2) λ t₁ →
+    bind (F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))) (singleton 4) λ t₂ →
+    bind (F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))) (node t₁ 3 t₂) λ t →
     split t 2
 
   -- run Ctrl-C Ctrl-N here
-  compute : cmp (F (prod bst (prod (maybe 𝕂) bst)))
+  compute : cmp (F (prod⁺ bst (prod⁺ (maybe 𝕂) bst)))
   compute = {! example  !}
 
 module Ex/NatStringDict where
@@ -299,14 +299,14 @@ module Ex/NatStringDict where
 
   open ParametricBST (RedBlackBST strictTotalOrder)
 
-  example : cmp (F (prod bst (prod (maybe 𝕂) bst)))
+  example : cmp (F (prod⁺ bst (prod⁺ (maybe 𝕂) bst)))
   example =
-    bind (F (prod bst (prod (maybe 𝕂) bst))) (singleton (1 , "red")) λ t₁ →
-    bind (F (prod bst (prod (maybe 𝕂) bst))) (insert t₁ (2 , "orange")) λ t₁ →
-    bind (F (prod bst (prod (maybe 𝕂) bst))) (singleton (4 , "green")) λ t₂ →
-    bind (F (prod bst (prod (maybe 𝕂) bst))) (node t₁ (3 , "yellow") t₂) λ t →
+    bind (F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))) (singleton (1 , "red")) λ t₁ →
+    bind (F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))) (insert t₁ (2 , "orange")) λ t₁ →
+    bind (F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))) (singleton (4 , "green")) λ t₂ →
+    bind (F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))) (node t₁ (3 , "yellow") t₂) λ t →
     split t (2 , "")
 
   -- run Ctrl-C Ctrl-N here
-  compute : cmp (F (prod bst (prod (maybe 𝕂) bst)))
+  compute : cmp (F (prod⁺ bst (prod⁺ (maybe 𝕂) bst)))
   compute = {! example  !}
