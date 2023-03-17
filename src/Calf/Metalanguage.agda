@@ -21,6 +21,10 @@ postulate
   F : tp pos → tp neg
   U : tp neg → tp pos
 
+{-# POLARITY val ++ #-}
+{-# POLARITY F ++ #-}
+{-# POLARITY U ++ #-}
+
 -- This is equivalent to adding "thunk / force" operations. But less bureaucratic.
 cmp : tp neg → □
 cmp X = val (U X)
@@ -71,3 +75,5 @@ postulate
   bind/meta : ∀ A 𝕊 𝕋 e f (g : 𝕊 → 𝕋) → g (bind {A} (meta 𝕊) e f) ≡ bind {A} (meta 𝕋) e (λ a → g(f a))
   tbind/meta : ∀ A 𝕊 e f (p : 𝕊 → □) → p (bind {A} (meta 𝕊) e f) ≡ cmp (tbind {A} e (λ a → meta (p (f a))))
   bind/idem : ∀ A 𝕊 e (f : val A → val A → 𝕊) → bind {A} (meta 𝕊) e (λ a → (bind {A} (meta 𝕊) e (λ a' → f a a'))) ≡ bind {A} (meta 𝕊) e (λ a → f a a)
+
+{-# POLARITY meta ++ #-}
