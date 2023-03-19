@@ -70,6 +70,7 @@ Queue.deq (ll-queue {A} bl []) with reverse bl
 ... | a ∷ fl = step _ (length bl) (ret (just a , ll-queue [] fl))
 Queue.deq (ll-queue {A} bl (a ∷ fl)) = ret (just a , ll-queue bl fl)
 Queue.quit (ll-queue {A} bl fl) = step (F unit) (length bl) (ret triv)
+  -- (length bl) is the remaining potential; get rid of it
 
 {-# TERMINATING #-}
 ll-queue' : cmp (Π (list A) λ _ → Π (list A) λ _ → queue A)
@@ -109,6 +110,7 @@ _q≈_.quit (cong f h) = {!   !}
 {-# TERMINATING #-}
 ll-queue/q≈ : (bl fl : val (list A)) →
   ll-queue bl fl q≈ step (queue A) (length bl) (ll-queue' bl fl)
+  -- (length bl) is the initial potential to ask for
 _q≈_.enq (ll-queue/q≈ {A} bl fl) a rewrite Nat.+-comm (length bl) 1 = ll-queue/q≈ (a ∷ bl) fl
 _q≈_.deq (ll-queue/q≈ {A} bl []) with reverse bl | lemma bl
   where
