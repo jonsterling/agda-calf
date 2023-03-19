@@ -40,33 +40,27 @@ variable
   P Q : val A → tp neg
 
 
--- record DynamicArray (A : tp pos) : Set where
---   coinductive
---   field
---     append : cmp (Π A λ _ → meta (DynamicArray A))
---     deq : cmp (Π )
-
-
 record Queue (A : tp pos) : Set where
   coinductive
-  constructor ⟪_,_⟫
   field
     enq : cmp (Π A λ _ → meta (Queue A))
     deq : cmp (F (prod⁺ (maybe A) (U (meta (Queue A)))))
+    quit : cmp (F unit)
 queue : tp pos → tp neg
 queue A = meta (Queue A)
 
 postulate
-  -- mylaw : ∀ {c e₁ e₂} → step (queue A) c ⟪ e₁ , e₂ ⟫ ≡ ⟪ step (Π A λ _ → queue A) c e₁ , step _ c e₂ ⟫
   queue/law/enq : ∀ {c e} → Queue.enq (step (queue A) c e) ≡ step (Π A λ _ → queue A) c (Queue.enq e)
   queue/law/deq : ∀ {c e} → Queue.deq (step (queue A) c e) ≡ step (F (prod⁺ (maybe A) (U (meta (Queue A))))) c (Queue.deq e)
-{-# REWRITE queue/law/enq queue/law/deq #-}
+  queue/law/quit : ∀ {c e} → Queue.quit (step (queue A) c e) ≡ step (F unit) c (Queue.quit e)
+{-# REWRITE queue/law/enq queue/law/deq queue/law/quit #-}
 
 {-# TERMINATING #-}
 l-queue : cmp (Π (list A) λ _ → queue A)
 Queue.enq (l-queue {A} l) a = step (queue A) (length l) (l-queue (l ++ [ a ]))
 Queue.deq (l-queue {A} []) = ret (nothing , l-queue [])
 Queue.deq (l-queue {A} (a ∷ l)) = ret (just a , l-queue l)
+Queue.quit (l-queue {A} l) = ret triv
 
 {-# TERMINATING #-}
 ll-queue : cmp (Π (list A) λ _ → Π (list A) λ _ → queue A)
@@ -75,6 +69,7 @@ Queue.deq (ll-queue {A} bl []) with reverse bl
 ... | [] = ret (nothing , ll-queue [] [])
 ... | a ∷ fl = step _ (length bl) (ret (just a , ll-queue [] fl))
 Queue.deq (ll-queue {A} bl (a ∷ fl)) = ret (just a , ll-queue bl fl)
+Queue.quit (ll-queue {A} bl fl) = step (F unit) (length bl) (ret triv)
 
 {-# TERMINATING #-}
 ll-queue' : cmp (Π (list A) λ _ → Π (list A) λ _ → queue A)
@@ -83,44 +78,72 @@ Queue.deq (ll-queue' {A} bl []) with reverse bl
 ... | [] = ret (nothing , ll-queue' [] [])
 ... | a ∷ fl = ret (just a , ll-queue' [] fl)
 Queue.deq (ll-queue' {A} bl (a ∷ fl)) = ret (just a , ll-queue' bl fl)
+Queue.quit (ll-queue' {A} bl fl) = ret triv
 
 
 {-# NO_POSITIVITY_CHECK #-}
 record _q≈_ {A : tp pos} (q₁ q₂ : cmp (queue A)) : Set where
   coinductive
-  constructor ⟪_,_⟫
   field
     enq : cmp (Π A λ a → meta (Queue.enq q₁ a q≈ Queue.enq q₂ a))
     deq :
       Σ ℂ λ c₁ → Σ (val (maybe A)) λ a₁ → Σ (cmp (queue A)) λ q₁' → Queue.deq q₁ ≡ step _ c₁ (ret (a₁ , q₁')) ×
       Σ ℂ λ c₂ → Σ (val (maybe A)) λ a₂ → Σ (cmp (queue A)) λ q₂' → Queue.deq q₂ ≡ step _ c₂ (ret (a₂ , q₂')) ×
-      (a₁ ≡ a₂) × (q₁' q≈ q₂')
+      -- (c₁ ≡ c₂) ×  -- not amortized
+      (a₁ ≡ a₂) ×
+      -- (q₁' q≈ q₂')  -- not amortized
+      (step (queue A) c₁ q₁' q≈ step (queue A) c₂ q₂')  -- amortized
+
       -- cmp
       --   ( tbind (Queue.deq q₁) λ (a₁ , q₁') →
       --     tbind (Queue.deq q₂) λ (a₂ , q₂') →
       --     F (prod⁺ (eq (maybe A) a₁ a₂) (U (meta (q₁' q≈ q₂'))))
       --   )
+    quit : Queue.quit q₁ ≡ Queue.quit q₂
 
 cong : (f : Queue A → Queue A) {x y : Queue A} → x q≈ y → f x q≈ f y
 _q≈_.enq (cong f h) a = cong (λ q → Queue.enq (f q) a) h
 _q≈_.deq (cong f h) = {!   !}
+_q≈_.quit (cong f h) = {!   !}
 
+{-# TERMINATING #-}
 ll-queue/q≈ : (bl fl : val (list A)) →
   ll-queue bl fl q≈ step (queue A) (length bl) (ll-queue' bl fl)
 _q≈_.enq (ll-queue/q≈ {A} bl fl) a rewrite Nat.+-comm (length bl) 1 = ll-queue/q≈ (a ∷ bl) fl
-_q≈_.deq (ll-queue/q≈ {A} bl []) with reverse bl
-... | [] =
+_q≈_.deq (ll-queue/q≈ {A} bl []) with reverse bl | lemma bl
+  where
+    lemma : (l : val (list A)) → reverse l ≡ [] → l ≡ []
+    lemma [] refl = refl
+    lemma (x ∷ l) h with reverse (x ∷ l) | List.length-reverse (x ∷ l)
+    lemma (x ∷ l) refl | .[] | ()
+... | [] | h rewrite h refl =
         zero , nothing , ll-queue [] [] , refl ,
-        length bl , nothing , ll-queue' [] [] , refl ,
+        zero , nothing , ll-queue' [] [] , refl ,
         refl , ll-queue/q≈ [] []
-... | a ∷ fl =
+... | a ∷ fl | _ =
         length bl , just a , ll-queue [] fl , refl ,
         length bl , just a , ll-queue' [] fl , refl ,
-        refl , ll-queue/q≈ [] fl
+        refl , cong (step (queue A) (length bl)) (ll-queue/q≈ [] fl)
 _q≈_.deq (ll-queue/q≈ {A} bl (a ∷ fl)) =
-  0 , just a , ll-queue bl fl , refl ,
-  length bl , just a , {!   !} , {!   !} ,
-  refl , {!   !}
+  zero , just a , ll-queue bl fl , refl ,
+  length bl , just a , ll-queue' bl fl , refl ,
+  refl , ll-queue/q≈ bl fl
+_q≈_.quit (ll-queue/q≈ {A} bl fl) = refl
+
+
+-- {-# TERMINATING #-}
+-- fake-queue : cmp (queue A)
+-- Queue.enq fake-queue a = fake-queue
+-- Queue.deq fake-queue = ret (nothing , fake-queue)
+-- Queue.quit fake-queue = ret triv
+
+-- issue : (c₁ c₂ : ℂ) → step (queue A) c₁ fake-queue q≈ step (queue A) c₂ fake-queue
+-- _q≈_.enq (issue c₁ c₂) a = issue c₁ c₂
+-- _q≈_.deq (issue c₁ c₂) =
+--   c₁ , nothing , fake-queue , refl ,
+--   c₂ , nothing , fake-queue , refl ,
+--   refl , issue c₁ c₂
+-- _q≈_.quit (issue c₁ c₂) = {!   !}
 
 
 --------------------------------------------------------------------------------
