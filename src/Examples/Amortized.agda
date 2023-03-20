@@ -107,10 +107,14 @@ record _q≈_ {A : tp pos} (q₁ q₂ : cmp (queue A)) : Set where
       --   )
     quit : Queue.quit q₁ ≡ Queue.quit q₂
 
-q-cong : (f : Queue A → Queue A) {x y : Queue A} → x q≈ y → f x q≈ f y
-_q≈_.enq (q-cong f h) a = q-cong (λ q → Queue.enq (f q) a) h
-_q≈_.deq (q-cong f h) = {!   !}
-_q≈_.quit (q-cong f h) = {!   !}
+q-cong : (c : cmp cost) {x y : Queue A} → x q≈ y → step (queue A) c x q≈ step (queue A) c y
+_q≈_.enq (q-cong c {x} {y} h) a = q-cong c (_q≈_.enq h a)
+_q≈_.deq (q-cong {A} c h) =
+  let (c₁ , a₁ , q₁' , h₁ , c₂ , a₂ , q₂' , h₂ , ha , hq') = _q≈_.deq h in
+  c + c₁ , a₁ , q₁' , Eq.cong (step (F (prod⁺ (maybe A) (U (queue A)))) c) h₁ ,
+  c + c₂ , a₂ , q₂' , Eq.cong (step (F (prod⁺ (maybe A) (U (queue A)))) c) h₂ ,
+  ha , q-cong c hq'
+_q≈_.quit (q-cong c h) = Eq.cong (step (F unit) c) (_q≈_.quit h)
 
 {-# TERMINATING #-}
 ll-queue/q≈ : (bl fl : val (list A)) →
@@ -130,7 +134,7 @@ _q≈_.deq (ll-queue/q≈ {A} bl []) with reverse bl | lemma bl
 ... | a ∷ fl | _ =
         length bl , just a , ll-queue [] fl , refl ,
         length bl , just a , ll-queue' [] fl , refl ,
-        refl , q-cong (step (queue A) (length bl)) (ll-queue/q≈ [] fl)
+        refl , q-cong (length bl) (ll-queue/q≈ [] fl)
 _q≈_.deq (ll-queue/q≈ {A} bl (a ∷ fl)) =
   zero , just a , ll-queue bl fl , refl ,
   length bl , just a , ll-queue' bl fl , refl ,
@@ -161,15 +165,15 @@ record DynamicArray (A : tp pos) : Set where
   field
     append : cmp (Π A λ _ → meta (DynamicArray A))
     get : cmp (Π nat λ _ → F (prod⁺ (maybe A) (U (meta (DynamicArray A)))))
-    -- quit : cmp (F unit)
+    quit : cmp (F unit)
 dynamic-array : tp pos → tp neg
 dynamic-array A = meta (DynamicArray A)
 
 postulate
   dynamic-array/law/append : ∀ {c e} → DynamicArray.append (step (dynamic-array A) c e) ≡ step (Π A λ _ → dynamic-array A) c (DynamicArray.append e)
   dynamic-array/law/get : ∀ {c e} → DynamicArray.get (step (dynamic-array A) c e) ≡ step (Π nat λ _ → F (prod⁺ (maybe A) (U (meta (DynamicArray A))))) c (DynamicArray.get e)
-  -- queue/law/quit : ∀ {c e} → Queue.quit (step (queue A) c e) ≡ step (F unit) c (Queue.quit e)
-{-# REWRITE dynamic-array/law/append dynamic-array/law/get #-}
+  dynamic-array/law/quit : ∀ {c e} → DynamicArray.quit (step (dynamic-array A) c e) ≡ step (F unit) c (DynamicArray.quit e)
+{-# REWRITE dynamic-array/law/append dynamic-array/law/get dynamic-array/law/quit #-}
 
 -- vec : tp pos → val nat → tp pos
 -- vec A n = U (meta (Vec (val A) n))
@@ -184,6 +188,7 @@ DynamicArray.append (dynarr₁ n (suc m)) triv = dynarr₁ n m
 DynamicArray.get (dynarr₁ n m) i with i Nat.<? 2 ^ n ∸ m
 ... | no ¬p = ret (nothing , dynarr₁ n m)
 ... | yes p = ret (just triv , dynarr₁ n m)
+DynamicArray.quit (dynarr₁ n m) = step (F unit) (2 ^ n ∸ 2 * m) (ret triv)
 
 {-# TERMINATING #-}
 dynarr₂ : cmp (Π nat λ _ → dynamic-array unit)
@@ -191,6 +196,7 @@ DynamicArray.append (dynarr₂ n) triv = step (dynamic-array unit) 2 (dynarr₂ 
 DynamicArray.get (dynarr₂ n) i with i Nat.<? n
 ... | no ¬p = ret (nothing , dynarr₂ n)
 ... | yes p = ret (just triv , dynarr₂ n)
+DynamicArray.quit (dynarr₂ n) = ret triv
 
 {-# NO_POSITIVITY_CHECK #-}
 record _d≈_ {A : tp pos} (d₁ d₂ : cmp (dynamic-array A)) : Set where
@@ -205,10 +211,16 @@ record _d≈_ {A : tp pos} (d₁ d₂ : cmp (dynamic-array A)) : Set where
         (a₁ ≡ a₂) ×
         -- (d₁' d≈ d₂')  -- not amortized
         (step (dynamic-array A) c₁ d₁' d≈ step (dynamic-array A) c₂ d₂')  -- amortized
-    -- quit : Queue.quit q₁ ≡ Queue.quit q₂
+    quit : DynamicArray.quit d₁ ≡ DynamicArray.quit d₂
 
-d-cong : (f : DynamicArray A → DynamicArray A) {x y : DynamicArray A} → x d≈ y → f x d≈ f y
-d-cong = {!   !}
+d-cong : (c : cmp cost) {x y : DynamicArray A} → x d≈ y → step (dynamic-array A) c x d≈ step (dynamic-array A) c y
+_d≈_.append (d-cong c h) a = d-cong c (_d≈_.append h a)
+_d≈_.get (d-cong {A} c h) i =
+  let (c₁ , a₁ , d₁' , h₁ , c₂ , a₂ , d₂' , h₂ , ha , hd') = _d≈_.get h i in
+  c + c₁ , a₁ , d₁' , Eq.cong (step (F (prod⁺ (maybe A) (U (dynamic-array A)))) c) h₁ ,
+  c + c₂ , a₂ , d₂' , Eq.cong (step (F (prod⁺ (maybe A) (U (dynamic-array A)))) c) h₂ ,
+  ha , d-cong c hd'
+_d≈_.quit (d-cong c h) = Eq.cong (step (F unit) c) (_d≈_.quit h)
 
 -- from unreleased agda-stdlib
 2^n>0 : ∀ (n : ℕ) → 2 ^ n > 0
@@ -261,7 +273,7 @@ _d≈_.append (dynarr/d≈ n zero h) triv =
     ≡⟨ Nat.+-comm (2 ^ n) 1 ⟩
       suc (2 ^ n)
     ∎)
-    (d-cong (step (dynamic-array unit) (2 ^ n))
+    (d-cong (2 ^ n)
       {x = dynarr₁ (suc n) pred[2^ n ]}
       {y = step (dynamic-array unit) (2 ^ suc n ∸ 2 * pred[2^ n ]) (dynarr₂ (2 ^ suc n ∸ pred[2^ n ]))}
       (dynarr/d≈ (suc n) pred[2^ n ] Nat.≤-refl))
@@ -322,6 +334,7 @@ _d≈_.get (dynarr/d≈ n m h) i with i Nat.<? 2 ^ n ∸ m
         zero , just triv , dynarr₁ n m , refl ,
         2 ^ n ∸ 2 * m , just triv , dynarr₂ (2 ^ n ∸ m) , refl ,
         refl , dynarr/d≈ n m h
+_d≈_.quit (dynarr/d≈ n m h) = refl
 
 --------------------------------------------------------------------------------
 
