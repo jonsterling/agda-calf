@@ -27,7 +27,7 @@ open import Data.Product
 import Data.Nat as Nat
 import Data.Nat.Properties as Nat
 open import Data.Nat.PredExp2
-import Data.List as List
+open import Data.List as List using (_ʳ++_; reverseAcc)
 import Data.List.Properties as List
 import Data.Fin as Fin
 open import Data.Vec as Vec using (Vec)
@@ -116,17 +116,17 @@ _q≈_.deq (q-cong {A} c h) =
   ha , q-cong c hq'
 _q≈_.quit (q-cong c h) = Eq.cong (step (F unit) c) (_q≈_.quit h)
 
+reverse[l]≡[]⇒l≡[] : {A : Set} → (l : List A) → reverse l ≡ [] → l ≡ []
+reverse[l]≡[]⇒l≡[] [] refl = refl
+reverse[l]≡[]⇒l≡[] (x ∷ l) h with reverse (x ∷ l) | List.length-reverse (x ∷ l)
+reverse[l]≡[]⇒l≡[] (x ∷ l) refl | .[] | ()
+
 {-# TERMINATING #-}
 ll-queue/q≈ : (bl fl : val (list A)) →
   ll-queue bl fl q≈ step (queue A) (length bl) (ll-queue' bl fl)
   -- (length bl) is the initial potential to ask for
 _q≈_.enq (ll-queue/q≈ {A} bl fl) a rewrite Nat.+-comm (length bl) 1 = ll-queue/q≈ (a ∷ bl) fl
-_q≈_.deq (ll-queue/q≈ {A} bl []) with reverse bl | lemma bl
-  where
-    lemma : (l : val (list A)) → reverse l ≡ [] → l ≡ []
-    lemma [] refl = refl
-    lemma (x ∷ l) h with reverse (x ∷ l) | List.length-reverse (x ∷ l)
-    lemma (x ∷ l) refl | .[] | ()
+_q≈_.deq (ll-queue/q≈ {A} bl []) with reverse bl | reverse[l]≡[]⇒l≡[] bl
 ... | [] | h rewrite h refl =
         zero , nothing , ll-queue [] [] , refl ,
         zero , nothing , ll-queue' [] [] , refl ,
@@ -141,6 +141,39 @@ _q≈_.deq (ll-queue/q≈ {A} bl (a ∷ fl)) =
   refl , ll-queue/q≈ bl fl
 _q≈_.quit (ll-queue/q≈ {A} bl fl) = refl
 
+
+{-# TERMINATING #-}
+l-queue≈ll-queue : (bl fl : val (list A)) → ◯ (l-queue {A} (fl ++ reverse bl) q≈ ll-queue bl fl)
+_q≈_.enq (l-queue≈ll-queue {A} bl fl u) a =
+  Eq.subst
+    (_q≈ Queue.enq (ll-queue bl fl) a)
+    (Eq.sym (step/ext (queue A) (l-queue _) (length (fl ++ reverse bl)) u))
+    (Eq.subst
+      (λ l → l-queue l q≈ ll-queue (a ∷ bl) fl)
+      {x = fl ++ reverse (a ∷ bl)}
+      (let open ≡-Reasoning in
+      begin
+        fl ++ reverse (a ∷ bl)
+      ≡⟨ Eq.cong (fl ++_) (List.unfold-reverse a bl) ⟩
+        fl ++ reverse bl ∷ʳ a
+      ≡˘⟨ List.++-assoc fl (reverse bl) [ a ] ⟩
+        (fl ++ reverse bl) ∷ʳ a
+      ∎)
+      (l-queue≈ll-queue {A} (a ∷ bl) fl u))
+_q≈_.deq (l-queue≈ll-queue {A} bl [] u) with reverse bl | reverse[l]≡[]⇒l≡[] bl
+... | [] | h rewrite h refl =
+        zero , nothing , l-queue [] , refl ,
+        zero , nothing , ll-queue [] [] , refl ,
+        refl , l-queue≈ll-queue [] [] u
+... | a ∷ fl | _ =
+        zero , just a , l-queue (fl ++ reverse []) , Eq.cong (λ l → ret (just a , l-queue l)) (Eq.sym (List.++-identityʳ fl)) ,
+        zero , just a , ll-queue [] fl , step/ext (F (prod⁺ (maybe A) (U (queue A)))) _ (length bl) u ,
+        refl , l-queue≈ll-queue [] fl u
+_q≈_.deq (l-queue≈ll-queue {A} bl (a ∷ fl) u) =
+  zero , just a , l-queue (fl ++ reverse bl) , refl ,
+  zero , just a , ll-queue bl fl , refl ,
+  refl , l-queue≈ll-queue bl fl u
+_q≈_.quit (l-queue≈ll-queue bl fl u) = Eq.sym (step/ext (F unit) (ret triv) (length bl) u)
 
 -- {-# TERMINATING #-}
 -- fake-queue : cmp (queue A)
