@@ -86,6 +86,12 @@ Queue.deq (ll-queue' {A} bl []) with reverse bl
 Queue.deq (ll-queue' {A} bl (a ∷ fl)) = ret (just a , ll-queue' bl fl)
 Queue.quit (ll-queue' {A} bl fl) = ret triv
 
+{-# TERMINATING #-}
+l-queue' : cmp (Π (list A) λ _ → queue A)
+Queue.enq (l-queue' {A} l) a = step (queue A) 1 (l-queue' (l ++ [ a ]))
+Queue.deq (l-queue' {A} []) = ret (nothing , l-queue' [])
+Queue.deq (l-queue' {A} (a ∷ l)) = ret (just a , l-queue' l)
+Queue.quit (l-queue' {A} l) = ret triv
 
 {-# NO_POSITIVITY_CHECK #-}
 record _q≈_ {A : tp pos} (q₁ q₂ : cmp (queue A)) : Set where
@@ -140,6 +146,45 @@ _q≈_.deq (ll-queue/q≈ {A} bl (a ∷ fl)) =
   length bl , just a , ll-queue' bl fl , refl ,
   refl , ll-queue/q≈ bl fl
 _q≈_.quit (ll-queue/q≈ {A} bl fl) = refl
+
+
+{-# TERMINATING #-}
+l-queue/q≈ : (bl fl : val (list A)) →
+  ll-queue bl fl q≈ step (queue A) (length bl) (l-queue' (fl ++ reverse bl))
+  -- (length bl) is the initial potential to ask for
+_q≈_.enq (l-queue/q≈ {A} bl fl) a rewrite Nat.+-comm (length bl) 1 =
+  Eq.subst
+    (λ l → ll-queue (a ∷ bl) fl q≈ step (queue A) (suc (length bl)) (l-queue' l))
+    {x = fl ++ reverse (a ∷ bl)}
+    (let open ≡-Reasoning in
+    begin
+      fl ++ reverse (a ∷ bl)
+    ≡⟨ Eq.cong (fl ++_) (List.unfold-reverse a bl) ⟩
+      fl ++ reverse bl ∷ʳ a
+    ≡˘⟨ List.++-assoc fl (reverse bl) [ a ] ⟩
+      (fl ++ reverse bl) ∷ʳ a
+    ∎)
+    (l-queue/q≈ (a ∷ bl) fl)
+_q≈_.deq (l-queue/q≈ {A} bl []) with reverse bl | reverse[l]≡[]⇒l≡[] bl
+... | [] | h rewrite h refl =
+        zero , nothing , ll-queue [] [] , refl ,
+        zero , nothing , l-queue' [] , refl ,
+        refl , l-queue/q≈ [] []
+... | a ∷ fl | _ =
+        length bl , just a , ll-queue [] fl , refl ,
+        length bl , just a , l-queue' fl , refl ,
+        refl ,
+        q-cong (length bl)
+          ( Eq.subst
+              (λ l → ll-queue [] fl q≈ l-queue' l)
+              (List.++-identityʳ fl)
+              (l-queue/q≈ [] fl)
+          )
+_q≈_.deq (l-queue/q≈ {A} bl (a ∷ fl)) =
+  zero , just a , ll-queue bl fl , refl ,
+  length bl , just a , l-queue' (fl ++ reverse bl) , refl ,
+  refl , l-queue/q≈ bl fl
+_q≈_.quit (l-queue/q≈ {A} bl fl) = refl
 
 
 {-# TERMINATING #-}
