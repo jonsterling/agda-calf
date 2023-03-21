@@ -63,35 +63,35 @@ postulate
 {-# TERMINATING #-}
 l-queue : cmp (Π (list A) λ _ → queue A)
 Queue.enq (l-queue {A} l) a = step (queue A) (length l) (l-queue (l ++ [ a ]))
-Queue.deq (l-queue {A} []) = ret (nothing , l-queue [])
-Queue.deq (l-queue {A} (a ∷ l)) = ret (just a , l-queue l)
-Queue.quit (l-queue {A} l) = ret triv
+Queue.deq (l-queue []) = ret (nothing , l-queue [])
+Queue.deq (l-queue (a ∷ l)) = ret (just a , l-queue l)
+Queue.quit (l-queue l) = ret triv
 
 {-# TERMINATING #-}
 ll-queue : cmp (Π (list A) λ _ → Π (list A) λ _ → queue A)
-Queue.enq (ll-queue {A} bl fl) a = ll-queue (a ∷ bl) fl
+Queue.enq (ll-queue bl fl) a = ll-queue (a ∷ bl) fl
 Queue.deq (ll-queue {A} bl []) with reverse bl
 ... | [] = ret (nothing , ll-queue [] [])
 ... | a ∷ fl = step (F (prod⁺ (maybe A) (U (meta (Queue A))))) (length bl) (ret (just a , ll-queue [] fl))
-Queue.deq (ll-queue {A} bl (a ∷ fl)) = ret (just a , ll-queue bl fl)
-Queue.quit (ll-queue {A} bl fl) = step (F unit) (length bl) (ret triv)
+Queue.deq (ll-queue bl (a ∷ fl)) = ret (just a , ll-queue bl fl)
+Queue.quit (ll-queue bl fl) = step (F unit) (length bl) (ret triv)
   -- (length bl) is the remaining potential; get rid of it
 
 {-# TERMINATING #-}
 ll-queue' : cmp (Π (list A) λ _ → Π (list A) λ _ → queue A)
 Queue.enq (ll-queue' {A} bl fl) a = step (queue A) 1 (ll-queue' (a ∷ bl) fl)
-Queue.deq (ll-queue' {A} bl []) with reverse bl
+Queue.deq (ll-queue' bl []) with reverse bl
 ... | [] = ret (nothing , ll-queue' [] [])
 ... | a ∷ fl = ret (just a , ll-queue' [] fl)
-Queue.deq (ll-queue' {A} bl (a ∷ fl)) = ret (just a , ll-queue' bl fl)
-Queue.quit (ll-queue' {A} bl fl) = ret triv
+Queue.deq (ll-queue' bl (a ∷ fl)) = ret (just a , ll-queue' bl fl)
+Queue.quit (ll-queue' bl fl) = ret triv
 
 {-# TERMINATING #-}
 l-queue' : cmp (Π (list A) λ _ → queue A)
 Queue.enq (l-queue' {A} l) a = step (queue A) 1 (l-queue' (l ++ [ a ]))
-Queue.deq (l-queue' {A} []) = ret (nothing , l-queue' [])
-Queue.deq (l-queue' {A} (a ∷ l)) = ret (just a , l-queue' l)
-Queue.quit (l-queue' {A} l) = ret triv
+Queue.deq (l-queue' []) = ret (nothing , l-queue' [])
+Queue.deq (l-queue' (a ∷ l)) = ret (just a , l-queue' l)
+Queue.quit (l-queue' l) = ret triv
 
 {-# NO_POSITIVITY_CHECK #-}
 record _q≈_ {A : tp pos} (q₁ q₂ : cmp (queue A)) : Set where
@@ -131,8 +131,8 @@ reverse[l]≡[]⇒l≡[] (x ∷ l) refl | .[] | ()
 ll-queue/q≈ : (bl fl : val (list A)) →
   ll-queue bl fl q≈ step (queue A) (length bl) (ll-queue' bl fl)
   -- (length bl) is the initial potential to ask for
-_q≈_.enq (ll-queue/q≈ {A} bl fl) a rewrite Nat.+-comm (length bl) 1 = ll-queue/q≈ (a ∷ bl) fl
-_q≈_.deq (ll-queue/q≈ {A} bl []) with reverse bl | reverse[l]≡[]⇒l≡[] bl
+_q≈_.enq (ll-queue/q≈ bl fl) a rewrite Nat.+-comm (length bl) 1 = ll-queue/q≈ (a ∷ bl) fl
+_q≈_.deq (ll-queue/q≈ bl []) with reverse bl | reverse[l]≡[]⇒l≡[] bl
 ... | [] | h rewrite h refl =
         zero , nothing , ll-queue [] [] , refl ,
         zero , nothing , ll-queue' [] [] , refl ,
@@ -141,11 +141,11 @@ _q≈_.deq (ll-queue/q≈ {A} bl []) with reverse bl | reverse[l]≡[]⇒l≡[] 
         length bl , just a , ll-queue [] fl , refl ,
         length bl , just a , ll-queue' [] fl , refl ,
         refl , q-cong (length bl) (ll-queue/q≈ [] fl)
-_q≈_.deq (ll-queue/q≈ {A} bl (a ∷ fl)) =
+_q≈_.deq (ll-queue/q≈ bl (a ∷ fl)) =
   zero , just a , ll-queue bl fl , refl ,
   length bl , just a , ll-queue' bl fl , refl ,
   refl , ll-queue/q≈ bl fl
-_q≈_.quit (ll-queue/q≈ {A} bl fl) = refl
+_q≈_.quit (ll-queue/q≈ bl fl) = refl
 
 
 {-# TERMINATING #-}
@@ -165,7 +165,7 @@ _q≈_.enq (l-queue/q≈ {A} bl fl) a rewrite Nat.+-comm (length bl) 1 =
       (fl ++ reverse bl) ∷ʳ a
     ∎)
     (l-queue/q≈ (a ∷ bl) fl)
-_q≈_.deq (l-queue/q≈ {A} bl []) with reverse bl | reverse[l]≡[]⇒l≡[] bl
+_q≈_.deq (l-queue/q≈ bl []) with reverse bl | reverse[l]≡[]⇒l≡[] bl
 ... | [] | h rewrite h refl =
         zero , nothing , ll-queue [] [] , refl ,
         zero , nothing , l-queue' [] , refl ,
@@ -180,11 +180,11 @@ _q≈_.deq (l-queue/q≈ {A} bl []) with reverse bl | reverse[l]≡[]⇒l≡[] b
               (List.++-identityʳ fl)
               (l-queue/q≈ [] fl)
           )
-_q≈_.deq (l-queue/q≈ {A} bl (a ∷ fl)) =
+_q≈_.deq (l-queue/q≈ bl (a ∷ fl)) =
   zero , just a , ll-queue bl fl , refl ,
   length bl , just a , l-queue' (fl ++ reverse bl) , refl ,
   refl , l-queue/q≈ bl fl
-_q≈_.quit (l-queue/q≈ {A} bl fl) = refl
+_q≈_.quit (l-queue/q≈ bl fl) = refl
 
 
 {-# TERMINATING #-}
@@ -214,7 +214,7 @@ _q≈_.deq (l-queue≈ll-queue {A} bl [] u) with reverse bl | reverse[l]≡[]⇒
         zero , just a , l-queue (fl ++ reverse []) , Eq.cong (λ l → ret (just a , l-queue l)) (Eq.sym (List.++-identityʳ fl)) ,
         zero , just a , ll-queue [] fl , step/ext (F (prod⁺ (maybe A) (U (queue A)))) _ (length bl) u ,
         refl , l-queue≈ll-queue [] fl u
-_q≈_.deq (l-queue≈ll-queue {A} bl (a ∷ fl) u) =
+_q≈_.deq (l-queue≈ll-queue bl (a ∷ fl) u) =
   zero , just a , l-queue (fl ++ reverse bl) , refl ,
   zero , just a , ll-queue bl fl , refl ,
   refl , l-queue≈ll-queue bl fl u
