@@ -234,6 +234,185 @@ _q≈_.quit (l-queue≈ll-queue bl fl u) = Eq.sym (step/ext (F unit) (ret triv) 
 --   refl , issue c₁ c₂
 -- _q≈_.quit (issue c₁ c₂) = {!   !}
 
+data QueueProgram (A : tp pos) (B : tp pos) : Set
+queue-program : tp pos → tp pos → tp pos
+
+data QueueProgram A B where
+  return : val B → QueueProgram A B
+  enq : val A → val (queue-program A B) → QueueProgram A B
+  deq : val (U (Π (maybe A) λ _ → F (queue-program A B))) → QueueProgram A B
+queue-program A B = U (meta (QueueProgram A B))
+
+{-# TERMINATING #-}
+ψ : cmp (Π (queue-program A B) λ _ → Π (U (queue A)) λ _ → F B)
+ψ {B = B} (return b) q = bind (F B) (Queue.quit q) λ _ → ret b
+ψ (enq a p) q = ψ p (Queue.enq q a)
+ψ {B = B} (deq f) q =
+  bind (F B) (Queue.deq q) λ (a , q') →
+  bind (F B) (f a) λ p' →
+  ψ p' q'
+
+lemma/ψ : ∀ c p q → step (F B) c (ψ p q) ≡ ψ p (step (queue A) c q)
+lemma/ψ c (return x) q = refl
+lemma/ψ c (enq a p) q = lemma/ψ c p (Queue.enq q a)
+lemma/ψ {A} c (deq f) q = refl
+
+postulate
+  writer : (e : cmp (F A)) →
+    Σ ℂ λ c → Σ (val A) λ v → e ≡ step (F A) c (ret v)
+  step-ret-injective : (c₁ c₂ : ℂ) (v₁ v₂ : val A) →
+    step (F A) c₁ (ret v₁) ≡ step (F A) c₂ (ret v₂) → v₁ ≡ v₂
+  bind/step/commutative : ∀ {c e f} →
+    bind {A = B} (F A) e (step (F A) c ∘ f) ≡ step (F A) c (bind (F A) e f)
+
+{-# TERMINATING #-}
+big-theorem₁ : (q₁ q₂ : cmp (queue A)) →
+  q₁ q≈ q₂ → (∀ {B} → (p : val (queue-program A B)) → ψ p q₁ ≡ ψ p q₂)
+big-theorem₁ q₁ q₂ h {B} (return x) =
+  Eq.cong (λ e → bind (F B) e (λ _ → ret x)) (_q≈_.quit h)
+big-theorem₁ q₁ q₂ h (enq a p) = big-theorem₁ (Queue.enq q₁ a) (Queue.enq q₂ a) (_q≈_.enq h a) p
+big-theorem₁ {A} q₁ q₂ h {B} (deq f) with _q≈_.deq h
+... | c₁ , a , q₁' , h₁ , c₂ , _ , q₂' , h₂ , refl , hq' =
+  let open ≡-Reasoning in
+  begin
+    (bind (F B) (Queue.deq q₁) λ (a , q₁') →
+    bind (F B) (f a) λ p' →
+    ψ p' q₁')
+  ≡⟨ Eq.cong (λ e → bind (F B) e λ (a , q₁') → bind (F B) (f a) λ p' → ψ p' q₁') h₁ ⟩
+    (bind (F B) (step (F (prod⁺ (maybe A) (U (queue A)))) c₁ (ret (a , q₁'))) λ (a , q₁') →
+    bind (F B) (f a) λ p' →
+    ψ p' q₁')
+  ≡⟨⟩
+    step (F B) c₁ (
+    bind (F B) (f a) λ p' →
+    ψ p' q₁')
+  ≡˘⟨ bind/step/commutative {A = B} {c = c₁} {e = f a} ⟩
+    (bind (F B) (f a) λ p' →
+    step (F B) c₁ (ψ p' q₁'))
+  ≡⟨
+    Eq.cong (bind (F B) (f a)) (funext λ p' →
+    begin
+      step (F B) c₁ (ψ p' q₁')
+    ≡⟨ lemma/ψ c₁ p' q₁' ⟩
+      ψ p' (step (queue A) c₁ q₁')
+    ≡⟨ big-theorem₁ (step (queue A) c₁ q₁') (step (queue A) c₂ q₂') hq' p' ⟩
+      ψ p' (step (queue A) c₂ q₂')
+    ≡˘⟨ lemma/ψ c₂ p' q₂' ⟩
+      step (F B) c₂ (ψ p' q₂')
+    ∎)
+  ⟩
+    (bind (F B) (f a) λ p' →
+    step (F B) c₂ (ψ p' q₂'))
+  ≡⟨ bind/step/commutative {A = B} {c = c₂} {e = f a} ⟩
+    step (F B) c₂ (
+    bind (F B) (f a) λ p' →
+    ψ p' q₂')
+  ≡⟨⟩
+    (bind (F B) (step (F (prod⁺ (maybe A) (U (queue A)))) c₂ (ret (a , q₂'))) λ (a , q₂') →
+    bind (F B) (f a) λ p' →
+    ψ p' q₂')
+  ≡˘⟨ Eq.cong (λ e → bind (F B) e λ (a , q₂') → bind (F B) (f a) λ p' → ψ p' q₂') h₂ ⟩
+    (bind (F B) (Queue.deq q₂) λ (a , q₂') →
+    bind (F B) (f a) λ p' →
+    ψ p' q₂')
+  ∎
+
+big-theorem₂ : (q₁ q₂ : cmp (queue A)) →
+  (∀ {B} → (p : val (queue-program A B)) → ψ p q₁ ≡ ψ p q₂) → q₁ q≈ q₂
+_q≈_.enq (big-theorem₂ q₁ q₂ typical) a =
+  big-theorem₂ (Queue.enq q₁ a) (Queue.enq q₂ a) (λ p → typical (enq a p))
+_q≈_.deq (big-theorem₂ {A} q₁ q₂ typical) =
+  let (c₁ , (a₁ , q₁') , h₁) = writer (Queue.deq q₁) in
+  let (c₂ , (a₂ , q₂') , h₂) = writer (Queue.deq q₂) in
+  c₁ , a₁ , q₁' , h₁ ,
+  c₂ , a₂ , q₂' , h₂ ,
+  ( let (c₁' , triv , h₁') = writer (Queue.quit q₁') in
+    let (c₂' , triv , h₂') = writer (Queue.quit q₂') in
+    let open ≡-Reasoning in
+    let bar =
+            begin
+              step (F (maybe A)) (c₁ + c₁') (ret a₁)
+            ≡⟨⟩
+              step (F (maybe A)) c₁ (
+              bind (F (maybe A)) (step (F unit) c₁' (ret triv)) λ _ →
+              ret a₁)
+            ≡˘⟨ Eq.cong (λ e → step (F (maybe A)) c₁ (bind (F (maybe A)) e λ _ → ret a₁)) h₁' ⟩
+              step (F (maybe A)) c₁ (
+              bind (F (maybe A)) (Queue.quit q₁') λ _ →
+              ret a₁)
+            ≡⟨⟩
+              step (F (maybe A)) c₁ (ψ (return a₁) q₁')
+            ≡⟨⟩
+              (bind (F (maybe A)) (step (F (prod⁺ (maybe A) (U (queue A)))) c₁ (ret (a₁ , q₁'))) λ (a , q₁') →
+              bind {A = queue-program A (maybe A)} (F (maybe A)) (ret (return a)) λ p' →
+              ψ p' q₁')
+            ≡˘⟨ Eq.cong (λ e → bind (F (maybe A)) e _) h₁ ⟩
+              (bind (F (maybe A)) (Queue.deq q₁) λ (a , q₁') →
+              bind {A = queue-program A (maybe A)} (F (maybe A)) (ret (return a)) λ p' →
+              ψ p' q₁')
+            ≡⟨⟩
+              ψ (deq (λ a → ret (return a))) q₁
+            ≡⟨ typical {B = maybe A} (deq (λ a → ret (return a))) ⟩
+              ψ (deq (λ a → ret (return a))) q₂
+            ≡⟨⟩
+              (bind (F (maybe A)) (Queue.deq q₂) λ (a , q₂') →
+              bind {A = queue-program A (maybe A)} (F (maybe A)) (ret (return a)) λ p' →
+              ψ p' q₂')
+            ≡⟨ Eq.cong (λ e → bind (F (maybe A)) e _) h₂ ⟩
+              (bind (F (maybe A)) (step (F (prod⁺ (maybe A) (U (queue A)))) c₂ (ret (a₂ , q₂'))) λ (a , q₂') →
+              bind {A = queue-program A (maybe A)} (F (maybe A)) (ret (return a)) λ p' →
+              ψ p' q₂')
+            ≡⟨⟩
+              step (F (maybe A)) c₂ (ψ (return a₂) q₂')
+            ≡⟨⟩
+              step (F (maybe A)) c₂ (
+              bind (F (maybe A)) (Queue.quit q₂') λ _ →
+              ret a₂)
+            ≡⟨ Eq.cong (λ e → step (F (maybe A)) c₂ (bind (F (maybe A)) e λ _ → ret a₂)) h₂' ⟩
+              step (F (maybe A)) c₂ (
+              bind (F (maybe A)) (step (F unit) c₂' (ret triv)) λ _ →
+              ret a₂)
+            ≡⟨⟩
+              step (F (maybe A)) (c₂ + c₂') (ret a₂)
+            ∎
+    in
+    step-ret-injective (c₁ + c₁') (c₂ + c₂') a₁ a₂ bar
+  ) ,
+  big-theorem₂
+    (step (queue A) c₁ q₁')
+    (step (queue A) c₂ q₂')
+    λ {B} p' →
+      let open ≡-Reasoning in
+      begin
+        ψ p' (step (queue A) c₁ q₁')
+      ≡˘⟨ lemma/ψ c₁ p' q₁' ⟩
+        step (F B) c₁ (ψ p' q₁')
+      ≡⟨⟩
+        (bind (F B) (step (F (prod⁺ (maybe A) (U (queue A)))) c₁ (ret (a₁ , q₁'))) λ (a , q₁') →
+        bind {A = queue-program A B} (F B) (ret p') λ p' →
+        ψ p' q₁')
+      ≡˘⟨ Eq.cong (λ e → bind (F B) e _) h₁ ⟩
+        (bind (F B) (Queue.deq q₁) λ (a , q₁') →
+        bind {A = queue-program A B} (F B) (ret p') λ p' →
+        ψ p' q₁')
+      ≡⟨⟩
+        ψ (deq (const (ret p'))) q₁
+      ≡⟨ typical (deq (const (ret p'))) ⟩
+        ψ (deq (const (ret p'))) q₂
+      ≡⟨⟩
+        (bind (F B) (Queue.deq q₂) λ (a , q₂') →
+        bind {A = queue-program A B} (F B) (ret p') λ p' →
+        ψ p' q₂')
+      ≡⟨ Eq.cong (λ e → bind (F B) e _) h₂ ⟩
+        (bind (F B) (step (F (prod⁺ (maybe A) (U (queue A)))) c₂ (ret (a₂ , q₂'))) λ (a , q₂') →
+        bind {A = queue-program A B} (F B) (ret p') λ p' →
+        ψ p' q₂')
+      ≡⟨⟩
+        step (F B) c₂ (ψ p' q₂')
+      ≡⟨ lemma/ψ c₂ p' q₂' ⟩
+        ψ p' (step (queue A) c₂ q₂')
+      ∎
+_q≈_.quit (big-theorem₂ q₁ q₂ typical) = typical {B = unit} (return triv)
 
 --------------------------------------------------------------------------------
 
