@@ -45,41 +45,41 @@ variable
   P Q : val A → tp neg
 
 
-record Queue (A : tp pos) : Set where
+record Queue (A : tp pos) (X : tp neg) : Set where
   coinductive
   field
-    enq : cmp (Π A λ _ → meta (Queue A))
-    deq : cmp (F (prod⁺ (maybe A) (U (meta (Queue A)))))
-    quit : cmp (F unit)
-queue : tp pos → tp neg
-queue A = meta (Queue A)
+    enq : cmp (Π A λ _ → meta (Queue A X))
+    deq : cmp (F (prod⁺ (maybe A) (U (meta (Queue A X)))))
+    quit : cmp X
+queue : tp pos → tp neg → tp neg
+queue A X = meta (Queue A X)
 
 postulate
-  queue/law/enq : ∀ {c e} → Queue.enq (step (queue A) c e) ≡ step (Π A λ _ → queue A) c (Queue.enq e)
-  queue/law/deq : ∀ {c e} → Queue.deq (step (queue A) c e) ≡ step (F (prod⁺ (maybe A) (U (meta (Queue A))))) c (Queue.deq e)
-  queue/law/quit : ∀ {c e} → Queue.quit (step (queue A) c e) ≡ step (F unit) c (Queue.quit e)
+  queue/law/enq : ∀ {c e} → Queue.enq (step (queue A X) c e) ≡ step (Π A λ _ → queue A X) c (Queue.enq e)
+  queue/law/deq : ∀ {c e} → Queue.deq (step (queue A X) c e) ≡ step (F (prod⁺ (maybe A) (U (queue A X)))) c (Queue.deq e)
+  queue/law/quit : ∀ {c e} → Queue.quit (step (queue A X) c e) ≡ step X c (Queue.quit e)
 {-# REWRITE queue/law/enq queue/law/deq queue/law/quit #-}
 
 {-# TERMINATING #-}
-l-queue : cmp (Π (list A) λ _ → queue A)
-Queue.enq (l-queue {A} l) a = step (queue A) (length l) (l-queue (l ++ [ a ]))
+l-queue : cmp (Π (list A) λ _ → queue A (F unit))
+Queue.enq (l-queue {A} l) a = step (queue A (F unit)) (length l) (l-queue (l ++ [ a ]))
 Queue.deq (l-queue []) = ret (nothing , l-queue [])
 Queue.deq (l-queue (a ∷ l)) = ret (just a , l-queue l)
 Queue.quit (l-queue l) = ret triv
 
 {-# TERMINATING #-}
-ll-queue : cmp (Π (list A) λ _ → Π (list A) λ _ → queue A)
+ll-queue : cmp (Π (list A) λ _ → Π (list A) λ _ → queue A (F unit))
 Queue.enq (ll-queue bl fl) a = ll-queue (a ∷ bl) fl
 Queue.deq (ll-queue {A} bl []) with reverse bl
 ... | [] = ret (nothing , ll-queue [] [])
-... | a ∷ fl = step (F (prod⁺ (maybe A) (U (meta (Queue A))))) (length bl) (ret (just a , ll-queue [] fl))
+... | a ∷ fl = step (F (prod⁺ (maybe A) (U (queue A (F unit))))) (length bl) (ret (just a , ll-queue [] fl))
 Queue.deq (ll-queue bl (a ∷ fl)) = ret (just a , ll-queue bl fl)
 Queue.quit (ll-queue bl fl) = step (F unit) (length bl) (ret triv)
   -- (length bl) is the remaining potential; get rid of it
 
 {-# TERMINATING #-}
-ll-queue' : cmp (Π (list A) λ _ → Π (list A) λ _ → queue A)
-Queue.enq (ll-queue' {A} bl fl) a = step (queue A) 1 (ll-queue' (a ∷ bl) fl)
+ll-queue' : cmp (Π (list A) λ _ → Π (list A) λ _ → queue A (F unit))
+Queue.enq (ll-queue' {A} bl fl) a = step (queue A (F unit)) 1 (ll-queue' (a ∷ bl) fl)
 Queue.deq (ll-queue' bl []) with reverse bl
 ... | [] = ret (nothing , ll-queue' [] [])
 ... | a ∷ fl = ret (just a , ll-queue' [] fl)
@@ -87,24 +87,24 @@ Queue.deq (ll-queue' bl (a ∷ fl)) = ret (just a , ll-queue' bl fl)
 Queue.quit (ll-queue' bl fl) = ret triv
 
 {-# TERMINATING #-}
-l-queue' : cmp (Π (list A) λ _ → queue A)
-Queue.enq (l-queue' {A} l) a = step (queue A) 1 (l-queue' (l ++ [ a ]))
+l-queue' : cmp (Π (list A) λ _ → queue A (F unit))
+Queue.enq (l-queue' {A} l) a = step (queue A (F unit)) 1 (l-queue' (l ++ [ a ]))
 Queue.deq (l-queue' []) = ret (nothing , l-queue' [])
 Queue.deq (l-queue' (a ∷ l)) = ret (just a , l-queue' l)
 Queue.quit (l-queue' l) = ret triv
 
 {-# NO_POSITIVITY_CHECK #-}
-record _q≈_ {A : tp pos} (q₁ q₂ : cmp (queue A)) : Set where
+record _q≈_ {A : tp pos} {X : tp neg} (q₁ q₂ : cmp (queue A X)) : Set where
   coinductive
   field
     enq : cmp (Π A λ a → meta (Queue.enq q₁ a q≈ Queue.enq q₂ a))
     deq :
-      Σ ℂ λ c₁ → Σ (val (maybe A)) λ a₁ → Σ (cmp (queue A)) λ q₁' → Queue.deq q₁ ≡ step (F (prod⁺ (maybe A) (U (meta (Queue A))))) c₁ (ret (a₁ , q₁')) ×
-      Σ ℂ λ c₂ → Σ (val (maybe A)) λ a₂ → Σ (cmp (queue A)) λ q₂' → Queue.deq q₂ ≡ step (F (prod⁺ (maybe A) (U (meta (Queue A))))) c₂ (ret (a₂ , q₂')) ×
+      Σ ℂ λ c₁ → Σ (val (maybe A)) λ a₁ → Σ (cmp (queue A X)) λ q₁' → Queue.deq q₁ ≡ step (F (prod⁺ (maybe A) (U (queue A X)))) c₁ (ret (a₁ , q₁')) ×
+      Σ ℂ λ c₂ → Σ (val (maybe A)) λ a₂ → Σ (cmp (queue A X)) λ q₂' → Queue.deq q₂ ≡ step (F (prod⁺ (maybe A) (U (queue A X)))) c₂ (ret (a₂ , q₂')) ×
       -- (c₁ ≡ c₂) ×  -- not amortized
       (a₁ ≡ a₂) ×
       -- (q₁' q≈ q₂')  -- not amortized
-      (step (queue A) c₁ q₁' q≈ step (queue A) c₂ q₂')  -- amortized
+      (step (queue A X) c₁ q₁' q≈ step (queue A X) c₂ q₂')  -- amortized
 
       -- cmp
       --   ( tbind (Queue.deq q₁) λ (a₁ , q₁') →
@@ -113,14 +113,14 @@ record _q≈_ {A : tp pos} (q₁ q₂ : cmp (queue A)) : Set where
       --   )
     quit : Queue.quit q₁ ≡ Queue.quit q₂
 
-q-cong : (c : cmp cost) {x y : Queue A} → x q≈ y → step (queue A) c x q≈ step (queue A) c y
+q-cong : (c : cmp cost) {x y : Queue A X} → x q≈ y → step (queue A X) c x q≈ step (queue A X) c y
 _q≈_.enq (q-cong c {x} {y} h) a = q-cong c (_q≈_.enq h a)
-_q≈_.deq (q-cong {A} c h) =
+_q≈_.deq (q-cong {A} {X} c h) =
   let (c₁ , a₁ , q₁' , h₁ , c₂ , a₂ , q₂' , h₂ , ha , hq') = _q≈_.deq h in
-  c + c₁ , a₁ , q₁' , Eq.cong (step (F (prod⁺ (maybe A) (U (queue A)))) c) h₁ ,
-  c + c₂ , a₂ , q₂' , Eq.cong (step (F (prod⁺ (maybe A) (U (queue A)))) c) h₂ ,
+  c + c₁ , a₁ , q₁' , Eq.cong (step (F (prod⁺ (maybe A) (U (queue A X)))) c) h₁ ,
+  c + c₂ , a₂ , q₂' , Eq.cong (step (F (prod⁺ (maybe A) (U (queue A X)))) c) h₂ ,
   ha , q-cong c hq'
-_q≈_.quit (q-cong c h) = Eq.cong (step (F unit) c) (_q≈_.quit h)
+_q≈_.quit (q-cong {X = X} c h) = Eq.cong (step X c) (_q≈_.quit h)
 
 reverse[l]≡[]⇒l≡[] : {A : Set} → (l : List A) → reverse l ≡ [] → l ≡ []
 reverse[l]≡[]⇒l≡[] [] refl = refl
@@ -129,7 +129,7 @@ reverse[l]≡[]⇒l≡[] (x ∷ l) refl | .[] | ()
 
 {-# TERMINATING #-}
 ll-queue/q≈ : (bl fl : val (list A)) →
-  ll-queue bl fl q≈ step (queue A) (length bl) (ll-queue' bl fl)
+  ll-queue bl fl q≈ step (queue A (F unit)) (length bl) (ll-queue' bl fl)
   -- (length bl) is the initial potential to ask for
 _q≈_.enq (ll-queue/q≈ bl fl) a rewrite Nat.+-comm (length bl) 1 = ll-queue/q≈ (a ∷ bl) fl
 _q≈_.deq (ll-queue/q≈ bl []) with reverse bl | reverse[l]≡[]⇒l≡[] bl
@@ -148,13 +148,22 @@ _q≈_.deq (ll-queue/q≈ bl (a ∷ fl)) =
 _q≈_.quit (ll-queue/q≈ bl fl) = refl
 
 
+-- fact : cmp (Π nat λ _ → F nat)
+-- fact zero = ret (suc zero)
+-- fact (suc n) = step (F nat) 1 (bind (F nat) (fact n) (λ x → ret (suc n * x)))
+
+-- foo = {! fact (suc (suc (suc (suc (suc zero)))))  !}
+
+-- _++'_ : cmp (Π (list A) λ _ → Π (list A) λ _ → F (list A))
+-- _++'_ l₁ l₂ = {!   !}
+
 {-# TERMINATING #-}
 l-queue/q≈ : (bl fl : val (list A)) →
-  ll-queue bl fl q≈ step (queue A) (length bl) (l-queue' (fl ++ reverse bl))
+  ll-queue bl fl q≈ step (queue A (F unit)) (length bl) (l-queue' (fl ++ reverse bl))
   -- (length bl) is the initial potential to ask for
 _q≈_.enq (l-queue/q≈ {A} bl fl) a rewrite Nat.+-comm (length bl) 1 =
   Eq.subst
-    (λ l → ll-queue (a ∷ bl) fl q≈ step (queue A) (suc (length bl)) (l-queue' l))
+    (λ l → ll-queue (a ∷ bl) fl q≈ step (queue A (F unit)) (suc (length bl)) (l-queue' l))
     {x = fl ++ reverse (a ∷ bl)}
     (let open ≡-Reasoning in
     begin
@@ -192,7 +201,7 @@ l-queue≈ll-queue : (bl fl : val (list A)) → ◯ (l-queue {A} (fl ++ reverse 
 _q≈_.enq (l-queue≈ll-queue {A} bl fl u) a =
   Eq.subst
     (_q≈ Queue.enq (ll-queue bl fl) a)
-    (Eq.sym (step/ext (queue A) (l-queue _) (length (fl ++ reverse bl)) u))
+    (Eq.sym (step/ext (queue A (F unit)) (l-queue _) (length (fl ++ reverse bl)) u))
     (Eq.subst
       (λ l → l-queue l q≈ ll-queue (a ∷ bl) fl)
       {x = fl ++ reverse (a ∷ bl)}
@@ -212,7 +221,7 @@ _q≈_.deq (l-queue≈ll-queue {A} bl [] u) with reverse bl | reverse[l]≡[]⇒
         refl , l-queue≈ll-queue [] [] u
 ... | a ∷ fl | _ =
         zero , just a , l-queue (fl ++ reverse []) , Eq.cong (λ l → ret (just a , l-queue l)) (Eq.sym (List.++-identityʳ fl)) ,
-        zero , just a , ll-queue [] fl , step/ext (F (prod⁺ (maybe A) (U (queue A)))) _ (length bl) u ,
+        zero , just a , ll-queue [] fl , step/ext (F (prod⁺ (maybe A) (U (queue A (F unit))))) _ (length bl) u ,
         refl , l-queue≈ll-queue [] fl u
 _q≈_.deq (l-queue≈ll-queue bl (a ∷ fl) u) =
   zero , just a , l-queue (fl ++ reverse bl) , refl ,
@@ -221,12 +230,12 @@ _q≈_.deq (l-queue≈ll-queue bl (a ∷ fl) u) =
 _q≈_.quit (l-queue≈ll-queue bl fl u) = Eq.sym (step/ext (F unit) (ret triv) (length bl) u)
 
 -- {-# TERMINATING #-}
--- fake-queue : cmp (queue A)
+-- fake-queue : cmp (queue A (F unit))
 -- Queue.enq fake-queue a = fake-queue
 -- Queue.deq fake-queue = ret (nothing , fake-queue)
 -- Queue.quit fake-queue = ret triv
 
--- issue : (c₁ c₂ : ℂ) → step (queue A) c₁ fake-queue q≈ step (queue A) c₂ fake-queue
+-- issue : (c₁ c₂ : ℂ) → step (queue A (F unit)) c₁ fake-queue q≈ step (queue A (F unit)) c₂ fake-queue
 -- _q≈_.enq (issue c₁ c₂) a = issue c₁ c₂
 -- _q≈_.deq (issue c₁ c₂) =
 --   c₁ , nothing , fake-queue , refl ,
@@ -244,7 +253,7 @@ data QueueProgram A B where
 queue-program A B = U (meta (QueueProgram A B))
 
 {-# TERMINATING #-}
-ψ : cmp (Π (queue-program A B) λ _ → Π (U (queue A)) λ _ → F B)
+ψ : cmp (Π (queue-program A B) λ _ → Π (U (queue A (F unit))) λ _ → F B)
 ψ {B = B} (return b) q = bind (F B) (Queue.quit q) λ _ → ret b
 ψ (enq a p) q = ψ p (Queue.enq q a)
 ψ {B = B} (deq f) q =
@@ -252,7 +261,7 @@ queue-program A B = U (meta (QueueProgram A B))
   bind (F B) (f a) λ p' →
   ψ p' q'
 
-lemma/ψ : ∀ c p q → step (F B) c (ψ p q) ≡ ψ p (step (queue A) c q)
+lemma/ψ : ∀ c p q → step (F B) c (ψ p q) ≡ ψ p (step (queue A (F unit)) c q)
 lemma/ψ c (return x) q = refl
 lemma/ψ c (enq a p) q = lemma/ψ c p (Queue.enq q a)
 lemma/ψ {A} c (deq f) q = refl
@@ -266,7 +275,7 @@ postulate
     bind {A = B} (F A) e (step (F A) c ∘ f) ≡ step (F A) c (bind (F A) e f)
 
 {-# TERMINATING #-}
-big-theorem₁ : (q₁ q₂ : cmp (queue A)) →
+big-theorem₁ : (q₁ q₂ : cmp (queue A (F unit))) →
   q₁ q≈ q₂ → (∀ {B} → (p : val (queue-program A B)) → ψ p q₁ ≡ ψ p q₂)
 big-theorem₁ q₁ q₂ h {B} (return x) =
   Eq.cong (λ e → bind (F B) e (λ _ → ret x)) (_q≈_.quit h)
@@ -279,7 +288,7 @@ big-theorem₁ {A} q₁ q₂ h {B} (deq f) with _q≈_.deq h
     bind (F B) (f a) λ p' →
     ψ p' q₁')
   ≡⟨ Eq.cong (λ e → bind (F B) e λ (a , q₁') → bind (F B) (f a) λ p' → ψ p' q₁') h₁ ⟩
-    (bind (F B) (step (F (prod⁺ (maybe A) (U (queue A)))) c₁ (ret (a , q₁'))) λ (a , q₁') →
+    (bind (F B) (step (F (prod⁺ (maybe A) (U (queue A (F unit))))) c₁ (ret (a , q₁'))) λ (a , q₁') →
     bind (F B) (f a) λ p' →
     ψ p' q₁')
   ≡⟨⟩
@@ -294,9 +303,9 @@ big-theorem₁ {A} q₁ q₂ h {B} (deq f) with _q≈_.deq h
     begin
       step (F B) c₁ (ψ p' q₁')
     ≡⟨ lemma/ψ c₁ p' q₁' ⟩
-      ψ p' (step (queue A) c₁ q₁')
-    ≡⟨ big-theorem₁ (step (queue A) c₁ q₁') (step (queue A) c₂ q₂') hq' p' ⟩
-      ψ p' (step (queue A) c₂ q₂')
+      ψ p' (step (queue A (F unit)) c₁ q₁')
+    ≡⟨ big-theorem₁ (step (queue A (F unit)) c₁ q₁') (step (queue A (F unit)) c₂ q₂') hq' p' ⟩
+      ψ p' (step (queue A (F unit)) c₂ q₂')
     ≡˘⟨ lemma/ψ c₂ p' q₂' ⟩
       step (F B) c₂ (ψ p' q₂')
     ∎)
@@ -308,7 +317,7 @@ big-theorem₁ {A} q₁ q₂ h {B} (deq f) with _q≈_.deq h
     bind (F B) (f a) λ p' →
     ψ p' q₂')
   ≡⟨⟩
-    (bind (F B) (step (F (prod⁺ (maybe A) (U (queue A)))) c₂ (ret (a , q₂'))) λ (a , q₂') →
+    (bind (F B) (step (F (prod⁺ (maybe A) (U (queue A (F unit))))) c₂ (ret (a , q₂'))) λ (a , q₂') →
     bind (F B) (f a) λ p' →
     ψ p' q₂')
   ≡˘⟨ Eq.cong (λ e → bind (F B) e λ (a , q₂') → bind (F B) (f a) λ p' → ψ p' q₂') h₂ ⟩
@@ -317,7 +326,7 @@ big-theorem₁ {A} q₁ q₂ h {B} (deq f) with _q≈_.deq h
     ψ p' q₂')
   ∎
 
-big-theorem₂ : (q₁ q₂ : cmp (queue A)) →
+big-theorem₂ : (q₁ q₂ : cmp (queue A (F unit))) →
   (∀ {B} → (p : val (queue-program A B)) → ψ p q₁ ≡ ψ p q₂) → q₁ q≈ q₂
 _q≈_.enq (big-theorem₂ q₁ q₂ typical) a =
   big-theorem₂ (Queue.enq q₁ a) (Queue.enq q₂ a) (λ p → typical (enq a p))
@@ -343,7 +352,7 @@ _q≈_.deq (big-theorem₂ {A} q₁ q₂ typical) =
             ≡⟨⟩
               step (F (maybe A)) c₁ (ψ (return a₁) q₁')
             ≡⟨⟩
-              (bind (F (maybe A)) (step (F (prod⁺ (maybe A) (U (queue A)))) c₁ (ret (a₁ , q₁'))) λ (a , q₁') →
+              (bind (F (maybe A)) (step (F (prod⁺ (maybe A) (U (queue A (F unit))))) c₁ (ret (a₁ , q₁'))) λ (a , q₁') →
               bind {A = queue-program A (maybe A)} (F (maybe A)) (ret (return a)) λ p' →
               ψ p' q₁')
             ≡˘⟨ Eq.cong (λ e → bind (F (maybe A)) e _) h₁ ⟩
@@ -359,7 +368,7 @@ _q≈_.deq (big-theorem₂ {A} q₁ q₂ typical) =
               bind {A = queue-program A (maybe A)} (F (maybe A)) (ret (return a)) λ p' →
               ψ p' q₂')
             ≡⟨ Eq.cong (λ e → bind (F (maybe A)) e _) h₂ ⟩
-              (bind (F (maybe A)) (step (F (prod⁺ (maybe A) (U (queue A)))) c₂ (ret (a₂ , q₂'))) λ (a , q₂') →
+              (bind (F (maybe A)) (step (F (prod⁺ (maybe A) (U (queue A (F unit))))) c₂ (ret (a₂ , q₂'))) λ (a , q₂') →
               bind {A = queue-program A (maybe A)} (F (maybe A)) (ret (return a)) λ p' →
               ψ p' q₂')
             ≡⟨⟩
@@ -379,16 +388,16 @@ _q≈_.deq (big-theorem₂ {A} q₁ q₂ typical) =
     step-ret-injective (c₁ + c₁') (c₂ + c₂') a₁ a₂ bar
   ) ,
   big-theorem₂
-    (step (queue A) c₁ q₁')
-    (step (queue A) c₂ q₂')
+    (step (queue A (F unit)) c₁ q₁')
+    (step (queue A (F unit)) c₂ q₂')
     λ {B} p' →
       let open ≡-Reasoning in
       begin
-        ψ p' (step (queue A) c₁ q₁')
+        ψ p' (step (queue A (F unit)) c₁ q₁')
       ≡˘⟨ lemma/ψ c₁ p' q₁' ⟩
         step (F B) c₁ (ψ p' q₁')
       ≡⟨⟩
-        (bind (F B) (step (F (prod⁺ (maybe A) (U (queue A)))) c₁ (ret (a₁ , q₁'))) λ (a , q₁') →
+        (bind (F B) (step (F (prod⁺ (maybe A) (U (queue A (F unit))))) c₁ (ret (a₁ , q₁'))) λ (a , q₁') →
         bind {A = queue-program A B} (F B) (ret p') λ p' →
         ψ p' q₁')
       ≡˘⟨ Eq.cong (λ e → bind (F B) e _) h₁ ⟩
@@ -404,13 +413,13 @@ _q≈_.deq (big-theorem₂ {A} q₁ q₂ typical) =
         bind {A = queue-program A B} (F B) (ret p') λ p' →
         ψ p' q₂')
       ≡⟨ Eq.cong (λ e → bind (F B) e _) h₂ ⟩
-        (bind (F B) (step (F (prod⁺ (maybe A) (U (queue A)))) c₂ (ret (a₂ , q₂'))) λ (a , q₂') →
+        (bind (F B) (step (F (prod⁺ (maybe A) (U (queue A (F unit))))) c₂ (ret (a₂ , q₂'))) λ (a , q₂') →
         bind {A = queue-program A B} (F B) (ret p') λ p' →
         ψ p' q₂')
       ≡⟨⟩
         step (F B) c₂ (ψ p' q₂')
       ≡⟨ lemma/ψ c₂ p' q₂' ⟩
-        ψ p' (step (queue A) c₂ q₂')
+        ψ p' (step (queue A (F unit)) c₂ q₂')
       ∎
 _q≈_.quit (big-theorem₂ q₁ q₂ typical) = typical {B = unit} (return triv)
 
