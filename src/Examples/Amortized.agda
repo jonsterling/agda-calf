@@ -293,17 +293,16 @@ module Queue where
   step-ψ c (dequeue f) q = refl
 
   postulate
-    writer : (e : cmp (F E)) →
-      Σ ℂ λ c → Σ (val E) λ v → e ≡ step (F E) c (ret v)
     step-ret-injective : (c₁ c₂ : ℂ) (v₁ v₂ : val E) →
       step (F E) c₁ (ret v₁) ≡ step (F E) c₂ (ret v₂) → v₁ ≡ v₂
-    bind/step/commutative : ∀ {c e f} →
-      bind {A = A} (F E) e (step (F E) c ∘ f) ≡ step (F E) c (bind (F E) e f)
 
   {-# TERMINATING #-}
-  big-theorem : (q₁ q₂ : cmp (queue E (F unit))) →
-    q₁ ≈ q₂ ⇔ (∀ A → (p : val (queue-program E A)) → ψ p q₁ ≡ ψ p q₂)
-  big-theorem {E} q₁ q₂ = record
+  classic-amortization :
+    (∀ {A} e → Σ ℂ λ c → Σ (val A) λ v → e ≡ step (F A) c (ret v))
+    → (∀ {A B c e f} → bind {A = A} (F B) e (step (F B) c ∘ f) ≡ step (F B) c (bind (F B) e f))
+    → (q₁ q₂ : cmp (queue E (F unit)))
+    → q₁ ≈ q₂ ⇔ (∀ A → (p : val (queue-program E A)) → ψ p q₁ ≡ ψ p q₂)
+  classic-amortization {E} writer bind/step/commutative q₁ q₂ = record
     { f = forward q₁ q₂
     ; g = backward q₁ q₂
     ; cong₁ = Eq.cong (forward q₁ q₂)
@@ -330,7 +329,7 @@ module Queue where
           step (F A) c₁ (
           bind (F A) (f a) λ p' →
           ψ p' q₁')
-        ≡˘⟨ bind/step/commutative {E = A} {c = c₁} {e = f a} ⟩
+        ≡˘⟨ bind/step/commutative {B = A} {c = c₁} {e = f a} ⟩
           (bind (F A) (f a) λ p' →
           step (F A) c₁ (ψ p' q₁'))
         ≡⟨
@@ -347,7 +346,7 @@ module Queue where
         ⟩
           (bind (F A) (f a) λ p' →
           step (F A) c₂ (ψ p' q₂'))
-        ≡⟨ bind/step/commutative {E = A} {c = c₂} {e = f a} ⟩
+        ≡⟨ bind/step/commutative {B = A} {c = c₂} {e = f a} ⟩
           step (F A) c₂ (
           bind (F A) (f a) λ p' →
           ψ p' q₂')
