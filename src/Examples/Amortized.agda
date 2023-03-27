@@ -302,20 +302,20 @@ module Queue where
 
   {-# TERMINATING #-}
   big-theorem : (q₁ q₂ : cmp (queue E (F unit))) →
-    q₁ ≈ q₂ ⇔ (∀ {A} → (p : val (queue-program E A)) → ψ p q₁ ≡ ψ p q₂)
-  big-theorem q₁ q₂ = record
+    q₁ ≈ q₂ ⇔ (∀ A → (p : val (queue-program E A)) → ψ p q₁ ≡ ψ p q₂)
+  big-theorem {E} q₁ q₂ = record
     { f = forward q₁ q₂
     ; g = backward q₁ q₂
-    ; cong₁ = {!   !}
-    ; cong₂ = {!   !}
+    ; cong₁ = Eq.cong (forward q₁ q₂)
+    ; cong₂ = Eq.cong (backward q₁ q₂)
     }
     where
       forward : (q₁ q₂ : cmp (queue E (F unit))) →
-        q₁ ≈ q₂ → (∀ {A} → (p : val (queue-program E A)) → ψ p q₁ ≡ ψ p q₂)
-      forward q₁ q₂ h {A} (return x) =
+        q₁ ≈ q₂ → (∀ A → (p : val (queue-program E A)) → ψ p q₁ ≡ ψ p q₂)
+      forward q₁ q₂ h A (return x) =
         Eq.cong (λ e → bind (F A) e (λ _ → ret x)) (_≈_.quit h)
-      forward q₁ q₂ h (enqueue a p) = forward (Queue.enqueue q₁ a) (Queue.enqueue q₂ a) (_≈_.enqueue h a) p
-      forward {E} q₁ q₂ h {A} (dequeue f) with _≈_.dequeue h
+      forward q₁ q₂ h A (enqueue a p) = forward (Queue.enqueue q₁ a) (Queue.enqueue q₂ a) (_≈_.enqueue h a) A p
+      forward q₁ q₂ h A (dequeue f) with _≈_.dequeue h
       ... | c₁ , a , q₁' , h₁ , c₂ , _ , q₂' , h₂ , refl , hq' =
         let open ≡-Reasoning in
         begin
@@ -339,7 +339,7 @@ module Queue where
             step (F A) c₁ (ψ p' q₁')
           ≡⟨ step-ψ c₁ p' q₁' ⟩
             ψ p' (step (queue E (F unit)) c₁ q₁')
-          ≡⟨ forward (step (queue E (F unit)) c₁ q₁') (step (queue E (F unit)) c₂ q₂') hq' p' ⟩
+          ≡⟨ forward (step (queue E (F unit)) c₁ q₁') (step (queue E (F unit)) c₂ q₂') hq' A p' ⟩
             ψ p' (step (queue E (F unit)) c₂ q₂')
           ≡˘⟨ step-ψ c₂ p' q₂' ⟩
             step (F A) c₂ (ψ p' q₂')
@@ -362,11 +362,11 @@ module Queue where
         ∎
 
       backward : (q₁ q₂ : cmp (queue E (F unit))) →
-        (∀ {A} → (p : val (queue-program E A)) → ψ p q₁ ≡ ψ p q₂) → q₁ ≈ q₂
-      _≈_.quit (backward q₁ q₂ typical) = typical {A = unit} (return triv)
+        (∀ A → (p : val (queue-program E A)) → ψ p q₁ ≡ ψ p q₂) → q₁ ≈ q₂
+      _≈_.quit (backward q₁ q₂ typical) = typical unit (return triv)
       _≈_.enqueue (backward q₁ q₂ typical) a =
-        backward (Queue.enqueue q₁ a) (Queue.enqueue q₂ a) (λ p → typical (enqueue a p))
-      _≈_.dequeue (backward {E} q₁ q₂ typical) =
+        backward (Queue.enqueue q₁ a) (Queue.enqueue q₂ a) (λ A p → typical A (enqueue a p))
+      _≈_.dequeue (backward q₁ q₂ typical) =
         let (c₁ , (a₁ , q₁') , h₁) = writer (Queue.dequeue q₁) in
         let (c₂ , (a₂ , q₂') , h₂) = writer (Queue.dequeue q₂) in
         c₁ , a₁ , q₁' , h₁ ,
@@ -401,7 +401,7 @@ module Queue where
               ψ p' q₁')
             ≡⟨⟩
               ψ (dequeue (λ a → ret (return a))) q₁
-            ≡⟨ typical {A = maybe E} (dequeue (λ a → ret (return a))) ⟩
+            ≡⟨ typical (maybe E) (dequeue (λ a → ret (return a))) ⟩
               ψ (dequeue (λ a → ret (return a))) q₂
             ≡⟨⟩
               (bind (F (maybe E)) (Queue.dequeue q₂) λ (a , q₂') →
@@ -428,7 +428,7 @@ module Queue where
         backward
           (step (queue E (F unit)) c₁ q₁')
           (step (queue E (F unit)) c₂ q₂')
-          λ {A} p' →
+          λ A p' →
             let open ≡-Reasoning in
             begin
               ψ p' (step (queue E (F unit)) c₁ q₁')
@@ -444,7 +444,7 @@ module Queue where
               ψ p' q₁')
             ≡⟨⟩
               ψ (dequeue (const (ret p'))) q₁
-            ≡⟨ typical (dequeue (const (ret p'))) ⟩
+            ≡⟨ typical A (dequeue (const (ret p'))) ⟩
               ψ (dequeue (const (ret p'))) q₂
             ≡⟨⟩
               (bind (F A) (Queue.dequeue q₂) λ (a , q₂') →
