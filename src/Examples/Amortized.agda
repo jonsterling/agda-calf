@@ -51,7 +51,7 @@ module Simple where
 
   {-# TERMINATING #-}
   every : cmp simple
-  Simple.here every = step (F unit) 1 (ret triv)
+  Simple.here every = ret triv
   Simple.next every = step simple 1 every
 
   {-# TERMINATING #-}
@@ -72,15 +72,15 @@ module Simple where
   _≈_.next (≈-cong c h) = ≈-cong c (_≈_.next h)
 
   Φ : val bool → ℂ
-  Φ false = 0
-  Φ true  = 1
+  Φ false = 1
+  Φ true  = 0
 
   {-# TERMINATING #-}
-  every≈alternating : ∀ b → every ≈ step simple (Φ b) (alternating b)
+  every≈alternating : ∀ b → alternating b ≈ step simple (Φ b) every
   _≈_.here (every≈alternating false) = refl
   _≈_.here (every≈alternating true) = refl
-  _≈_.next (every≈alternating false) = ≈-cong 1 (every≈alternating true)
-  _≈_.next (every≈alternating true) = ≈-cong 1 (every≈alternating false)
+  _≈_.next (every≈alternating false) = ≈-cong 2 (every≈alternating true)
+  _≈_.next (every≈alternating true) = every≈alternating false
 
 
 module Queue where
