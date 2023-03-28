@@ -293,8 +293,8 @@ module Queue where
   step-ψ c (dequeue f) q = refl
 
   postulate
-    step-ret-injective : (c₁ c₂ : ℂ) (v₁ v₂ : val E) →
-      step (F E) c₁ (ret v₁) ≡ step (F E) c₂ (ret v₂) → v₁ ≡ v₂
+    step-ret-injective : (c₁ c₂ : ℂ) (v₁ v₂ : val A) →
+      step (F A) c₁ (ret v₁) ≡ step (F A) c₂ (ret v₂) → v₁ ≡ v₂
 
   {-# TERMINATING #-}
   classic-amortization :
