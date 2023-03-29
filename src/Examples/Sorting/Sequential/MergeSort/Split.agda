@@ -30,7 +30,7 @@ split/clocked/correct : ∀ k k' l → k + k' ≡ length l →
 split/clocked/correct zero    k' l        refl u = [] , l , refl , refl , refl , refl
 split/clocked/correct (suc k) k' (x ∷ xs) h    u =
   let (l₁ , l₂ , ≡ , h₁ , h₂ , ↭) = split/clocked/correct k k' xs (N.suc-injective h) u in
-  x ∷ l₁ , l₂ , Eq.cong (λ e → bind (F pair) e _) ≡ , Eq.cong suc h₁ , h₂ , prep x ↭
+  x ∷ l₁ , l₂ , Eq.cong (λ e → bind (F pair) e λ (l₁ , l₂) → ret (x ∷ l₁ , l₂)) ≡ , Eq.cong suc h₁ , h₂ , prep x ↭
 
 split/clocked/cost : cmp (Π nat λ _ → Π (list A) λ _ → cost)
 split/clocked/cost _ _ = zero
@@ -38,7 +38,7 @@ split/clocked/cost _ _ = zero
 split/clocked≤split/clocked/cost : ∀ k l → IsBounded pair (split/clocked k l) (split/clocked/cost k l)
 split/clocked≤split/clocked/cost zero    l        = bound/ret
 split/clocked≤split/clocked/cost (suc k) []       = bound/ret
-split/clocked≤split/clocked/cost (suc k) (x ∷ xs) = bound/bind/const zero zero (split/clocked≤split/clocked/cost k xs) λ _ → bound/ret
+split/clocked≤split/clocked/cost (suc k) (x ∷ xs) = bound/bind/const zero zero (split/clocked≤split/clocked/cost k xs) λ (l₁ , l₂) → bound/ret {a = x ∷ l₁ , l₂}
 
 split : cmp (Π (list A) λ _ → F pair)
 split l = split/clocked ⌊ length l /2⌋ l

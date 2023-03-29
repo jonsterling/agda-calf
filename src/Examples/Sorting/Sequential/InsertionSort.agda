@@ -89,7 +89,7 @@ insert≤insert/cost : ∀ x l → IsBounded (list A) (insert x l) (insert/cost 
 insert≤insert/cost x []       = bound/ret
 insert≤insert/cost x (y ∷ ys) with h-cost x y
 ... | ⇓ false withCost q [ q≤1 , h-eq ] rewrite eq/ref h-eq =
-  bound/step q (insert/cost x ys + 0) (bound/bind/const (insert/cost x ys) 0 (insert≤insert/cost x ys) λ _ → bound/ret)
+  bound/step q (insert/cost x ys + 0) (bound/bind/const (insert/cost x ys) 0 (insert≤insert/cost x ys) λ l → bound/ret {a = y ∷ l})
 ... | ⇓ true  withCost q [ q≤1 , h-eq ] rewrite eq/ref h-eq =
   bound/step q 0 bound/ret
 
