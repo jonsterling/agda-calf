@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --rewriting #-}
+{-# OPTIONS --prop --rewriting --guardedness #-}
 
 module index where
 
