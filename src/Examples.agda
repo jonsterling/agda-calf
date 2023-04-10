@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --rewriting #-}
+{-# OPTIONS --prop --rewriting --guardedness #-}
 
 module Examples where
 
@@ -13,3 +13,6 @@ import Examples.Exp2
 
 -- Hybrid
 import Examples.Sorting
+
+-- Amortized Analysis via Coinduction
+import Examples.Amortized

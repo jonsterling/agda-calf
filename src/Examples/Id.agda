@@ -53,7 +53,7 @@ module Hard where
     ≡⟨ step/ext (F nat) _ 1 u ⟩
       (bind (F nat) (id n) λ n' →
         ret (suc n'))
-    ≡⟨ Eq.cong (λ e → bind (F nat) e _) (id/correct n u) ⟩
+    ≡⟨ Eq.cong (λ e → bind (F nat) e λ n' → ret (suc n')) (id/correct n u) ⟩
       ret (suc n)
     ∎
       where open ≡-Reasoning
@@ -97,7 +97,7 @@ module Hard where
   id≤id/cost (suc n) =
     bound/step 1 _ (
       bound/bind (id/cost n) _ (id≤id/cost n) λ n →
-        bound/ret
+        bound/ret {a = suc n}
     )
 
   id≤id/cost/closed : ∀ n → IsBounded nat (id n) (id/cost/closed n)
