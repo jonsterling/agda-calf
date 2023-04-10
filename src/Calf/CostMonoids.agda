@@ -24,6 +24,22 @@ open import Relation.Binary.PropositionalEquality
     open import Data.Nat
     open import Data.Nat.Properties
 
+ℚ-CostMonoid : CostMonoid
+ℚ-CostMonoid = record
+  { ℂ = ℚ
+  ; _+_ = _+_
+  ; zero = 0ℚ
+  ; _≤_ = _≤_
+  ; isCostMonoid = record
+    { isMonoid = +-0-isMonoid
+    ; isPreorder = ≤-isPreorder
+    ; isMonotone = record { ∙-mono-≤ = +-mono-≤ }
+    }
+  }
+  where
+    open import Data.Rational
+    open import Data.Rational.Properties
+
 ℕ-Work-ParCostMonoid : ParCostMonoid
 ℕ-Work-ParCostMonoid = record
   { ℂ = ℕ
