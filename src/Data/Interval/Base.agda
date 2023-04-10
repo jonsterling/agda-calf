@@ -164,8 +164,8 @@ NonZero p = ℕ.NonZero (↥ p)
 -- place in `Data.Rational.Unnormalised.Base`.
 
 infix  8 1-_
-infixl 7 _*_ _⊓_
-infixl 6 _⊔_
+infixl 7 _∧_ _⊓_
+infixl 6 _∨_ _⊔_
 
 1-_ : 𝕀 → 𝕀
 1- p@record{isCoprime = isCoprime; isContained = isContained} =
@@ -184,35 +184,52 @@ infixl 6 _⊔_
     coprime-∸ m≤n c (d₁ , d₂) = c (∣m∸n∣m⇒∣n _ m≤n d₁ d₂ , d₂)
 
 
--- multiplication
-_*_ : 𝕀 → 𝕀 → 𝕀
-p@record{isContained = isContained₁} * q@record{isContained = isContained₂} =
+-- conjunction
+_∧_ : 𝕀 → 𝕀 → 𝕀
+p@record{isContained = isContained₁} ∧ q@record{isContained = isContained₂} =
   _/_
     (↥ p ℕ.* ↥ q)
     (↧ p ℕ.* ↧ q)
     {{_}}
     {{ℕ.*-mono-≤ {x = ↥ p} {y = ↧ p} {u = ↥ q} {v = ↧ q} isContained₁ isContained₂}}
 
+-- disjunction
+_∨_ : 𝕀 → 𝕀 → 𝕀
+p@record{} ∨ q@record{} = 1- ((1- p) ∧ (1- q))
+
 -- max
-_⊔_ : (p q : 𝕀) → 𝕀
+_⊔_ : 𝕀 → 𝕀 → 𝕀
 p@record{} ⊔ q@record{} = if p ≤ᵇ q then q else p
 
 -- min
-_⊓_ : (p q : 𝕀) → 𝕀
+_⊓_ : 𝕀 → 𝕀 → 𝕀
 p@record{} ⊓ q@record{} = if p ≤ᵇ q then p else q
 
 ------------------------------------------------------------------------
 -- Raw bundles
 
-*-rawMagma : RawMagma 0ℓ 0ℓ
-*-rawMagma = record
+∧-rawMagma : RawMagma 0ℓ 0ℓ
+∧-rawMagma = record
   { _≈_ = _≡_
-  ; _∙_ = _*_
+  ; _∙_ = _∧_
   }
 
-*-1-rawMonoid : RawMonoid 0ℓ 0ℓ
-*-1-rawMonoid = record
+∧-1-rawMonoid : RawMonoid 0ℓ 0ℓ
+∧-1-rawMonoid = record
   { _≈_ = _≡_
-  ; _∙_ = _*_
+  ; _∙_ = _∧_
   ; ε   = 1𝕀
+  }
+
+∨-rawMagma : RawMagma 0ℓ 0ℓ
+∨-rawMagma = record
+  { _≈_ = _≡_
+  ; _∙_ = _∨_
+  }
+
+∨-0-rawMonoid : RawMonoid 0ℓ 0ℓ
+∨-0-rawMonoid = record
+  { _≈_ = _≡_
+  ; _∙_ = _∨_
+  ; ε   = 0𝕀
   }
