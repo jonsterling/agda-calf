@@ -16,7 +16,6 @@ open import Relation.Binary.PropositionalEquality
   ; _≤_ = _≤_
   ; isCostMonoid = record
     { isMonoid = +-0-isMonoid
-    ; isCancellative = record { ∙-cancel-≡ = +-cancel-≡ }
     ; isPreorder = ≤-isPreorder
     ; isMonotone = record { ∙-mono-≤ = +-mono-≤ }
     }
@@ -36,7 +35,6 @@ open import Relation.Binary.PropositionalEquality
   ; isParCostMonoid = record
     { isMonoid = +-0-isMonoid
     ; isCommutativeMonoid = +-0-isCommutativeMonoid
-    ; isCancellative = record { ∙-cancel-≡ = +-cancel-≡ }
     ; isPreorder = ≤-isPreorder
     ; isMonotone-⊕ = record { ∙-mono-≤ = +-mono-≤ }
     ; isMonotone-⊗ = record { ∙-mono-≤ = +-mono-≤ }
@@ -58,7 +56,6 @@ open import Relation.Binary.PropositionalEquality
     { isMonoid = +-0-isMonoid
     ; isCommutativeMonoid = ⊔-0-isCommutativeMonoid
     ; isPreorder = ≤-isPreorder
-    ; isCancellative = record { ∙-cancel-≡ = +-cancel-≡ }
     ; isMonotone-⊕ = record { ∙-mono-≤ = +-mono-≤ }
     ; isMonotone-⊗ = record { ∙-mono-≤ = ⊔-mono-≤ }
     }
@@ -108,11 +105,6 @@ combineParCostMonoids pcm₁ pcm₂ = record
           (λ (a₁ , a₂) → cong₂ _,_ (⊗-identityʳ pcm₁ a₁) (⊗-identityʳ pcm₂ a₂))
         }
       ; comm = λ (a₁ , a₂) (b₁ , b₂) → cong₂ _,_ (⊗-comm pcm₁ a₁ b₁) (⊗-comm pcm₂ a₂ b₂)
-      }
-    ; isCancellative = record
-      { ∙-cancel-≡ =
-        (λ (x₁ , x₂) (y₁ , y₂) (z₁ , z₂) h → cong₂ _,_ (⊕-cancelˡ-≡ pcm₁ x₁ y₁ z₁ (cong proj₁ h)) (⊕-cancelˡ-≡ pcm₂ x₂ y₂ z₂ (cong proj₂ h))) ,
-        (λ (x₁ , x₂) (y₁ , y₂) (z₁ , z₂) h → cong₂ _,_ (⊕-cancelʳ-≡ pcm₁ x₁ y₁ z₁ (cong proj₁ h)) (⊕-cancelʳ-≡ pcm₂ x₂ y₂ z₂ (cong proj₂ h)))
       }
     ; isPreorder = record
       { isEquivalence = isEquivalence

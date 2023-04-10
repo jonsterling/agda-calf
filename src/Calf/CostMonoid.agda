@@ -21,16 +21,6 @@ module _ {ℂ : Set} where
   open import Algebra.Structures _≈_ public
   open import Relation.Binary.Structures _≈_
 
-  record IsCancellative (_∙_ : Op₂ ℂ) : Set where
-    field
-      ∙-cancel-≡ : Cancellative _∙_
-
-    ∙-cancelˡ-≡ : LeftCancellative _∙_
-    ∙-cancelˡ-≡ = proj₁ ∙-cancel-≡
-
-    ∙-cancelʳ-≡ : RightCancellative _∙_
-    ∙-cancelʳ-≡ = proj₂ ∙-cancel-≡
-
   record IsMonotone (_∙_ : Op₂ ℂ) (_≤_ : Relation) (isPreorder : IsPreorder _≤_) : Set where
     field
       ∙-mono-≤ : _∙_ Preserves₂ _≤_ ⟶ _≤_ ⟶ _≤_
@@ -48,7 +38,6 @@ module _ {ℂ : Set} where
   record IsCostMonoid (_+_ : Op₂ ℂ) (zero : ℂ) (_≤_ : Relation) : Set where
     field
       isMonoid       : IsMonoid _+_ zero
-      isCancellative : IsCancellative _+_
       isPreorder     : IsPreorder _≤_
       isMonotone     : IsMonotone _+_ _≤_ isPreorder
 
@@ -58,13 +47,6 @@ module _ {ℂ : Set} where
         identityˡ to +-identityˡ;
         identityʳ to +-identityʳ;
         assoc to +-assoc
-      )
-
-    open IsCancellative isCancellative public
-      renaming (
-        ∙-cancel-≡ to +-cancel-≡;
-        ∙-cancelˡ-≡ to +-cancelˡ-≡;
-        ∙-cancelʳ-≡ to +-cancelʳ-≡
       )
 
     open IsPreorder isPreorder public
@@ -82,7 +64,6 @@ module _ {ℂ : Set} where
     field
       isMonoid            : IsMonoid _⊕_ 𝟘
       isCommutativeMonoid : IsCommutativeMonoid _⊗_ 𝟙
-      isCancellative      : IsCancellative _⊕_
       isPreorder          : IsPreorder _≤_
       isMonotone-⊕        : IsMonotone _⊕_ _≤_ isPreorder
       isMonotone-⊗        : IsMonotone _⊗_ _≤_ isPreorder
@@ -102,13 +83,6 @@ module _ {ℂ : Set} where
         identityʳ to ⊗-identityʳ;
         assoc to ⊗-assoc;
         comm to ⊗-comm
-      )
-
-    open IsCancellative isCancellative public
-      renaming (
-        ∙-cancel-≡ to ⊕-cancel-≡;
-        ∙-cancelˡ-≡ to ⊕-cancelˡ-≡;
-        ∙-cancelʳ-≡ to ⊕-cancelʳ-≡
       )
 
     open IsPreorder isPreorder public
@@ -176,7 +150,6 @@ record ParCostMonoid : Set₁ where
     ; isCostMonoid = record
       { isMonoid = isMonoid
       ; isPreorder = isPreorder
-      ; isCancellative = isCancellative
       ; isMonotone = isMonotone-⊕
       }
     }
