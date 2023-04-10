@@ -2,10 +2,15 @@
 
 -- Probabilistic sampling.
 
-module Calf.Probability where
+open import Calf.CostMonoid
+
+module Calf.Probability (costMonoid : CostMonoid) where
+
+open CostMonoid costMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage
+open import Calf.Step costMonoid
 open import Relation.Binary.PropositionalEquality
 
 open import Data.Interval
@@ -37,3 +42,9 @@ flip/assocˡ {X} {e₀} {e₁} {e₂} {p} {q} {r} h =
   ≡˘⟨ flip/assocʳ {X} {e₀} {e₁} {e₂} (cong (_∧ q) h) ⟩
     flip X (p ∧ q) (flip X r e₀ e₁) e₂
   ∎
+
+postulate
+  -- bind/step : ∀ {A} {X} {e f n} → bind {A} X (step (F A) n e) f ≡ step X n (bind {A} X e f)
+  flip/step : {X : tp neg} {c : cmp cost} {e₀ e₁ : cmp X} {p : 𝕀} →
+    step X c (flip X p e₀ e₁) ≡ flip X p (step X c e₀) (step X c e₁)
+{-# REWRITE flip/step #-}
