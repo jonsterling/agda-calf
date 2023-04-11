@@ -10,7 +10,6 @@ module Data.Interval.Base where
 
 open import Algebra.Bundles.Raw
 open import Data.Bool.Base using (Bool; true; false; if_then_else_)
-open import Data.Integer.Base as ℤ using (ℤ; +_; +0; +[1+_]; -[1+_])
 open import Data.Nat.GCD
 open import Data.Nat.Coprimality as C
   using (Coprime; coprime-/gcd; ¬0-coprimeTo-2+; coprime-+)
@@ -28,6 +27,8 @@ open import Relation.Unary using (Pred)
 open import Relation.Binary.Core using (Rel)
 open import Relation.Binary.PropositionalEquality.Core as P
   using (_≡_; _≢_; refl)
+open import Data.Integer using (+_)
+open import Data.Rational as ℚ using (ℚ)
 
 ------------------------------------------------------------------------
 -- The unit interval in reduced form. Note that there is exactly one
@@ -122,6 +123,13 @@ infixl 7 _/_
 _/_ : (n : ℕ) (d : ℕ) .{{_ : ℕ.NonZero d}} .{{_ : n ℕ.≤ d}} → 𝕀
 _/_ = normalize
 
+------------------------------------------------------------------------
+-- Conversion to rationals
+
+toℚ : 𝕀 → ℚ
+toℚ (mk𝕀 numerator denominator-1 isCoprime isContained) =
+  ℚ.mkℚ (+ numerator) denominator-1 isCoprime
+
 ------------------------------------------------------------------------------
 -- Some constants
 
@@ -141,11 +149,23 @@ instance
 ½ : 𝕀
 ½ = 1 / 2
 
+¼ : 𝕀
+¼ = 1 / 4
+
+⅓ : 𝕀
+⅓ = 1 / 3
+
+⅔ : 𝕀
+⅔ = 2 / 3
+
 ------------------------------------------------------------------------
 -- Simple predicates
 
 NonZero : Pred 𝕀 0ℓ
 NonZero p = ℕ.NonZero (↥ p)
+
+NonOne : Pred 𝕀 0ℓ
+NonOne p = ℕ.NonZero (𝕀.denominator-1 p)
 
 -- Constructors
 
@@ -164,7 +184,7 @@ NonZero p = ℕ.NonZero (↥ p)
 -- place in `Data.Rational.Unnormalised.Base`.
 
 infix  8 1-_
-infixl 7 _∧_ _⊓_
+infixl 7 _∧_ _⊓_ _*_ _÷_
 infixl 6 _∨_ _⊔_
 
 1-_ : 𝕀 → 𝕀
@@ -196,6 +216,18 @@ p@record{isContained = isContained₁} ∧ q@record{isContained = isContained₂
 -- disjunction
 _∨_ : 𝕀 → 𝕀 → 𝕀
 p@record{} ∨ q@record{} = 1- ((1- p) ∧ (1- q))
+
+-- multiplication
+_*_ = _∧_
+
+-- division
+_÷_ : (p q : 𝕀) .{{_ : NonZero q}} {_ : p ≤ q} → 𝕀
+(p ÷ q) {*≤* h} =
+  _/_
+    (↥ p ℕ.* ↧ q)
+    (↥ q ℕ.* ↧ p)
+    {{ℕ.m*n≢0 (↥ q) (↧ p)}}
+    {{h}}
 
 -- max
 _⊔_ : 𝕀 → 𝕀 → 𝕀
