@@ -78,3 +78,21 @@ postulate
   bind/idem : ∀ A 𝕊 e (f : val A → val A → 𝕊) → bind {A} (meta 𝕊) e (λ a → (bind {A} (meta 𝕊) e (λ a' → f a a'))) ≡ bind {A} (meta 𝕊) e (λ a → f a a)
 
 {-# POLARITY meta ++ #-}
+
+
+open import Relation.Binary.Definitions
+
+postulate
+  _≲_ : {X : tp neg} → cmp X → cmp X → □
+
+  ≲-refl : {X : tp neg} → Reflexive (_≲_ {X})
+  ≲-trans : {X : tp neg} → Transitive (_≲_ {X})
+
+  bind-mono-≲ : {A : tp pos} {X : tp neg} {e₁ e₂ : cmp (F A)} {f₁ f₂ : val A → cmp X}
+    → _≲_ {F A} e₁ e₂
+    → ((a : val A) → _≲_ {X} (f₁ a) (f₂ a))
+    → _≲_ {X} (bind {A} X e₁ f₁) (bind {A} X e₂ f₂)
+
+  λ-mono-≲ : {A : tp pos} {X : val A → tp neg} {f₁ f₂ : (a : val A) → cmp (X a)}
+    → ((a : val A) → _≲_ {X a} (f₁ a) (f₂ a))
+    → _≲_ {Π A X} f₁ f₂
