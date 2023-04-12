@@ -1,36 +1,27 @@
 {-# OPTIONS --prop --rewriting #-}
 
-module Examples.Gcd.Rec where
+module Examples.Gcd.Refine where
 
 open import Calf.CostMonoid
 import Calf.CostMonoids as CM
 
 open import Calf CM.ℕ-CostMonoid
-open import Calf.Types.Nat as Nat
+open import Calf.Types.Nat
+open import Calf.Types.Bounded CM.ℕ-CostMonoid
 
 open import Examples.Gcd.Euclid
 open import Examples.Gcd.Clocked as Clocked
 
-open import Data.Nat.GCD
 open import Data.Nat.DivMod
 open import Data.Nat
-open import Data.Nat.Induction
 open import Relation.Binary.PropositionalEquality as P
-open import Induction.WellFounded
-open import Relation.Binary.Construct.On as On
-open import Function.Base using (_on_)
 open import Function
 open import Data.Nat.Properties
-open import Data.Unit using (tt)
 open import Data.Product
-open import Data.Product.Properties
-open import Data.Bool.Base using (Bool; false; true)
+open import Data.Bool using (Bool; false; true)
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 open import Relation.Binary
-
-open import Data.Nat.Solver using (module +-*-Solver)
-open +-*-Solver using (solve; _:*_; _:+_; con; var; _:=_)
 
 fib : ℕ → ℕ
 fib 0 = 0
@@ -85,12 +76,12 @@ fib-mono-< {suc (suc x)} {suc (suc y)} (s≤s (s≤s h)) =
   +-mono-≤ g1 g
 
 -- test : ℕ
--- test = gcd/cost (7 , 4 , s≤s (s≤s (s≤s (s≤s (s≤s z≤n)))))
+-- test = gcd/depth (7 , 4 , s≤s (s≤s (s≤s (s≤s (s≤s z≤n)))))
 
-gcd/rec : ∀ (n : ℕ) (i@(x , y , h) : m>n) →
-          gcd/cost i ≥ 1 + n  →
+gcd/fib : ∀ (n : ℕ) (i@(x , y , h) : m>n) →
+          gcd/depth i ≥ 1 + n  →
           Σ (x ≥ fib (2 + n)) λ _ → (y ≥ fib (1 + n))
-gcd/rec zero (x , y , h) h1 with 1 ≤? y | 1 ≤? x
+gcd/fib zero (x , y , h) h1 with 1 ≤? y | 1 ≤? x
 ... | (true because (ofʸ py)) | (true because (ofʸ px)) = px , py
 ... | (true because _) | (false because (ofⁿ px)) =
   let g = ≰⇒> px in
@@ -99,13 +90,13 @@ gcd/rec zero (x , y , h) h1 with 1 ≤? y | 1 ≤? x
   case g2 of λ { () }
 ... | (false because (ofⁿ py)) | _ rewrite (n<1⇒n≡0 (≰⇒> py)) =
   case h1 of λ { () }
-gcd/rec (suc n) (x , y , h) h1 with y
+gcd/fib (suc n) (x , y , h) h1 with y
 ... | zero = let g = n≤0⇒n≡0 h1 in case g of λ {()}
-... | suc y' rewrite gcd/cost-unfold {h = h} =
-  let g : suc (gcd/cost (suc y' , x % suc y' , m%n<n x y')) ≥ 1 + (suc n)
+... | suc y' rewrite gcd/depth-unfold-suc {x} {y'} {h} =
+  let g : suc (gcd/depth (suc y' , x % suc y' , m%n<n x y')) ≥ 1 + (suc n)
       g = h1 in
   let g1 = +-cancelˡ-≤ 1 g in
-  let (r1 , r2) = gcd/rec n (suc y' , x % suc y' , m%n<n x y') g1 in
+  let (r1 , r2) = gcd/fib n (suc y' , x % suc y' , m%n<n x y') g1 in
   let r1' : fib n + fib (suc n) ≤ suc y'
       r1' = P.subst (λ n → n ≤ suc y') (+-comm (fib (suc n)) (fib n)) r1 in
   (let e1 = m≡m%n+[m/n]*n x y' in
@@ -121,21 +112,21 @@ gcd/rec (suc n) (x , y , h) h1 with y
     r2 (≤-trans r1' e5))
   )), r1
 
-gcd/cost/bound : ∀ (n : ℕ) (i@(x , y , h) : m>n) →
+gcd/depth/bound : ∀ (n : ℕ) (i@(x , y , h) : m>n) →
                 x < fib (2 + n) → y < (fib (1 + n)) →
-                gcd/cost i < 1 + n
-gcd/cost/bound n i h1 h2 = ≰⇒> (contraposition (gcd/rec n i) (λ { (g1 , g2) → (<⇒≱ h1) g1}))
+                gcd/depth i < 1 + n
+gcd/depth/bound n i h1 h2 = ≰⇒> (contraposition (gcd/fib n i) (λ { (g1 , g2) → (<⇒≱ h1) g1}))
 
-gcd/cost/closed : m>n → ℕ
-gcd/cost/closed i@(x , y , h) = 1 + fib⁻¹ x
+gcd/depth/closed : m>n → ℕ
+gcd/depth/closed i@(x , y , h) = 1 + fib⁻¹ x
 
-gcd/cost/closed/ub : ∀ (i@(x , y , h) : m>n) → gcd/cost i ≤ gcd/cost/closed i
-gcd/cost/closed/ub i@(x , y , h) =
+gcd/depth≤gcd/depth/closed : ∀ (i@(x , y , h) : m>n) → gcd/depth i ≤ gcd/depth/closed i
+gcd/depth≤gcd/depth/closed i@(x , y , h) =
   let g : x < fib (1 + fib⁻¹ x)
       g = fib-fib⁻¹ x .proj₂ in
   let g1 : fib (1 + fib⁻¹ x) ≤ fib (2 + fib⁻¹ x)
       g1 = fib-mono-< {1 + fib⁻¹ x} {2 + fib⁻¹ x} (+-monoˡ-< (fib⁻¹ x) (s≤s (s≤s z≤n))) in
-  (<⇒≤ (gcd/cost/bound _ i (<-transˡ g g1) (<-trans h g)))
+  (<⇒≤ (gcd/depth/bound _ i (<-transˡ g g1) (<-trans h g)))
 
-gcd/closed : cmp (Ψ gcd/i (λ { _ → nat }) (gcd/cost/closed ∘ to-ext))
-gcd/closed = Ψ/relax gcd/i (const nat) (λ i → gcd/cost/closed/ub (to-ext i)) Clocked.gcd
+gcd≤gcd/depth/closed : ∀ i → IsBounded nat (gcd i) (gcd/depth/closed i)
+gcd≤gcd/depth/closed i = bound/relax (λ _ → gcd/depth≤gcd/depth/closed i) (gcd≤gcd/depth i)

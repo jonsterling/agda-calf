@@ -1,22 +1,22 @@
 {-# OPTIONS --prop --without-K --rewriting #-}
 
--- This file adds the phase distinction for extension.
+-- The phase distinction for extension.
 
-open import Calf.CostMonoid
-
-module Calf.PhaseDistinction (costMonoid : CostMonoid) where
-
-open CostMonoid costMonoid
+module Calf.PhaseDistinction where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
-open import Calf.Step costMonoid
 
-open import Data.Nat using (ℕ)
 open import Relation.Binary.PropositionalEquality as P
+
+
+-- Extensional phase.
 
 postulate
   ext : Ω
+
+
+-- Open/extensional modality.
 
 ◯ : □ → □
 ◯ A = ext → A
@@ -37,6 +37,28 @@ postulate
 ◯⁻_ : tp neg → tp neg
 ◯⁻ A = ext/cmp (λ _ → A)
 
+
+-- Closed/intensional modality.
+
 postulate
-  step/ext : ∀ X → (e : cmp X) → (c : ℂ) → ◯ (step X c e ≡ e)
-  -- sadly the above cannot be made an Agda rewrite rule
+  ● : tp pos → tp pos
+  η : ∀ {A} → val A → val (● A)
+  ∗ : ∀ {A} → ext → val (● A)
+  η≡∗ : ∀ {A} (a : val A) u → η {A} a ≡ ∗ u
+  ●/ind : ∀ {A} (a : val (● A)) (X : val (● A) → tp neg)
+    (x0 : (a : val A) → cmp (X (η a))) →
+    (x1 : (u : ext) → cmp (X (∗ u))) →
+    ((a : val A) → (u : ext) → P.subst (λ a → cmp (X a)) (η≡∗ a u) (x0 a) ≡ x1 u ) →
+    cmp (X a)
+  ●/ind/β₁ : ∀ {A} (a : val A) (X : val (● A) → tp neg)
+    (x0 : (a : val A) → cmp (X (η a))) →
+    (x1 : (u : ext) → cmp (X (∗ u))) →
+    (h : (a : val A) → (u : ext) → P.subst (λ a → cmp (X a)) (η≡∗ a u) (x0 a) ≡ x1 u ) →
+    ●/ind (η a) X x0 x1 h ≡ x0 a
+  {-# REWRITE ●/ind/β₁ #-}
+  ●/ind/β₂ : ∀ {A} (u : ext) (X : val (● A) → tp neg)
+    (x0 : (a : val A) → cmp (X (η a))) →
+    (x1 : (u : ext) → cmp (X (∗ u))) →
+    (h : (a : val A) → (u : ext) → P.subst (λ a → cmp (X a)) (η≡∗ a u) (x0 a) ≡ x1 u ) →
+    ●/ind (∗ u) X x0 x1 h ≡ x1 u
+  {-# REWRITE ●/ind/β₂ #-}

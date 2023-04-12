@@ -14,8 +14,9 @@ open import Data.Product
 module _ {ℂ : Set} where
   Relation = Rel ℂ 0ℓ
 
-  _≈_ : Relation
-  _≈_ = _≡_
+  private
+    _≈_ : Relation
+    _≈_ = _≡_
 
   open import Algebra.Definitions _≈_
   open import Algebra.Structures _≈_ public
@@ -37,7 +38,7 @@ module _ {ℂ : Set} where
 
     open IsPreorder isPreorder
       using ()
-      renaming (refl to ≤-refl; trans to ≤-trans)
+      renaming (reflexive to ≤-reflexive; refl to ≤-refl; trans to ≤-trans)
 
     ∙-monoˡ-≤ : ∀ n → (_∙ n) Preserves _≤_ ⟶ _≤_
     ∙-monoˡ-≤ n m≤o = ∙-mono-≤ m≤o (≤-refl {n})
@@ -69,7 +70,7 @@ module _ {ℂ : Set} where
 
     open IsPreorder isPreorder public
       using ()
-      renaming (refl to ≤-refl; trans to ≤-trans)
+      renaming (reflexive to ≤-reflexive; refl to ≤-refl; trans to ≤-trans)
 
     open IsMonotone isMonotone public
       renaming (
@@ -113,7 +114,7 @@ module _ {ℂ : Set} where
 
     open IsPreorder isPreorder public
       using ()
-      renaming (refl to ≤-refl; trans to ≤-trans)
+      renaming (reflexive to ≤-reflexive; refl to ≤-refl; trans to ≤-trans)
 
     open IsMonotone isMonotone-⊕ public
       renaming (

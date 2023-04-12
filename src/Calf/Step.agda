@@ -10,6 +10,7 @@ open CostMonoid costMonoid
 
 open import Calf.Prelude
 open import Calf.Metalanguage
+open import Calf.PhaseDistinction
 open import Relation.Binary.PropositionalEquality
 
 cost : tp neg
@@ -34,5 +35,5 @@ postulate
   dbind/step : ∀ {A} {X : val A → tp neg} {e f n} → dbind {A} X (step (F A) n e) f ≡ step (tbind {A} e X) n (dbind {A} X e f)
   {-# REWRITE bind/step dbind/step #-}
 
-  meta/step : ∀ {A n} → (e : cmp (meta A)) → step (meta A) n e ≡ e
-  {-# REWRITE meta/step #-}
+  step/ext : ∀ X → (e : cmp X) → (c : ℂ) → ◯ (step X c e ≡ e)
+  -- sadly the above cannot be made an Agda rewrite rule

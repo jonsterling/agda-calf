@@ -2,13 +2,16 @@
 
 module Examples.Id where
 
+open import Calf.CostMonoid
 open import Calf.CostMonoids using (ℕ-CostMonoid)
 
-open import Calf ℕ-CostMonoid
-open import Calf.Types.Nat using (nat)
+costMonoid = ℕ-CostMonoid
+open CostMonoid costMonoid
 
-open import Data.Nat
-open import Data.Nat.Properties
+open import Calf costMonoid
+open import Calf.Types.Nat
+open import Calf.Types.Bounded costMonoid
+open import Calf.Types.BigO costMonoid
 
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
 
@@ -22,12 +25,15 @@ module Easy where
   id/cost : cmp (Π nat λ _ → cost)
   id/cost n = 0
 
-  id≤id/cost : ∀ n → ub nat (id n) (id/cost n)
-  id≤id/cost n = ub/ret
+  id≤id/cost : ∀ n → IsBounded nat (id n) (id/cost n)
+  id≤id/cost n = bound/ret
+
+  id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → 0)
+  id/asymptotic = 0 ≤n⇒f[n]≤ 0 g[n]via λ n _ → id≤id/cost n
 
 module Hard where
   id : cmp (Π nat λ _ → F nat)
-  id zero = ret zero
+  id zero = ret 0
   id (suc n) =
     step (F nat) 1 (
       bind (F nat) (id n) λ n' →
@@ -47,7 +53,7 @@ module Hard where
     ≡⟨ step/ext (F nat) _ 1 u ⟩
       (bind (F nat) (id n) λ n' →
         ret (suc n'))
-    ≡⟨ Eq.cong (λ e → bind (F nat) e _) (id/correct n u) ⟩
+    ≡⟨ Eq.cong (λ e → bind (F nat) e λ n' → ret (suc n')) (id/correct n u) ⟩
       ret (suc n)
     ∎
       where open ≡-Reasoning
@@ -73,17 +79,12 @@ module Hard where
         bind cost (id n) λ n' → id/cost n +
           0
       )
-    ≡⟨⟩
-      suc (
-        bind cost (id n) λ n' → id/cost n +
-          0
-      )
-    ≡⟨ Eq.cong (λ e → suc (bind cost e λ n' → id/cost n + 0)) (id/correct n u) ⟩
-      suc (id/cost n + 0)
+    ≡⟨ Eq.cong (λ e → 1 + bind cost e λ n' → id/cost n + 0) (id/correct n u) ⟩
+      1 + (id/cost n + 0)
     ≡⟨ Eq.cong suc (+-identityʳ _) ⟩
-      suc (id/cost n)
-    ≤⟨ s≤s (id/cost≤id/cost/closed n u) ⟩
-      suc (id/cost/closed n)
+      1 + id/cost n
+    ≤⟨ +-monoʳ-≤ 1 (id/cost≤id/cost/closed n u) ⟩
+      1 + id/cost/closed n
     ≡⟨⟩
       suc n
     ≡⟨⟩
@@ -91,16 +92,19 @@ module Hard where
     ∎
       where open ≤-Reasoning
 
-  id≤id/cost : ∀ n → ub nat (id n) (id/cost n)
-  id≤id/cost zero    = ub/ret
+  id≤id/cost : ∀ n → IsBounded nat (id n) (id/cost n)
+  id≤id/cost zero    = bound/ret
   id≤id/cost (suc n) =
-    ub/step 1 _ (
-      ub/bind (id/cost n) _ (id≤id/cost n) λ n →
-        ub/ret
+    bound/step 1 _ (
+      bound/bind (id/cost n) _ (id≤id/cost n) λ n →
+        bound/ret {a = suc n}
     )
 
-  id≤id/cost/closed : ∀ n → ub nat (id n) (id/cost/closed n)
-  id≤id/cost/closed n = ub/relax (id/cost≤id/cost/closed n) (id≤id/cost n)
+  id≤id/cost/closed : ∀ n → IsBounded nat (id n) (id/cost/closed n)
+  id≤id/cost/closed n = bound/relax (id/cost≤id/cost/closed n) (id≤id/cost n)
+
+  id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → n)
+  id/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ n _ → id≤id/cost/closed n
 
 easy≡hard : ◯ (Easy.id ≡ Hard.id)
 easy≡hard u =

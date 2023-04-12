@@ -7,28 +7,16 @@ import Calf.CostMonoids as CM
 
 open import Calf CM.ℕ-CostMonoid
 open import Calf.Types.Nat
+open import Data.Nat using (_≤_; z≤n)
+open import Calf.Types.Unit
+open import Calf.Types.Bounded CM.ℕ-CostMonoid
+open import Calf.Types.BoundedFunction CM.ℕ-CostMonoid
 
-open import Data.Nat as Nat
-open import Function
-open import Relation.Binary.PropositionalEquality as P
-open import Examples.Gcd.Euclid
-open import Induction.WellFounded
-open import Induction
-open import Data.Nat.Properties
 open import Data.Nat.DivMod
-open import Relation.Nullary.Decidable using (False; toWitnessFalse)
-open import Data.Nat.Induction using (<-wellFounded)
-open import Data.Unit using (tt)
-open import Function.Base using (_on_)
+open import Relation.Binary.PropositionalEquality as P
 open import Data.Product
-open import Data.Product.Properties
-open import Relation.Binary.HeterogeneousEquality as H
-open import Agda.Builtin.Nat using (div-helper; mod-helper)
-import Level as L
-open import Relation.Binary using (Rel)
-open import Relation.Unary using (Pred; _⊆′_)
-open import Data.Nat.DivMod.Core
-open import Axiom.UniquenessOfIdentityProofs.WithK using (uip)
+
+open import Examples.Gcd.Euclid
 
 {- Alternative definition of gcd with an explicit clock parameter.
    It is easier to see the computational behavior of the code in this version:
@@ -36,68 +24,34 @@ open import Axiom.UniquenessOfIdentityProofs.WithK using (uip)
    2) clock is zero: algorithm terminates
    Crucially, if the recursor is by-name, then the value of the clock does not
    affect asymptotic behavior of the algorithm.
-   Two things one can do in sqtt:
-   1) give a good characterization of the clock in terms of the input by refining the raw recurrence (see Gcd-Rec.agda)
+   Two things one can do in calf:
+   1) give a good characterization of the clock in terms of the input by refining the raw recurrence (see Refine.agda)
    2) give a good characterization for of the clock for running the code; this usually
    means finding a clock computation that is simpler to compute
-   than the "good" upperbound. For gcd, one can reuse the argument as the clock (see Gcd-Ext.agda)
+   than the "good" upperbound. For gcd, one can reuse the argument as the clock (see Spec.agda)
 -}
-gcd/clocked : cmp (Π (U (meta ℕ)) λ _ → Π gcd/i λ _ → F nat)
+gcd/clocked : cmp (Π nat λ _ → Π gcd/i λ _ → F nat)
 gcd/clocked zero (x , y , h) = ret x
-gcd/clocked (suc k) (x , y , h) = rec y (const (F nat)) (ret {nat} x)
-  (λ y' _ →
-    bind {mod-tp x (succ y') tt} (F nat) (mod x (succ y') tt)
-    λ { (z , eqn2) →
-    let h2 = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2) (m%n<n' (toℕ x) _ tt) in
-    gcd/clocked k (succ y' , z , h2) })
+gcd/clocked (suc k) (x , 0 , h) =  ret {nat} x
+gcd/clocked (suc k) (x , suc y , h) =
+  bind {mod-tp x (suc y) triv} (F nat) (mod x (suc y) triv)
+  λ { (z , eqn2) →
+  let h2 = P.subst (λ k → suc k ≤ suc y) (P.sym eqn2) (m%n<n' x _ triv) in
+  gcd/clocked k (suc y , z , h2) }
 
-gcd/code : cmp (Π gcd/i λ _ → F nat)
-gcd/code i = gcd/clocked (gcd/cost (to-ext i)) i
+gcd : cmp (Π gcd/i λ _ → F nat)
+gcd i = gcd/clocked (gcd/depth i) i
 
-gcd/i/eq : ∀ {x x' y y' h h'} →
-        (eqn : x ≡ x') →
-        (eqn2 : y ≡ y') →
-        _≡_ {A = m>n} (x , y , h) (x' , y' , h')
-gcd/i/eq {x} {x'} {y} {y'} {h} {h'} eqn eqn2 = Inverse.f Σ-≡,≡↔≡ (eqn , Inverse.f Σ-≡,≡↔≡ (P.trans (proj₁/subst eqn) eqn2 ,
-  <-irrelevant _ _))
+-- cost of clocked gcd is bounded by for any (not necessarily safe)
+-- instantiation of the clock
+gcd/clocked≤gcd/depth : ∀ k i → IsBounded nat (gcd/clocked k i) (gcd/depth i)
+gcd/clocked≤gcd/depth zero i = bound/relax (λ _ → z≤n) bound/ret
+gcd/clocked≤gcd/depth (suc k) (x , zero , h) = bound/ret
+gcd/clocked≤gcd/depth (suc k) (x , suc y , h) rewrite gcd/depth-unfold-suc {x} {y} {h} =
+  bound/step 1 _ (gcd/clocked≤gcd/depth k (suc y , x % suc y , m%n<n' x _ triv))
 
--- cost of clocked gcd is bounded by for any instantiation of the clock
-gcd/clocked≤gcd/cost : ∀ k i → ub nat (gcd/clocked k i) (gcd/cost (to-ext i))
-gcd/clocked≤gcd/cost 0 i = ub/relax (λ _ → z≤n) ub/ret
-gcd/clocked≤gcd/cost (suc k) i@(x , y , z) rewrite gcd/cost-unfold' i =
-  ub/rec
-  (const nat)
-  y
-  (ret {nat} x)
-  (λ y' →
-    bind {mod-tp x (succ y') tt} (F nat) (mod x (succ y') tt)
-    λ { (z , eqn2)
-          → let h2
-                  = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2)
-                    (m%n<n' (toℕ x) _ tt)
-            in gcd/clocked k (succ y' , z , h2)
-      })
-  0
-  (λ n' → suc (gcd/cost (suc n' , toℕ x % suc n' , m%n<n (toℕ x) n')))
-  ub/ret
-  λ y' → ub/bind/suc {e = mod x (succ y') tt} {f = λ { (z , eqn2)
-          → let h2
-                  = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2)
-                    (m%n<n' (toℕ x) _ tt)
-            in gcd/clocked k (succ y' , z , h2)
-      }} (gcd/cost (suc (toℕ y') , toℕ x % suc (toℕ y') , m%n<n (toℕ x) (toℕ y')))
-  (ub/step 1 0 ub/ret)
-  λ {(z , eqn2) →
-  let h2 = P.subst (λ k → suc k ≤ toℕ (succ y')) (P.sym eqn2) (m%n<n' (toℕ x) (toℕ (succ y')) tt) in
-  let g = gcd/clocked≤gcd/cost k (succ y' , z , h2) in
-  let h3 = to-ext-unfold (succ y' , z , h2) in
-  let h4 = P.subst (λ cost → ub nat (gcd/clocked k (succ y' , z , h2)) (gcd/cost cost)) h3 g in
-  let h5 = gcd/i/eq {h = h2} {h' = m%n<n (toℕ x) (toℕ y')} refl eqn2 in
-  let h6 = P.subst (λ cost → ub nat (gcd/clocked k (succ y' , z , h2)) (gcd/cost cost)) h5 h4 in
-  h6 }
+gcd≤gcd/depth : ∀ i → IsBounded nat (gcd i) (gcd/depth i)
+gcd≤gcd/depth i = gcd/clocked≤gcd/depth (gcd/depth i) i
 
-gcd : cmp (Ψ gcd/i (λ { _ → nat }) (gcd/cost ∘ to-ext))
-gcd = gcd/code ,
-      λ { (x , y , h) →
-          gcd/clocked≤gcd/cost (gcd/cost (to-ext (x , y , h))) ((x , y , h))
-      }
+gcd/bounded : cmp (Ψ gcd/i (λ { _ → nat }) gcd/depth)
+gcd/bounded = gcd , gcd≤gcd/depth
