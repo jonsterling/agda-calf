@@ -34,4 +34,6 @@ record given_measured-via_,_∈𝓞_
       h : ∀ x → n' Nat.≤ ∣ x ∣ → IsBounded B (f x) ([ k ]* g ∣ x ∣)
 
 _≤n⇒f[n]≤g[n]via_ : ∀ {A B f ∣_∣ g} → (n' : val nat) → (∀ x → n' Nat.≤ ∣ x ∣ → IsBounded B (f x) (g ∣ x ∣)) → given A measured-via ∣_∣ , f ∈𝓞 g
-n' ≤n⇒f[n]≤g[n]via h = n' ≤n⇒f[n]≤ 1 g[n]via (λ x h≤ → Eq.subst (IsBounded _ _) (Eq.sym (+-identityʳ _)) (h x h≤))
+_≤n⇒f[n]≤g[n]via_ {B = B} {f = f} n' h =
+  n' ≤n⇒f[n]≤ 1 g[n]via λ x h≤ →
+    Eq.subst (IsBounded B (f x)) (Eq.sym (+-identityʳ _)) (h x h≤)
