@@ -21,12 +21,12 @@ open import Calf.Types.Sum
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_)
 
 
-IsBounded : (A : tp pos) → cmp (F A) → cmp cost → Set
+IsBounded : (A : tp pos) → cmp (F A) → ℂ → Set
 IsBounded A e c =
   (result : cmp (F unit)) →
     _≲_ {F unit} (bind (F unit) e λ _ → result) (step (F unit) c result)
 
-IsBounded⁻ : (A : tp pos) → cmp (F A) → cmp cost → tp neg
+IsBounded⁻ : (A : tp pos) → cmp (F A) → ℂ → tp neg
 IsBounded⁻ A e p = meta (IsBounded A e p)
 
 
@@ -46,23 +46,6 @@ bound/step : ∀ {A e} (d c : ℂ) →
   IsBounded A e c →
   IsBounded A (step (F A) d e) (d + c)
 bound/step d c h result = step-mono-≲ (λ u → ≤-refl) (h result)
-
-bound/bind : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
-  (c : ℂ) (d : val A → ℂ) →
-  IsBounded A e c →
-  ((a : val A) → IsBounded B (f a) (d a)) →
-  IsBounded B (bind {A} (F B) e f)
-              (bind {A} cost e (λ a → c + d a))
-bound/bind {e = e} {f = f} c d he hf result =
-  ≲-trans
-    (bind-mono-≲ {e₁ = e} ≲-refl λ a → hf a result)
-    (≲-trans
-      {j = step (F unit) c (step (F unit) {!   !} result)}
-      {!   !}
-      -- (bind-mono-≲ {f₁ = ret} (he (step (F unit) {! d ?  !} result)) λ _ → ≲-refl)
-      {! step (F unit) c (step (F unit) (bind cost e d) result)  !})
-    -- (bind-mono-≲ {f₁ = {!   !}} (he {!   !}) {! λ _ → ≲-refl  !})
-    -- (bind-mono-≲ {f₁ = ret} (he (step (F unit) d result)) λ _ → ≲-refl)
 
 bound/bind/const : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
   (c d : ℂ) →
