@@ -34,17 +34,6 @@ open import Data.List.Relation.Unary.All using (All; []; _∷_; map; lookup) pub
 open import Data.List.Relation.Unary.All.Properties as AllP using () renaming (++⁺ to ++⁺-All) public
 open import Data.List.Relation.Unary.Any using (Any; here; there)
 
-_≥_ : val A → val A → Set
-x ≥ y = y ≤ x
-
-_≰_ : val A → val A → Set
-x ≰ y = ¬ x ≤ y
-
-≰⇒≥ : _≰_ ⇒ _≥_
-≰⇒≥ {x} {y} h with ≤-total x y
-... | inj₁ h₁ = contradiction h₁ h
-... | inj₂ h₂ = h₂
-
 
 _≤*_ : val A → val (list A) → Set
 _≤*_ x = All (x ≤_)

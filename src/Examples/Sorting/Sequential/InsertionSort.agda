@@ -28,28 +28,19 @@ open import Data.Nat.Square
 insert : cmp (Π A λ _ → Π (list A) λ _ → F (list A))
 insert x []       = ret [ x ]
 insert x (y ∷ ys) =
-  bind (F (list A)) (x ≤ᵇ y)
-    λ { false → bind (F (list A)) (insert x ys) (ret ∘ (y ∷_))
-      ; true  → ret (x ∷ (y ∷ ys)) }
+  bind (F (list A)) (x ≤ᵇ y) λ b →
+    if b
+      then ret (x ∷ (y ∷ ys))
+      else bind (F (list A)) (insert x ys) (ret ∘ (y ∷_))
 
 insert/correct : ∀ x l → Sorted l → ◯ (∃ λ l' → insert x l ≡ ret l' × SortedOf (x ∷ l) l')
 insert/correct x []       []       u = [ x ] , refl , refl , [] ∷ []
-insert/correct x (y ∷ ys) (h ∷ hs) u with h-cost x y
-insert/correct x (y ∷ ys) (h ∷ hs) u | ⇓ b withCost q [ _ , h-eq ] rewrite eq/ref h-eq
-  with ≤ᵇ-reflects-≤ u (Eq.trans (eq/ref h-eq) (step/ext (F bool) (ret b) q u)) | ≤-total x y
-insert/correct x (y ∷ ys) (h ∷ hs) u | ⇓ false withCost q [ _ , _ ] | ofⁿ ¬x≤y | inj₁ x≤y = contradiction x≤y ¬x≤y
-insert/correct x (y ∷ ys) (h ∷ hs) u | ⇓ false withCost q [ _ , _ ] | ofⁿ ¬x≤y | inj₂ x≤y =
+insert/correct x (y ∷ ys) (h ∷ hs) u with x ≤? y
+... | yes x≤y rewrite Equivalence.g (≤ᵇ-reflects-≤ u) (ofʸ x≤y) =
+  x ∷ (y ∷ ys) , refl , refl , (x≤y ∷ ≤-≤* x≤y h) ∷ (h ∷ hs)
+... | no ¬x≤y rewrite Equivalence.g (≤ᵇ-reflects-≤ u) (ofⁿ ¬x≤y) =
   let (ys' , h-ys' , x∷ys↭ys' , sorted-ys') = insert/correct x ys hs u in
-  y ∷ ys' , (
-    let open ≡-Reasoning in
-    begin
-      step (F (list A)) q (bind (F (list A)) (insert x ys) (ret ∘ (y ∷_)))
-    ≡⟨ step/ext (F (list A)) (bind (F (list A)) (insert x ys) (ret ∘ (y ∷_))) q u ⟩
-      bind (F (list A)) (insert x ys) (ret ∘ (y ∷_))
-    ≡⟨ Eq.cong (λ e → bind (F (list A)) e (ret ∘ (y ∷_))) h-ys' ⟩
-      ret (y ∷ ys')
-    ∎
-  ) , (
+  y ∷ ys' , Eq.cong (λ e → bind (F (list A)) e (ret ∘ (y ∷_))) h-ys' , (
     let open PermutationReasoning in
     begin
       x ∷ y ∷ ys
@@ -58,43 +49,34 @@ insert/correct x (y ∷ ys) (h ∷ hs) u | ⇓ false withCost q [ _ , _ ] | of�
     <⟨ x∷ys↭ys' ⟩
       y ∷ ys'
     ∎
-  ) , All-resp-↭ x∷ys↭ys' (x≤y ∷ h) ∷ sorted-ys'
-insert/correct x (y ∷ ys) (h ∷ hs) u | ⇓ true withCost q [ _ , _ ] | ofʸ x≤y | _ =
-  x ∷ (y ∷ ys) , step/ext (F (list A)) (ret _) q u , refl , (x≤y ∷ ≤-≤* x≤y h) ∷ (h ∷ hs)
+  ) , All-resp-↭ x∷ys↭ys' (≰⇒≥ ¬x≤y ∷ h) ∷ sorted-ys'
 
 insert/cost : cmp (Π A λ _ → Π (list A) λ _ → cost)
-insert/cost x []       = zero
-insert/cost x (y ∷ ys) with h-cost x y
-... | ⇓ false withCost q [ q≤1 , h-eq ] = q + (insert/cost x ys + zero)
-... | ⇓ true  withCost q [ q≤1 , h-eq ] = q + 0
+insert/cost x l = length l
 
-insert/cost/closed : cmp (Π A λ _ → Π (list A) λ _ → cost)
-insert/cost/closed x l = length l
-
-insert/cost≤insert/cost/closed : ∀ x l → ◯ (insert/cost x l Nat.≤ insert/cost/closed x l)
-insert/cost≤insert/cost/closed x []       u = N.≤-refl
-insert/cost≤insert/cost/closed x (y ∷ ys) u with h-cost x y
-... | ⇓ false withCost q [ q≤1 , h-eq ] =
-  Eq.subst (λ n → (q + n) Nat.≤ (suc (length ys))) (Eq.sym (+-identityʳ (insert/cost x ys))) (
-    N.≤-trans
-      (+-monoˡ-≤ _ (q≤1 u))
-      (s≤s (insert/cost≤insert/cost/closed x ys u))
-  )
-... | ⇓ true  withCost q [ q≤1 , h-eq ] =
-  Eq.subst (Nat._≤ (suc (length ys))) (Eq.sym (+-identityʳ q)) (
-    N.≤-trans (q≤1 u) (s≤s z≤n)
-  )
-
-insert≤insert/cost : ∀ x l → IsBounded (list A) (insert x l) (insert/cost x l)
-insert≤insert/cost x []       = bound/ret
-insert≤insert/cost x (y ∷ ys) with h-cost x y
-... | ⇓ false withCost q [ q≤1 , h-eq ] rewrite eq/ref h-eq =
-  bound/step q (insert/cost x ys + 0) (bound/bind/const (insert/cost x ys) 0 (insert≤insert/cost x ys) λ l → bound/ret {a = y ∷ l})
-... | ⇓ true  withCost q [ q≤1 , h-eq ] rewrite eq/ref h-eq =
-  bound/step q 0 bound/ret
-
-insert≤insert/cost/closed : ∀ x l → IsBounded (list A) (insert x l) (insert/cost/closed x l)
-insert≤insert/cost/closed x l = bound/relax (insert/cost≤insert/cost/closed x l) (insert≤insert/cost x l)
+insert/is-bounded : ∀ x l → IsBounded (list A) (insert x l) (insert/cost x l)
+insert/is-bounded x []       = bound/ret {list A} [ x ]
+insert/is-bounded x (y ∷ ys) =
+  bound/bind/const {bool} {list A}
+    {x ≤ᵇ y}
+    {λ b →
+      if b
+        then ret (x ∷ (y ∷ ys))
+        else bind (F (list A)) (insert x ys) (ret ∘ (y ∷_))}
+    1
+    (length ys)
+    (h-cost x y)
+    λ { false →
+          Eq.subst
+            (IsBounded (list A) (bind (F (list A)) (insert x ys) (ret ∘ (y ∷_))))
+            (+-identityʳ (length ys))
+            (bound/bind/const {list A} {list A}
+              {insert x ys}
+              {ret ∘ (y ∷_)}
+              (length ys)
+              zero
+              (insert/is-bounded x ys) λ ys' → bound/ret {list A} (y ∷ ys'))
+      ; true  → bound/relax {list A} {ret (x ∷ (y ∷ ys))} (λ _ → z≤n {length ys}) (bound/ret {list A} (x ∷ (y ∷ ys))) }
 
 sort : cmp (Π (list A) λ _ → F (list A))
 sort []       = ret []
@@ -130,60 +112,37 @@ sort/correct (x ∷ xs) u =
   ) , sorted-x∷xs'
 
 sort/cost : cmp (Π (list A) λ _ → cost)
-sort/cost []       = 0
-sort/cost (x ∷ xs) = bind cost (sort xs) (λ xs' → sort/cost xs + insert/cost/closed x xs')
+sort/cost l = length l ²
 
-sort/cost/closed : cmp (Π (list A) λ _ → cost)
-sort/cost/closed l = length l ²
-
-sort/cost≤sort/cost/closed : ∀ l → ◯ (sort/cost l Nat.≤ sort/cost/closed l)
-sort/cost≤sort/cost/closed []       u = N.≤-refl
-sort/cost≤sort/cost/closed (x ∷ xs) u =
-  let (xs' , ≡ , ↭ , sorted) = sort/correct xs u in
-  begin
-    sort/cost (x ∷ xs)
-  ≡⟨⟩
-    bind cost (sort xs) (λ xs' → sort/cost xs + length xs')
-  ≡⟨ Eq.cong (λ e → bind cost e λ xs' → sort/cost xs + length xs') (≡) ⟩
-    sort/cost xs + length xs'
-  ≡˘⟨ Eq.cong (sort/cost xs +_) (↭-length ↭) ⟩
-    sort/cost xs + length xs
-  ≤⟨ +-monoˡ-≤ (insert/cost/closed x xs) (sort/cost≤sort/cost/closed xs u) ⟩
-    sort/cost/closed xs + insert/cost/closed x xs
-  ≡⟨⟩
-    length xs ² + length xs
-  ≤⟨ lemma/arithmetic (length xs) ⟩
-    length (x ∷ xs) ²
-  ≡⟨⟩
-    sort/cost/closed (x ∷ xs)
-  ∎
-    where
-      open ≤-Reasoning
-
-      lemma/arithmetic : ∀ n → n ² + n Nat.≤ suc n ²
-      lemma/arithmetic n =
-        begin
-          n ² + n
-        ≡⟨ N.+-comm (n ²) n ⟩
-          n + n ²
-        ≡⟨⟩
-          n + n * n
-        ≤⟨ N.m≤n+m (n + n * n) (suc n) ⟩
-          suc n + (n + n * n)
-        ≡⟨⟩
-          suc (n + (n + n * n))
-        ≡˘⟨ Eq.cong (λ m → suc (n + m)) (N.*-suc n n) ⟩
-          suc (n + n * suc n)
-        ≡⟨⟩
-          suc n ²
-        ∎
-
-sort≤sort/cost : ∀ l → IsBounded (list A) (sort l) (sort/cost l)
-sort≤sort/cost []       = bound/ret
-sort≤sort/cost (x ∷ xs) = bound/bind (sort/cost xs) (insert/cost/closed x) (sort≤sort/cost xs) (insert≤insert/cost/closed x)
-
-sort≤sort/cost/closed : ∀ l → IsBounded (list A) (sort l) (sort/cost/closed l)
-sort≤sort/cost/closed l = bound/relax (sort/cost≤sort/cost/closed l) (sort≤sort/cost l)
+sort/is-bounded : ∀ l → IsBounded (list A) (sort l) (sort/cost l)
+sort/is-bounded []       = bound/ret {list A} []
+sort/is-bounded (x ∷ xs) =
+  Eq.subst
+    (IsBounded (list A) (sort (x ∷ xs)))
+    (N.+-comm (length xs * length (x ∷ xs)) (length (x ∷ xs)))
+    ( bound/bind/const {list A} {list A} {sort xs} {insert x}
+        (length xs * length (x ∷ xs))
+        (length (x ∷ xs))
+        (bound/relax {e = sort xs} (λ _ → N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs))) (sort/is-bounded xs))
+        λ xs' →
+          bound/relax
+            {e = insert x xs'}
+            (λ u →
+              let open ≤-Reasoning in
+              let (xs'' , sort-xs''≡ , ↭ , sorted) = sort/correct xs u in
+              begin
+                length xs'
+              ≤⟨ N.n≤1+n (length xs') ⟩
+                suc (length xs')
+              ≡⟨ Eq.cong (suc ∘ length) {xs'} {xs''} {!   !} ⟩
+                suc (length xs'')
+              ≡˘⟨ Eq.cong suc (↭-length ↭) ⟩
+                suc (length xs)
+              ≡⟨⟩
+                length (x ∷ xs)
+              ∎)
+            (insert/is-bounded x xs')
+    )
 
 sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n ²)
-sort/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ l _ → sort≤sort/cost/closed l
+sort/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ l _ → sort/is-bounded l
