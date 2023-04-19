@@ -39,13 +39,13 @@ bound/circ : ∀ {A e} d {c} →
 bound/circ d {c} h result =
   ≲-trans (h result) (step-mono-≲ {e₁ = result} (λ u → Eq.subst (c ≤_) (Eq.sym (step/ext cost c d u)) ≤-refl) ≲-refl)
 
-bound/ret : {A : tp pos} {a : val A} → IsBounded A (ret {A} a) zero
-bound/ret result = ≲-refl
+bound/ret : {A : tp pos} (a : val A) → IsBounded A (ret a) zero
+bound/ret a result = ≲-refl
 
-bound/step : ∀ {A e} (d c : ℂ) →
+bound/step : {A : tp pos} (c' : ℂ) {c : ℂ} (e : cmp (F A)) →
   IsBounded A e c →
-  IsBounded A (step (F A) d e) (d + c)
-bound/step d c h result = step-mono-≲ (λ u → ≤-refl) (h result)
+  IsBounded A (step (F A) c' e) (c' + c)
+bound/step _ _ h result = step-mono-≲ (λ u → ≤-refl) (h result)
 
 bound/bind/const : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
   (c d : ℂ) →
