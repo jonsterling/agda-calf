@@ -26,7 +26,7 @@ module Easy where
   id/cost n = 0
 
   id/is-bounded : ∀ n → IsBounded nat (id n) (id/cost n)
-  id/is-bounded n = bound/ret {nat} {n}
+  id/is-bounded n = bound/ret {nat} n
 
   id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → 0)
   id/asymptotic = 0 ≤n⇒f[n]≤ 0 g[n]via λ n _ → id/is-bounded n
@@ -62,12 +62,11 @@ module Hard where
   id/cost n = n
 
   id/is-bounded : ∀ n → IsBounded nat (id n) (id/cost n)
-  id/is-bounded zero = bound/ret {nat} {0}
+  id/is-bounded zero = bound/ret {nat} 0
   id/is-bounded (suc n) =
     bound/step
-      {e = bind (F nat) (id n) λ n' → ret (suc n')}
       1
-      (id/cost n)
+      (bind (F nat) (id n) λ n' → ret (suc n'))
       (id/is-bounded n)
 
   id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → n)
