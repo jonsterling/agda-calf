@@ -82,6 +82,7 @@ postulate
 
 open import Relation.Binary.Definitions
 
+infix 4 _≲_
 postulate
   _≲_ : {X : tp neg} → cmp X → cmp X → □
 
@@ -96,3 +97,27 @@ postulate
   λ-mono-≲ : {A : tp pos} {X : val A → tp neg} {f₁ f₂ : (a : val A) → cmp (X a)}
     → ((a : val A) → _≲_ {X a} (f₁ a) (f₂ a))
     → _≲_ {Π A X} f₁ f₂
+
+open import Relation.Binary.Structures
+
+≲-isPreorder : {X : tp neg} → IsPreorder _≡_ (_≲_ {X})
+≲-isPreorder = record
+  { isEquivalence = isEquivalence
+  ; reflexive     = λ { refl → ≲-refl }
+  ; trans         = ≲-trans
+  }
+
+module ≲-Reasoning (X : tp neg) where
+  open import Function
+  open import Relation.Binary.Reasoning.Base.Triple
+    (≲-isPreorder {X})
+    ≲-trans
+    (resp₂ _≲_)
+    id
+    ≲-trans
+    ≲-trans
+    public
+    hiding (begin-strict_; step-<; step-≈; step-≈˘)
+    renaming (step-≤ to step-≲)
+
+open ≲-Reasoning
