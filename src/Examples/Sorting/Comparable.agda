@@ -54,8 +54,8 @@ NatComparable = record
   ; ≤ᵇ-reflects-≤ = λ u → record
       { f = reflects u
       ; g = reflects⁻¹ u
-      ; cong₁ = {!   !}
-      ; cong₂ = {!   !}
+      ; cong₁ = Eq.cong (reflects u)
+      ; cong₂ = Eq.cong (reflects⁻¹ u)
       }
   ; ≤-refl = ≤-refl
   ; ≤-trans = ≤-trans

@@ -22,7 +22,7 @@ open import Relation.Binary.PropositionalEquality as Eq using (_≡_)
 
 
 IsBounded : (A : tp pos) → cmp (F A) → ℂ → Set
-IsBounded A e c =
+IsBounded A e c = -- (e ; -) ≲ (step c -)
   (result : cmp (F unit)) →
     _≲_ {F unit} (bind (F unit) e λ _ → result) (step (F unit) c result)
 
