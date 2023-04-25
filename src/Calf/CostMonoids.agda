@@ -41,6 +41,22 @@ open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; modu
     open import Data.Integer
     open import Data.Integer.Properties
 
+ℚ-CostMonoid : CostMonoid
+ℚ-CostMonoid = record
+  { ℂ = ℚ
+  ; _+_ = _+_
+  ; zero = 0ℚ
+  ; _≤_ = _≤_
+  ; isCostMonoid = record
+    { isMonoid = +-0-isMonoid
+    ; isPreorder = ≤-isPreorder
+    ; isMonotone = record { ∙-mono-≤ = +-mono-≤ }
+    }
+  }
+  where
+    open import Data.Rational
+    open import Data.Rational.Properties
+
 ResourceMonoid : CostMonoid
 ResourceMonoid = record
   { ℂ = ℕ × ℕ
