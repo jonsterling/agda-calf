@@ -13,11 +13,8 @@ open import Calf.Metalanguage
 open import Calf.PhaseDistinction
 open import Relation.Binary.PropositionalEquality
 
-cost : tp neg
-cost = meta ℂ
-
 postulate
-  step : (X : tp neg) → cmp cost → cmp X → cmp X
+  step : (X : tp neg) → ℂ → cmp X → cmp X
   step/id : ∀ {X : tp neg} {e : cmp X} →
     step X zero e ≡ e
   {-# REWRITE step/id #-}
@@ -36,7 +33,7 @@ postulate
   {-# REWRITE bind/step dbind/step #-}
 
   step-mono-≲ : {X : tp neg} {c₁ c₂ : ℂ} {e₁ e₂ : cmp X} →
-    ◯ (c₁ ≤ c₂) → _≲_ {X} e₁ e₂ → _≲_ {X} (step X c₁ e₁) (step X c₂ e₂)
+    c₁ ≤ c₂ → _≲_ {X} e₁ e₂ → _≲_ {X} (step X c₁ e₁) (step X c₂ e₂)
 
   step/ext : ∀ X → (e : cmp X) → (c : ℂ) → ◯ (step X c e ≡ e)
   -- sadly the above cannot be made an Agda rewrite rule
