@@ -321,6 +321,91 @@ RedBlackBST Key =
     irbt : val color → val nat → tp pos
     irbt y n = U (meta (IRBT y n))
 
+    -- data HRBT : val nat → Set where
+    --   hred : {m : val nat} → IRBT red m → HRBT m
+    --   hblack : {m : val nat} → IRBT black (suc m) → HRBT (suc m)
+    -- hrbt : val nat → tp pos
+    -- hrbt n = U (meta (HRBT n))
+
+    -- height : val color → val nat → val nat
+    -- height red n = n
+    -- height black n = suc n
+
+    -- data AlmostRBT : val nat → Set where
+    --   at :   {n : val nat} { c1 c2 : val color}
+    --           → (c : val color)
+    --           → IRBT c1 n → val 𝕂 → IRBT c2 n
+    --           → AlmostRBT (height c n)
+    -- arbt : val nat → tp pos
+    -- arbt n = U (meta (AlmostRBT n))
+
+    data HiddenRBT : val nat → Set where
+      redhd : {n : val nat} → IRBT red n → HiddenRBT n
+      blackhd : {n : val nat} → IRBT black n → HiddenRBT n
+    hrbt : val nat → tp pos
+    hrbt n = U (meta (HiddenRBT n))
+
+    data AlmostRightRBT : val nat → Set where
+      redat :   {n : val nat} { c1 : val color}
+              → IRBT black n → val 𝕂 → IRBT c1 n
+              → AlmostRightRBT n
+      blackat : {n : val nat} { c1 c2 : val color}
+              → IRBT c1 n → val 𝕂 → IRBT c2 n
+              → AlmostRightRBT (suc n)
+    arrbt : val nat → tp pos
+    arrbt n = U (meta (AlmostRightRBT n))
+
+    mutual
+      jj-joinRight : cmp (
+                       Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
+                       Π 𝕂 λ _ →
+                       Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+                       Π (U (meta (n₁ > n₂))) λ _ →
+                       F (arrbt n₁)
+                      )
+      jj-joinRight .red n₁ (red t₁ k₁ t₃) k y₂ n₂ t₂ p =
+        bind (F (arrbt n₁)) (jj-joinRight' _ t₃ k _ _ t₂ p) (λ { (redhd t₄) → ret (redat t₁ k₁ t₄)
+                                                               ; (blackhd t₄) → ret (redat t₁ k₁ t₄) })
+      jj-joinRight .black (suc n₁) (black t₁ k₁ t₃) k y₂ n₂ t₂ p with n₁ Nat.≟ n₂
+      jj-joinRight .black (suc .zero) (black t₁ k₁ leaf) k .black .zero leaf p | yes refl = ret (blackat t₁ k₁ (red leaf k leaf))
+      jj-joinRight .black (suc .zero) (black t₁ k₁ leaf) k .red .zero (red t₂ k₂ t₃) p | yes refl = ret (redat (black t₁ k₁ leaf) k (black t₂ k₂ t₃)) --rotate
+      jj-joinRight .black (suc .zero) (black t₁ k₁ (red t₃ k₂ t₄)) k .black .zero leaf p | yes refl = ret (redat (black t₁ k₁ t₃) k₂ (black t₄ k leaf)) --rotate
+      jj-joinRight .black (suc n₁) (black t₁ k₁ (red t₃ k₂ t₄)) k .red n₁ (red t₂ k₃ t₅) p | yes refl = ret (redat (black t₁ k₁ t₃) k₂ (black t₄ k (red t₂ k₃ t₅))) --3R god
+      jj-joinRight .black (suc .(suc _)) (black t₁ k₁ (red t₃ k₂ t₄)) k .black .(suc _) (black t₂ k₃ t₅) p | yes refl = ret (redat (black t₁ k₁ t₃) k₂ (black t₄ k (black t₂ k₃ t₅))) --rotate
+      jj-joinRight .black (suc .(suc _)) (black t₁ k₁ (black t₃ k₂ t₄)) k .red .(suc _) (red t₂ k₃ t₅) p | yes refl = ret (redat (black t₁ k₁ (black t₃ k₂ t₄)) k (black t₂ k₃ t₅)) --rotate
+      jj-joinRight .black (suc .(suc _)) (black t₁ k₁ (black t₃ k₂ t₄)) k .black .(suc _) (black t₂ k₃ t₅) p | yes refl = ret (blackat t₁ k₁ (red (black t₃ k₂ t₄) k (black t₂ k₃ t₅)))
+      ... | no p₁ =
+        bind (F (arrbt (suc n₁))) (jj-joinRight _ _ t₃ k _ _ t₂ {!   !}) λ { (redat t₄ k₂ leaf) → ret (blackat t₁ k₁ (red t₄ k₂ leaf))
+                                                                            ; (redat t₄ k₂ (red t₅ k₃ t₆)) → ret (redat (black t₁ k₁ t₄) k₂ (black t₅ k₃ t₆)) --rotate
+                                                                            ; (redat t₄ k₂ (black t₅ k₃ t₆)) → ret (blackat t₁ k₁ (black t₅ k₃ t₆))
+                                                                            ; (blackat t₄ k₂ t₅) → ret (blackat t₁ k₁ (black t₄ k₂ t₅)) }
+
+      jj-joinRight' : cmp (
+                       Π nat λ n₁ → Π (irbt black n₁) λ _ →
+                       Π 𝕂 λ _ →
+                       Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+                       Π (U (meta (n₁ > n₂))) λ _ →
+                       F (hrbt n₁)
+                      )
+      jj-joinRight' (suc n₁) (black t₁ k₁ t₃) k y₂ n₂ t₂ p with n₁ Nat.≟ n₂
+      jj-joinRight' (suc .zero) (black t₁ k₁ leaf) k .black .zero leaf p | yes refl = ret (blackhd (black t₁ k₁ (red leaf k leaf)))
+      jj-joinRight' (suc .zero) (black t₁ k₁ leaf) k .red .zero (red t₂ k₂ t₃) p | yes refl = ret (redhd (red (black t₁ k₁ leaf) k (black t₂ k₂ t₃))) --rotate
+      jj-joinRight' (suc .zero) (black t₁ k₁ (red t₃ k₂ t₄)) k .black .zero leaf p | yes refl = ret (redhd (red (black t₁ k₁ t₃) k₂ (black t₄ k leaf))) --rotate
+      jj-joinRight' (suc n₁) (black t₁ k₁ (red t₃ k₂ t₄)) k .red n₁ (red t₂ k₃ t₅) p | yes refl = ret (redhd (red (black t₁ k₁ t₃) k₂ (black t₄ k (red t₂ k₃ t₅)))) -- 3R god
+      jj-joinRight' (suc .(suc _)) (black t₁ k₁ (red t₃ k₂ t₄)) k .black .(suc _) (black t₂ k₃ t₅) p | yes refl = ret (redhd (red (black t₁ k₁ t₃) k₂ (black t₄ k (black t₂ k₃ t₅)))) --rotate
+      jj-joinRight' (suc .(suc _)) (black t₁ k₁ (black t₃ k₂ t₄)) k .red .(suc _) (red t₂ k₃ t₅) p | yes refl = ret (redhd (red (black t₁ k₁ (black t₃ k₂ t₄)) k (black t₂ k₃ t₅))) --rotate
+      jj-joinRight' (suc .(suc _)) (black t₁ k₁ (black t₃ k₂ t₄)) k .black .(suc _) (black t₂ k₃ t₅) p | yes refl = ret (blackhd (black t₁ k₁ (red (black t₃ k₂ t₄) k (black t₂ k₃ t₅))))
+      ... | no p₁ =
+        bind (F (hrbt (suc n₁))) (jj-joinRight _ _ t₃ k _ _ t₂ {!   !}) λ { (redat t₄ k₂ (red t₅ k₃ t₆)) → ret (redhd (red (black t₁ k₁ t₄) k₂ (black t₅ k₃ t₆))) -- rotate
+                                                                           ; (redat t₄ k₂ leaf) → ret (blackhd (black t₁ k₁ (red t₄ k₂ leaf)))
+                                                                           ; (redat t₄ k₂ (black t₅ k₃ t₆)) → ret (blackhd (black t₁ k₁ (red t₄ k₂ (black t₅ k₃ t₆))))
+                                                                           ; (blackat t₄ k₂ t₅) → ret (blackhd (black t₁ k₁ (black t₄ k₂ t₅))) }
+
+    -- data InsRBT : Set where
+    --   root : {n : val nat} → IRBT black n → InsRBT
+    -- insrbt : tp pos
+    -- insrbt = U (meta InsRBT)
+
     record RBT : Set where
       pattern
       constructor ⟪_⟫
@@ -331,44 +416,274 @@ RedBlackBST Key =
     rbt : tp pos
     rbt = U (meta RBT)
 
+    -- data JRBT : Set where
+    --   root : {n : val nat} { c : val color } → IRBT c n → JRBT
+    -- jrbt : tp pos
+    -- jrbt = U (meta JRBT)
+
+    -- j-rotateLeft : cmp (
+    --                 Π color λ y → Π 𝕂 λ _ →
+    --                 Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
+    --                 Π nat λ n₂ → Π (arbt n₂) λ { (at red t₂ k₁ t₃) → F (arbt n₂) ; (at black t₂ k₁ t₃) → F (arbt n₂) }
+    --                 -- F (arbt n₁)
+    --               )
+    -- j-rotateLeft y k y₁ n₁ t₁ .(height red _) (at red t₂ k₁ t₃) =
+    --   ret (at red {!   !} k₁ {!  t₃ !})
+    -- j-rotateLeft y k y₁ n₁ t₁ .(height black _) (at black t₂ k₁ t₃) =
+    --   ret (at {!  black !} {!   !} {!   !} {!   !})
+
+    -- ≤-≢ : {n₁ n₂ : ℕ} → n₂ ≤ (suc n₁) → ¬ (suc n₁) ≡ n₂ → n₂ ≤ n₁
+    -- -- ≤-≢ h₁ h₂ = ?
+    -- ≤-≢ : cmp (
+    --       Π nat λ n₁ → Π nat λ n₂ →
+    --       Π (U (meta ((suc n₁) ≥ n₂))) λ _ → Π (U (meta (¬ (suc n₁) ≡ n₂))) λ _ →
+    --       meta (n₁ ≥ n₂)
+    --     )
+    -- ≤-≢ n₁ .zero Nat.z≤n h₂ = Nat.z≤n
+    -- ≤-≢ n₁ (suc n₂) (Nat.s≤s h₁) h₂ with n₁ Nat.≟ (suc n₂)
+    -- ... | yes refl = Nat.s≤s {!   !}
+    -- ... | no n₁≢n₂ = {!   !}
+
+    -- j-joinRight : cmp (
+    --                  Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
+    --                  Π 𝕂 λ _ →
+    --                  Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+    --                  Π (U (meta (n₁ ≥ n₂))) λ _ →
+    --                  F (arrbt n₁)
+    --                 )
+    -- j-joinRight y₁ n₁ t₁ k y n₂ t₂ n₁≥n₂ with n₁ Nat.≟ n₂
+    -- j-joinRight .black .zero leaf k y .zero t₂ n₁≥n₂ | yes refl = ret (redat leaf k leaf)
+    -- j-joinRight .red n₁ (red t₁ k₁ t₃) k y .n₁ t₂ n₁≥n₂ | yes refl =
+    --   bind (F (arrbt n₁)) (j-joinRight _ _ t₃ k _ _ t₂ n₁≥n₂) λ { (redat t₄ k₂ t₅) → {!   !}
+    --                                                             ; (blackat t₄ k₂ t₅) → ret (redat t₁ k (black t₄ k₂ t₅)) }
+    -- j-joinRight .black .(suc _) (black t₁ k₁ t₃) k y .(suc _) t₂ n₁≥n₂ | yes refl = ret (redat (black t₁ k₁ t₃) k t₂)
+    -- j-joinRight .black .zero leaf k y .zero t₂ Nat.z≤n | no n₁≢n₂ = contradiction refl n₁≢n₂
+    -- j-joinRight .red n₁ (red t₁ k₁ t₃) k y n₂ t₂ n₁≥n₂ | no n₁≢n₂ =
+    --   bind (F (arrbt n₁)) ((j-joinRight _ _ t₃ k _ _ t₂ n₁≥n₂)) λ { (redat t₄ k₂ t₅) → ret (redat {!   !} k {!   !})
+    --                                                               ; (blackat t₄ k₂ t₅) → ret (redat t₁ k (black t₄ k₂ t₅)) }
+    -- j-joinRight .black (suc n₁) (black t₁ k₁ t₃) k y n₂ t₂ n₁≥n₂ | no n₁≢n₂ =
+    --   bind (F (arrbt (suc n₁))) (j-joinRight _ _ t₃ k _ _ t₂ {!   !}) λ { (redat t₄ k₂ leaf) → ret (blackat t₁ k (red t₄ k₂ leaf))
+    --                                                                      ; (redat t₄ k₂ (red t₅ k₃ t₆)) → ret (redat (black t₁ k t₄) k₂ (black t₅ k₃ t₆)) --rotate
+    --                                                                      ; (redat t₄ k₂ (black t₅ k₃ t₆)) → ret (blackat t₁ k (red t₄ k₂ (black t₅ k₃ t₆)))
+    --                                                                      ; (blackat t₄ k₂ t₅) → ret (blackat t₁ k (black t₄ k₂ t₅)) }
+
+    -- j-joinRight' : cmp (
+    --                  Π nat λ n₁ → Π (irbt black n₁) λ _ →
+    --                  Π 𝕂 λ _ →
+    --                  Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+    --                  Π (U (meta (n₁ ≥ n₂))) λ _ →
+    --                  F (Σ (y) (irbt y n₁))
+    --                 )
+    -- j-joinRight' n₁ t₁ k y₂ n₂ t₃ n₁≥n₂ with with n₁ Nat.≟ n₂
+    -- ... | yes refl = ?
+    -- ... | no h = ?
+
+    -- joinRightBlack : cmp (
+    --                  Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
+    --                  Π 𝕂 λ _ →
+    --                  Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+    --                  Π (U (meta (n₁ ≥ n₂))) λ _ →
+    --                  F (arbt n₁)
+    --                 )
+    -- joinRightBlack y₁ n₁ t₁ k y n₂ t₂ n₁≥n₂ with n₁ Nat.≟ n₂
+    -- ... | yes refl = ret (at red t₁ k t₂)
+    -- joinRightBlack black .zero leaf k y .zero t₂ Nat.z≤n | no n₁≢n₂ = contradiction refl n₁≢n₂
+    -- joinRightBlack red n₁ (red t₁ k₁ t₃) k y n₂ t₂ n₁≥n₂ | no n₁≢n₂ =
+    --   bind (F (arbt n₁)) (joinRightBlack _ _ t₃ k _ _ t₂ n₁≥n₂) (λ { (at red t₄ k₂ t₅) → {!   !}
+    --                                                                ; (at black t₄ k₂ t₅) → {!   !} })
+    -- joinRightBlack black (suc n₁) (black t₁ k₁ t₃) k y n₂ t₂ n₁≥n₂ | no n₁≢n₂ =
+    --   bind (F (arbt (suc n₁))) (joinRightBlack _ _ t₃ k _ _ t₂ {!   !}) λ { (at red t₄ k₂ leaf) → {!   !}
+    --                                                                         ; (at red t₄ k₂ (red t₅ k₃ t₆)) → ret (at red (black t₁ k t₄) k₂ (black t₅ k₃ t₆)) --rotate
+    --                                                                         ; (at red t₄ k₂ (black t₅ k₃ t₆)) → {!   !}
+    --                                                                         ; (at black t₄ k₂ t₅) → ret (at black t₁ k (black t₄ k₂ t₅))
+    --                                                                       --  }
+    j-joinMid :
+      cmp
+        ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
+          Π 𝕂 λ _ →
+          Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+          F (rbt)
+        )
+    j-joinMid y₁ n₁ t₁ k y₂ n₂ t₂ with Nat.<-cmp n₁ n₂
+    j-joinMid red n₁ t₁ k y₂ n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
+    j-joinMid black n₁ t₁ k red n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
+    j-joinMid black n₁ t₁ k black n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (red t₁ k t₂) ⟫
+    ... | tri< n₁<n₂ n₁≢n₂ ¬n₁>n₂ =
+      {!   !}
+    ... | tri> ¬n₁<n₂ n₁≢n₂ n₁>n₂ =
+      bind (F rbt) (jj-joinRight _ _ t₁ k _ _ t₂ (n₁>n₂)) λ { (redat t₃ k₁ (red t₄ k₂ t₅)) → ret ⟪ black t₃ k₁ (red t₄ k₂ t₅) ⟫
+                                                            ; (redat t₃ k₁ (black t₄ k₂ t₅)) → ret ⟪ red t₃ k₁ (black t₄ k₂ t₅) ⟫
+                                                            ; (blackat t₃ k₁ t₄) → ret ⟪ black t₃ k₁ t₄ ⟫ }
+
+    -- j-joinMid :
+    --   cmp
+    --     ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
+    --       Π 𝕂 λ _ →
+    --       Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+    --       F (rbt)
+    --     )
+    -- j-joinMid y₁ n₁ t₁ k y₂ n₂ t₂ with Nat.<-cmp n₁ n₂
+    -- j-joinMid red n₁ t₁ k y₂ n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
+    -- j-joinMid black n₁ t₁ k red n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
+    -- j-joinMid black n₁ t₁ k black n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (red t₁ k t₂) ⟫
+    -- ... | tri< n₁<n₂ n₁≢n₂ ¬n₁>n₂ =
+    --   {!   !}
+    -- ... | tri> ¬n₁<n₂ n₁≢n₂ n₁>n₂ =
+    --   bind (F rbt) (joinRightBlack _ _ t₁ k _ _ t₂ (Nat.<⇒≤ n₁>n₂)) λ {
+    --     (at red t₃ k₁ (red t₄ k₂ t₅)) → ret ⟪ black t₃ k₁ (red t₄ k₂ t₅) ⟫
+    --   ; (at red (red t₃ k t₆) k₁ t₄) → ret ⟪ black (red t₃ k t₆) k₁ t₄ ⟫
+    --   ; (at red (black t₃ k t₆) k₁ (black t₄ k₂ t₅)) → ret ⟪ red ((black t₃ k t₆)) k₁ ((black t₄ k₂ t₅)) ⟫
+    --   ; (at black t₃ k₁ t₄) → ret ⟪ black t₃ k₁ t₄ ⟫ }
+
+    -- rotateLeftB : cmp (
+    --                Π color λ y → Π nat λ n → Π (arbt n) λ _ →
+    --                Π 𝕂 λ _ →
+    --                Π (irbt y n) λ _ →
+    --                F (hrbt (suc n))
+    --               )
+    -- rotateLeftB y .(height red zero) (at red leaf k₁ leaf) k d = ret (hblack (black (red leaf k₁ leaf) k d))
+    -- -- rotate
+    -- rotateLeftB y .(height red zero) (at red leaf k₁ (red r₁ k₂ r₂)) k d = ret (hred (red (black leaf k₁ r₁) k₂ (black r₂ k d)))
+    -- rotateLeftB y .(height black zero) (at black leaf k₁ r) k d = ret (hblack (black (black leaf k₁ r) k d))
+    -- -- rotate
+    -- rotateLeftB y .(height red _) (at red (red l₁ k₂ l₂) k₁ r) k d = ret (hred (red (black l₁ k₂ l₂) k₁ (black r k d)))
+    -- rotateLeftB y .(height black _) (at black (red l₁ k₂ l₂) k₁ r) k d = ret (hblack (black (black (red l₁ k₂ l₂) k₁ r) k d))
+    -- -- rotate
+    -- rotateLeftB y .(height red (suc _)) (at red (black l₁ k₂ l₂) k₁ (red r₁ k₃ r₂)) k d = ret (hred (red (black (black l₁ k₂ l₂) k₁ r₁) k₃ (black r₂ k d)))
+    -- rotateLeftB y .(height red (suc _)) (at red (black l₁ k₂ l₂) k₁ (black r₁ k₃ r₂)) k d = ret (hblack (black (red (black l₁ k₂ l₂) k₁ (black r₁ k₃ r₂)) k d))
+    -- rotateLeftB y .(height black (suc _)) (at black (black l₁ k₂ l₂) k₁ r) k d = ret (hblack (black (black (black l₁ k₂ l₂) k₁ r) k d))
+
+    -- rotateRightR : cmp (
+    --                Π color λ y → Π nat λ n → Π (irbt y n) λ _ →
+    --                Π 𝕂 λ _ →
+    --                Π (hrbt n) λ _ →
+    --                F (arbt n)
+    --               )
+    -- rotateRightR y n l k (hred r) = ret (at red l k r)
+    -- rotateRightR y .(suc _) l k (hblack r) = ret (at red l k r)
+
+    -- rotateLeftR : cmp (
+    --                Π color λ y → Π nat λ n → Π (hrbt n) λ _ →
+    --                Π 𝕂 λ _ →
+    --                Π (irbt y n) λ _ →
+    --                F (arbt n)
+    --               )
+    -- rotateLeftR y n (hred l) k r = ret (at red l k r)
+    -- rotateLeftR y .(suc _) (hblack l) k r = ret (at red l k r)
+
+    -- joinRight : cmp (
+    --       Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
+    --       Π 𝕂 λ _ →
+    --       Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+    --       Π (U (meta (n₁ ≥ n₂))) λ _ →
+    --       F (hrbt n₁)
+    -- )
+
+    -- rbt that removes invariants
+    -- used in intermediate states
+    -- data nRBT : Set where
+    --   nleaf  : nRBT
+    --   nred   : (t₁ : nRBT) (k : val 𝕂) (t₂ : nRBT) → nRBT
+    --   nblack : (t₁ : nRBT) (k : val 𝕂) (t₂ : nRBT) → nRBT
+    -- nrbt : tp pos
+    -- nrbt = U (meta nRBT)
+
+    -- irbt2nrbt : cmp (Π color λ y → Π nat λ n → Π (irbt y n) λ _ → F (nrbt))
+    -- irbt2nrbt .black .zero leaf = ret nleaf
+    -- irbt2nrbt .red n (red i k i₁) = bind (F nrbt) (irbt2nrbt black n i) (λ lhs →
+    --                                 bind (F nrbt) (irbt2nrbt black n i₁) (λ rhs →
+    --                                 ret (nred lhs k rhs)))
+    -- irbt2nrbt .black .(suc _) (black i k i₁) = bind (F nrbt) (irbt2nrbt {! y₁  !} {! n  !} i) λ lhs →
+    --                                            bind (F nrbt) (irbt2nrbt {! y₂ !} {! n  !} i₁) (λ rhs →
+    --                                            ret (nblack lhs k rhs))
+
+    -- rotateLeft : cmp (Π nrbt λ _ → F (nrbt))
+    -- rotateLeft nleaf = ret nleaf
+    -- rotateLeft (nred n k n₁) = {!   !}
+    -- rotateLeft (nblack n k n₁) = {!   !}
+
     -- Just Join for Parallel Ordered Sets (Blelloch, Ferizovic, and Sun)
     -- https://diderot.one/courses/121/books/492/chapter/6843
 
-    i-joinRight :
-      cmp
-        ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
-          Π 𝕂 λ _ →
-          Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
-          Π (U (meta (n₁ ≥ n₂))) λ _ →
-          F (irbt y₁ n₁)  -- TODO: is this correct?
-        )
-    i-joinRight y₁ n₁ t₁ k y₂ n₂ t₂ n₁≥n₂ with n₁ Nat.≟ n₂
-    ... | yes refl = ret {!  red !}
-    i-joinRight .black .zero leaf k y₂ .zero t₂ Nat.z≤n | no n₁≢n₂ = contradiction refl n₁≢n₂
-    i-joinRight .red n₁ (red t₁₁ k₁ t₁₂) k y₂ n₂ t₂ n₁≥n₂ | no n₁≢n₂ =
-      bind (F {!   !}) (i-joinRight _ _ t₁₂ k _ _ t₂ {!     !}) λ t₂' →
-      ret (red t₁₁ k₁ t₂')
-    i-joinRight .black .(suc _) (black t₁₁ k₁ t₁₂) k y₂ n₂ t₂ n₁≥n₂ | no n₁≢n₂ =
-      {!   !}
+    -- https://github.com/sweirich/dth/blob/master/depending-on-types/RBT.agda
 
-    i-joinMid :
-      cmp
-        ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
-          Π 𝕂 λ _ →
-          Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
-          F rbt
-        )
-    i-joinMid y₁ n₁ t₁ k y₂ n₂ t₂ with Nat.<-cmp n₁ n₂
-    i-joinMid red n₁ t₁ k y₂ n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
-    i-joinMid black n₁ t₁ k red n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
-    i-joinMid black n₁ t₁ k black n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (red t₁ k t₂) ⟫
-    ... | tri< n₁<n₂ n₁≢n₂ ¬n₁>n₂ = {!   !}
-    ... | tri> ¬n₁<n₂ n₁≢n₂ n₁>n₂ =
-      bind (F rbt) (i-joinRight _ _ t₁ k _ _ t₂ (Nat.<⇒≤ n₁>n₂)) λ t →
-      {!   !}
+    -- mutual
+    --   joinRight :
+    --     cmp
+    --       ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
+    --         Π 𝕂 λ _ →
+    --         Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+    --         Π (U (meta (n₁ ≥ n₂))) λ _ →
+    --         F (arbt n₁)
+    --       )
+    --   joinRight y₁ n₁ t₁ k y₂ n₂ t₂ n₁≥n₂ = {!   !} -- with n₁ Nat.≟ n₂
+      -- ... | yes refl = ret (at red t₁ k t₂)
+      -- joinRight .black .zero leaf k y₂ .zero t₂ Nat.z≤n | no n₁≢n₂ = contradiction refl n₁≢n₂
+    -- joinRight .red n₁ (red t₁ k₁ t₃) k y₂ n₂ t₂ n₁≥n₂ | no n₁≢n₂ =
+      --      bind (F (arbt n₁)) (joinRight' _ t₃ k _ _ t₂ n₁≥n₂) λ { (hred t₃) → ret (at red t₁ k₁ t₃) ;
+      --                                                              (hblack t₄) → ret (at red t₁ k t₄) }
+      -- joinRight .black n₁ (black t₁ k₁ t₃) k y₂ n₂ t₂ n₁≥n₂ | no n₁≢n₂ =
+      --      bind (F (arbt n₁)) (joinRight _ _ t₃ k _ _ t₂ {!!}) (λ { (at red t₄ k₂ leaf) → ret (at black t₁ k₁ leaf) ; -- line 10 case
+      --                                                                (at c t₄ k₂ (red t₅ k t₆)) → {!!} ;  -- line 9 case
+      --                                                                (at red t₄ k₂ (black t₅ k t₆)) → ret (at black t₁ k₁ ( red {!!} {!!} {!!}))} ) -- line 10 case
+
+    --   joinRight' : cmp (
+    --         Π nat λ n₁ → Π (irbt black n₁) λ _ →
+    --         Π 𝕂 λ _ →
+    --         Π color λ y → Π nat λ n₂ → Π (irbt y n₂) λ _ →
+    --         Π (U (meta (n₁ ≥ n₂))) λ _ →
+    --         F (hrbt n₁)
+    --       )
+    --   joinRight' n₁ t₁ k y n₂ t₂ n₁≥n₂ with n₁ Nat.≟ n₂
+    --   ... | yes refl = ret (hred (red t₁ k {!t₂!}))
+    --   joinRight' .zero leaf k y .zero t₂ Nat.z≤n | no n₁≢n₂ = contradiction refl n₁≢n₂
+    --   joinRight' .(suc _) (black t₁ k₁ t₃) k y .zero t₂ Nat.z≤n | no n₁≢n₂ = {!   !}
+    --   joinRight' .(suc _) t₁ k y .(suc _) t₂ (Nat.s≤s n₁≥n₂) | no n₁≢n₂ = {!   !}
+    --       -- call rotateLeftB
+
+
+    -- unhiden : cmp (Π nat λ n → Π (hrbt n) λ _ → F (irbt black n))
+    -- unhiden _ (hred (red x k x₁)) = ret {! black x k x₁  !}
+    -- unhiden .(suc _) (hblack (black x k x₁)) = ret (black x k x₁)
+
+    -- i-joinRight :
+    --   cmp
+    --     ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
+    --       Π 𝕂 λ _ →
+    --       Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+    --       Π (U (meta (n₁ ≥ n₂))) λ _ →
+    --       F (irbt y₁ n₁)  -- TODO: is this correct?
+    --     )
+    -- i-joinRight y₁ n₁ t₁ k y₂ n₂ t₂ n₁≥n₂ with n₁ Nat.≟ n₂
+    -- ... | yes refl = ret {!  red t₁ k t₂ !} -- black height are the same
+    --                                          -- needs to make sure both y₁ and y₂ are black
+    -- -- i-joinRight .black n₁ t₁ k .black n₂ t₂ n₁≥n₂ with n₁ Nat.≟ n₂
+    -- -- ... | yes refl = ?
+    -- i-joinRight .black .zero leaf k y₂ .zero t₂ Nat.z≤n | no n₁≢n₂ = contradiction refl n₁≢n₂
+    -- i-joinRight .red n₁ (red t₁₁ k₁ t₁₂) k y₂ n₂ t₂ n₁≥n₂ | no n₁≢n₂ =
+    --   bind (F {!  !}) (i-joinRight _ _ t₁₂ k _ _ t₂ {!     !}) λ t₂' →
+    --   ret (red t₁₁ k₁ t₂')
+    -- i-joinRight .black .(suc _) (black t₁₁ k₁ t₁₂) k y₂ n₂ t₂ n₁≥n₂ | no n₁≢n₂ =
+    --   {!   !}
+
+    -- i-joinMid :
+    --   cmp
+    --     ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
+    --       Π 𝕂 λ _ →
+    --       Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+    --       F rbt
+    --     )
+    -- i-joinMid y₁ n₁ t₁ k y₂ n₂ t₂ with Nat.<-cmp n₁ n₂
+    -- i-joinMid red n₁ t₁ k y₂ n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
+    -- i-joinMid black n₁ t₁ k red n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
+    -- i-joinMid black n₁ t₁ k black n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (red t₁ k t₂) ⟫
+    -- ... | tri< n₁<n₂ n₁≢n₂ ¬n₁>n₂ = {!   !}
+    -- ... | tri> ¬n₁<n₂ n₁≢n₂ n₁>n₂ =
+    --   bind (F rbt) (i-joinRight _ _ t₁ k _ _ t₂ (Nat.<⇒≤ n₁>n₂)) λ t →
+    --   {!   !}
 
     joinMid : cmp (Π rbt λ _ → Π 𝕂 λ _ → Π rbt λ _ → F rbt)
-    joinMid ⟪ t₁ ⟫ k ⟪ t₂ ⟫ = i-joinMid _ _ t₁ k _ _ t₂
+    joinMid ⟪ t₁ ⟫ k ⟪ t₂ ⟫ = j-joinMid _ _ t₁ k _ _ t₂
 
     i-rec : {X : tp neg} →
       cmp
@@ -408,6 +723,52 @@ RedBlackBST Key =
         (λ _ _ t₁ ih₁ k _ _ t₂ ih₂ → f ⟪ t₁ ⟫ ih₁ k ⟪ t₂ ⟫ ih₂)
         _ _ t
 
+    -- forget : cmp (Π nat λ n → Π (hrbt n) λ _ → F (arbt n))
+    -- forget n (hred (red x k x₁)) = ret (at red x k x₁)
+    -- forget .(suc _) (hblack (black x k x₁)) = ret (at black x k x₁)
+
+    -- open StrictTotalOrder Key
+
+    -- mutual
+    --   ins-black : cmp (Π nat λ n → Π (irbt black n) λ _ → Π 𝕂 λ _ → F (hrbt n))
+    --   ins-black .zero leaf k = ret (hred (red leaf k leaf))
+    --   ins-black (suc n) (black t₁ k₁ t₂) k =
+    --     case compare k k₁ of λ
+    --       { (tri< k<k' ¬k≡k' ¬k>k') →
+    --           bind (F (hrbt (suc n))) (ins n _ t₁ k) λ t₃ →
+    --           bind (F (hrbt (suc n))) (rotateLeftB _ n t₃ k₁ t₂) ret
+    --       ; (tri≈ ¬k<k' k≡k' ¬k>k') →
+    --           bind (F (hrbt (suc n))) (ins n _ t₂ k) (λ t₃ →
+    --           bind (F (hrbt (suc n))) {!  rotateRightB y₁ n t₁ k₁ t₃ !} ret)
+    --       ; (tri> ¬k<k' ¬k≡k' k>k') → ret (hblack (black t₁ k t₂))
+    --       }
+
+    --   ins : cmp (Π nat λ n → Π color λ y → Π (irbt y n) λ _ → Π 𝕂 λ _ → F (arbt n))
+    --   ins .zero .black leaf k =
+    --     bind (F (arbt zero)) (ins-black zero leaf k) (λ x →
+    --     bind (F (arbt zero)) (forget zero x) ret)
+    --   ins n .red (red t k₁ t₁) k =
+    --     case compare k k₁ of λ
+    --       { (tri< k<k' ¬k≡k' ¬k>k') →
+    --           bind (F (arbt n)) (ins-black n t k) λ t₂ →
+    --           bind (F (arbt n)) (rotateLeftR black n t₂ k₁ t₁) ret
+    --       ; (tri≈ ¬k<k' k≡k' ¬k>k') →
+    --           bind (F (arbt n)) (ins-black n t₁ k) (λ t₂ →
+    --           bind (F (arbt n)) (rotateRightR black n t k₁ t₂) ret)
+    --       ; (tri> ¬k<k' ¬k≡k' k>k') → ret (at red t k t₁)
+    --       }
+    --   ins (suc n) .black (black t k₁ t₁) k =
+    --     bind (F (arbt (suc n))) (ins-black (suc n) (black t k₁ t₁) k) λ x →
+    --     bind (F (arbt (suc n))) (forget (suc n) x) ret
+
+    -- unhiden' : cmp (Π nat λ n → Π (hrbt n) λ _ → F insrbt)
+    -- unhiden' n (hred (red l k r)) = ret (root (black l k r))
+    -- unhiden' .(suc _) (hblack (black l k r)) = ret (root (black l k r))
+
+    -- insert : cmp (Π insrbt λ _ → Π 𝕂 λ _ → F insrbt)
+    -- insert (root t) k =
+    --   bind (F insrbt) (ins-black _ t k) λ ht →
+    --   bind (F insrbt) (unhiden' _ ht) ret
 
 module Ex/NatSet where
   open ParametricBST (ListBST Nat.<-strictTotalOrder)
