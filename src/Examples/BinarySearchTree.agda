@@ -29,7 +29,7 @@ open import Function
 open import Relation.Nullary
 open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary
-open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning)
+open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning; ≢-sym)
 
 variable
   A B C : tp pos
@@ -385,7 +385,7 @@ RedBlackBST Key =
         bind (F (arrbt (suc n₁))) (joinEqual n₁ (black t₁ k₁ t₃) k _ t₂) (λ { (redhd (red t₄ k₂ t₅)) → ret (redat t₄ k₂ t₅) --weaken
                                                                             ; (blackhd (black t₄ k₂ t₅)) → ret (blackat t₄ k₂ t₅) })
       ... | no p₁ =
-        bind (F (arrbt (suc n₁))) (jj-joinRight _ _ t₃ k _ _ t₂ {!   !}) λ { (redat t₄ k₂ leaf) → ret (blackat t₁ k₁ (red t₄ k₂ leaf))
+        bind (F (arrbt (suc n₁))) (jj-joinRight _ _ t₃ k _ _ t₂ (Nat.≤∧≢⇒< (Nat.≤-pred p) (≢-sym p₁))) λ { (redat t₄ k₂ leaf) → ret (blackat t₁ k₁ (red t₄ k₂ leaf))
                                                                             ; (redat t₄ k₂ (red t₅ k₃ t₆)) → ret (redat (black t₁ k₁ t₄) k₂ (black t₅ k₃ t₆)) --rotate
                                                                             ; (redat t₄ k₂ (black t₅ k₃ t₆)) → ret (blackat t₁ k₁ (black t₅ k₃ t₆))
                                                                             ; (blackat t₄ k₂ t₅) → ret (blackat t₁ k₁ (black t₄ k₂ t₅)) }
@@ -401,7 +401,7 @@ RedBlackBST Key =
       ... | yes refl =
         bind (F (hrbt (suc n₁))) (joinEqual n₁ (black t₁ k₁ t₃) k _ t₂) ret
       ... | no p₁ =
-        bind (F (hrbt (suc n₁))) (jj-joinRight _ _ t₃ k _ _ t₂ {!   !}) λ { (redat t₄ k₂ (red t₅ k₃ t₆)) → ret (redhd (red (black t₁ k₁ t₄) k₂ (black t₅ k₃ t₆))) -- rotate
+        bind (F (hrbt (suc n₁))) (jj-joinRight _ _ t₃ k _ _ t₂ (Nat.≤∧≢⇒< (Nat.≤-pred p) (≢-sym p₁))) λ { (redat t₄ k₂ (red t₅ k₃ t₆)) → ret (redhd (red (black t₁ k₁ t₄) k₂ (black t₅ k₃ t₆))) -- rotate
                                                                            ; (redat t₄ k₂ leaf) → ret (blackhd (black t₁ k₁ (red t₄ k₂ leaf)))
                                                                            ; (redat t₄ k₂ (black t₅ k₃ t₆)) → ret (blackhd (black t₁ k₁ (red t₄ k₂ (black t₅ k₃ t₆))))
                                                                            ; (blackat t₄ k₂ t₅) → ret (blackhd (black t₁ k₁ (black t₄ k₂ t₅))) }
@@ -437,7 +437,6 @@ RedBlackBST Key =
     -- j-rotateLeft y k y₁ n₁ t₁ .(height black _) (at black t₂ k₁ t₃) =
     --   ret (at {!  black !} {!   !} {!   !} {!   !})
 
-    -- ≤-≢ : {n₁ n₂ : ℕ} → n₂ ≤ (suc n₁) → ¬ (suc n₁) ≡ n₂ → n₂ ≤ n₁
     -- -- ≤-≢ h₁ h₂ = ?
     -- ≤-≢ : cmp (
     --       Π nat λ n₁ → Π nat λ n₂ →
