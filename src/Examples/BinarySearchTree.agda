@@ -355,6 +355,20 @@ RedBlackBST Key =
     arrbt : val nat → tp pos
     arrbt n = U (meta (AlmostRightRBT n))
 
+    joinEqual : cmp (
+                       Π nat λ n₁ → Π (irbt black (suc n₁)) λ _ →
+                       Π 𝕂 λ _ →
+                       Π color λ y₂ → Π (irbt y₂ n₁) λ _ →
+                       F (hrbt (suc n₁))
+                    )
+    joinEqual .zero (black t₁ k₁ leaf) k .black leaf = ret (blackhd (black t₁ k₁ (red leaf k leaf)))
+    joinEqual .zero (black t₁ k₁ leaf) k .red (red t₂ k₂ t₃) = ret (redhd (red (black t₁ k₁ leaf) k (black t₂ k₂ t₃))) --rotate
+    joinEqual .zero (black t₁ k₁ (red t₃ k₂ t₄)) k .black leaf = ret (redhd (red (black t₁ k₁ t₃) k₂ (black t₄ k leaf))) --rotate
+    joinEqual n₁ (black t₁ k₁ (red t₃ k₂ t₄)) k .red (red t₂ k₃ t₅) = ret (redhd (red (black t₁ k₁ t₃) k₂ (black t₄ k (red t₂ k₃ t₅)))) -- 3R god
+    joinEqual .(suc _) (black t₁ k₁ (red t₃ k₂ t₄)) k .black (black t₂ k₃ t₅) = ret (redhd (red (black t₁ k₁ t₃) k₂ (black t₄ k (black t₂ k₃ t₅)))) --rotate
+    joinEqual .(suc _) (black t₁ k₁ (black t₃ k₂ t₄)) k .red (red t₂ k₃ t₅) = ret (redhd (red (black t₁ k₁ (black t₃ k₂ t₄)) k (black t₂ k₃ t₅))) --rotate
+    joinEqual .(suc _) (black t₁ k₁ (black t₃ k₂ t₄)) k .black (black t₂ k₃ t₅) = ret (blackhd (black t₁ k₁ (red (black t₃ k₂ t₄) k (black t₂ k₃ t₅))))
+
     mutual
       jj-joinRight : cmp (
                        Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
@@ -367,13 +381,9 @@ RedBlackBST Key =
         bind (F (arrbt n₁)) (jj-joinRight' _ t₃ k _ _ t₂ p) (λ { (redhd t₄) → ret (redat t₁ k₁ t₄)
                                                                ; (blackhd t₄) → ret (redat t₁ k₁ t₄) })
       jj-joinRight .black (suc n₁) (black t₁ k₁ t₃) k y₂ n₂ t₂ p with n₁ Nat.≟ n₂
-      jj-joinRight .black (suc .zero) (black t₁ k₁ leaf) k .black .zero leaf p | yes refl = ret (blackat t₁ k₁ (red leaf k leaf))
-      jj-joinRight .black (suc .zero) (black t₁ k₁ leaf) k .red .zero (red t₂ k₂ t₃) p | yes refl = ret (redat (black t₁ k₁ leaf) k (black t₂ k₂ t₃)) --rotate
-      jj-joinRight .black (suc .zero) (black t₁ k₁ (red t₃ k₂ t₄)) k .black .zero leaf p | yes refl = ret (redat (black t₁ k₁ t₃) k₂ (black t₄ k leaf)) --rotate
-      jj-joinRight .black (suc n₁) (black t₁ k₁ (red t₃ k₂ t₄)) k .red n₁ (red t₂ k₃ t₅) p | yes refl = ret (redat (black t₁ k₁ t₃) k₂ (black t₄ k (red t₂ k₃ t₅))) --3R god
-      jj-joinRight .black (suc .(suc _)) (black t₁ k₁ (red t₃ k₂ t₄)) k .black .(suc _) (black t₂ k₃ t₅) p | yes refl = ret (redat (black t₁ k₁ t₃) k₂ (black t₄ k (black t₂ k₃ t₅))) --rotate
-      jj-joinRight .black (suc .(suc _)) (black t₁ k₁ (black t₃ k₂ t₄)) k .red .(suc _) (red t₂ k₃ t₅) p | yes refl = ret (redat (black t₁ k₁ (black t₃ k₂ t₄)) k (black t₂ k₃ t₅)) --rotate
-      jj-joinRight .black (suc .(suc _)) (black t₁ k₁ (black t₃ k₂ t₄)) k .black .(suc _) (black t₂ k₃ t₅) p | yes refl = ret (blackat t₁ k₁ (red (black t₃ k₂ t₄) k (black t₂ k₃ t₅)))
+      ... | yes refl =
+        bind (F (arrbt (suc n₁))) (joinEqual n₁ (black t₁ k₁ t₃) k _ t₂) (λ { (redhd (red t₄ k₂ t₅)) → ret (redat t₄ k₂ t₅) --weaken
+                                                                            ; (blackhd (black t₄ k₂ t₅)) → ret (blackat t₄ k₂ t₅) })
       ... | no p₁ =
         bind (F (arrbt (suc n₁))) (jj-joinRight _ _ t₃ k _ _ t₂ {!   !}) λ { (redat t₄ k₂ leaf) → ret (blackat t₁ k₁ (red t₄ k₂ leaf))
                                                                             ; (redat t₄ k₂ (red t₅ k₃ t₆)) → ret (redat (black t₁ k₁ t₄) k₂ (black t₅ k₃ t₆)) --rotate
@@ -388,13 +398,8 @@ RedBlackBST Key =
                        F (hrbt n₁)
                       )
       jj-joinRight' (suc n₁) (black t₁ k₁ t₃) k y₂ n₂ t₂ p with n₁ Nat.≟ n₂
-      jj-joinRight' (suc .zero) (black t₁ k₁ leaf) k .black .zero leaf p | yes refl = ret (blackhd (black t₁ k₁ (red leaf k leaf)))
-      jj-joinRight' (suc .zero) (black t₁ k₁ leaf) k .red .zero (red t₂ k₂ t₃) p | yes refl = ret (redhd (red (black t₁ k₁ leaf) k (black t₂ k₂ t₃))) --rotate
-      jj-joinRight' (suc .zero) (black t₁ k₁ (red t₃ k₂ t₄)) k .black .zero leaf p | yes refl = ret (redhd (red (black t₁ k₁ t₃) k₂ (black t₄ k leaf))) --rotate
-      jj-joinRight' (suc n₁) (black t₁ k₁ (red t₃ k₂ t₄)) k .red n₁ (red t₂ k₃ t₅) p | yes refl = ret (redhd (red (black t₁ k₁ t₃) k₂ (black t₄ k (red t₂ k₃ t₅)))) -- 3R god
-      jj-joinRight' (suc .(suc _)) (black t₁ k₁ (red t₃ k₂ t₄)) k .black .(suc _) (black t₂ k₃ t₅) p | yes refl = ret (redhd (red (black t₁ k₁ t₃) k₂ (black t₄ k (black t₂ k₃ t₅)))) --rotate
-      jj-joinRight' (suc .(suc _)) (black t₁ k₁ (black t₃ k₂ t₄)) k .red .(suc _) (red t₂ k₃ t₅) p | yes refl = ret (redhd (red (black t₁ k₁ (black t₃ k₂ t₄)) k (black t₂ k₃ t₅))) --rotate
-      jj-joinRight' (suc .(suc _)) (black t₁ k₁ (black t₃ k₂ t₄)) k .black .(suc _) (black t₂ k₃ t₅) p | yes refl = ret (blackhd (black t₁ k₁ (red (black t₃ k₂ t₄) k (black t₂ k₃ t₅))))
+      ... | yes refl =
+        bind (F (hrbt (suc n₁))) (joinEqual n₁ (black t₁ k₁ t₃) k _ t₂) ret
       ... | no p₁ =
         bind (F (hrbt (suc n₁))) (jj-joinRight _ _ t₃ k _ _ t₂ {!   !}) λ { (redat t₄ k₂ (red t₅ k₃ t₆)) → ret (redhd (red (black t₁ k₁ t₄) k₂ (black t₅ k₃ t₆))) -- rotate
                                                                            ; (redat t₄ k₂ leaf) → ret (blackhd (black t₁ k₁ (red t₄ k₂ leaf)))
