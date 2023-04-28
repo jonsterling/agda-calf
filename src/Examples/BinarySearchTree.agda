@@ -154,66 +154,42 @@ RedBlackBST Key =
     hrbt : val nat → tp pos
     hrbt n = U (meta (HiddenRBT n))
 
-    data AlmostRightRBT : val nat → Set where
-      redat :   {n : val nat} { c1 : val color}
-              → IRBT black n → val 𝕂 → IRBT c1 n
-              → AlmostRightRBT n
-      blackat : {n : val nat} { c1 c2 : val color}
-              → IRBT c1 n → val 𝕂 → IRBT c2 n
-              → AlmostRightRBT (suc n)
-    arrbt : val nat → tp pos
-    arrbt n = U (meta (AlmostRightRBT n))
+    data AlmostRightRBT : (left-color : val color) → val nat → Set where
+      violation :
+        {n : val nat}
+        → IRBT black n → val 𝕂 → IRBT red n
+        → AlmostRightRBT red n
+      valid :
+        {left-color : val color} {n : val nat} {y : val color} → IRBT y n
+        → AlmostRightRBT left-color n
 
-    joinEqual : cmp (
-                       Π nat λ n₁ → Π (irbt black (suc n₁)) λ _ →
-                       Π 𝕂 λ _ →
-                       Π color λ y₂ → Π (irbt y₂ n₁) λ _ →
-                       F (hrbt (suc n₁))
-                    )
-    joinEqual .zero (black t₁ k₁ leaf) k .black leaf = ret (blackhd (black t₁ k₁ (red leaf k leaf)))
-    joinEqual .zero (black t₁ k₁ leaf) k .red (red t₂ k₂ t₃) = ret (redhd (red (black t₁ k₁ leaf) k (black t₂ k₂ t₃))) --rotate
-    joinEqual .zero (black t₁ k₁ (red t₃ k₂ t₄)) k .black leaf = ret (redhd (red (black t₁ k₁ t₃) k₂ (black t₄ k leaf))) --rotate
-    joinEqual n₁ (black t₁ k₁ (red t₃ k₂ t₄)) k .red (red t₂ k₃ t₅) = ret (redhd (red (black t₁ k₁ t₃) k₂ (black t₄ k (red t₂ k₃ t₅)))) -- 3R god
-    joinEqual .(suc _) (black t₁ k₁ (red t₃ k₂ t₄)) k .black (black t₂ k₃ t₅) = ret (redhd (red (black t₁ k₁ t₃) k₂ (black t₄ k (black t₂ k₃ t₅)))) --rotate
-    joinEqual .(suc _) (black t₁ k₁ (black t₃ k₂ t₄)) k .red (red t₂ k₃ t₅) = ret (redhd (red (black t₁ k₁ (black t₃ k₂ t₄)) k (black t₂ k₃ t₅))) --rotate
-    joinEqual .(suc _) (black t₁ k₁ (black t₃ k₂ t₄)) k .black (black t₂ k₃ t₅) = ret (blackhd (black t₁ k₁ (red (black t₃ k₂ t₄) k (black t₂ k₃ t₅))))
+    arrbt : val color → val nat → tp pos
+    arrbt y n = U (meta (AlmostRightRBT y n))
 
-    mutual
-      jj-joinRight : cmp (
-                       Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
-                       Π 𝕂 λ _ →
-                       Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
-                       Π (U (meta (n₁ > n₂))) λ _ →
-                       F (arrbt n₁)
-                      )
-      jj-joinRight .red n₁ (red t₁ k₁ t₃) k y₂ n₂ t₂ p =
-        bind (F (arrbt n₁)) (jj-joinRight' _ t₃ k _ _ t₂ p) (λ { (redhd t₄) → ret (redat t₁ k₁ t₄)
-                                                               ; (blackhd t₄) → ret (redat t₁ k₁ t₄) })
-      jj-joinRight .black (suc n₁) (black t₁ k₁ t₃) k y₂ n₂ t₂ p with n₁ Nat.≟ n₂
-      ... | yes refl =
-        bind (F (arrbt (suc n₁))) (joinEqual n₁ (black t₁ k₁ t₃) k _ t₂) (λ { (redhd (red t₄ k₂ t₅)) → ret (redat t₄ k₂ t₅) --weaken
-                                                                            ; (blackhd (black t₄ k₂ t₅)) → ret (blackat t₄ k₂ t₅) })
-      ... | no p₁ =
-        bind (F (arrbt (suc n₁))) (jj-joinRight _ _ t₃ k _ _ t₂ (Nat.≤∧≢⇒< (Nat.≤-pred p) (≢-sym p₁))) λ { (redat t₄ k₂ leaf) → ret (blackat t₁ k₁ (red t₄ k₂ leaf))
-                                                                            ; (redat t₄ k₂ (red t₅ k₃ t₆)) → ret (redat (black t₁ k₁ t₄) k₂ (black t₅ k₃ t₆)) --rotate
-                                                                            ; (redat t₄ k₂ (black t₅ k₃ t₆)) → ret (blackat t₁ k₁ (black t₅ k₃ t₆))
-                                                                            ; (blackat t₄ k₂ t₅) → ret (blackat t₁ k₁ (black t₄ k₂ t₅)) }
-
-      jj-joinRight' : cmp (
-                       Π nat λ n₁ → Π (irbt black n₁) λ _ →
-                       Π 𝕂 λ _ →
-                       Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
-                       Π (U (meta (n₁ > n₂))) λ _ →
-                       F (hrbt n₁)
-                      )
-      jj-joinRight' (suc n₁) (black t₁ k₁ t₃) k y₂ n₂ t₂ p with n₁ Nat.≟ n₂
-      ... | yes refl =
-        bind (F (hrbt (suc n₁))) (joinEqual n₁ (black t₁ k₁ t₃) k _ t₂) ret
-      ... | no p₁ =
-        bind (F (hrbt (suc n₁))) (jj-joinRight _ _ t₃ k _ _ t₂ (Nat.≤∧≢⇒< (Nat.≤-pred p) (≢-sym p₁))) λ { (redat t₄ k₂ (red t₅ k₃ t₆)) → ret (redhd (red (black t₁ k₁ t₄) k₂ (black t₅ k₃ t₆))) -- rotate
-                                                                           ; (redat t₄ k₂ leaf) → ret (blackhd (black t₁ k₁ (red t₄ k₂ leaf)))
-                                                                           ; (redat t₄ k₂ (black t₅ k₃ t₆)) → ret (blackhd (black t₁ k₁ (red t₄ k₂ (black t₅ k₃ t₆))))
-                                                                           ; (blackat t₄ k₂ t₅) → ret (blackhd (black t₁ k₁ (black t₄ k₂ t₅))) }
+    joinRight : cmp (
+                    Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
+                    Π 𝕂 λ _ →
+                    Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+                    Π (U (meta (n₁ > n₂))) λ _ →
+                    F (arrbt y₁ n₁)
+                  )
+    joinRight .red n₁ (red t₁₁ k₁ t₁₂) k y₂ n₂ t₂ n₁>n₂ =
+      bind (F (arrbt red n₁)) (joinRight _ _ t₁₂ k _ _ t₂ n₁>n₂) λ
+        { (valid {y = red} t') → ret (violation t₁₁ k₁ t')
+        ; (valid {y = black} t') → ret (valid (red t₁₁ k₁ t')) }
+    joinRight .black (suc n₁) (black { y₂ = y₁₂ } t₁₁ k₁ t₁₂) k y₂ n₂ t₂ n₁>n₂ with n₁ Nat.≟ n₂
+    joinRight .black (suc n₁) (black {y₂ = red} t₁₁ k₁ t₁₂) k red n₁ (red t₂₁ k₂ t₂₂) n₁>n₂ | yes refl =
+      ret (valid (red (black t₁₁ k₁ t₁₂) k (black t₂₁ k₂ t₂₂)))
+    joinRight .black (suc n₁) (black {y₂ = red} t₁₁ k₁ (red t₁₂₁ k₁₂ t₁₂₂)) k black n₁ t₂ n₁>n₂ | yes refl =
+      ret (valid (red (black t₁₁ k₁ t₁₂₁) k₁₂ (black t₁₂₂ k t₂)))
+    joinRight .black (suc n₁) (black {y₂ = black} t₁₁ k₁ t₁₂) k red n₁ (red t₂₁ k₂ t₂₂) n₁>n₂ | yes refl =
+      ret (valid (red (black t₁₁ k₁ t₁₂) k (black t₂₁ k₂ t₂₂)))
+    joinRight .black (suc n₁) (black {y₂ = black} t₁₁ k₁ t₁₂) k black n₁ t₂ n₁>n₂ | yes refl =
+      ret (valid (black t₁₁ k₁ (red t₁₂ k t₂)))
+    ... | no n₁≢n₂ =
+      bind (F (arrbt black (suc n₁))) (joinRight _ _ t₁₂ k _ _ t₂ (Nat.≤∧≢⇒< (Nat.≤-pred n₁>n₂) (≢-sym n₁≢n₂))) λ
+        { (violation t'₁ k' (red t'₂₁ k'₂ t'₂₂)) → ret (valid (red (black t₁₁ k₁ t'₁) k' (black t'₂₁ k'₂ t'₂₂)))
+        ; (valid t') → ret (valid (black t₁₁ k₁ t'))  }
 
     record RBT : Set where
       pattern
@@ -225,26 +201,26 @@ RedBlackBST Key =
     rbt : tp pos
     rbt = U (meta RBT)
 
-    j-joinMid :
+    i-joinMid :
       cmp
         ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
           Π 𝕂 λ _ →
           Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
-          F (rbt)
+          F rbt
         )
-    j-joinMid y₁ n₁ t₁ k y₂ n₂ t₂ with Nat.<-cmp n₁ n₂
-    j-joinMid red n₁ t₁ k y₂ n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
-    j-joinMid black n₁ t₁ k red n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
-    j-joinMid black n₁ t₁ k black n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (red t₁ k t₂) ⟫
+    i-joinMid y₁ n₁ t₁ k y₂ n₂ t₂ with Nat.<-cmp n₁ n₂
+    i-joinMid red n₁ t₁ k y₂ n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
+    i-joinMid black n₁ t₁ k red n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
+    i-joinMid black n₁ t₁ k black n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (red t₁ k t₂) ⟫
     ... | tri< n₁<n₂ n₁≢n₂ ¬n₁>n₂ =
       {!   !}
     ... | tri> ¬n₁<n₂ n₁≢n₂ n₁>n₂ =
-      bind (F rbt) (jj-joinRight _ _ t₁ k _ _ t₂ (n₁>n₂)) λ { (redat t₃ k₁ (red t₄ k₂ t₅)) → ret ⟪ black t₃ k₁ (red t₄ k₂ t₅) ⟫
-                                                            ; (redat t₃ k₁ (black t₄ k₂ t₅)) → ret ⟪ red t₃ k₁ (black t₄ k₂ t₅) ⟫
-                                                            ; (blackat t₃ k₁ t₄) → ret ⟪ black t₃ k₁ t₄ ⟫ }
+      bind (F rbt) (joinRight _ _ t₁ k _ _ t₂ n₁>n₂) λ
+        { (violation t'₁ k' t'₂) → ret ⟪ black t'₁ k' t'₂ ⟫
+        ; (valid t') → ret ⟪ t' ⟫ }
 
     joinMid : cmp (Π rbt λ _ → Π 𝕂 λ _ → Π rbt λ _ → F rbt)
-    joinMid ⟪ t₁ ⟫ k ⟪ t₂ ⟫ = j-joinMid _ _ t₁ k _ _ t₂
+    joinMid ⟪ t₁ ⟫ k ⟪ t₂ ⟫ = i-joinMid _ _ t₁ k _ _ t₂
 
     i-rec : {X : tp neg} →
       cmp
