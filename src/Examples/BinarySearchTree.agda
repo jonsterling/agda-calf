@@ -177,13 +177,11 @@ RedBlackBST Key =
       bind (F (arrbt red n₁)) (joinRight _ _ t₁₂ k _ _ t₂ n₁>n₂) λ
         { (valid {y = red} t') → ret (violation t₁₁ k₁ t')
         ; (valid {y = black} t') → ret (valid (red t₁₁ k₁ t')) }
-    joinRight .black (suc n₁) (black { y₂ = y₁₂ } t₁₁ k₁ t₁₂) k y₂ n₂ t₂ n₁>n₂ with n₁ Nat.≟ n₂
-    joinRight .black (suc n₁) (black {y₂ = red} t₁₁ k₁ t₁₂) k red n₁ (red t₂₁ k₂ t₂₂) n₁>n₂ | yes refl =
+    joinRight .black (suc n₁) (black t₁₁ k₁ t₁₂) k y₂ n₂ t₂ n₁>n₂ with n₁ Nat.≟ n₂
+    joinRight .black (suc n₁) (black t₁₁ k₁ t₁₂) k red n₁ (red t₂₁ k₂ t₂₂) n₁>n₂ | yes refl =
       ret (valid (red (black t₁₁ k₁ t₁₂) k (black t₂₁ k₂ t₂₂)))
     joinRight .black (suc n₁) (black {y₂ = red} t₁₁ k₁ (red t₁₂₁ k₁₂ t₁₂₂)) k black n₁ t₂ n₁>n₂ | yes refl =
       ret (valid (red (black t₁₁ k₁ t₁₂₁) k₁₂ (black t₁₂₂ k t₂)))
-    joinRight .black (suc n₁) (black {y₂ = black} t₁₁ k₁ t₁₂) k red n₁ (red t₂₁ k₂ t₂₂) n₁>n₂ | yes refl =
-      ret (valid (red (black t₁₁ k₁ t₁₂) k (black t₂₁ k₂ t₂₂)))
     joinRight .black (suc n₁) (black {y₂ = black} t₁₁ k₁ t₁₂) k black n₁ t₂ n₁>n₂ | yes refl =
       ret (valid (black t₁₁ k₁ (red t₁₂ k t₂)))
     ... | no n₁≢n₂ =
