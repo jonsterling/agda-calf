@@ -31,6 +31,7 @@ open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning; ≢-sym)
 
+
 variable
   A B C : tp pos
   X Y Z : tp neg
@@ -118,6 +119,7 @@ ListBST Key =
     rec {X} z f []      = z
     rec {X} z f (x ∷ l) = step X (1 , 1) (f [] z x l (rec {X} z f l))
 
+
 RedBlackBST : (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) → ParametricBST Key
 RedBlackBST Key =
   record
@@ -129,6 +131,7 @@ RedBlackBST Key =
   where
     𝕂 : tp pos
     𝕂 = U (meta (StrictTotalOrder.Carrier Key))
+
 
     data Color : Set where
       red : Color
@@ -148,16 +151,16 @@ RedBlackBST Key =
     irbt : val color → val nat → tp pos
     irbt y n = U (meta (IRBT y n))
 
-    data AlmostRightRBT : (left-color : val color) → val nat → Set where
-      violation :
-        {n : val nat}
-        → IRBT black n → val 𝕂 → IRBT red n
-        → AlmostRightRBT red n
-      valid :
-        {left-color : val color} {n : val nat} {y : val color} → IRBT y n
-        → AlmostRightRBT left-color n
-    arrbt : val color → val nat → tp pos
-    arrbt y n = U (meta (AlmostRightRBT y n))
+    record RBT : Set where
+      pattern
+      constructor ⟪_⟫
+      field
+        {y} : val color
+        {n} : val nat
+        t : val (irbt y n)
+    rbt : tp pos
+    rbt = U (meta RBT)
+
 
     data AlmostLeftRBT : (right-color : val color) → val nat → Set where
       violation :
@@ -170,13 +173,49 @@ RedBlackBST Key =
     alrbt : val color → val nat → tp pos
     alrbt y n = U (meta (AlmostLeftRBT y n))
 
-    joinRight : cmp (
-                    Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
-                    Π 𝕂 λ _ →
-                    Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
-                    Π (U (meta (n₁ > n₂))) λ _ →
-                    F (arrbt y₁ n₁)
-                  )
+    joinLeft :
+      cmp
+        ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
+          Π 𝕂 λ _ →
+          Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+          Π (U (meta (n₁ < n₂))) λ _ →
+          F (alrbt y₂ n₂)
+        )
+    joinLeft y₁ n₁ t₁ k .red n₂ (red t₂₁ k₁ t₂₂) n₁<n₂ =
+      bind (F (alrbt red n₂)) (joinLeft _ _ t₁ k _ _ t₂₁ n₁<n₂) λ
+        { (valid {y = red} t') → ret (violation t' k₁ t₂₂)
+        ; (valid {y = black} t') → ret (valid (red t' k₁ t₂₂)) }
+    joinLeft y₁ n₁ t₁ k .black (suc n₂) (black {y₁ = c} t₂₁ k₁ t₂₂) n₁<n₂ with n₁ Nat.≟ n₂
+    joinLeft red n₁ (red t₁₁ k₁ t₁₂) k .black (suc n₁) (black t₂₁ k₂ t₂₂) n₁<n₂ | yes refl =
+      ret (valid (red (black t₁₁ k₁ t₁₂) k (black t₂₁ k₂ t₂₂)))
+    joinLeft black n₁ t₁ k .black (suc n₁) (black {y₁ = red} (red t₂₁₁ k₁₁ t₂₁₂) k₁ t₂₂) n₁<n₂ | yes refl =
+      ret (valid (red (black t₁ k t₂₁₁) k₁₁ (black t₂₁₂ k₁ t₂₂)))
+    joinLeft black n₁ t₁ k .black (suc n₁) (black {y₁ = black} t₂₁ k₁ t₂₂) n₁<n₂ | yes refl =
+      ret (valid (black (red t₁ k t₂₁) k₁ t₂₂))
+    ... | no n₁≢n₂ =
+      bind (F (alrbt black (suc n₂))) (joinLeft _ _ t₁ k _ _ t₂₁ (Nat.≤∧≢⇒< (Nat.≤-pred n₁<n₂) n₁≢n₂)) λ
+        { (violation (red t'₁₁ k'₁ t'₁₂) k' t'₂) → ret (valid (red (black t'₁₁ k'₁ t'₁₂) k' (black t'₂ k₁ t₂₂)))
+        ; (valid t') → ret (valid (black t' k₁ t₂₂)) }
+
+    data AlmostRightRBT : (left-color : val color) → val nat → Set where
+      violation :
+        {n : val nat}
+        → IRBT black n → val 𝕂 → IRBT red n
+        → AlmostRightRBT red n
+      valid :
+        {left-color : val color} {n : val nat} {y : val color} → IRBT y n
+        → AlmostRightRBT left-color n
+    arrbt : val color → val nat → tp pos
+    arrbt y n = U (meta (AlmostRightRBT y n))
+
+    joinRight :
+      cmp
+        ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
+          Π 𝕂 λ _ →
+          Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+          Π (U (meta (n₁ > n₂))) λ _ →
+          F (arrbt y₁ n₁)
+        )
     joinRight .red n₁ (red t₁₁ k₁ t₁₂) k y₂ n₂ t₂ n₁>n₂ =
       bind (F (arrbt red n₁)) (joinRight _ _ t₁₂ k _ _ t₂ n₁>n₂) λ
         { (valid {y = red} t') → ret (violation t₁₁ k₁ t')
@@ -192,39 +231,6 @@ RedBlackBST Key =
       bind (F (arrbt black (suc n₁))) (joinRight _ _ t₁₂ k _ _ t₂ (Nat.≤∧≢⇒< (Nat.≤-pred n₁>n₂) (≢-sym n₁≢n₂))) λ
         { (violation t'₁ k' (red t'₂₁ k'₂ t'₂₂)) → ret (valid (red (black t₁₁ k₁ t'₁) k' (black t'₂₁ k'₂ t'₂₂)))
         ; (valid t') → ret (valid (black t₁₁ k₁ t'))  }
-
-    joinLeft : cmp (
-                    Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
-                    Π 𝕂 λ _ →
-                    Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
-                    Π (U (meta (n₁ < n₂))) λ _ →
-                    F (alrbt y₂ n₂)
-                  )
-    joinLeft y₁ n₁ t₁ k .red n₂ (red t₂₁ k₁ t₂₂) n₁<n₂ =
-      bind (F (alrbt red n₂)) (joinLeft _ _ t₁ k _ _ t₂₁ n₁<n₂) λ
-      { (valid {y = red} t') → ret (violation t' k₁ t₂₂)
-      ; (valid {y = black} t') → ret (valid (red t' k₁ t₂₂)) }
-    joinLeft y₁ n₁ t₁ k .black (suc n₂) (black {y₁ = c} t₂₁ k₁ t₂₂) n₁<n₂ with n₁ Nat.≟ n₂
-    joinLeft red n₁ (red t₁₁ k₁ t₁₂) k .black (suc n₁) (black t₂₁ k₂ t₂₂) n₁<n₂ | yes refl =
-      ret (valid (red (black t₁₁ k₁ t₁₂) k (black t₂₁ k₂ t₂₂)))
-    joinLeft black n₁ t₁ k .black (suc n₁) (black {y₁ = red} (red t₂₁₁ k₁₁ t₂₁₂) k₁ t₂₂) n₁<n₂ | yes refl =
-      ret (valid (red (black t₁ k t₂₁₁) k₁₁ (black t₂₁₂ k₁ t₂₂)))
-    joinLeft black n₁ t₁ k .black (suc n₁) (black {y₁ = black} t₂₁ k₁ t₂₂) n₁<n₂ | yes refl =
-      ret (valid (black (red t₁ k t₂₁) k₁ t₂₂))
-    ... | no n₁≢n₂ =
-      bind (F (alrbt black (suc n₂))) (joinLeft _ _ t₁ k _ _ t₂₁ (Nat.≤∧≢⇒< (Nat.≤-pred n₁<n₂) n₁≢n₂)) λ
-       { (violation (red t'₁₁ k'₁ t'₁₂) k' t'₂) → ret (valid (red (black t'₁₁ k'₁ t'₁₂) k' (black t'₂ k₁ t₂₂)))
-       ; (valid t') → ret (valid (black t' k₁ t₂₂)) }
-
-    record RBT : Set where
-      pattern
-      constructor ⟪_⟫
-      field
-        {y} : val color
-        {n} : val nat
-        t : val (irbt y n)
-    rbt : tp pos
-    rbt = U (meta RBT)
 
     i-joinMid :
       cmp
@@ -248,6 +254,7 @@ RedBlackBST Key =
 
     joinMid : cmp (Π rbt λ _ → Π 𝕂 λ _ → Π rbt λ _ → F rbt)
     joinMid ⟪ t₁ ⟫ k ⟪ t₂ ⟫ = i-joinMid _ _ t₁ k _ _ t₂
+
 
     i-rec : {X : tp neg} →
       cmp
@@ -287,8 +294,9 @@ RedBlackBST Key =
         (λ _ _ t₁ ih₁ k _ _ t₂ ih₂ → f ⟪ t₁ ⟫ ih₁ k ⟪ t₂ ⟫ ih₂)
         _ _ t
 
+
 module Ex/NatSet where
-  open ParametricBST (ListBST Nat.<-strictTotalOrder)
+  open ParametricBST (RedBlackBST Nat.<-strictTotalOrder)
 
   example : cmp Split
   example =
@@ -300,7 +308,8 @@ module Ex/NatSet where
 
   -- run Ctrl-C Ctrl-N here
   compute : cmp Split
-  compute = ret {!   !}
+  compute = {! example  !}
+
 
 module Ex/NatStringDict where
   strictTotalOrder : StrictTotalOrder 0ℓ 0ℓ 0ℓ
