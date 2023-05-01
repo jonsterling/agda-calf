@@ -356,14 +356,14 @@ module DynamicArray where
     field
       quit   : cmp D
       append : cmp (Π A λ _ → dynamic-array A)
-      get    : cmp (Π nat λ _ → prod⁻ (◯⁻ (F (maybe A))) (dynamic-array A))
+      get    : cmp (Π nat λ _ → Σ+- (maybe A) λ _ → dynamic-array A)
   postulate
     dynamic-array/decode : val (U (dynamic-array A)) ≡ DynamicArray A
     {-# REWRITE dynamic-array/decode #-}
 
-    quit/step   : ∀ {c e} → DynamicArray.quit   (step (dynamic-array A) c e) ≡ step D                                                        c (DynamicArray.quit   e)
-    append/step : ∀ {c e} → DynamicArray.append (step (dynamic-array A) c e) ≡ step (Π A λ _ → dynamic-array A)                              c (DynamicArray.append e)
-    get/step    : ∀ {c e} → DynamicArray.get    (step (dynamic-array A) c e) ≡ step (Π nat λ _ → prod⁻ (◯⁻ (F (maybe A))) (dynamic-array A)) c (DynamicArray.get    e)
+    quit/step   : ∀ {c e} → DynamicArray.quit   (step (dynamic-array A) c e) ≡ step D                                                 c (DynamicArray.quit   e)
+    append/step : ∀ {c e} → DynamicArray.append (step (dynamic-array A) c e) ≡ step (Π A λ _ → dynamic-array A)                       c (DynamicArray.append e)
+    get/step    : ∀ {c e} → DynamicArray.get    (step (dynamic-array A) c e) ≡ step (Π nat λ _ → Σ+- (maybe A) λ _ → dynamic-array A) c (DynamicArray.get    e)
     {-# REWRITE quit/step append/step get/step #-}
 
   Φ : val nat → val nat → ℂ
@@ -378,16 +378,16 @@ module DynamicArray where
   DynamicArray.append (array n zero) triv = step (dynamic-array unit) (2 ^ n) (array (suc n) pred[2^ n ])
   DynamicArray.append (array n (suc m)) triv = array n m
   DynamicArray.get (array n m) i with i Nat.<? 2 ^ n ∸ m
-  ... | no ¬p = (λ _ → ret nothing) , array n m
-  ... | yes p = (λ _ → ret (just triv)) , array n m
+  ... | no ¬p = nothing , array n m
+  ... | yes p = just triv , array n m
 
   {-# TERMINATING #-}
   SPEC/array : cmp (Π nat λ _ → dynamic-array unit)
   DynamicArray.quit (SPEC/array n) = exactly
   DynamicArray.append (SPEC/array n) triv = step (dynamic-array unit) 2 (SPEC/array (suc n))
   DynamicArray.get (SPEC/array n) i with i Nat.<? n
-  ... | no ¬p = (λ _ → ret nothing) , SPEC/array n
-  ... | yes p = (λ _ → ret (just triv)) , SPEC/array n
+  ... | no ¬p = nothing , SPEC/array n
+  ... | yes p = just triv , SPEC/array n
 
   record _≈_ {A : tp pos} (d₁ d₂ : cmp (dynamic-array A)) : Set where
     coinductive
@@ -398,16 +398,14 @@ module DynamicArray where
         Π A λ a → meta (DynamicArray.append d₁ a ≈ DynamicArray.append d₂ a)
       get    : cmp $
         Π nat λ i →
-          prod⁻
-            (ext/cmp λ u → meta (proj₁ (DynamicArray.get d₁ i) u ≡ proj₁ (DynamicArray.get d₂ i) u))
-            (meta (proj₂ (DynamicArray.get d₁ i) ≈ proj₂ (DynamicArray.get d₂ i)))
+          Σ+-
+            (U (meta (proj₁ (DynamicArray.get d₁ i) ≡ proj₁ (DynamicArray.get d₂ i))))
+            λ _ → meta (proj₂ (DynamicArray.get d₁ i) ≈ proj₂ (DynamicArray.get d₂ i))
 
   ≈-cong : (c : cmp cost) {x y : DynamicArray A} → x ≈ y → step (dynamic-array A) c x ≈ step (dynamic-array A) c y
   _≈_.quit (≈-cong c h) = Eq.cong (step D c) (_≈_.quit h)
   _≈_.append (≈-cong c h) a = ≈-cong c (_≈_.append h a)
-  _≈_.get (≈-cong {A} c h) i =
-    (λ u → Eq.cong (step (F (maybe A)) c) (proj₁ (_≈_.get h i) u)) ,
-    ≈-cong c (proj₂ (_≈_.get h i))
+  _≈_.get (≈-cong c h) i = proj₁ (_≈_.get h i) , ≈-cong c (proj₂ (_≈_.get h i))
 
   -- from unreleased agda-stdlib
   2^n>0 : ∀ (n : ℕ) → 2 ^ n > 0
@@ -506,9 +504,5 @@ module DynamicArray where
       ∎)
       (array≈SPEC/array n m (Nat.<⇒≤ h))
   _≈_.get (array≈SPEC/array n m h) i with i Nat.<? 2 ^ n ∸ m
-  ... | no ¬p =
-          (λ u → Eq.sym (step/ext (F (maybe unit)) (ret nothing) (2 ^ n ∸ 2 * m) u)) ,
-          array≈SPEC/array n m h
-  ... | yes p =
-          (λ u → Eq.sym (step/ext (F (maybe unit)) (ret (just triv)) (2 ^ n ∸ 2 * m) u)) ,
-          array≈SPEC/array n m h
+  ... | no ¬p = refl , array≈SPEC/array n m h
+  ... | yes p = refl , array≈SPEC/array n m h
