@@ -354,19 +354,21 @@ module Queue where
 
 
 module DynamicArray where
-  record DynamicArray (A : tp pos) : Set where
+  record DynamicArray (A : tp pos) : Set
+  dynamic-array : tp pos → tp neg
+
+  record DynamicArray A where
     coinductive
     field
-      quit : cmp (F unit)
-      append : cmp (Π A λ _ → meta (DynamicArray A))
-      get : cmp (Π nat λ _ → F (prod⁺ (maybe A) (U (meta (DynamicArray A)))))
-  dynamic-array : tp pos → tp neg
+      quit   : cmp (F unit)
+      append : cmp (Π A λ _ → dynamic-array A)
+      get    : cmp (Π nat λ _ → F (prod⁺ (maybe A) (U (dynamic-array A))))
   dynamic-array A = meta (DynamicArray A)
 
   postulate
-    quit/step   : ∀ {c e} → DynamicArray.quit   (step (dynamic-array A) c e) ≡ step (F unit)                                                      c (DynamicArray.quit   e)
-    append/step : ∀ {c e} → DynamicArray.append (step (dynamic-array A) c e) ≡ step (Π A λ _ → dynamic-array A)                                   c (DynamicArray.append e)
-    get/step    : ∀ {c e} → DynamicArray.get    (step (dynamic-array A) c e) ≡ step (Π nat λ _ → F (prod⁺ (maybe A) (U (meta (DynamicArray A))))) c (DynamicArray.get    e)
+    quit/step   : ∀ {c e} → DynamicArray.quit   (step (dynamic-array A) c e) ≡ step (F unit)                                                c (DynamicArray.quit   e)
+    append/step : ∀ {c e} → DynamicArray.append (step (dynamic-array A) c e) ≡ step (Π A λ _ → dynamic-array A)                             c (DynamicArray.append e)
+    get/step    : ∀ {c e} → DynamicArray.get    (step (dynamic-array A) c e) ≡ step (Π nat λ _ → F (prod⁺ (maybe A) (U (dynamic-array A)))) c (DynamicArray.get    e)
   {-# REWRITE quit/step append/step get/step #-}
 
   Φ : val nat → val nat → ℂ
@@ -399,8 +401,8 @@ module DynamicArray where
       append : cmp (Π A λ a → meta (DynamicArray.append d₁ a ≈ DynamicArray.append d₂ a))
       get :
         (i : val nat) →
-          Σ ℂ λ c₁ → Σ (val (maybe A)) λ a₁ → Σ (cmp (dynamic-array A)) λ d₁' → DynamicArray.get d₁ i ≡ step (F (prod⁺ (maybe A) (U (meta (DynamicArray A))))) c₁ (ret (a₁ , d₁')) ×
-          Σ ℂ λ c₂ → Σ (val (maybe A)) λ a₂ → Σ (cmp (dynamic-array A)) λ d₂' → DynamicArray.get d₂ i ≡ step (F (prod⁺ (maybe A) (U (meta (DynamicArray A))))) c₂ (ret (a₂ , d₂')) ×
+          Σ ℂ λ c₁ → Σ (val (maybe A)) λ a₁ → Σ (cmp (dynamic-array A)) λ d₁' → DynamicArray.get d₁ i ≡ step (F (prod⁺ (maybe A) (U (dynamic-array A)))) c₁ (ret (a₁ , d₁')) ×
+          Σ ℂ λ c₂ → Σ (val (maybe A)) λ a₂ → Σ (cmp (dynamic-array A)) λ d₂' → DynamicArray.get d₂ i ≡ step (F (prod⁺ (maybe A) (U (dynamic-array A)))) c₂ (ret (a₂ , d₂')) ×
           -- (c₁ ≡ c₂) ×  -- not amortized
           (a₁ ≡ a₂) ×
           -- (d₁' ≈ d₂')  -- not amortized
