@@ -4,22 +4,16 @@ module Calf.Types.Product where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
+open import Relation.Binary.PropositionalEquality using (_≡_)
 
 open import Data.Product using (_×_; _,_; proj₁; proj₂) public
 
-prod⁺ : tp pos → tp pos → tp pos
-prod⁺ A B = U (meta (val A × val B))
+postulate
+  prod⁺ : tp pos → tp pos → tp pos
+  prod⁺/decode : {A B : tp pos} → val (prod⁺ A B) ≡ (val A × val B)
+  {-# REWRITE prod⁺/decode #-}
 
--- Doesn't seem to work?
--- prod⁻ : tp neg → tp neg → tp neg
--- prod⁻ X Y = meta (cmp X × cmp Y)
-
-record Prod⁻ (X Y : tp neg) : Set where
-  constructor _,_
-  field
-    proj₁ : cmp X
-    proj₂ : cmp Y
-open Prod⁻ public
-
-prod⁻ : tp neg → tp neg → tp neg
-prod⁻ X Y = meta (Prod⁻ X Y)
+postulate
+  prod⁻ : tp neg → tp neg → tp neg
+  prod⁻/decode : {X Y : tp neg} → val (U (prod⁻ X Y)) ≡ (cmp X × cmp Y)
+  {-# REWRITE prod⁻/decode #-}

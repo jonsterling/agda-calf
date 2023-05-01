@@ -34,20 +34,20 @@ variable
 
 
 module Simple where
-  record Simple : Set
-  simple : tp neg
-
-  record Simple where
+  postulate
+    simple : tp neg
+  record Simple : Set where
     coinductive
     field
       here : cmp (F unit)
       next : cmp simple
-  simple = meta Simple
-
   postulate
+    simple/decode : val (U simple) ≡ Simple
+    {-# REWRITE simple/decode #-}
+
     here/step : ∀ {c e} → Simple.here (step simple c e) ≡ step (F unit) c (Simple.here e)
     next/step : ∀ {c e} → Simple.next (step simple c e) ≡ step simple   c (Simple.next e)
-  {-# REWRITE here/step next/step #-}
+    {-# REWRITE here/step next/step #-}
 
   {-# TERMINATING #-}
   every : cmp simple
@@ -86,22 +86,22 @@ module Queue where
   E : tp pos
   E = nat
 
-  record Queue (X : tp neg) : Set
-  queue : tp neg → tp neg
-
-  record Queue X where
+  postulate
+    queue : tp neg → tp neg
+  record Queue (X : tp neg) : Set where
     coinductive
     field
       quit    : cmp X
       enqueue : cmp (Π E λ _ → queue X)
       dequeue : cmp (prod⁻ (◯⁻ (F (maybe E))) (queue X))
-  queue X = meta (Queue X)
-
   postulate
+    queue/decode : val (U (queue X)) ≡ Queue X
+    {-# REWRITE queue/decode #-}
+
     quit/step    : ∀ {c e} → Queue.quit    (step (queue X) c e) ≡ step X                                    c (Queue.quit e)
     enqueue/step : ∀ {c e} → Queue.enqueue (step (queue X) c e) ≡ step (Π E λ _ → queue X)                  c (Queue.enqueue e)
     dequeue/step : ∀ {c e} → Queue.dequeue (step (queue X) c e) ≡ step (prod⁻ (◯⁻ (F (maybe E))) (queue X)) c (Queue.dequeue e)
-  {-# REWRITE quit/step enqueue/step dequeue/step #-}
+    {-# REWRITE quit/step enqueue/step dequeue/step #-}
 
   -- only *D*iscards cost
   D : tp neg
@@ -268,14 +268,15 @@ module Queue where
   --     ∎) ,
   --   issue c₁ c₂
 
-  data QueueProgram (A : tp pos) : Set
-  queue-program : tp pos → tp pos
-
-  data QueueProgram A where
+  postulate
+    queue-program : tp pos → tp pos
+  data QueueProgram (A : tp pos) : Set where
     return  : val A → QueueProgram A
     enqueue : val E → val (queue-program A) → QueueProgram A
     dequeue : val (U (Π (U (◯⁻ (F (maybe E)))) (λ _ → F (queue-program A)))) → QueueProgram A
-  queue-program A = U (meta (QueueProgram A))
+  postulate
+    queue-program/decode : val (queue-program A) ≡ QueueProgram A
+    {-# REWRITE queue-program/decode #-}
 
   {-# TERMINATING #-}
   ψ : cmp (Π (queue-program A) λ _ → Π (U (queue D)) λ _ → F A)
@@ -357,22 +358,22 @@ module DynamicArray where
   D : tp neg
   D = [ F unit ∣ ext ↪ (λ _ → ret triv) ]
 
-  record DynamicArray (A : tp pos) : Set
-  dynamic-array : tp pos → tp neg
-
-  record DynamicArray A where
+  postulate
+    dynamic-array : tp pos → tp neg
+  record DynamicArray (A : tp pos) : Set where
     coinductive
     field
       quit   : cmp D
       append : cmp (Π A λ _ → dynamic-array A)
       get    : cmp (Π nat λ _ → prod⁻ (◯⁻ (F (maybe A))) (dynamic-array A))
-  dynamic-array A = meta (DynamicArray A)
-
   postulate
+    dynamic-array/decode : val (U (dynamic-array A)) ≡ DynamicArray A
+    {-# REWRITE dynamic-array/decode #-}
+
     quit/step   : ∀ {c e} → DynamicArray.quit   (step (dynamic-array A) c e) ≡ step D                                                        c (DynamicArray.quit   e)
     append/step : ∀ {c e} → DynamicArray.append (step (dynamic-array A) c e) ≡ step (Π A λ _ → dynamic-array A)                              c (DynamicArray.append e)
     get/step    : ∀ {c e} → DynamicArray.get    (step (dynamic-array A) c e) ≡ step (Π nat λ _ → prod⁻ (◯⁻ (F (maybe A))) (dynamic-array A)) c (DynamicArray.get    e)
-  {-# REWRITE quit/step append/step get/step #-}
+    {-# REWRITE quit/step append/step get/step #-}
 
   Φ : val nat → val nat → ℂ
   Φ n m = 2 ^ n ∸ 2 * m
