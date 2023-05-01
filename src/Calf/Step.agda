@@ -32,6 +32,9 @@ postulate
   Π/step : ∀ {A} {X : val A → tp neg} {f : cmp (Π A X)} {n} → step (Π A X) n f ≡ λ x → step (X x) n (f x)
   {-# REWRITE Π/step #-}
 
+  Σ+-/step : ∀ {A P c e} → step (Σ+- A P) c e ≡ (proj₁ e , step (P (proj₁ e)) c (proj₂ e))
+  {-# REWRITE Σ+-/step #-}
+
   prod⁻/step : {X Y : tp neg} {c : ℂ} {e : cmp (prod⁻ X Y)} →
     step (prod⁻ X Y) c e ≡ (step X c (proj₁ e) , step Y c (proj₂ e))
   {-# REWRITE prod⁻/step  #-}
