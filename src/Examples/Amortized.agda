@@ -103,21 +103,17 @@ module Queue where
     dequeue/step : ∀ {c e} → Queue.dequeue (step (queue X) c e) ≡ step (Σ+- (maybe E) (λ _ → queue X)) c (Queue.dequeue e)
     {-# REWRITE quit/step enqueue/step dequeue/step #-}
 
-  -- only *D*iscards cost
-  D : tp neg
-  D = [ F unit ∣ ext ↪ (λ _ → ret triv) ]
-
   {-# TERMINATING #-}
-  list-queue : cmp (Π (list E) λ _ → queue D)
-  Queue.quit (list-queue l) = exactly
-  Queue.enqueue (list-queue l) e = step (queue D) (length l) (list-queue (l ++ [ e ]))
+  list-queue : cmp (Π (list E) λ _ → queue (F unit))
+  Queue.quit (list-queue l) = ret triv
+  Queue.enqueue (list-queue l) e = step (queue (F unit)) (length l) (list-queue (l ++ [ e ]))
   Queue.dequeue (list-queue []     ) = nothing , list-queue []
   Queue.dequeue (list-queue (e ∷ l)) = just e , list-queue l
 
   {-# TERMINATING #-}
-  SPEC/list-queue : cmp (Π (list E) λ _ → queue D)
-  Queue.quit (SPEC/list-queue l) = exactly
-  Queue.enqueue (SPEC/list-queue l) e = step (queue D) 1 (SPEC/list-queue (l ++ [ e ]))
+  SPEC/list-queue : cmp (Π (list E) λ _ → queue (F unit))
+  Queue.quit (SPEC/list-queue l) = ret triv
+  Queue.enqueue (SPEC/list-queue l) e = step (queue (F unit)) 1 (SPEC/list-queue (l ++ [ e ]))
   Queue.dequeue (SPEC/list-queue []     ) = nothing , SPEC/list-queue []
   Queue.dequeue (SPEC/list-queue (e ∷ l)) = just e , SPEC/list-queue l
 
@@ -125,18 +121,18 @@ module Queue where
   Φ bl fl = length bl
 
   {-# TERMINATING #-}
-  batched-queue : cmp (Π (list E) λ _ → Π (list E) λ _ → queue D)
-  Queue.quit (batched-queue bl fl) = witnessed-by (step/ext (F unit) (ret triv) (Φ bl fl))
+  batched-queue : cmp (Π (list E) λ _ → Π (list E) λ _ → queue (F unit))
+  Queue.quit (batched-queue bl fl) = step (F unit) (Φ bl fl) (ret triv)
   Queue.enqueue (batched-queue bl fl) e = batched-queue (e ∷ bl) fl
   Queue.dequeue (batched-queue bl []) with reverse bl
   ... | [] = nothing , batched-queue [] []
-  ... | e ∷ fl = step (Σ+- (maybe E) λ _ → queue D) (length bl) (just e , batched-queue [] fl)
+  ... | e ∷ fl = step (Σ+- (maybe E) λ _ → queue (F unit)) (length bl) (just e , batched-queue [] fl)
   Queue.dequeue (batched-queue bl (e ∷ fl)) = just e , batched-queue bl fl
 
   {-# TERMINATING #-}
-  SPEC/batched-queue : cmp (Π (list E) λ _ → Π (list E) λ _ → queue D)
-  Queue.quit (SPEC/batched-queue bl fl) = exactly
-  Queue.enqueue (SPEC/batched-queue bl fl) e = step (queue D) 1 (SPEC/batched-queue (e ∷ bl) fl)
+  SPEC/batched-queue : cmp (Π (list E) λ _ → Π (list E) λ _ → queue (F unit))
+  Queue.quit (SPEC/batched-queue bl fl) = ret triv
+  Queue.enqueue (SPEC/batched-queue bl fl) e = step (queue (F unit)) 1 (SPEC/batched-queue (e ∷ bl) fl)
   Queue.dequeue (SPEC/batched-queue bl []) with reverse bl
   ... | [] = nothing , SPEC/batched-queue [] []
   ... | e ∷ fl = just e , SPEC/batched-queue [] fl
@@ -161,11 +157,11 @@ module Queue where
 
   {-# TERMINATING #-}
   batched-queue≈SPEC/batched-queue : (bl fl : val (list E)) →
-    batched-queue bl fl ≈ step (queue D) (Φ bl fl) (SPEC/batched-queue bl fl)
-  _≈_.quit (batched-queue≈SPEC/batched-queue bl fl) = extension-≡ refl
+    batched-queue bl fl ≈ step (queue (F unit)) (Φ bl fl) (SPEC/batched-queue bl fl)
+  _≈_.quit (batched-queue≈SPEC/batched-queue bl fl) = refl
   _≈_.enqueue (batched-queue≈SPEC/batched-queue bl fl) e =
     Eq.subst
-      (λ c → batched-queue (e ∷ bl) fl ≈ step (queue D) c (SPEC/batched-queue (e ∷ bl) fl))
+      (λ c → batched-queue (e ∷ bl) fl ≈ step (queue (F unit)) c (SPEC/batched-queue (e ∷ bl) fl))
       (Nat.+-comm 1 (length bl))
       (batched-queue≈SPEC/batched-queue (e ∷ bl) fl)
   _≈_.dequeue (batched-queue≈SPEC/batched-queue bl []) with reverse bl | List.reverse-injective {xs = bl} {ys = []}
@@ -178,11 +174,11 @@ module Queue where
 
   {-# TERMINATING #-}
   batched-queue≈SPEC/list-queue : (bl fl : val (list E)) →
-    batched-queue bl fl ≈ step (queue D) (Φ bl fl) (SPEC/list-queue (fl ++ reverse bl))
-  _≈_.quit (batched-queue≈SPEC/list-queue bl fl) = extension-≡ refl
+    batched-queue bl fl ≈ step (queue (F unit)) (Φ bl fl) (SPEC/list-queue (fl ++ reverse bl))
+  _≈_.quit (batched-queue≈SPEC/list-queue bl fl) = refl
   _≈_.enqueue (batched-queue≈SPEC/list-queue bl fl) e =
     Eq.subst₂
-      (λ c l → batched-queue (e ∷ bl) fl ≈ step (queue D) c (SPEC/list-queue l))
+      (λ c l → batched-queue (e ∷ bl) fl ≈ step (queue (F unit)) c (SPEC/list-queue l))
       (Nat.+-comm 1 (length bl))
       (let open ≡-Reasoning in
       begin
@@ -224,11 +220,11 @@ module Queue where
   {-# TERMINATING #-}
   ◯[list-queue≈batched-queue] : (bl fl : val (list E)) → ◯ (list-queue (fl ++ reverse bl) ≈ batched-queue bl fl)
   _≈_.quit (◯[list-queue≈batched-queue] bl fl u) =
-    extension-≡ (Eq.sym (step/ext (F unit) (ret triv) (length bl) u))
+    Eq.sym (step/ext (F unit) (ret triv) (length bl) u)
   _≈_.enqueue (◯[list-queue≈batched-queue] bl fl u) e =
     Eq.subst
       (_≈ Queue.enqueue (batched-queue bl fl) e)
-      (Eq.sym (step/ext (queue D) (list-queue _) (length (fl ++ reverse bl)) u))
+      (Eq.sym (step/ext (queue (F unit)) (list-queue _) (length (fl ++ reverse bl)) u))
       (Eq.subst
         (λ l → list-queue l ≈ batched-queue (e ∷ bl) fl)
         {x = fl ++ reverse (e ∷ bl)}
@@ -250,7 +246,7 @@ module Queue where
     Eq.subst₂
       _≈_
       (Eq.cong list-queue (List.++-identityʳ fl))
-      (Eq.sym (step/ext (queue D) (batched-queue [] fl) (Φ bl fl) u))
+      (Eq.sym (step/ext (queue (F unit)) (batched-queue [] fl) (Φ bl fl) u))
       (◯[list-queue≈batched-queue] [] fl u)
   _≈_.dequeue (◯[list-queue≈batched-queue] bl (e ∷ fl) u) =
     refl , ◯[list-queue≈batched-queue] bl fl u
@@ -305,23 +301,19 @@ module Queue where
 
 
 module DynamicArray where
-  -- only *D*iscards cost
-  D : tp neg
-  D = [ F unit ∣ ext ↪ (λ _ → ret triv) ]
-
   postulate
     dynamic-array : tp pos → tp neg
   record DynamicArray (A : tp pos) : Set where
     coinductive
     field
-      quit   : cmp D
+      quit   : cmp (F unit)
       append : cmp (Π A λ _ → dynamic-array A)
       get    : cmp (Π nat λ _ → Σ+- (maybe A) λ _ → dynamic-array A)
   postulate
     dynamic-array/decode : val (U (dynamic-array A)) ≡ DynamicArray A
     {-# REWRITE dynamic-array/decode #-}
 
-    quit/step   : ∀ {c e} → DynamicArray.quit   (step (dynamic-array A) c e) ≡ step D                                                 c (DynamicArray.quit   e)
+    quit/step   : ∀ {c e} → DynamicArray.quit   (step (dynamic-array A) c e) ≡ step (F unit)                                          c (DynamicArray.quit   e)
     append/step : ∀ {c e} → DynamicArray.append (step (dynamic-array A) c e) ≡ step (Π A λ _ → dynamic-array A)                       c (DynamicArray.append e)
     get/step    : ∀ {c e} → DynamicArray.get    (step (dynamic-array A) c e) ≡ step (Π nat λ _ → Σ+- (maybe A) λ _ → dynamic-array A) c (DynamicArray.get    e)
     {-# REWRITE quit/step append/step get/step #-}
@@ -334,7 +326,7 @@ module DynamicArray where
   -- length of allocated array: (2 ^ n)
   -- remaining free spaces: m (≤ 2 ^ (pred n))
   array : cmp (Π nat λ _ → Π nat λ _ → dynamic-array unit)
-  DynamicArray.quit (array n m) = witnessed-by (step/ext (F unit) (ret triv) (Φ n m))
+  DynamicArray.quit (array n m) = step (F unit) (Φ n m) (ret triv)
   DynamicArray.append (array n zero) triv = step (dynamic-array unit) (2 ^ n) (array (suc n) pred[2^ n ])
   DynamicArray.append (array n (suc m)) triv = array n m
   DynamicArray.get (array n m) i with i Nat.<? 2 ^ n ∸ m
@@ -343,7 +335,7 @@ module DynamicArray where
 
   {-# TERMINATING #-}
   SPEC/array : cmp (Π nat λ _ → dynamic-array unit)
-  DynamicArray.quit (SPEC/array n) = exactly
+  DynamicArray.quit (SPEC/array n) = ret triv
   DynamicArray.append (SPEC/array n) triv = step (dynamic-array unit) 2 (SPEC/array (suc n))
   DynamicArray.get (SPEC/array n) i with i Nat.<? n
   ... | no ¬p = nothing , SPEC/array n
@@ -363,7 +355,7 @@ module DynamicArray where
             λ _ → meta (proj₂ (DynamicArray.get d₁ i) ≈ proj₂ (DynamicArray.get d₂ i))
 
   ≈-cong : (c : cmp cost) {x y : DynamicArray A} → x ≈ y → step (dynamic-array A) c x ≈ step (dynamic-array A) c y
-  _≈_.quit (≈-cong c h) = Eq.cong (step D c) (_≈_.quit h)
+  _≈_.quit (≈-cong c h) = Eq.cong (step (F unit) c) (_≈_.quit h)
   _≈_.append (≈-cong c h) a = ≈-cong c (_≈_.append h a)
   _≈_.get (≈-cong c h) i = proj₁ (_≈_.get h i) , ≈-cong c (proj₂ (_≈_.get h i))
 
@@ -383,7 +375,7 @@ module DynamicArray where
   {-# TERMINATING #-}
   array≈SPEC/array : (n m : val nat) → m Nat.≤ pred[2^ pred n ] →
     array n m ≈ step (dynamic-array unit) (2 ^ n ∸ 2 * m) (SPEC/array (2 ^ n ∸ m))
-  _≈_.quit (array≈SPEC/array n m h) = extension-≡ refl
+  _≈_.quit (array≈SPEC/array n m h) = refl
   _≈_.append (array≈SPEC/array n zero h) triv =
     Eq.subst₂
       (λ c x →
