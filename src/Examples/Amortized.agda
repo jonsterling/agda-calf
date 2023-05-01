@@ -142,7 +142,7 @@ module Queue where
   ... | e ∷ fl = just e , SPEC/batched-queue [] fl
   Queue.dequeue (SPEC/batched-queue bl (e ∷ fl)) = just e , SPEC/batched-queue bl fl
 
-  record _≈_ {X : tp neg} (q₁ q₂ : cmp (queue X)) : Set where
+  record _≈_ (q₁ q₂ : cmp (queue X)) : Set where
     coinductive
     field
       quit    : cmp $
@@ -155,7 +155,7 @@ module Queue where
           λ _ → meta (proj₂ (Queue.dequeue q₁) ≈ proj₂ (Queue.dequeue q₂))
 
   ≈-cong : (c : ℂ) {x y : Queue X} → x ≈ y → step (queue X) c x ≈ step (queue X) c y
-  _≈_.quit (≈-cong {X = X} c {x} {y} h) = Eq.cong (step X c) (_≈_.quit h)
+  _≈_.quit (≈-cong {X = X} c h) = Eq.cong (step X c) (_≈_.quit h)
   _≈_.enqueue (≈-cong c h) e = ≈-cong c (_≈_.enqueue h e)
   _≈_.dequeue (≈-cong c h) = proj₁ (_≈_.dequeue h) , ≈-cong c (proj₂ (_≈_.dequeue h))
 
@@ -208,6 +208,18 @@ module Queue where
   _≈_.dequeue (batched-queue≈SPEC/list-queue bl (e ∷ fl)) =
     refl , batched-queue≈SPEC/list-queue bl fl
 
+  -- {-# TERMINATING #-}
+  -- fake-queue : cmp (queue (F unit))
+  -- Queue.quit fake-queue = ret triv
+  -- Queue.enqueue fake-queue e = fake-queue
+  -- Queue.dequeue fake-queue = nothing , fake-queue
+
+  -- issue : (c₁ c₂ : ℂ) → step (queue (F unit)) c₁ fake-queue ≈ step (queue (F unit)) c₂ fake-queue
+  -- _≈_.quit (issue c₁ c₂) = {!   !}
+  -- _≈_.enqueue (issue c₁ c₂) e = issue c₁ c₂
+  -- _≈_.dequeue (issue c₁ c₂) =
+  --   refl , issue c₁ c₂
+
 
   {-# TERMINATING #-}
   ◯[list-queue≈batched-queue] : (bl fl : val (list E)) → ◯ (list-queue (fl ++ reverse bl) ≈ batched-queue bl fl)
@@ -243,18 +255,6 @@ module Queue where
   _≈_.dequeue (◯[list-queue≈batched-queue] bl (e ∷ fl) u) =
     refl , ◯[list-queue≈batched-queue] bl fl u
 
-  -- {-# TERMINATING #-}
-  -- fake-queue : cmp (queue (F unit))
-  -- Queue.quit fake-queue = ret triv
-  -- Queue.enqueue fake-queue e = fake-queue
-  -- Queue.dequeue fake-queue = nothing , fake-queue
-
-  -- issue : (c₁ c₂ : ℂ) → step (queue (F unit)) c₁ fake-queue ≈ step (queue (F unit)) c₂ fake-queue
-  -- _≈_.quit (issue c₁ c₂) = {!   !}
-  -- _≈_.enqueue (issue c₁ c₂) e = issue c₁ c₂
-  -- _≈_.dequeue (issue c₁ c₂) =
-  --   refl , issue c₁ c₂
-
 
   postulate
     queue-program : tp pos → tp pos
@@ -267,14 +267,14 @@ module Queue where
     {-# REWRITE queue-program/decode #-}
 
   ψ : val (queue-program A) → cmp (queue X) → val (prod⁺ A (U X))
-  ψ {A = A} (return b) q = b , Queue.quit q
+  ψ (return b   ) q = b , Queue.quit q
   ψ (enqueue e p) q = ψ p (Queue.enqueue q e)
-  ψ (dequeue f) q = ψ (f (proj₁ (Queue.dequeue q))) (proj₂ (Queue.dequeue q))
+  ψ (dequeue f  ) q = ψ (f (proj₁ (Queue.dequeue q))) (proj₂ (Queue.dequeue q))
 
   _≈'_ : (q₁ q₂ : cmp (queue X)) → Set
   _≈'_ q₁ q₂ = (A : tp pos) (p : val (queue-program A)) → ψ p q₁ ≡ ψ p q₂
 
-  classic-amortization : {X : tp neg} {q₁ q₂ : cmp (queue X)} → q₁ ≈ q₂ ⇔ q₁ ≈' q₂
+  classic-amortization : {q₁ q₂ : cmp (queue X)} → q₁ ≈ q₂ ⇔ q₁ ≈' q₂
   classic-amortization {X} = record
     { f = forward
     ; g = backward
