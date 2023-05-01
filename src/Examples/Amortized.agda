@@ -95,7 +95,6 @@ module Queue where
       quit    : cmp X
       enqueue : cmp (Π E λ _ → queue X)
       dequeue : cmp (prod⁻ (◯⁻ (F (maybe E))) (queue X))
-      -- question: what about coproducts, e.g. dequeue : 1 + (E × queue X)
   queue X = meta (Queue X)
 
   postulate
@@ -300,11 +299,11 @@ module Queue where
     where
       forward : {q₁ q₂ : cmp (queue D)} →
         q₁ ≈ q₂ → q₁ ≈' q₂
-      forward {q₁} {q₂} h A (return x) =
+      forward h A (return x) =
         Eq.cong (λ e → bind (F A) (out e) (const (ret x))) (_≈_.quit h)
       forward h A (enqueue e p) =
         forward (_≈_.enqueue h e) A p
-      forward {q₁} {q₂} h A (dequeue f) =
+      forward h A (dequeue f) =
         Eq.cong₂
           (λ e₁ e₂ → bind (F A) (f e₁) e₂)
           (funext/Ω λ u → proj₁ (_≈_.dequeue h) u)

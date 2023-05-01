@@ -10,6 +10,7 @@ open import Data.Product using (_×_; _,_; proj₁; proj₂) public
 prod⁺ : tp pos → tp pos → tp pos
 prod⁺ A B = U (meta (val A × val B))
 
+-- Doesn't seem to work?
 -- prod⁻ : tp neg → tp neg → tp neg
 -- prod⁻ X Y = meta (cmp X × cmp Y)
 
