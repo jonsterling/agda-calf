@@ -32,16 +32,6 @@ variable
   A B C : tp pos
   X Y Z : tp neg
 
-record StepCommutative : Set where
-  field
-    step/bind : (e : cmp (F A)) (f : val A → cmp X) (c : ℂ) →
-      step X c (bind X e f) ≡
-      bind X e (λ a → step X c (f a))
-    bind/bind : (e₁ : cmp (F A)) (e₂ : cmp (F B)) (f : val A → val B → cmp X) →
-      (bind X e₁ λ x₁ → bind X e₂ λ x₂ → f x₁ x₂) ≡
-      (bind X e₂ λ x₂ → bind X e₁ λ x₁ → f x₁ x₂)
-
-
 
 module Simple where
   record Simple : Set
@@ -296,62 +286,11 @@ module Queue where
     bind (F A) (f (proj₁ (Queue.dequeue q))) λ p' →
     ψ p' (proj₂ (Queue.dequeue q))
 
-  {-# TERMINATING #-}
-  step-ψ : StepCommutative → ∀ c p q → step (F A) c (ψ p q) ≡ ψ p (step (queue D) c q)
-  step-ψ step-commutative c (return x) q = refl
-  step-ψ step-commutative c (enqueue e p) q = step-ψ step-commutative c p (Queue.enqueue q e)
-  step-ψ {A} step-commutative c (dequeue f) q =
-    let open ≡-Reasoning in
-    begin
-      step (F A) c (ψ (dequeue f) q)
-    ≡⟨⟩
-      step (F A) c (
-        bind (F A) (f (proj₁ (Queue.dequeue q))) λ p' →
-        ψ p' (proj₂ (Queue.dequeue q))
-      )
-    ≡⟨
-      StepCommutative.step/bind step-commutative
-        {X = F A}
-        (f (proj₁ (Queue.dequeue q)))
-        (λ p' → ψ p' (proj₂ (Queue.dequeue q))) c
-    ⟩
-      ( bind (F A) (f (proj₁ (Queue.dequeue q))) λ p' →
-        step (F A) c (ψ p' (proj₂ (Queue.dequeue q)))
-      )
-    ≡⟨
-      Eq.cong
-        (bind (F A) (f (proj₁ (Queue.dequeue q))))
-        (funext λ p' → step-ψ step-commutative c p' (proj₂ (Queue.dequeue q)))
-    ⟩
-      ( bind (F A) (f (proj₁ (Queue.dequeue q))) λ p' →
-        ψ p' (proj₂ (Queue.dequeue (step (queue D) c q)))
-      )
-    ≡˘⟨
-      Eq.cong
-        (λ e → bind (F A) (f e) λ p' → ψ p' (proj₂ (Queue.dequeue (step (queue D) c q))))
-        (funext/Ω λ u → step/ext (F (maybe E)) (proj₁ (Queue.dequeue q) u) c u)
-    ⟩
-      ( bind (F A) (f (λ u → step (F (maybe E)) c (proj₁ (Queue.dequeue q) u))) λ p' →
-        ψ p' (step (queue D) c (proj₂ (Queue.dequeue q)))
-      )
-    ≡⟨⟩
-      ( bind (F A) (f (proj₁ (Queue.dequeue (step (queue D) c q)))) λ p' →
-        ψ p' (proj₂ (Queue.dequeue (step (queue D) c q)))
-      )
-    ≡⟨⟩
-      ψ (dequeue f) (step (queue D) c q)
-    ∎
-
-  postulate
-    step-ret-injective : (c₁ c₂ : ℂ) (v₁ v₂ : val A) →
-      step (F A) c₁ (ret v₁) ≡ step (F A) c₂ (ret v₂) → v₁ ≡ v₂
-
   _≈'_ : (q₁ q₂ : cmp (queue D)) → Set
   _≈'_ q₁ q₂ = (A : tp pos) (p : val (queue-program A)) → ψ p q₁ ≡ ψ p q₂
 
   {-# TERMINATING #-}
-  classic-amortization : {q₁ q₂ : cmp (queue D)} →
-    q₁ ≈ q₂ ⇔ q₁ ≈' q₂
+  classic-amortization : {q₁ q₂ : cmp (queue D)} → q₁ ≈ q₂ ⇔ q₁ ≈' q₂
   classic-amortization = record
     { f = forward
     ; g = backward
