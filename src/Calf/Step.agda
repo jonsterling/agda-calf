@@ -36,9 +36,21 @@ postulate
     step (prod⁻ X Y) c e ≡ (step X c (proj₁ e) , step Y c (proj₂ e))
   {-# REWRITE prod⁻/step  #-}
 
+  ext/cmp/step : {X : ext → tp neg} {c : ℂ} {e : cmp (ext/cmp X)} →
+    step (ext/cmp X) c e ≡ λ u → step (X u) c (e u)
+  {-# REWRITE ext/cmp/step #-}
+
   bind/step : ∀ {A} {X} {e f n} → bind {A} X (step (F A) n e) f ≡ step X n (bind {A} X e f)
   dbind/step : ∀ {A} {X : val A → tp neg} {e f n} → dbind {A} X (step (F A) n e) f ≡ step (tbind {A} e X) n (dbind {A} X e f)
   {-# REWRITE bind/step dbind/step #-}
 
   step/ext : ∀ X → (e : cmp X) → (c : ℂ) → ◯ (step X c e ≡ e)
   -- sadly the above cannot be made an Agda rewrite rule
+
+  extension/step : ∀ {X spec c e} →
+    step [ X ∣ ext ↪ spec ] c e ≡
+    record
+      { out = step X c (out e)
+      ; law = λ u → trans (step/ext X (out e) c u) (law e u)
+      }
+  {-# REWRITE extension/step #-}
