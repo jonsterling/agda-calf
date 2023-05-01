@@ -12,6 +12,7 @@ open import Calf.Prelude
 open import Calf.Metalanguage
 open import Calf.PhaseDistinction
 open import Relation.Binary.PropositionalEquality
+open import Calf.Types.Product
 
 cost : tp neg
 cost = meta ℂ
@@ -30,6 +31,10 @@ postulate
 
   Π/step : ∀ {A} {X : val A → tp neg} {f : cmp (Π A X)} {n} → step (Π A X) n f ≡ λ x → step (X x) n (f x)
   {-# REWRITE Π/step #-}
+
+  prod⁻/step : {X Y : tp neg} {c : ℂ} {e : cmp (prod⁻ X Y)} →
+    step (prod⁻ X Y) c e ≡ (step X c (proj₁ e) , step Y c (proj₂ e))
+  {-# REWRITE prod⁻/step  #-}
 
   bind/step : ∀ {A} {X} {e f n} → bind {A} X (step (F A) n e) f ≡ step X n (bind {A} X e f)
   dbind/step : ∀ {A} {X : val A → tp neg} {e f n} → dbind {A} X (step (F A) n e) f ≡ step (tbind {A} e X) n (dbind {A} X e f)
