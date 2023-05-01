@@ -73,8 +73,8 @@ open Extension public
 witnessed-by : {X : tp neg} {φ : Ω} {out : cmp X} {spec : (u : φ) → cmp X} → ((u : φ) → out ≡ spec u) → Extension X φ spec
 witnessed-by {out = out} h = record { out = out ; law = h }
 
-exactly : {X : tp neg} {φ : Ω} (spec : cmp X) → Extension X φ λ _ → spec
-exactly x = record { out = x ; law = λ u → refl }
+exactly : {X : tp neg} {φ : Ω} {spec : cmp X} → Extension X φ λ _ → spec
+exactly {spec = spec} = record { out = spec ; law = λ u → refl }
 
 postulate
   extension-≡ : ∀ {X φ spec} {x y : Extension X φ spec} → out x ≡ out y → x ≡ y
