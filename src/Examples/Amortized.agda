@@ -23,7 +23,7 @@ import Data.Nat.Properties as Nat
 open import Data.Nat.PredExp2
 import Data.List.Properties as List
 
-open import Function
+open import Function hiding (_⇔_)
 
 open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
@@ -259,47 +259,46 @@ module Queue where
   data QueueProgram (A : tp pos) : Set where
     return  : val A → QueueProgram A
     enqueue : val E → val (queue-program A) → QueueProgram A
-    dequeue : (val (maybe E) → val (queue-program A)) → QueueProgram A
+    dequeue : val (U (Π (maybe E) λ _ → F (queue-program A))) → QueueProgram A
   postulate
     queue-program/decode : val (queue-program A) ≡ QueueProgram A
     {-# REWRITE queue-program/decode #-}
 
-  ψ : val (queue-program A) → cmp (queue X) → val (prod⁺ A (U X))
-  ψ (return b   ) q = b , Queue.quit q
-  ψ (enqueue e p) q = ψ p (Queue.enqueue q e)
-  ψ (dequeue f  ) q = ψ (f (proj₁ (Queue.dequeue q))) (proj₂ (Queue.dequeue q))
+  {-# TERMINATING #-}
+  ψ : cmp (Π (queue-program A) λ _ → Π (U (queue X)) λ _ → A ⋉ X)
+  ψ {A} {X} (return b   ) q = b , Queue.quit q
+  ψ {A} {X} (enqueue e p) q = ψ p (Queue.enqueue q e)
+  ψ {A} {X} (dequeue f  ) q =
+    bind (A ⋉ X) (f (proj₁ (Queue.dequeue q))) λ p' →
+    ψ p' (proj₂ (Queue.dequeue q))
 
   _≈'_ : (q₁ q₂ : cmp (queue X)) → Set
-  q₁ ≈' q₂ = (A : tp pos) (p : val (queue-program A)) → ψ p q₁ ≡ ψ p q₂
+  q₁ ≈' q₂ = (A : tp pos) → cmp (Π (queue-program A) λ p → meta (ψ p q₁ ≡ ψ p q₂))
 
-  classic-amortization : {q₁ q₂ : cmp (queue X)} → q₁ ≈ q₂ ⇔ q₁ ≈' q₂
-  classic-amortization {X} = record
-    { f = forward
-    ; g = backward
-    ; cong₁ = Eq.cong forward
-    ; cong₂ = Eq.cong backward
-    }
+  infix 3 _⇒_ _⇔_
+  _⇒_ _⇔_ : tp neg → tp neg → tp neg
+  X ⇒ Y = Π (U X) λ _ → Y
+  X ⇔ Y = prod⁻ (X ⇒ Y) (Y ⇒ X)
+
+  {-# TERMINATING #-}
+  classic-amortization : {q₁ q₂ : cmp (queue X)} → cmp (meta (q₁ ≈ q₂) ⇔ meta (q₁ ≈' q₂))
+  classic-amortization {X} = forward , backward
     where
       forward : {q₁ q₂ : cmp (queue X)} → q₁ ≈ q₂ → q₁ ≈' q₂
-      forward h A (return x) = Eq.cong (x ,_) (_≈_.quit h)
+      forward h A (return x   ) = Eq.cong (x ,_) (_≈_.quit h)
       forward h A (enqueue e p) = forward (_≈_.enqueue h e) A p
-      forward {q₁} {q₂} h A (dequeue f) =
-        let open ≡-Reasoning in
-        begin
-          ψ (f (proj₁ (Queue.dequeue q₁))) (proj₂ (Queue.dequeue q₁))
-        ≡⟨ Eq.cong (λ e → ψ (f e) (proj₂ (Queue.dequeue q₁))) (proj₁ (_≈_.dequeue h)) ⟩
-          ψ (f (proj₁ (Queue.dequeue q₂))) (proj₂ (Queue.dequeue q₁))
-        ≡⟨ forward (proj₂ (_≈_.dequeue h)) A (f (proj₁ (Queue.dequeue q₂))) ⟩
-          ψ (f (proj₁ (Queue.dequeue q₂))) (proj₂ (Queue.dequeue q₂))
-        ∎
+      forward h A (dequeue f  ) =
+        Eq.cong₂
+          (λ e₁ e₂ → bind (A ⋉ X) (f e₁) e₂)
+          (proj₁ (_≈_.dequeue h))
+          (funext (forward (proj₂ (_≈_.dequeue h)) A))
 
       backward : {q₁ q₂ : cmp (queue X)} → q₁ ≈' q₂ → q₁ ≈ q₂
-      _≈_.quit (backward typical) = Eq.cong proj₂ (typical unit (return triv))
-      _≈_.enqueue (backward typical) e =
-        backward (λ A p → typical A (enqueue e p))
-      _≈_.dequeue (backward typical) =
-        Eq.cong proj₁ (typical (maybe E) (dequeue (λ e → return e))) ,
-        backward λ A p → typical A (dequeue (λ _ → p))
+      _≈_.quit (backward classic) = Eq.cong proj₂ (classic unit (return triv))
+      _≈_.enqueue (backward classic) e = backward (λ A p → classic A (enqueue e p))
+      _≈_.dequeue (backward classic) =
+        Eq.cong proj₁ (classic (maybe E) (dequeue (ret ∘ return))) ,
+        backward λ A p → classic A (dequeue (λ _ → ret p))
 
 
 module DynamicArray where
