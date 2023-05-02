@@ -32,6 +32,9 @@ variable
   A B C : tp pos
   X Y Z : tp neg
 
+_⋉_ : tp pos → tp neg → tp neg
+A ⋉ X = Σ+- A (const X)
+
 
 module Simple where
   postulate
@@ -93,14 +96,14 @@ module Queue where
     field
       quit    : cmp X
       enqueue : cmp (Π E λ _ → queue X)
-      dequeue : cmp (Σ+- (maybe E) λ _ → queue X)
+      dequeue : cmp (maybe E ⋉ queue X)
   postulate
     queue/decode : val (U (queue X)) ≡ Queue X
     {-# REWRITE queue/decode #-}
 
-    quit/step    : ∀ {c e} → Queue.quit    (step (queue X) c e) ≡ step X                               c (Queue.quit e)
-    enqueue/step : ∀ {c e} → Queue.enqueue (step (queue X) c e) ≡ step (Π E λ _ → queue X)             c (Queue.enqueue e)
-    dequeue/step : ∀ {c e} → Queue.dequeue (step (queue X) c e) ≡ step (Σ+- (maybe E) (λ _ → queue X)) c (Queue.dequeue e)
+    quit/step    : ∀ {c e} → Queue.quit    (step (queue X) c e) ≡ step X                   c (Queue.quit e)
+    enqueue/step : ∀ {c e} → Queue.enqueue (step (queue X) c e) ≡ step (Π E λ _ → queue X) c (Queue.enqueue e)
+    dequeue/step : ∀ {c e} → Queue.dequeue (step (queue X) c e) ≡ step (maybe E ⋉ queue X) c (Queue.dequeue e)
     {-# REWRITE quit/step enqueue/step dequeue/step #-}
 
   {-# TERMINATING #-}
@@ -126,7 +129,7 @@ module Queue where
   Queue.enqueue (batched-queue bl fl) e = batched-queue (e ∷ bl) fl
   Queue.dequeue (batched-queue bl []) with reverse bl
   ... | [] = nothing , batched-queue [] []
-  ... | e ∷ fl = step (Σ+- (maybe E) λ _ → queue (F unit)) (length bl) (just e , batched-queue [] fl)
+  ... | e ∷ fl = step (maybe E ⋉ queue (F unit)) (length bl) (just e , batched-queue [] fl)
   Queue.dequeue (batched-queue bl (e ∷ fl)) = just e , batched-queue bl fl
 
   {-# TERMINATING #-}
@@ -146,9 +149,8 @@ module Queue where
       enqueue : cmp $
         Π E λ e → meta (Queue.enqueue q₁ e ≈ Queue.enqueue q₂ e)
       dequeue : cmp $
-        Σ+-
-          (U (meta (proj₁ (Queue.dequeue q₁) ≡ proj₁ (Queue.dequeue q₂))))
-          λ _ → meta (proj₂ (Queue.dequeue q₁) ≈ proj₂ (Queue.dequeue q₂))
+        (U (meta (proj₁ (Queue.dequeue q₁) ≡ proj₁ (Queue.dequeue q₂)))) ⋉
+        (meta (proj₂ (Queue.dequeue q₁) ≈ proj₂ (Queue.dequeue q₂)))
 
   ≈-cong : (c : ℂ) {x y : Queue X} → x ≈ y → step (queue X) c x ≈ step (queue X) c y
   _≈_.quit (≈-cong {X = X} c h) = Eq.cong (step X c) (_≈_.quit h)
@@ -308,14 +310,14 @@ module DynamicArray where
     field
       quit   : cmp (F unit)
       append : cmp (Π A λ _ → dynamic-array A)
-      get    : cmp (Π nat λ _ → Σ+- (maybe A) λ _ → dynamic-array A)
+      get    : cmp (Π nat λ _ → maybe A ⋉ dynamic-array A)
   postulate
     dynamic-array/decode : val (U (dynamic-array A)) ≡ DynamicArray A
     {-# REWRITE dynamic-array/decode #-}
 
-    quit/step   : ∀ {c e} → DynamicArray.quit   (step (dynamic-array A) c e) ≡ step (F unit)                                          c (DynamicArray.quit   e)
-    append/step : ∀ {c e} → DynamicArray.append (step (dynamic-array A) c e) ≡ step (Π A λ _ → dynamic-array A)                       c (DynamicArray.append e)
-    get/step    : ∀ {c e} → DynamicArray.get    (step (dynamic-array A) c e) ≡ step (Π nat λ _ → Σ+- (maybe A) λ _ → dynamic-array A) c (DynamicArray.get    e)
+    quit/step   : ∀ {c e} → DynamicArray.quit   (step (dynamic-array A) c e) ≡ step (F unit)                                c (DynamicArray.quit   e)
+    append/step : ∀ {c e} → DynamicArray.append (step (dynamic-array A) c e) ≡ step (Π A λ _ → dynamic-array A)             c (DynamicArray.append e)
+    get/step    : ∀ {c e} → DynamicArray.get    (step (dynamic-array A) c e) ≡ step (Π nat λ _ → maybe A ⋉ dynamic-array A) c (DynamicArray.get    e)
     {-# REWRITE quit/step append/step get/step #-}
 
   Φ : val nat → val nat → ℂ
@@ -350,9 +352,8 @@ module DynamicArray where
         Π A λ a → meta (DynamicArray.append d₁ a ≈ DynamicArray.append d₂ a)
       get    : cmp $
         Π nat λ i →
-          Σ+-
-            (U (meta (proj₁ (DynamicArray.get d₁ i) ≡ proj₁ (DynamicArray.get d₂ i))))
-            λ _ → meta (proj₂ (DynamicArray.get d₁ i) ≈ proj₂ (DynamicArray.get d₂ i))
+          (U (meta (proj₁ (DynamicArray.get d₁ i) ≡ proj₁ (DynamicArray.get d₂ i)))) ⋉
+          (meta (proj₂ (DynamicArray.get d₁ i) ≈ proj₂ (DynamicArray.get d₂ i)))
 
   ≈-cong : (c : cmp cost) {x y : DynamicArray A} → x ≈ y → step (dynamic-array A) c x ≈ step (dynamic-array A) c y
   _≈_.quit (≈-cong c h) = Eq.cong (step (F unit) c) (_≈_.quit h)
