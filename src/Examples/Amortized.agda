@@ -193,8 +193,7 @@ module Queue where
       (batched-queue≈SPEC/list-queue (e ∷ bl) fl)
   _≈_.dequeue (batched-queue≈SPEC/list-queue bl []) with reverse bl | List.reverse-injective {xs = bl} {ys = []}
   _≈_.dequeue (batched-queue≈SPEC/list-queue bl []) | [] | h with h refl
-  ... | refl =
-    refl , batched-queue≈SPEC/list-queue [] []
+  ... | refl = refl , batched-queue≈SPEC/list-queue [] []
   _≈_.dequeue (batched-queue≈SPEC/list-queue bl []) | e ∷ fl | _ =
     refl ,
     ≈-cong (length bl)
@@ -215,8 +214,7 @@ module Queue where
   -- issue : (c₁ c₂ : ℂ) → step (queue (F unit)) c₁ fake-queue ≈ step (queue (F unit)) c₂ fake-queue
   -- _≈_.quit (issue c₁ c₂) = {!   !}
   -- _≈_.enqueue (issue c₁ c₂) e = issue c₁ c₂
-  -- _≈_.dequeue (issue c₁ c₂) =
-  --   refl , issue c₁ c₂
+  -- _≈_.dequeue (issue c₁ c₂) = refl , issue c₁ c₂
 
 
   {-# TERMINATING #-}
@@ -241,8 +239,7 @@ module Queue where
         (◯[list-queue≈batched-queue] (e ∷ bl) fl u))
   _≈_.dequeue (◯[list-queue≈batched-queue] bl [] u) with reverse bl | List.reverse-injective {xs = bl} {ys = []}
   _≈_.dequeue (◯[list-queue≈batched-queue] bl [] u) | [] | h with h refl
-  ... | refl =
-    refl , ◯[list-queue≈batched-queue] [] [] u
+  ... | refl = refl , ◯[list-queue≈batched-queue] [] [] u
   _≈_.dequeue (◯[list-queue≈batched-queue] bl [] u) | e ∷ fl | _ =
     refl ,
     Eq.subst₂
