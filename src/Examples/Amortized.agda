@@ -240,7 +240,7 @@ module Queue where
         ∎)
         (◯[list-queue≈batched-queue] (e ∷ bl) fl u))
   _≈_.dequeue (◯[list-queue≈batched-queue] bl [] u) with reverse bl | List.reverse-injective {xs = bl} {ys = []}
-  ... | [] | h with h refl
+  _≈_.dequeue (◯[list-queue≈batched-queue] bl [] u) | [] | h with h refl
   ... | refl =
     refl , ◯[list-queue≈batched-queue] [] [] u
   _≈_.dequeue (◯[list-queue≈batched-queue] bl [] u) | e ∷ fl | _ =
@@ -270,7 +270,7 @@ module Queue where
   ψ (dequeue f  ) q = ψ (f (proj₁ (Queue.dequeue q))) (proj₂ (Queue.dequeue q))
 
   _≈'_ : (q₁ q₂ : cmp (queue X)) → Set
-  _≈'_ q₁ q₂ = (A : tp pos) (p : val (queue-program A)) → ψ p q₁ ≡ ψ p q₂
+  q₁ ≈' q₂ = (A : tp pos) (p : val (queue-program A)) → ψ p q₁ ≡ ψ p q₂
 
   classic-amortization : {q₁ q₂ : cmp (queue X)} → q₁ ≈ q₂ ⇔ q₁ ≈' q₂
   classic-amortization {X} = record
