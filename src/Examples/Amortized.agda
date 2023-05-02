@@ -266,11 +266,11 @@ module Queue where
 
   {-# TERMINATING #-}
   ψ : cmp (Π (queue-program A) λ _ → Π (U (queue X)) λ _ → A ⋉ X)
-  ψ {A} {X} (return b   ) q = b , Queue.quit q
+  ψ {A} {X} (return a   ) q = a , Queue.quit q
   ψ {A} {X} (enqueue e p) q = ψ p (Queue.enqueue q e)
-  ψ {A} {X} (dequeue f  ) q =
-    bind (A ⋉ X) (f (proj₁ (Queue.dequeue q))) λ p' →
-    ψ p' (proj₂ (Queue.dequeue q))
+  ψ {A} {X} (dequeue k  ) q =
+    bind (A ⋉ X) (k (proj₁ (Queue.dequeue q))) λ p →
+    ψ p (proj₂ (Queue.dequeue q))
 
   _≈'_ : (q₁ q₂ : cmp (queue X)) → Set
   q₁ ≈' q₂ = (A : tp pos) → cmp (Π (queue-program A) λ p → meta (ψ p q₁ ≡ ψ p q₂))
@@ -285,20 +285,20 @@ module Queue where
   classic-amortization {X} = forward , backward
     where
       forward : {q₁ q₂ : cmp (queue X)} → q₁ ≈ q₂ → q₁ ≈' q₂
-      forward h A (return x   ) = Eq.cong (x ,_) (_≈_.quit h)
+      forward h A (return a   ) = Eq.cong (a ,_) (_≈_.quit h)
       forward h A (enqueue e p) = forward (_≈_.enqueue h e) A p
-      forward h A (dequeue f  ) =
+      forward h A (dequeue k  ) =
         Eq.cong₂
-          (λ e₁ e₂ → bind (A ⋉ X) (f e₁) e₂)
+          (λ e₁ e₂ → bind (A ⋉ X) (k e₁) e₂)
           (proj₁ (_≈_.dequeue h))
           (funext (forward (proj₂ (_≈_.dequeue h)) A))
 
       backward : {q₁ q₂ : cmp (queue X)} → q₁ ≈' q₂ → q₁ ≈ q₂
       _≈_.quit (backward classic) = Eq.cong proj₂ (classic unit (return triv))
-      _≈_.enqueue (backward classic) e = backward (λ A p → classic A (enqueue e p))
+      _≈_.enqueue (backward classic) e = backward λ A p → classic A (enqueue e p)
       _≈_.dequeue (backward classic) =
-        Eq.cong proj₁ (classic (maybe E) (dequeue (ret ∘ return))) ,
-        backward λ A p → classic A (dequeue (λ _ → ret p))
+        Eq.cong proj₁ (classic (maybe E) (dequeue λ e → ret (return e))) ,
+        backward λ A p → classic A (dequeue λ _ → ret p)
 
 
 module DynamicArray where
