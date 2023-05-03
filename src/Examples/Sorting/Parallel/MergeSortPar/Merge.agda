@@ -41,7 +41,7 @@ splitMid/clocked/correct : ∀ k k' l h → k + suc k' ≡ length l →
 splitMid/clocked/correct zero    k' (x ∷ xs) (s≤s h) refl     u = [] , x , xs , refl , refl , refl , refl
 splitMid/clocked/correct (suc k) k' (x ∷ xs) (s≤s h) h-length u =
   let (l₁ , mid , l₂ , ≡ , h₁ , h₂ , ≡-↭) = splitMid/clocked/correct k k' xs h (N.suc-injective h-length) u in
-  x ∷ l₁ , mid , l₂ , Eq.cong (λ e → bind (F triple) e _) ≡ , Eq.cong suc h₁ , h₂ , Eq.cong (x ∷_) ≡-↭
+  x ∷ l₁ , mid , l₂ , Eq.cong (λ e → bind (F triple) e λ (l₁ , mid , l₂) → ret ((x ∷ l₁) , mid , l₂)) ≡ , Eq.cong suc h₁ , h₂ , Eq.cong (x ∷_) ≡-↭
 
 splitMid/clocked/cost : cmp (Π nat λ k → Π (list A) λ l → Π (U (meta (k Nat.< length l))) λ _ → cost)
 splitMid/clocked/cost _ _ _ = 𝟘
@@ -49,7 +49,7 @@ splitMid/clocked/cost _ _ _ = 𝟘
 splitMid/clocked≤splitMid/clocked/cost : ∀ k l h → IsBounded triple (splitMid/clocked k l h) (splitMid/clocked/cost k l h)
 splitMid/clocked≤splitMid/clocked/cost zero    (x ∷ xs) (s≤s h) = bound/ret
 splitMid/clocked≤splitMid/clocked/cost (suc k) (x ∷ xs) (s≤s h) =
-  bound/bind/const 𝟘 𝟘 (splitMid/clocked≤splitMid/clocked/cost k xs h) λ _ → bound/ret
+  bound/bind/const 𝟘 𝟘 (splitMid/clocked≤splitMid/clocked/cost k xs h) λ (l₁ , mid , l₂) → bound/ret {a = (x ∷ l₁) , mid , l₂}
 
 splitMid : cmp (Π (list A) λ l → Π (U (meta (0 Nat.< length l))) λ _ → F triple)
 splitMid (x ∷ xs) (s≤s h) = splitMid/clocked ⌊ length (x ∷ xs) /2⌋ (x ∷ xs) (N.⌊n/2⌋<n _)
@@ -142,7 +142,7 @@ splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) u | (l₁ , mid , l�
       splitBy/clocked/aux k pivot l₁ mid l₂ false
     ≡⟨⟩
       (bind (F pair) (splitBy/clocked k l₁ pivot) λ (l₁₁ , l₁₂) → ret (l₁₁ , l₁₂ ++ mid ∷ l₂))
-    ≡⟨ Eq.cong (λ e → bind (F pair) e _) ≡' ⟩
+    ≡⟨ Eq.cong (λ e → bind (F pair) e λ (l₁₁ , l₁₂) → ret (l₁₁ , l₁₂ ++ mid ∷ l₂)) ≡' ⟩
       ret (l₁₁ , l₁₂ ++ mid ∷ l₂)
     ∎
   ) , (
@@ -188,7 +188,7 @@ splitBy/clocked/correct (suc k) (x ∷ xs) pivot (s≤s h) u | (l₁ , mid , l�
       splitBy/clocked/aux k pivot l₁ mid l₂ true
     ≡⟨⟩
       (bind (F pair) (splitBy/clocked k l₂ pivot) λ (l₂₁ , l₂₂) → ret (l₁ ++ mid ∷ l₂₁ , l₂₂))
-    ≡⟨ Eq.cong (λ e → bind (F pair) e _) ≡' ⟩
+    ≡⟨ Eq.cong (λ e → bind (F pair) e λ (l₂₁ , l₂₂) → ret (l₁ ++ mid ∷ l₂₁ , l₂₂)) ≡' ⟩
       ret (l₁ ++ mid ∷ l₂₁ , l₂₂)
     ∎
   ) , (
@@ -307,8 +307,8 @@ splitBy/clocked≤splitBy/clocked/cost (suc k) []       pivot = bound/ret
 splitBy/clocked≤splitBy/clocked/cost (suc k) (x ∷ xs) pivot =
   bound/bind {e = splitMid (x ∷ xs) (s≤s z≤n)} (splitMid/cost (x ∷ xs) (s≤s z≤n)) _ (splitMid≤splitMid/cost (x ∷ xs) (s≤s z≤n)) λ (l₁ , mid , l₂) →
     bound/bind (1 , 1) _ (h-cost mid pivot)
-      λ { false → bound/bind (splitBy/clocked/cost k l₁ pivot) (λ _ → 𝟘) (splitBy/clocked≤splitBy/clocked/cost k l₁ pivot) λ _ → bound/ret
-        ; true  → bound/bind (splitBy/clocked/cost k l₂ pivot) (λ _ → 𝟘) (splitBy/clocked≤splitBy/clocked/cost k l₂ pivot) λ _ → bound/ret }
+      λ { false → bound/bind (splitBy/clocked/cost k l₁ pivot) (λ _ → 𝟘) (splitBy/clocked≤splitBy/clocked/cost k l₁ pivot) λ (l₁₁ , l₁₂) → bound/ret {a = l₁₁ , l₁₂ ++ mid ∷ l₂}
+        ; true  → bound/bind (splitBy/clocked/cost k l₂ pivot) (λ _ → 𝟘) (splitBy/clocked≤splitBy/clocked/cost k l₂ pivot) λ (l₂₁ , l₂₂) → bound/ret {a = l₁ ++ mid ∷ l₂₁ , l₂₂} }
 
 splitBy/clocked≤splitBy/clocked/cost/closed : ∀ k l pivot → ⌈log₂ suc (length l) ⌉ Nat.≤ k → IsBounded pair (splitBy/clocked k l pivot) (splitBy/clocked/cost/closed k l pivot)
 splitBy/clocked≤splitBy/clocked/cost/closed k l pivot h = bound/relax (splitBy/clocked/cost≤splitBy/clocked/cost/closed k l pivot h) (splitBy/clocked≤splitBy/clocked/cost k l pivot)

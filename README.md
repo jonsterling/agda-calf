@@ -20,7 +20,8 @@ For example, open [`html/Examples.Sorting.Parallel.html`](./html/Examples.Sortin
 ## Installation
 
 This implementation of **calf** has been tested using:
-- Agda v2.6.2, with `agda-stdlib` v1.7 (preferred)
+- Agda v2.6.3, with `agda-stdlib` v1.7.1 (preferred)
+- Agda v2.6.2, with `agda-stdlib` v1.7
 - Agda v2.6.1.3, with `agda-stdlib` v1.6
 
 Installation instructions may be found in [`INSTALL.md`](./INSTALL.md).

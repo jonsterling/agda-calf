@@ -48,9 +48,9 @@ merge/clocked/correct (suc k) (x ∷ xs) (y ∷ ys) u | ⇓ false withCost q [ _
     let open ≡-Reasoning in
     begin
       step (F (list A)) q (bind (F (list A)) (merge/clocked k (x ∷ xs , ys)) (ret ∘ (y ∷_)))
-    ≡⟨ step/ext (F (list A)) (bind (F (list A)) (merge/clocked k _) _) q u ⟩
+    ≡⟨ step/ext (F (list A)) (bind (F (list A)) (merge/clocked k (x ∷ xs , ys)) (ret ∘ (y ∷_))) q u ⟩
       bind (F (list A)) (merge/clocked k (x ∷ xs , ys)) (ret ∘ (y ∷_))
-    ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) ≡ ⟩
+    ≡⟨ Eq.cong (λ e → bind (F (list A)) e (ret ∘ (y ∷_))) ≡ ⟩
       ret (y ∷ l)
     ∎
   ) , (
@@ -82,9 +82,9 @@ merge/clocked/correct (suc k) (x ∷ xs) (y ∷ ys) u | ⇓ true withCost q [ _ 
     let open ≡-Reasoning in
     begin
       step (F (list A)) q (bind (F (list A)) (merge/clocked k (xs , y ∷ ys)) (ret ∘ (x ∷_)))
-    ≡⟨ step/ext (F (list A)) (bind (F (list A)) (merge/clocked k _) _) q u ⟩
+    ≡⟨ step/ext (F (list A)) (bind (F (list A)) (merge/clocked k (xs , y ∷ ys)) (ret ∘ (x ∷_))) q u ⟩
       bind (F (list A)) (merge/clocked k (xs , y ∷ ys)) (ret ∘ (x ∷_))
-    ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) ≡ ⟩
+    ≡⟨ Eq.cong (λ e → bind (F (list A)) e (ret ∘ (x ∷_))) ≡ ⟩
       ret (x ∷ l)
     ∎
   ) , (
@@ -158,8 +158,8 @@ merge/clocked≤merge/clocked/cost (suc k) (x ∷ xs , []    ) = bound/ret
 merge/clocked≤merge/clocked/cost (suc k) (x ∷ xs , y ∷ ys) =
   bound/bind 1 _ (h-cost x y) λ b →
     bound/bool {p = λ b → if_then_else_ b _ _} b
-      (bound/bind (merge/clocked/cost k (x ∷ xs , ys)) _ (merge/clocked≤merge/clocked/cost k (x ∷ xs , ys)) λ l → bound/ret)
-      (bound/bind (merge/clocked/cost k (xs , y ∷ ys)) _ (merge/clocked≤merge/clocked/cost k (xs , y ∷ ys)) λ l → bound/ret)
+      (bound/bind (merge/clocked/cost k (x ∷ xs , ys)) _ (merge/clocked≤merge/clocked/cost k (x ∷ xs , ys)) λ l → bound/ret {a = y ∷ l})
+      (bound/bind (merge/clocked/cost k (xs , y ∷ ys)) _ (merge/clocked≤merge/clocked/cost k (xs , y ∷ ys)) λ l → bound/ret {a = x ∷ l})
 
 merge/clocked≤merge/clocked/cost/closed : ∀ k p → IsBounded (list A) (merge/clocked k p) (merge/clocked/cost/closed k p)
 merge/clocked≤merge/clocked/cost/closed k p = bound/relax (merge/clocked/cost≤merge/clocked/cost/closed k p) (merge/clocked≤merge/clocked/cost k p)

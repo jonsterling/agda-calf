@@ -14,8 +14,9 @@ open import Data.Product
 module _ {ℂ : Set} where
   Relation = Rel ℂ 0ℓ
 
-  _≈_ : Relation
-  _≈_ = _≡_
+  private
+    _≈_ : Relation
+    _≈_ = _≡_
 
   open import Algebra.Definitions _≈_
   open import Algebra.Structures _≈_ public

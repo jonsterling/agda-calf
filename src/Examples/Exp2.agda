@@ -143,10 +143,10 @@ module Fast where
     ≡⟨⟩
       (bind (F nat) (exp₂ n) λ r →
         step (F nat) (1 , 1) (ret (r + r)))
-    ≡⟨ Eq.cong (bind (F nat) (exp₂ n)) (funext (λ r → step/ext (F nat) _ (1 , 1) u)) ⟩
+    ≡⟨ Eq.cong (bind (F nat) (exp₂ n)) (funext (λ r → step/ext (F nat) (ret (r + r)) (1 , 1) u)) ⟩
       (bind (F nat) (exp₂ n) λ r →
         ret (r + r))
-    ≡⟨ Eq.cong (λ e → bind (F nat) e _) (exp₂/correct n u) ⟩
+    ≡⟨ Eq.cong (λ e → bind (F nat) e λ r → ret (r + r)) (exp₂/correct n u) ⟩
       (bind (F nat) (ret {nat} (2 ^ n)) λ r →
         ret (r + r))
     ≡⟨⟩

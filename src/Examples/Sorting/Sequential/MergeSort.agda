@@ -80,7 +80,7 @@ sort/clocked/correct (suc k) l h u =
       (bind (F (list A)) (sort/clocked k l₁) λ l₁' →
         bind (F (list A)) (sort/clocked k l₂) λ l₂' →
           merge (l₁' , l₂'))
-    ≡⟨ Eq.cong (λ e → bind (F (list A)) e λ l₁' → bind (F (list A)) (sort/clocked k l₂) _) ≡₁ ⟩
+    ≡⟨ Eq.cong (λ e → bind (F (list A)) e λ l₁' → bind (F (list A)) (sort/clocked k l₂) λ l₂' → merge (l₁' , l₂')) ≡₁ ⟩
       (bind (F (list A)) (sort/clocked k l₂) λ l₂' →
         merge (l₁' , l₂'))
     ≡⟨ Eq.cong (λ e → bind (F (list A)) e λ l₂' → merge (l₁' , l₂')) ≡₂ ⟩
