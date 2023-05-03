@@ -137,7 +137,7 @@ RedBlackMSequence =
       bind (F (alrbt A red n₂)) (joinLeft _ _ t₁ a _ _ t₂₁ n₁<n₂) λ
         { (valid {y = red} t') → ret (violation t' a₁ t₂₂)
         ; (valid {y = black} t') → ret (valid (red t' a₁ t₂₂)) }
-    joinLeft {A} y₁ n₁ t₁ a .black (suc n₂) (black {y₁ = c} t₂₁ a₁ t₂₂) n₁<n₂ with n₁ Nat.≟ n₂
+    joinLeft {A} y₁ n₁ t₁ a .black (suc n₂) (black t₂₁ a₁ t₂₂) n₁<n₂ with n₁ Nat.≟ n₂
     joinLeft red n₁ (red t₁₁ a₁ t₁₂) a .black (suc n₁) (black t₂₁ a₂ t₂₂) n₁<n₂ | yes refl =
       ret (valid (red (black t₁₁ a₁ t₁₂) a (black t₂₁ a₂ t₂₂)))
     joinLeft black n₁ t₁ a .black (suc n₂) (black {y₁ = red} (red t₂₁₁ a₁₁ t₂₁₂) a₁ t₂₂) n₁<n₂ | yes refl =
