@@ -6,7 +6,6 @@ module Calf.PhaseDistinction where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
-open import Data.Product
 
 open import Relation.Binary.PropositionalEquality as P
 
