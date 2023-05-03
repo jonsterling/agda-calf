@@ -51,7 +51,7 @@ insert/correct x (y ∷ ys) (h ∷ hs) u with x ≤? y
     ∎
   ) , All-resp-↭ x∷ys↭ys' (≰⇒≥ ¬x≤y ∷ h) ∷ sorted-ys'
 
-insert/cost : cmp (Π A λ _ → Π (list A) λ _ → cost)
+insert/cost : cmp (Π A λ _ → Π (list A) λ _ → meta ℂ)
 insert/cost x l = length l
 
 insert/is-bounded : ∀ x l → IsBounded (list A) (insert x l) (insert/cost x l)
@@ -76,7 +76,8 @@ insert/is-bounded x (y ∷ ys) =
               (length ys)
               zero
               (insert/is-bounded x ys) λ ys' → bound/ret {list A} (y ∷ ys'))
-      ; true  → bound/relax {list A} {ret (x ∷ (y ∷ ys))} (λ _ → z≤n {length ys}) (bound/ret {list A} (x ∷ (y ∷ ys))) }
+      ; true  → bound/relax (z≤n {length ys}) {list A} {ret (x ∷ (y ∷ ys))} (bound/ret {list A} (x ∷ (y ∷ ys)))
+      }
 
 sort : cmp (Π (list A) λ _ → F (list A))
 sort []       = ret []
@@ -111,7 +112,7 @@ sort/correct (x ∷ xs) u =
     ∎
   ) , sorted-x∷xs'
 
-sort/cost : cmp (Π (list A) λ _ → cost)
+sort/cost : cmp (Π (list A) λ _ → meta ℂ)
 sort/cost l = length l ²
 
 sort/is-bounded : ∀ l → IsBounded (list A) (sort l) (sort/cost l)
@@ -123,13 +124,11 @@ sort/is-bounded (x ∷ xs) =
     ( bound/bind/const {list A} {list A} {sort xs} {insert x}
         (length xs * length (x ∷ xs))
         (length (x ∷ xs))
-        (bound/relax {e = sort xs} (λ _ → N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs))) (sort/is-bounded xs))
+        (bound/relax (N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs))) {e = sort xs} (sort/is-bounded xs))
         λ xs' →
           bound/relax
-            {e = insert x xs'}
-            (λ u →
-              let open ≤-Reasoning in
-              let (xs'' , sort-xs''≡ , ↭ , sorted) = sort/correct xs u in
+            ( let open ≤-Reasoning in
+              let (xs'' , sort-xs''≡ , ↭ , sorted) = sort/correct xs {!   !} in
               begin
                 length xs'
               ≤⟨ N.n≤1+n (length xs') ⟩
@@ -140,7 +139,9 @@ sort/is-bounded (x ∷ xs) =
                 suc (length xs)
               ≡⟨⟩
                 length (x ∷ xs)
-              ∎)
+              ∎
+            )
+            {e = insert x xs'}
             (insert/is-bounded x xs')
     )
 

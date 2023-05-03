@@ -22,7 +22,7 @@ module Easy where
   id/correct : ∀ n → ◯ (id n ≡ ret n)
   id/correct n u = refl
 
-  id/cost : cmp (Π nat λ _ → cost)
+  id/cost : cmp (Π nat λ _ → meta ℂ)
   id/cost n = 0
 
   id/is-bounded : ∀ n → IsBounded nat (id n) (id/cost n)
@@ -58,7 +58,7 @@ module Hard where
     ∎
       where open ≡-Reasoning
 
-  id/cost : cmp (Π nat λ _ → cost)
+  id/cost : cmp (Π nat λ _ → meta ℂ)
   id/cost n = n
 
   id/is-bounded : ∀ n → IsBounded nat (id n) (id/cost n)

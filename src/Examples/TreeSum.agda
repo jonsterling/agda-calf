@@ -21,7 +21,7 @@ open import Data.Product
 add : cmp (Π nat λ _ → Π nat λ _ → F nat)
 add m n = step (F nat) (1 , 1) (ret (m + n))
 
-add/cost : cmp (Π nat λ _ → Π nat λ _ → cost)
+add/cost : cmp (Π nat λ _ → Π nat λ _ → meta ℂ)
 add/cost m n = (1 , 1)
 
 add/is-bounded : ∀ m n → IsBounded nat (add m n) (add/cost m n)
@@ -74,7 +74,7 @@ depth : val tree → val nat
 depth (leaf x)     = 0
 depth (node t₁ t₂) = suc (depth t₁ ⊔ depth t₂)
 
-sum/cost : cmp (Π tree λ _ → cost)
+sum/cost : cmp (Π tree λ _ → meta ℂ)
 sum/cost t = size t , depth t
 
 sum/is-bounded : ∀ t → IsBounded nat (sum t) (sum/cost t)
