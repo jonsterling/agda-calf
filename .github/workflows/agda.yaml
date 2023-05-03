@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         agda-ref: ["v2.6.3"]
-        stdlib-ref: ["v1.7.1"]
+        stdlib-ref: ["fc473ec"]
         ghc-ver: ["8.10.2"]
         cabal-ver: ["3.4.0.0"]
     steps:
