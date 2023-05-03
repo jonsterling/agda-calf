@@ -92,23 +92,23 @@ gcd/fib zero (x , y , h) h1 with 1 ≤? y | 1 ≤? x
   case h1 of λ { () }
 gcd/fib (suc n) (x , y , h) h1 with y
 ... | zero = let g = n≤0⇒n≡0 h1 in case g of λ {()}
-... | suc y' rewrite gcd/depth-unfold-suc {x} {y'} {h} =
-  let g : suc (gcd/depth (suc y' , x % suc y' , m%n<n x y')) ≥ 1 + (suc n)
+... | y@(suc _) rewrite gcd/depth-unfold-suc {h = h} =
+  let g : suc (gcd/depth (y , x % y , m%n<n x y)) ≥ 1 + (suc n)
       g = h1 in
-  let g1 = +-cancelˡ-≤ 1 g in
-  let (r1 , r2) = gcd/fib n (suc y' , x % suc y' , m%n<n x y') g1 in
-  let r1' : fib n + fib (suc n) ≤ suc y'
-      r1' = P.subst (λ n → n ≤ suc y') (+-comm (fib (suc n)) (fib n)) r1 in
-  (let e1 = m≡m%n+[m/n]*n x y' in
-  let e2 = m/n*n≤m x (suc y') in
-  let e3 : 1 ≤ x / suc y'
-      e3 = m≥n⇒m/n>0 (≤-trans (n≤1+n (suc y'))  h) in
-  let e4 : 1 * (suc y') ≤ x / suc y' * suc y'
-      e4 = *-monoˡ-≤ (suc y') e3 in
-  let e5 = P.subst (λ n → n ≤ x / suc y' * suc y') (*-identityˡ (suc y')) e4 in
+  let g1 = +-cancelˡ-≤ 1 _ _ g in
+  let (r1 , r2) = gcd/fib n (y , x % y , m%n<n x y) g1 in
+  let r1' : fib n + fib (suc n) ≤ y
+      r1' = P.subst (λ n → n ≤ y) (+-comm (fib (suc n)) (fib n)) r1 in
+  (let e1 = m≡m%n+[m/n]*n x y in
+  let e2 = m/n*n≤m x y in
+  let e3 : 1 ≤ x / y
+      e3 = m≥n⇒m/n>0 (≤-trans (n≤1+n y)  h) in
+  let e4 : 1 * y ≤ x / y * y
+      e4 = *-monoˡ-≤ y e3 in
+  let e5 = P.subst (λ n → n ≤ x / y * y) (*-identityˡ y) e4 in
   P.subst (λ n → x ≥ n) (P.sym (+-assoc (fib (1 + n)) (fib n) (fib (1 + n)))) (
   P.subst (λ x → x ≥ _) (P.sym e1)
-    (+-mono-≤ {x = fib (1 + n)} {y = x % (suc y')}
+    (+-mono-≤ {x = fib (1 + n)} {y = x % y}
     r2 (≤-trans r1' e5))
   )), r1
 

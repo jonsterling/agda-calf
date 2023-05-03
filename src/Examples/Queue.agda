@@ -529,7 +529,7 @@ module FrontBack (A : tp pos) where
   amortized≥cost : ∀ q l l' → Amortized l l' → ◯ (Int.+ (ϕ q + lsum l') Int.≥ Int.+ (op/seq/cost l q))
   amortized≥cost q l l' h u =
     begin
-    Int.+ (op/seq/cost l q) ≤⟨ IntP.n≤m+n (0 + ϕ/-1 l q) ⟩
+    Int.+ (op/seq/cost l q) ≤⟨ IntP.i≤j+i (Int.+ op/seq/cost l q) (Int.0ℤ Int.+ (Int.+ ϕ/-1 l q)) ⟩
     Int.0ℤ Int.+ (Int.+ ϕ/-1 l q) Int.+ Int.+ op/seq/cost l q ≡⟨ P.cong (λ x → x Int.+ (Int.+ ϕ/-1 l q) Int.+ Int.+ op/seq/cost l q) (P.sym (IntP.n⊖n≡0 (ϕ q))) ⟩
     ϕ q Int.⊖ ϕ q Int.+ Int.+ ϕ/-1 l q Int.+ Int.+ op/seq/cost l q ≡⟨ P.cong (λ x → x Int.+ (Int.+ ϕ/-1 l q) Int.+ Int.+ op/seq/cost l q) (P.sym (IntP.m-n≡m⊖n (ϕ q) (ϕ q))) ⟩
     Int.+ ϕ q Int.+ Int.- (Int.+ ϕ q) Int.+ Int.+ ϕ/-1 l q Int.+ Int.+ op/seq/cost l q ≡⟨ P.cong (λ x → x Int.+ Int.+ op/seq/cost l q) (IntP.+-assoc (Int.+ ϕ q) (Int.- (Int.+ ϕ q)) (Int.+ ϕ/-1 l q)) ⟩
