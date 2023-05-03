@@ -39,50 +39,50 @@ variable
 
 
 -- Middle Sequence
-record MSequence (𝕂 : tp pos) : Set where
+record MSequence : Set where
   field
-    seq : tp pos
+    seq : tp pos → tp pos
 
-    empty : cmp (F seq)
-    join : cmp (Π seq λ t₁ → Π 𝕂 λ k → Π seq λ t₂ → F seq)
+    empty : cmp (F (seq A))
+    join : cmp (Π (seq A) λ s₁ → Π A λ a → Π (seq A) λ s₂ → F (seq A))
 
-    rec :
+    rec : {X : tp neg} →
       cmp
         ( Π (U X) λ _ →
-          Π (U (Π seq λ _ → Π (U X) λ _ → Π 𝕂 λ _ → Π seq λ _ → Π (U X) λ _ → X)) λ _ →
-          Π seq λ _ → X
+          Π (U (Π (seq A) λ _ → Π (U X) λ _ → Π A λ _ → Π (seq A) λ _ → Π (U X) λ _ → X)) λ _ →
+          Π (seq A) λ _ → X
         )
 
 
-ListMSequence : (𝕂 : tp pos) → MSequence 𝕂
-ListMSequence 𝕂 =
+ListMSequence : MSequence
+ListMSequence =
   record
-    { seq = list 𝕂
+    { seq = list
     ; empty = ret []
     ; join =
-        λ l₁ k l₂ →
+        λ {A} l₁ a l₂ →
           let n = length l₁ + 1 + length l₂ in
-          step (F (list 𝕂)) (n , n) (ret (l₁ ++ [ k ] ++ l₂))
-    ; rec = λ {X} → rec {X}
+          step (F (list A)) (n , n) (ret (l₁ ++ [ a ] ++ l₂))
+    ; rec = λ {A} {X} → rec {A} {X}
     }
   where
     rec : {X : tp neg} →
       cmp
         ( Π (U X) λ _ →
-          Π (U (Π (list 𝕂) λ _ → Π (U X) λ _ → Π 𝕂 λ _ → Π (list 𝕂) λ _ → Π (U X) λ _ → X)) λ _ →
-          Π (list 𝕂) λ _ → X
+          Π (U (Π (list A) λ _ → Π (U X) λ _ → Π A λ _ → Π (list A) λ _ → Π (U X) λ _ → X)) λ _ →
+          Π (list A) λ _ → X
         )
-    rec {X} z f []      = z
-    rec {X} z f (x ∷ l) = step X (1 , 1) (f [] z x l (rec {X} z f l))
+    rec {A} {X} z f []      = z
+    rec {A} {X} z f (x ∷ l) = step X (1 , 1) (f [] z x l (rec {A} {X} z f l))
 
 
-RedBlackMSequence : (𝕂 : tp pos) → MSequence 𝕂
-RedBlackMSequence 𝕂 =
+RedBlackMSequence : MSequence
+RedBlackMSequence =
   record
     { seq = rbt
     ; empty = ret ⟪ leaf ⟫
     ; join = join
-    ; rec = λ {X} → rec {X}
+    ; rec = λ {A} {X} → rec {A} {X}
     }
   where
     data Color : Set where
@@ -92,182 +92,178 @@ RedBlackMSequence 𝕂 =
     color = U (meta Color)
 
     -- Indexed Red Black Tree
-    data IRBT : val color → val nat → Set where
-      leaf  : IRBT black zero
+    data IRBT (A : tp pos) : val color → val nat → Set where
+      leaf  : IRBT A black zero
       red   : {n : val nat}
-        (t₁ : IRBT black n) (k : val 𝕂) (t₂ : IRBT black n)
-        → IRBT red n
+        (t₁ : IRBT A black n) (a : val A) (t₂ : IRBT A black n)
+        → IRBT A red n
       black : {n : val nat} {y₁ y₂ : val color}
-        (t₁ : IRBT y₁ n) (k : val 𝕂) (t₂ : IRBT y₂ n)
-        → IRBT black (suc n)
-    irbt : val color → val nat → tp pos
-    irbt y n = U (meta (IRBT y n))
+        (t₁ : IRBT A y₁ n) (a : val A) (t₂ : IRBT A y₂ n)
+        → IRBT A black (suc n)
+    irbt : tp pos → val color → val nat → tp pos
+    irbt A y n = U (meta (IRBT A y n))
 
-    record RBT : Set where
+    record RBT (A : tp pos) : Set where
       pattern
       constructor ⟪_⟫
       field
         {y} : val color
         {n} : val nat
-        t : val (irbt y n)
-    rbt : tp pos
-    rbt = U (meta RBT)
+        t : val (irbt A y n)
+    rbt : tp pos → tp pos
+    rbt A = U (meta (RBT A))
 
 
-    data AlmostLeftRBT : (right-color : val color) → val nat → Set where
+    data AlmostLeftRBT (A : tp pos) : (right-color : val color) → val nat → Set where
       violation :
         {n : val nat}
-        → IRBT red n → val 𝕂 → IRBT black n
-        → AlmostLeftRBT red n
+        → IRBT A red n → val A → IRBT A black n
+        → AlmostLeftRBT A red n
       valid :
-        {right-color : val color} {n : val nat} {y : val color} → IRBT y n
-        → AlmostLeftRBT right-color n
-    alrbt : val color → val nat → tp pos
-    alrbt y n = U (meta (AlmostLeftRBT y n))
+        {right-color : val color} {n : val nat} {y : val color} → IRBT A y n
+        → AlmostLeftRBT A right-color n
+    alrbt : tp pos → val color → val nat → tp pos
+    alrbt A y n = U (meta (AlmostLeftRBT A y n))
 
     joinLeft :
       cmp
-        ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
-          Π 𝕂 λ _ →
-          Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+        ( Π color λ y₁ → Π nat λ n₁ → Π (irbt A y₁ n₁) λ _ →
+          Π A λ _ →
+          Π color λ y₂ → Π nat λ n₂ → Π (irbt A y₂ n₂) λ _ →
           Π (U (meta (n₁ < n₂))) λ _ →
-          F (alrbt y₂ n₂)
+          F (alrbt A y₂ n₂)
         )
-    joinLeft y₁ n₁ t₁ k .red n₂ (red t₂₁ k₁ t₂₂) n₁<n₂ =
-      bind (F (alrbt red n₂)) (joinLeft _ _ t₁ k _ _ t₂₁ n₁<n₂) λ
-        { (valid {y = red} t') → ret (violation t' k₁ t₂₂)
-        ; (valid {y = black} t') → ret (valid (red t' k₁ t₂₂)) }
-    joinLeft y₁ n₁ t₁ k .black (suc n₂) (black {y₁ = c} t₂₁ k₁ t₂₂) n₁<n₂ with n₁ Nat.≟ n₂
-    joinLeft red n₁ (red t₁₁ k₁ t₁₂) k .black (suc n₁) (black t₂₁ k₂ t₂₂) n₁<n₂ | yes refl =
-      ret (valid (red (black t₁₁ k₁ t₁₂) k (black t₂₁ k₂ t₂₂)))
-    joinLeft black n₁ t₁ k .black (suc n₁) (black {y₁ = red} (red t₂₁₁ k₁₁ t₂₁₂) k₁ t₂₂) n₁<n₂ | yes refl =
-      ret (valid (red (black t₁ k t₂₁₁) k₁₁ (black t₂₁₂ k₁ t₂₂)))
-    joinLeft black n₁ t₁ k .black (suc n₁) (black {y₁ = black} t₂₁ k₁ t₂₂) n₁<n₂ | yes refl =
-      ret (valid (black (red t₁ k t₂₁) k₁ t₂₂))
+    joinLeft {A} y₁ n₁ t₁ a .red n₂ (red t₂₁ a₁ t₂₂) n₁<n₂ =
+      bind (F (alrbt A red n₂)) (joinLeft _ _ t₁ a _ _ t₂₁ n₁<n₂) λ
+        { (valid {y = red} t') → ret (violation t' a₁ t₂₂)
+        ; (valid {y = black} t') → ret (valid (red t' a₁ t₂₂)) }
+    joinLeft {A} y₁ n₁ t₁ a .black (suc n₂) (black {y₁ = c} t₂₁ a₁ t₂₂) n₁<n₂ with n₁ Nat.≟ n₂
+    joinLeft red n₁ (red t₁₁ a₁ t₁₂) a .black (suc n₁) (black t₂₁ a₂ t₂₂) n₁<n₂ | yes refl =
+      ret (valid (red (black t₁₁ a₁ t₁₂) a (black t₂₁ a₂ t₂₂)))
+    joinLeft black n₁ t₁ a .black (suc n₂) (black {y₁ = red} (red t₂₁₁ a₁₁ t₂₁₂) a₁ t₂₂) n₁<n₂ | yes refl =
+      ret (valid (red (black t₁ a t₂₁₁) a₁₁ (black t₂₁₂ a₁ t₂₂)))
+    joinLeft black n₁ t₁ a .black (suc n₂) (black {y₁ = black} t₂₁ a₁ t₂₂) n₁<n₂ | yes refl =
+      ret (valid (black (red t₁ a t₂₁) a₁ t₂₂))
     ... | no n₁≢n₂ =
-      bind (F (alrbt black (suc n₂))) (joinLeft _ _ t₁ k _ _ t₂₁ (Nat.≤∧≢⇒< (Nat.≤-pred n₁<n₂) n₁≢n₂)) λ
-        { (violation (red t'₁₁ k'₁ t'₁₂) k' t'₂) → ret (valid (red (black t'₁₁ k'₁ t'₁₂) k' (black t'₂ k₁ t₂₂)))
-        ; (valid t') → ret (valid (black t' k₁ t₂₂)) }
+      bind (F (alrbt A black (suc n₂))) (joinLeft _ _ t₁ a _ _ t₂₁ (Nat.≤∧≢⇒< (Nat.≤-pred n₁<n₂) n₁≢n₂)) λ
+        { (violation (red t'₁₁ a'₁ t'₁₂) a' t'₂) → ret (valid (red (black t'₁₁ a'₁ t'₁₂) a' (black t'₂ a₁ t₂₂)))
+        ; (valid t') → ret (valid (black t' a₁ t₂₂)) }
 
-    data AlmostRightRBT : (left-color : val color) → val nat → Set where
+    data AlmostRightRBT (A : tp pos) : (left-color : val color) → val nat → Set where
       violation :
         {n : val nat}
-        → IRBT black n → val 𝕂 → IRBT red n
-        → AlmostRightRBT red n
+        → IRBT A black n → val A → IRBT A red n
+        → AlmostRightRBT A red n
       valid :
-        {left-color : val color} {n : val nat} {y : val color} → IRBT y n
-        → AlmostRightRBT left-color n
-    arrbt : val color → val nat → tp pos
-    arrbt y n = U (meta (AlmostRightRBT y n))
+        {left-color : val color} {n : val nat} {y : val color} → IRBT A y n
+        → AlmostRightRBT A left-color n
+    arrbt : tp pos → val color → val nat → tp pos
+    arrbt A y n = U (meta (AlmostRightRBT A y n))
 
     joinRight :
       cmp
-        ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
-          Π 𝕂 λ _ →
-          Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
+        ( Π color λ y₁ → Π nat λ n₁ → Π (irbt A y₁ n₁) λ _ →
+          Π A λ _ →
+          Π color λ y₂ → Π nat λ n₂ → Π (irbt A y₂ n₂) λ _ →
           Π (U (meta (n₁ > n₂))) λ _ →
-          F (arrbt y₁ n₁)
+          F (arrbt A y₁ n₁)
         )
-    joinRight .red n₁ (red t₁₁ k₁ t₁₂) k y₂ n₂ t₂ n₁>n₂ =
-      bind (F (arrbt red n₁)) (joinRight _ _ t₁₂ k _ _ t₂ n₁>n₂) λ
-        { (valid {y = red} t') → ret (violation t₁₁ k₁ t')
-        ; (valid {y = black} t') → ret (valid (red t₁₁ k₁ t')) }
-    joinRight .black (suc n₁) (black t₁₁ k₁ t₁₂) k y₂ n₂ t₂ n₁>n₂ with n₁ Nat.≟ n₂
-    joinRight .black (suc n₁) (black t₁₁ k₁ t₁₂) k red n₁ (red t₂₁ k₂ t₂₂) n₁>n₂ | yes refl =
-      ret (valid (red (black t₁₁ k₁ t₁₂) k (black t₂₁ k₂ t₂₂)))
-    joinRight .black (suc n₁) (black {y₂ = red} t₁₁ k₁ (red t₁₂₁ k₁₂ t₁₂₂)) k black n₁ t₂ n₁>n₂ | yes refl =
-      ret (valid (red (black t₁₁ k₁ t₁₂₁) k₁₂ (black t₁₂₂ k t₂)))
-    joinRight .black (suc n₁) (black {y₂ = black} t₁₁ k₁ t₁₂) k black n₁ t₂ n₁>n₂ | yes refl =
-      ret (valid (black t₁₁ k₁ (red t₁₂ k t₂)))
+    joinRight {A} .red n₁ (red t₁₁ a₁ t₁₂) a y₂ n₂ t₂ n₁>n₂ =
+      bind (F (arrbt A red n₁)) (joinRight _ _ t₁₂ a _ _ t₂ n₁>n₂) λ
+        { (valid {y = red} t') → ret (violation t₁₁ a₁ t')
+        ; (valid {y = black} t') → ret (valid (red t₁₁ a₁ t')) }
+    joinRight {A} .black (suc n₁) (black t₁₁ a₁ t₁₂) a y₂ n₂ t₂ n₁>n₂ with n₁ Nat.≟ n₂
+    joinRight .black (suc n₁) (black t₁₁ a₁ t₁₂) a red n₁ (red t₂₁ a₂ t₂₂) n₁>n₂ | yes refl =
+      ret (valid (red (black t₁₁ a₁ t₁₂) a (black t₂₁ a₂ t₂₂)))
+    joinRight .black (suc n₁) (black {y₂ = red} t₁₁ a₁ (red t₁₂₁ a₁₂ t₁₂₂)) a black n₁ t₂ n₁>n₂ | yes refl =
+      ret (valid (red (black t₁₁ a₁ t₁₂₁) a₁₂ (black t₁₂₂ a t₂)))
+    joinRight .black (suc n₁) (black {y₂ = black} t₁₁ a₁ t₁₂) a black n₁ t₂ n₁>n₂ | yes refl =
+      ret (valid (black t₁₁ a₁ (red t₁₂ a t₂)))
     ... | no n₁≢n₂ =
-      bind (F (arrbt black (suc n₁))) (joinRight _ _ t₁₂ k _ _ t₂ (Nat.≤∧≢⇒< (Nat.≤-pred n₁>n₂) (≢-sym n₁≢n₂))) λ
-        { (violation t'₁ k' (red t'₂₁ k'₂ t'₂₂)) → ret (valid (red (black t₁₁ k₁ t'₁) k' (black t'₂₁ k'₂ t'₂₂)))
-        ; (valid t') → ret (valid (black t₁₁ k₁ t'))  }
+      bind (F (arrbt A black (suc n₁))) (joinRight _ _ t₁₂ a _ _ t₂ (Nat.≤∧≢⇒< (Nat.≤-pred n₁>n₂) (≢-sym n₁≢n₂))) λ
+        { (violation t'₁ a' (red t'₂₁ a'₂ t'₂₂)) → ret (valid (red (black t₁₁ a₁ t'₁) a' (black t'₂₁ a'₂ t'₂₂)))
+        ; (valid t') → ret (valid (black t₁₁ a₁ t'))  }
 
     i-join :
       cmp
-        ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
-          Π 𝕂 λ _ →
-          Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
-          F rbt
+        ( Π color λ y₁ → Π nat λ n₁ → Π (irbt A y₁ n₁) λ _ →
+          Π A λ _ →
+          Π color λ y₂ → Π nat λ n₂ → Π (irbt A y₂ n₂) λ _ →
+          F (rbt A)
         )
-    i-join y₁ n₁ t₁ k y₂ n₂ t₂ with Nat.<-cmp n₁ n₂
-    i-join red n₁ t₁ k y₂ n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
-    i-join black n₁ t₁ k red n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
-    i-join black n₁ t₁ k black n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (red t₁ k t₂) ⟫
+    i-join {A} y₁ n₁ t₁ a y₂ n₂ t₂ with Nat.<-cmp n₁ n₂
+    i-join red n₁ t₁ a y₂ n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ a t₂) ⟫
+    i-join black n₁ t₁ a red n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ a t₂) ⟫
+    i-join black n₁ t₁ a black n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (red t₁ a t₂) ⟫
     ... | tri< n₁<n₂ n₁≢n₂ ¬n₁>n₂ =
-      bind (F rbt) (joinLeft _ _ t₁ k _ _ t₂ n₁<n₂) λ
-        { (violation t'₁ k' t'₂) → ret ⟪ (black t'₁ k' t'₂) ⟫
+      bind (F (rbt A)) (joinLeft _ _ t₁ a _ _ t₂ n₁<n₂) λ
+        { (violation t'₁ a' t'₂) → ret ⟪ (black t'₁ a' t'₂) ⟫
         ; (valid t') → ret ⟪ t' ⟫}
     ... | tri> ¬n₁<n₂ n₁≢n₂ n₁>n₂ =
-      bind (F rbt) (joinRight _ _ t₁ k _ _ t₂ n₁>n₂) λ
-        { (violation t'₁ k' t'₂) → ret ⟪ black t'₁ k' t'₂ ⟫
+      bind (F (rbt A)) (joinRight _ _ t₁ a _ _ t₂ n₁>n₂) λ
+        { (violation t'₁ a' t'₂) → ret ⟪ black t'₁ a' t'₂ ⟫
         ; (valid t') → ret ⟪ t' ⟫ }
 
-    join : cmp (Π rbt λ _ → Π 𝕂 λ _ → Π rbt λ _ → F rbt)
-    join ⟪ t₁ ⟫ k ⟪ t₂ ⟫ = i-join _ _ t₁ k _ _ t₂
+    join : cmp (Π (rbt A) λ _ → Π A λ _ → Π (rbt A) λ _ → F (rbt A))
+    join ⟪ t₁ ⟫ a ⟪ t₂ ⟫ = i-join _ _ t₁ a _ _ t₂
 
 
-    i-rec : {X : tp neg} →
+    i-rec : {A : tp pos} {X : tp neg} →
       cmp
         ( Π (U X) λ _ →
           Π
             ( U
-              ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ → Π (U X) λ _ →
-                Π 𝕂 λ _ →
-                Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ → Π (U X) λ _ →
+              ( Π color λ y₁ → Π nat λ n₁ → Π (irbt A y₁ n₁) λ _ → Π (U X) λ _ →
+                Π A λ _ →
+                Π color λ y₂ → Π nat λ n₂ → Π (irbt A y₂ n₂) λ _ → Π (U X) λ _ →
                 X
               )
             ) λ _ →
-          Π color λ y → Π nat λ n → Π (irbt y n) λ _ →
+          Π color λ y → Π nat λ n → Π (irbt A y n) λ _ →
           X
         )
-    i-rec {X} z f .black .zero    leaf            = z
-    i-rec {X} z f .red   n        (red   t₁ k t₂) =
+    i-rec {A} {X} z f .black .zero    leaf            = z
+    i-rec {A} {X} z f .red   n        (red   t₁ a t₂) =
       f
-        _ _ t₁ (i-rec {X} z f _ _ t₁)
-        k
-        _ _ t₂ (i-rec {X} z f _ _ t₂)
-    i-rec {X} z f .black .(suc _) (black t₁ k t₂) =
+        _ _ t₁ (i-rec {A} {X} z f _ _ t₁)
+        a
+        _ _ t₂ (i-rec {A} {X} z f _ _ t₂)
+    i-rec {A} {X} z f .black .(suc _) (black t₁ a t₂) =
       f
-        _ _ t₁ (i-rec {X} z f _ _ t₁)
-        k
-        _ _ t₂ (i-rec {X} z f _ _ t₂)
+        _ _ t₁ (i-rec {A} {X} z f _ _ t₁)
+        a
+        _ _ t₂ (i-rec {A} {X} z f _ _ t₂)
 
-    rec : {X : tp neg} →
+    rec : {A : tp pos} {X : tp neg} →
       cmp
         ( Π (U X) λ _ →
-          Π (U (Π rbt λ _ → Π (U X) λ _ → Π 𝕂 λ _ → Π rbt λ _ → Π (U X) λ _ → X)) λ _ →
-          Π rbt λ _ → X
+          Π (U (Π (rbt A) λ _ → Π (U X) λ _ → Π A λ _ → Π (rbt A) λ _ → Π (U X) λ _ → X)) λ _ →
+          Π (rbt A) λ _ → X
         )
-    rec {X} z f ⟪ t ⟫ =
-      i-rec {X}
+    rec {A} {X} z f ⟪ t ⟫ =
+      i-rec {A} {X}
         z
-        (λ _ _ t₁ ih₁ k _ _ t₂ ih₂ → f ⟪ t₁ ⟫ ih₁ k ⟪ t₂ ⟫ ih₂)
+        (λ _ _ t₁ ih₁ a _ _ t₂ ih₂ → f ⟪ t₁ ⟫ ih₁ a ⟪ t₂ ⟫ ih₂)
         _ _ t
 
 
 module Ex/FromList where
-  open MSequence (RedBlackMSequence nat)
+  open MSequence RedBlackMSequence
 
-  fromList : cmp (Π (list nat) λ _ → F seq)
+  fromList : cmp (Π (list nat) λ _ → F (seq nat))
   fromList [] = empty
   fromList (x ∷ l) =
-    bind (F seq) empty λ s₁ →
-    bind (F seq) (fromList l) λ s₂ →
+    bind (F (seq nat)) empty λ s₁ →
+    bind (F (seq nat)) (fromList l) λ s₂ →
     join s₁ x s₂
 
-  example : cmp (F seq)
+  example : cmp (F (seq nat))
   example = fromList (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ [])
-
-  -- run Ctrl-C Ctrl-N here
-  compute : cmp (F seq)
-  compute = {! example  !}
 
 
 module BinarySearchTree
+  (MSeq : MSequence)
   (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ)
-  (MSeq : MSequence (U (meta (StrictTotalOrder.Carrier Key))))
   where
 
   open StrictTotalOrder Key
@@ -277,43 +273,43 @@ module BinarySearchTree
 
   open MSequence MSeq public
 
-  singleton : cmp (Π 𝕂 λ _ → F seq)
-  singleton k =
-    bind (F seq) empty λ t →
-    join t k t
+  singleton : cmp (Π 𝕂 λ _ → F (seq 𝕂))
+  singleton a =
+    bind (F (seq 𝕂)) empty λ t →
+    join t a t
 
   Split : tp neg
-  Split = F (prod⁺ seq (prod⁺ (maybe 𝕂) seq))
+  Split = F (prod⁺ (seq 𝕂) (prod⁺ (maybe 𝕂) (seq 𝕂)))
 
-  split : cmp (Π seq λ _ → Π 𝕂 λ _ → Split)
-  split t k =
+  split : cmp (Π (seq 𝕂) λ _ → Π 𝕂 λ _ → Split)
+  split t a =
     rec
-      {X = F (prod⁺ seq (prod⁺ (maybe 𝕂) seq))}
+      {X = F (prod⁺ (seq 𝕂) (prod⁺ (maybe 𝕂) (seq 𝕂)))}
       (bind Split empty λ t →
         ret (t , nothing , t))
-      (λ t₁ ih₁ k' t₂ ih₂ →
-        case compare k k' of λ
-          { (tri< k<k' ¬k≡k' ¬k>k') →
-              bind Split ih₁ λ ( t₁₁ , k? , t₁₂ ) →
-              bind Split (join t₁₂ k' t₂) λ t →
-              ret (t₁₁ , k? , t)
-          ; (tri≈ ¬k<k' k≡k' ¬k>k') → ret (t₁ , just k' , t₂)
-          ; (tri> ¬k<k' ¬k≡k' k>k') →
-              bind Split ih₂ λ ( t₂₁ , k? , t₂₂ ) →
-              bind Split (join t₁ k' t₂₁) λ t →
-              ret (t , k? , t₂₂)
+      (λ t₁ ih₁ a' t₂ ih₂ →
+        case compare a a' of λ
+          { (tri< a<a' ¬a≡a' ¬a>a') →
+              bind Split ih₁ λ ( t₁₁ , a? , t₁₂ ) →
+              bind Split (join t₁₂ a' t₂) λ t →
+              ret (t₁₁ , a? , t)
+          ; (tri≈ ¬a<a' a≡a' ¬a>a') → ret (t₁ , just a' , t₂)
+          ; (tri> ¬a<a' ¬a≡a' a>a') →
+              bind Split ih₂ λ ( t₂₁ , a? , t₂₂ ) →
+              bind Split (join t₁ a' t₂₁) λ t →
+              ret (t , a? , t₂₂)
           })
       t
 
-  find : cmp (Π seq λ _ → Π 𝕂 λ _ → F (maybe 𝕂))
-  find t k = bind (F (maybe 𝕂)) (split t k) λ { (_ , k? , _) → ret k? }
+  find : cmp (Π (seq 𝕂) λ _ → Π 𝕂 λ _ → F (maybe 𝕂))
+  find t a = bind (F (maybe 𝕂)) (split t a) λ { (_ , a? , _) → ret a? }
 
-  insert : cmp (Π seq λ _ → Π 𝕂 λ _ → F seq)
-  insert t k = bind (F seq) (split t k) λ { (t₁ , _ , t₂) → join t₁ k t₂ }
+  insert : cmp (Π (seq 𝕂) λ _ → Π 𝕂 λ _ → F (seq 𝕂))
+  insert t a = bind (F (seq 𝕂)) (split t a) λ { (t₁ , _ , t₂) → join t₁ a t₂ }
 
 
 module Ex/NatSet where
-  open BinarySearchTree Nat.<-strictTotalOrder (RedBlackMSequence _)
+  open BinarySearchTree RedBlackMSequence Nat.<-strictTotalOrder
 
   example : cmp Split
   example =
@@ -322,10 +318,6 @@ module Ex/NatSet where
     bind Split (singleton 4) λ t₂ →
     bind Split (join t₁ 3 t₂) λ t →
     split t 2
-
-  -- run Ctrl-C Ctrl-N here
-  compute : cmp Split
-  compute = {! example  !}
 
 
 module Ex/NatStringDict where
@@ -348,7 +340,7 @@ module Ex/NatStringDict where
             }
       }
 
-  open BinarySearchTree strictTotalOrder (RedBlackMSequence _)
+  open BinarySearchTree RedBlackMSequence strictTotalOrder
 
   example : cmp Split
   example =
@@ -357,7 +349,3 @@ module Ex/NatStringDict where
     bind Split (singleton (4 , "green")) λ t₂ →
     bind Split (join t₁ (3 , "yellow") t₂) λ t →
     split t (2 , "")
-
-  -- run Ctrl-C Ctrl-N here
-  compute : cmp Split
-  compute = {! example  !}
