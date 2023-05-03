@@ -38,78 +38,34 @@ variable
   P Q : val A → tp neg
 
 
-record ParametricBST (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) : Set₁ where
-  open StrictTotalOrder Key
-
-  𝕂 : tp pos
-  𝕂 = U (meta (StrictTotalOrder.Carrier Key))
-
+-- Middle Sequence
+record MSequence (𝕂 : tp pos) : Set where
   field
-    bst : tp pos
+    seq : tp pos
 
-    leaf : cmp (F bst)
-    node : cmp (Π bst λ t₁ → Π 𝕂 λ k → Π bst λ t₂ → F bst)
+    empty : cmp (F seq)
+    join : cmp (Π seq λ t₁ → Π 𝕂 λ k → Π seq λ t₂ → F seq)
 
     rec :
       cmp
         ( Π (U X) λ _ →
-          Π (U (Π bst λ _ → Π (U X) λ _ → Π 𝕂 λ _ → Π bst λ _ → Π (U X) λ _ → X)) λ _ →
-          Π bst λ _ → X
+          Π (U (Π seq λ _ → Π (U X) λ _ → Π 𝕂 λ _ → Π seq λ _ → Π (U X) λ _ → X)) λ _ →
+          Π seq λ _ → X
         )
 
-  empty : cmp (F bst)
-  empty = leaf
 
-  singleton : cmp (Π 𝕂 λ _ → F bst)
-  singleton k =
-    bind (F bst) empty λ t →
-    node t k t
-
-  Split : tp neg
-  Split = F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))
-
-  split : cmp (Π bst λ _ → Π 𝕂 λ _ → Split)
-  split t k =
-    rec
-      {X = F (prod⁺ bst (prod⁺ (maybe 𝕂) bst))}
-      (bind Split empty λ t →
-        ret (t , nothing , t))
-      (λ t₁ ih₁ k' t₂ ih₂ →
-        case compare k k' of λ
-          { (tri< k<k' ¬k≡k' ¬k>k') →
-              bind Split ih₁ λ ( t₁₁ , k? , t₁₂ ) →
-              bind Split (node t₁₂ k' t₂) λ t →
-              ret (t₁₁ , k? , t)
-          ; (tri≈ ¬k<k' k≡k' ¬k>k') → ret (t₁ , just k' , t₂)
-          ; (tri> ¬k<k' ¬k≡k' k>k') →
-              bind Split ih₂ λ ( t₂₁ , k? , t₂₂ ) →
-              bind Split (node t₁ k' t₂₁) λ t →
-              ret (t , k? , t₂₂)
-          })
-      t
-
-  find : cmp (Π bst λ _ → Π 𝕂 λ _ → F (maybe 𝕂))
-  find t k = bind (F (maybe 𝕂)) (split t k) λ { (_ , k? , _) → ret k? }
-
-  insert : cmp (Π bst λ _ → Π 𝕂 λ _ → F bst)
-  insert t k = bind (F bst) (split t k) λ { (t₁ , _ , t₂) → node t₁ k t₂ }
-
-
-ListBST : (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) → ParametricBST Key
-ListBST Key =
+ListMSequence : (𝕂 : tp pos) → MSequence 𝕂
+ListMSequence 𝕂 =
   record
-    { bst = list 𝕂
-    ; leaf = ret []
-    ; node =
+    { seq = list 𝕂
+    ; empty = ret []
+    ; join =
         λ l₁ k l₂ →
           let n = length l₁ + 1 + length l₂ in
           step (F (list 𝕂)) (n , n) (ret (l₁ ++ [ k ] ++ l₂))
     ; rec = λ {X} → rec {X}
     }
   where
-    𝕂 : tp pos
-    𝕂 = U (meta (StrictTotalOrder.Carrier Key))
-
     rec : {X : tp neg} →
       cmp
         ( Π (U X) λ _ →
@@ -120,19 +76,15 @@ ListBST Key =
     rec {X} z f (x ∷ l) = step X (1 , 1) (f [] z x l (rec {X} z f l))
 
 
-RedBlackBST : (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) → ParametricBST Key
-RedBlackBST Key =
+RedBlackMSequence : (𝕂 : tp pos) → MSequence 𝕂
+RedBlackMSequence 𝕂 =
   record
-    { bst = rbt
-    ; leaf = ret ⟪ leaf ⟫
-    ; node = joinMid
+    { seq = rbt
+    ; empty = ret ⟪ leaf ⟫
+    ; join = join
     ; rec = λ {X} → rec {X}
     }
   where
-    𝕂 : tp pos
-    𝕂 = U (meta (StrictTotalOrder.Carrier Key))
-
-
     data Color : Set where
       red : Color
       black : Color
@@ -232,17 +184,17 @@ RedBlackBST Key =
         { (violation t'₁ k' (red t'₂₁ k'₂ t'₂₂)) → ret (valid (red (black t₁₁ k₁ t'₁) k' (black t'₂₁ k'₂ t'₂₂)))
         ; (valid t') → ret (valid (black t₁₁ k₁ t'))  }
 
-    i-joinMid :
+    i-join :
       cmp
         ( Π color λ y₁ → Π nat λ n₁ → Π (irbt y₁ n₁) λ _ →
           Π 𝕂 λ _ →
           Π color λ y₂ → Π nat λ n₂ → Π (irbt y₂ n₂) λ _ →
           F rbt
         )
-    i-joinMid y₁ n₁ t₁ k y₂ n₂ t₂ with Nat.<-cmp n₁ n₂
-    i-joinMid red n₁ t₁ k y₂ n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
-    i-joinMid black n₁ t₁ k red n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
-    i-joinMid black n₁ t₁ k black n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (red t₁ k t₂) ⟫
+    i-join y₁ n₁ t₁ k y₂ n₂ t₂ with Nat.<-cmp n₁ n₂
+    i-join red n₁ t₁ k y₂ n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
+    i-join black n₁ t₁ k red n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ k t₂) ⟫
+    i-join black n₁ t₁ k black n₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (red t₁ k t₂) ⟫
     ... | tri< n₁<n₂ n₁≢n₂ ¬n₁>n₂ =
       bind (F rbt) (joinLeft _ _ t₁ k _ _ t₂ n₁<n₂) λ
         { (violation t'₁ k' t'₂) → ret ⟪ (black t'₁ k' t'₂) ⟫
@@ -252,8 +204,8 @@ RedBlackBST Key =
         { (violation t'₁ k' t'₂) → ret ⟪ black t'₁ k' t'₂ ⟫
         ; (valid t') → ret ⟪ t' ⟫ }
 
-    joinMid : cmp (Π rbt λ _ → Π 𝕂 λ _ → Π rbt λ _ → F rbt)
-    joinMid ⟪ t₁ ⟫ k ⟪ t₂ ⟫ = i-joinMid _ _ t₁ k _ _ t₂
+    join : cmp (Π rbt λ _ → Π 𝕂 λ _ → Π rbt λ _ → F rbt)
+    join ⟪ t₁ ⟫ k ⟪ t₂ ⟫ = i-join _ _ t₁ k _ _ t₂
 
 
     i-rec : {X : tp neg} →
@@ -295,15 +247,62 @@ RedBlackBST Key =
         _ _ t
 
 
+module BinarySearchTree
+  (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ)
+  (MSeq : MSequence (U (meta (StrictTotalOrder.Carrier Key))))
+  where
+
+  open StrictTotalOrder Key
+
+  𝕂 : tp pos
+  𝕂 = U (meta (StrictTotalOrder.Carrier Key))
+
+  open MSequence MSeq public
+
+  singleton : cmp (Π 𝕂 λ _ → F seq)
+  singleton k =
+    bind (F seq) empty λ t →
+    join t k t
+
+  Split : tp neg
+  Split = F (prod⁺ seq (prod⁺ (maybe 𝕂) seq))
+
+  split : cmp (Π seq λ _ → Π 𝕂 λ _ → Split)
+  split t k =
+    rec
+      {X = F (prod⁺ seq (prod⁺ (maybe 𝕂) seq))}
+      (bind Split empty λ t →
+        ret (t , nothing , t))
+      (λ t₁ ih₁ k' t₂ ih₂ →
+        case compare k k' of λ
+          { (tri< k<k' ¬k≡k' ¬k>k') →
+              bind Split ih₁ λ ( t₁₁ , k? , t₁₂ ) →
+              bind Split (join t₁₂ k' t₂) λ t →
+              ret (t₁₁ , k? , t)
+          ; (tri≈ ¬k<k' k≡k' ¬k>k') → ret (t₁ , just k' , t₂)
+          ; (tri> ¬k<k' ¬k≡k' k>k') →
+              bind Split ih₂ λ ( t₂₁ , k? , t₂₂ ) →
+              bind Split (join t₁ k' t₂₁) λ t →
+              ret (t , k? , t₂₂)
+          })
+      t
+
+  find : cmp (Π seq λ _ → Π 𝕂 λ _ → F (maybe 𝕂))
+  find t k = bind (F (maybe 𝕂)) (split t k) λ { (_ , k? , _) → ret k? }
+
+  insert : cmp (Π seq λ _ → Π 𝕂 λ _ → F seq)
+  insert t k = bind (F seq) (split t k) λ { (t₁ , _ , t₂) → join t₁ k t₂ }
+
+
 module Ex/NatSet where
-  open ParametricBST (RedBlackBST Nat.<-strictTotalOrder)
+  open BinarySearchTree Nat.<-strictTotalOrder (RedBlackMSequence _)
 
   example : cmp Split
   example =
     bind Split (singleton 1) λ t₁ →
     bind Split (insert t₁ 2) λ t₁ →
     bind Split (singleton 4) λ t₂ →
-    bind Split (node t₁ 3 t₂) λ t →
+    bind Split (join t₁ 3 t₂) λ t →
     split t 2
 
   -- run Ctrl-C Ctrl-N here
@@ -331,14 +330,14 @@ module Ex/NatStringDict where
             }
       }
 
-  open ParametricBST (RedBlackBST strictTotalOrder)
+  open BinarySearchTree strictTotalOrder (RedBlackMSequence _)
 
   example : cmp Split
   example =
     bind Split (singleton (1 , "red")) λ t₁ →
     bind Split (insert t₁ (2 , "orange")) λ t₁ →
     bind Split (singleton (4 , "green")) λ t₂ →
-    bind Split (node t₁ (3 , "yellow") t₂) λ t →
+    bind Split (join t₁ (3 , "yellow") t₂) λ t →
     split t (2 , "")
 
   -- run Ctrl-C Ctrl-N here
