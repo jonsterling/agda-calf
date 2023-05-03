@@ -247,6 +247,24 @@ RedBlackMSequence 𝕂 =
         _ _ t
 
 
+module Ex/FromList where
+  open MSequence (RedBlackMSequence nat)
+
+  fromList : cmp (Π (list nat) λ _ → F seq)
+  fromList [] = empty
+  fromList (x ∷ l) =
+    bind (F seq) empty λ s₁ →
+    bind (F seq) (fromList l) λ s₂ →
+    join s₁ x s₂
+
+  example : cmp (F seq)
+  example = fromList (1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ [])
+
+  -- run Ctrl-C Ctrl-N here
+  compute : cmp (F seq)
+  compute = {! example  !}
+
+
 module BinarySearchTree
   (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ)
   (MSeq : MSequence (U (meta (StrictTotalOrder.Carrier Key))))
