@@ -19,13 +19,16 @@ open import Calf.Types.Nat
 open import Calf.Types.List
 open import Data.Nat as Nat using (_+_; _∸_; pred; _*_; _^_; _>_)
 open import Data.Product
-import Data.Nat.Properties as Nat
+open import Data.Nat.Properties as Nat using (module ≤-Reasoning)
 open import Data.Nat.PredExp2
+open import Data.Nat.Logarithm
 import Data.List.Properties as List
 
 open import Function hiding (_⇔_)
 
 open import Relation.Nullary
+open import Relation.Nullary.Negation
+open import Relation.Binary
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
 
 variable
@@ -455,3 +458,125 @@ module DynamicArray where
   _≈_.get (array≈SPEC/array n m h) i with i Nat.<? 2 ^ n ∸ m
   ... | no ¬p = refl , array≈SPEC/array n m h
   ... | yes p = refl , array≈SPEC/array n m h
+
+module SplayTree where
+  E : tp pos
+  E = nat
+
+  variable
+    n n' n₁ n₂ n₃ : ℕ
+
+  postulate
+    finset : tp neg → tp neg
+  record FinSet (X : tp neg) : Set where
+    coinductive
+    field
+      quit : cmp X
+      find : cmp (Π nat λ _ → maybe E ⋉ finset X)
+  postulate
+    finset/decode : val (U (finset X)) ≡ FinSet X
+    {-# REWRITE finset/decode #-}
+
+    quit/step : ∀ {c e} → FinSet.quit (step (finset X) c e) ≡ step X                                c (FinSet.quit e)
+    find/step : ∀ {c e} → FinSet.find (step (finset X) c e) ≡ step (Π nat λ _ → maybe E ⋉ finset X) c (FinSet.find e)
+    {-# REWRITE quit/step find/step #-}
+
+  -- Indexed Tree
+  data ITree : ℕ → Set where
+    leaf : ITree 0
+    node : ITree n₁ → val E → ITree n₂ → ITree (n₁ + 1 + n₂)
+  postulate
+    itree : val nat → tp pos
+    itree/decode : val (itree n) ≡ ITree n
+    {-# REWRITE itree/decode #-}
+
+  data Splayed : ℕ → Set where
+    valid : (t : ITree n) → Splayed n
+    zig   : (a : ITree n₁) (x : val E) (b : ITree n₂) (y : val E) (c : ITree n₃) → Splayed ((n₁ + 1 + n₂) + 1 + n₃)
+    zag   : (a : ITree n₁) (y : val E) (b : ITree n₂) (x : val E) (c : ITree n₃) → Splayed (n₁ + 1 + (n₂ + 1 + n₃))
+  postulate
+    splayed : val nat → tp pos
+    splayed/decode : val (splayed n) ≡ Splayed n
+    {-# REWRITE splayed/decode #-}
+
+  open import Tactic.MonoidSolver using (solve; solve-macro)
+
+  +-assoc² : (n₁ : ℕ) {n₂ n₃ : ℕ} → n₁ + 1 + n₂ + 1 + n₃ ≡ n₁ + 1 + (n₂ + 1 + n₃)
+  +-assoc² n₁ {n₂} {n₃} = solve Nat.+-0-monoid
+
+
+  splay : ITree n → (i : val nat) → i Nat.< n → cmp (F (splayed n))
+  splay {n} (node {n₁} {n₂} l z r) i i<n with Nat.<-cmp i n₁
+  ... | tri< i<n₁ _ _ =
+    bind (F (splayed _)) (splay l i i<n₁) λ
+      { (valid (node a x b)) → ret (zig a x b z r)
+      ; (zig {n₁₁} {n₁₂} {n₁₃} a x b y c) →
+          let
+            arithmetic : n₁₁ + 1 + (n₁₂ + 1 + (n₁₃ + 1 + n₂)) ≡ n₁₁ + 1 + n₁₂ + 1 + n₁₃ + 1 + n₂
+            arithmetic = solve Nat.+-0-monoid  -- can't plug in directly?
+          in
+          ret (Eq.subst Splayed arithmetic (valid (node a x (node b y (node c z r)))))
+      ; (zag {n₁₁} {n₁₂} {n₁₃} a y b x c) →
+          let
+            arithmetic : n₁₁ + 1 + n₁₂ + 1 + (n₁₃ + 1 + n₂) ≡ n₁₁ + 1 + (n₁₂ + 1 + n₁₃) + 1 + n₂
+            arithmetic = solve Nat.+-0-monoid
+          in
+          ret (valid (Eq.subst ITree arithmetic (node (node a y b) x (node c z r))))
+      }
+  ... | tri≈ _ refl _ = ret (valid (node l z r))
+  ... | tri> _ _ i>n₁ =
+    let
+      arithmetic : i ∸ (n₁ + 1) Nat.< n₂
+      arithmetic =
+        let open ≤-Reasoning in
+        Nat.+-cancelˡ-< (n₁ + 1) (i ∸ (n₁ + 1)) n₂ $
+        begin-strict
+          (n₁ + 1) + (i ∸ (n₁ + 1))
+        ≡⟨ Nat.m+[n∸m]≡n (Eq.subst (i Nat.≥_) (Nat.+-comm 1 n₁) i>n₁) ⟩
+          i
+        <⟨ i<n ⟩
+          n₁ + 1 + n₂
+        ∎
+    in
+    bind (F (splayed _)) (splay r (i ∸ (n₁ + 1)) arithmetic) λ
+      { (valid leaf) → contradiction arithmetic Nat.n≮0
+      ; (valid (node a x b)) → ret (zag l z a x b)
+      ; (zig {n₁₁} {n₁₂} {n₁₃} a x b y c) →
+          let
+            arithmetic : n₁ + 1 + n₁₁ + 1 + (n₁₂ + 1 + n₁₃) ≡ n₁ + 1 + (n₁₁ + 1 + n₁₂ + 1 + n₁₃)
+            arithmetic = solve Nat.+-0-monoid
+          in
+          ret (valid (Eq.subst ITree arithmetic (node (node l z a) x (node b y c))))
+      ; (zag {n₁₁} {n₁₂} {n₁₃} a y b x c) →
+          let
+            arithmetic : n₁ + 1 + n₁₁ + 1 + n₁₂ + 1 + n₁₃ ≡ n₁ + 1 + (n₁₁ + 1 + (n₁₂ + 1 + n₁₃))
+            arithmetic = solve Nat.+-0-monoid
+          in
+          ret (valid (Eq.subst ITree arithmetic (node (node (node l z a) y b) x c)))
+      }
+
+  Φ : ITree n → ℂ
+  Φ leaf = 0
+  Φ {n} (node t₁ _ t₂) = Φ t₁ + ⌊log₂ n ⌋ + Φ t₂
+
+  {-# TERMINATING #-}
+  splay-finset : ITree n → FinSet (F (itree n))
+  FinSet.quit (splay-finset t) = ret t
+  FinSet.find (splay-finset {n} t) i with i Nat.<? n
+  ... | no _    = nothing , splay-finset t
+  ... | yes i<n =
+    bind (maybe E ⋉ finset _) (splay t i i<n) λ
+      { (valid t@(node _ x _)) → just x , splay-finset t
+      ; (zig {n₁} a x b y c) → just x , splay-finset (Eq.subst ITree (Eq.sym (+-assoc² n₁)) (node a x (node b y c)))
+      ; (zag {n₁} a y b x c) → just x , splay-finset (Eq.subst ITree (+-assoc² n₁) (node (node a y b) x c))
+      }
+
+  joinMid : FinSet (F (itree n₁)) → val E → FinSet (F (itree n₂)) → FinSet (F (itree (n₁ + 1 + n₂)))
+  joinMid s₁ x s₂ =
+    bind (finset _) (FinSet.quit s₁) λ t₁ →
+    bind (finset _) (FinSet.quit s₂) λ t₂ →
+    splay-finset (node t₁ x t₂)
+
+  list-to-itree : (l : val (list E)) → val (itree (length l))
+  list-to-itree []      = leaf
+  list-to-itree (x ∷ l) = node leaf x (list-to-itree l)
