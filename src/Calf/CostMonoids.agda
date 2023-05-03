@@ -111,8 +111,8 @@ combineParCostMonoids pcm₁ pcm₂ = record
       }
     ; isCancellative = record
       { ∙-cancel-≡ =
-        (λ (x₁ , x₂)           h → cong₂ _,_ (⊕-cancelˡ-≡ pcm₁ x₁    (cong proj₁ h)) (⊕-cancelˡ-≡ pcm₂ x₂    (cong proj₂ h))) ,
-        (λ (y₁ , y₂) (z₁ , z₂) h → cong₂ _,_ (⊕-cancelʳ-≡ pcm₁ y₁ z₁ (cong proj₁ h)) (⊕-cancelʳ-≡ pcm₂ y₂ z₂ (cong proj₂ h)))
+        (λ (x₁ , x₂) (y₁ , y₂) (z₁ , z₂) h → cong₂ _,_ (⊕-cancelˡ-≡ pcm₁ x₁ y₁ z₁ (cong proj₁ h)) (⊕-cancelˡ-≡ pcm₂ x₂ y₂ z₂ (cong proj₂ h))) ,
+        (λ (x₁ , x₂) (y₁ , y₂) (z₁ , z₂) h → cong₂ _,_ (⊕-cancelʳ-≡ pcm₁ x₁ y₁ z₁ (cong proj₁ h)) (⊕-cancelʳ-≡ pcm₂ x₂ y₂ z₂ (cong proj₂ h)))
       }
     ; isPreorder = record
       { isEquivalence = isEquivalence
