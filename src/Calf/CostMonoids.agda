@@ -259,6 +259,25 @@ ResourceMonoid = record
       +-mono-≤ h₁ (∸-mono h₂ h₁') ,
       +-mono-≤ h₂' (∸-mono h₁' h₂)
 
+List-CostMonoid : Set → CostMonoid
+List-CostMonoid A = record
+  { ℂ = List A
+  ; _+_ = _++_
+  ; zero = []
+  ; _≤_ = _⊆_
+  ; isCostMonoid = record
+    { isMonoid = ++-isMonoid
+    ; isPreorder = ⊆-isPreorder
+    ; isMonotone = record { ∙-mono-≤ = ++⁺ }
+    }
+  }
+  where
+    open import Data.List
+    open import Data.List.Properties
+    open import Data.List.Relation.Binary.Sublist.Propositional
+    open import Data.List.Relation.Binary.Sublist.Propositional.Properties
+
+
 sequentialParCostMonoid :
   (cm : CostMonoid)
   → IsCommutativeMonoid (CostMonoid._+_ cm) (CostMonoid.zero cm)
