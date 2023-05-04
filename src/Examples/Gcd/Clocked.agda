@@ -36,7 +36,7 @@ gcd/clocked (suc k) (x , 0 , h) =  ret {nat} x
 gcd/clocked (suc k) (x , suc y , h) =
   bind {mod-tp x (suc y) triv} (F nat) (mod x (suc y) triv)
   λ { (z , eqn2) →
-  let h2 = P.subst (λ k → suc k ≤ suc y) (P.sym eqn2) (m%n<n' x _ triv) in
+  let h2 = P.subst (λ k → suc k ≤ suc y) (P.sym eqn2) (m%n<n x _) in
   gcd/clocked k (suc y , z , h2) }
 
 gcd : cmp (Π gcd/i λ _ → F nat)
@@ -47,8 +47,8 @@ gcd i = gcd/clocked (gcd/depth i) i
 gcd/clocked≤gcd/depth : ∀ k i → IsBounded nat (gcd/clocked k i) (gcd/depth i)
 gcd/clocked≤gcd/depth zero i = bound/relax (λ _ → z≤n) bound/ret
 gcd/clocked≤gcd/depth (suc k) (x , zero , h) = bound/ret
-gcd/clocked≤gcd/depth (suc k) (x , suc y , h) rewrite gcd/depth-unfold-suc {x} {y} {h} =
-  bound/step 1 _ (gcd/clocked≤gcd/depth k (suc y , x % suc y , m%n<n' x _ triv))
+gcd/clocked≤gcd/depth (suc k) (x , y@(suc _) , h) rewrite gcd/depth-unfold-suc {h = h} =
+  bound/step 1 _ (gcd/clocked≤gcd/depth k (y , x % y , m%n<n x _))
 
 gcd≤gcd/depth : ∀ i → IsBounded nat (gcd i) (gcd/depth i)
 gcd≤gcd/depth i = gcd/clocked≤gcd/depth (gcd/depth i) i
