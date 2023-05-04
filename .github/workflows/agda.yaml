@@ -3,6 +3,11 @@ on:
   push:
     branches:
       - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
   pull_request:
 
 
