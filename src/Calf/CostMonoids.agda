@@ -26,6 +26,22 @@ open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; modu
     open import Data.Nat
     open import Data.Nat.Properties
 
+ℕ⊔-CostMonoid : CostMonoid
+ℕ⊔-CostMonoid = record
+  { ℂ = ℕ
+  ; _+_ = _⊔_
+  ; zero = zero
+  ; _≤_ = _≤_
+  ; isCostMonoid = record
+    { isMonoid = ⊔-0-isMonoid
+    ; isPreorder = ≤-isPreorder
+    ; isMonotone = record { ∙-mono-≤ = ⊔-mono-≤ }
+    }
+  }
+  where
+    open import Data.Nat
+    open import Data.Nat.Properties
+
 ℤ-CostMonoid : CostMonoid
 ℤ-CostMonoid = record
   { ℂ = ℤ
