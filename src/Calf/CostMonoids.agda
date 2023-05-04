@@ -277,27 +277,63 @@ List-CostMonoid A = record
     open import Data.List.Relation.Binary.Sublist.Propositional
     open import Data.List.Relation.Binary.Sublist.Propositional.Properties
 
+cm-× : CostMonoid → CostMonoid → CostMonoid
+cm-× cm₁ cm₂ =
+  record
+    { ℂ = ℂ cm₁ × ℂ cm₂
+    ; _+_ = λ (a₁ , a₂) (b₁ , b₂) → _+_ cm₁ a₁ b₁ , _+_ cm₂ a₂ b₂
+    ; zero = zero cm₁ , zero cm₂
+    ; _≤_ = λ (a₁ , a₂) (b₁ , b₂) → _≤_ cm₁ a₁ b₁ × _≤_ cm₂ a₂ b₂
+    ; isCostMonoid =
+        record
+          { isMonoid =
+              record
+                { isSemigroup = record
+                  { isMagma = record
+                    { isEquivalence = Eq.isEquivalence
+                    ; ∙-cong = Eq.cong₂ _
+                    }
+                  ; assoc = λ (a₁ , a₂) (b₁ , b₂) (c₁ , c₂) → Eq.cong₂ _,_ (+-assoc cm₁ a₁ b₁ c₁) (+-assoc cm₂ a₂ b₂ c₂)
+                  }
+                ; identity =
+                  (λ (a₁ , a₂) → Eq.cong₂ _,_ (+-identityˡ cm₁ a₁) (+-identityˡ cm₂ a₂)) ,
+                  (λ (a₁ , a₂) → Eq.cong₂ _,_ (+-identityʳ cm₁ a₁) (+-identityʳ cm₂ a₂))
+                }
+          ; isPreorder =
+              record
+                { isEquivalence = Eq.isEquivalence
+                ; reflexive = λ { refl → ≤-refl cm₁ , ≤-refl cm₂ }
+                ; trans = λ (h₁ , h₂) (h₁' , h₂') → ≤-trans cm₁ h₁ h₁' , ≤-trans cm₂ h₂ h₂'
+                }
+          ; isMonotone =
+              record
+                { ∙-mono-≤ = λ (h₁ , h₂) (h₁' , h₂') → +-mono-≤ cm₁ h₁ h₁' , +-mono-≤ cm₂ h₂ h₂'
+                }
+          }
+    }
+  where open CostMonoid
+
 
 sequentialParCostMonoid :
   (cm : CostMonoid)
   → IsCommutativeMonoid (CostMonoid._+_ cm) (CostMonoid.zero cm)
   → ParCostMonoid
 sequentialParCostMonoid cm isCommutativeMonoid = record
-  { ℂ = ℂ cm
-  ; _⊕_ = _+_ cm
-  ; 𝟘 = zero cm
-  ; _⊗_ = _+_ cm
-  ; 𝟙 = zero cm
-  ; _≤_ = _≤_ cm
+  { ℂ = ℂ
+  ; _⊕_ = _+_
+  ; 𝟘 = zero
+  ; _⊗_ = _+_
+  ; 𝟙 = zero
+  ; _≤_ = _≤_
   ; isParCostMonoid = record
-    { isMonoid = isMonoid cm
+    { isMonoid = isMonoid
     ; isCommutativeMonoid = isCommutativeMonoid
-    ; isPreorder = isPreorder cm
-    ; isMonotone-⊕ = isMonotone cm
-    ; isMonotone-⊗ = isMonotone cm
+    ; isPreorder = isPreorder
+    ; isMonotone-⊕ = isMonotone
+    ; isMonotone-⊗ = isMonotone
     }
   }
-  where open CostMonoid
+  where open CostMonoid cm
 
 ℕ-Work-ParCostMonoid : ParCostMonoid
 ℕ-Work-ParCostMonoid = sequentialParCostMonoid ℕ-CostMonoid +-0-isCommutativeMonoid
@@ -323,8 +359,8 @@ sequentialParCostMonoid cm isCommutativeMonoid = record
     open import Data.Nat
     open import Data.Nat.Properties
 
-combineParCostMonoids : ParCostMonoid → ParCostMonoid → ParCostMonoid
-combineParCostMonoids pcm₁ pcm₂ = record
+pcm-× : ParCostMonoid → ParCostMonoid → ParCostMonoid
+pcm-× pcm₁ pcm₂ = record
   { ℂ = ℂ pcm₁ × ℂ pcm₂
   ; _⊕_ = λ (a₁ , a₂) (b₁ , b₂) → _⊕_ pcm₁ a₁ b₁ , _⊕_ pcm₂ a₂ b₂
   ; 𝟘 = 𝟘 pcm₁ , 𝟘 pcm₂
@@ -375,4 +411,4 @@ combineParCostMonoids pcm₁ pcm₂ = record
   where open ParCostMonoid
 
 ℕ²-ParCostMonoid : ParCostMonoid
-ℕ²-ParCostMonoid = combineParCostMonoids ℕ-Work-ParCostMonoid ℕ-Span-ParCostMonoid
+ℕ²-ParCostMonoid = pcm-× ℕ-Work-ParCostMonoid ℕ-Span-ParCostMonoid
