@@ -6,6 +6,7 @@ module Calf.PhaseDistinction where
 
 open import Calf.Prelude
 open import Calf.Metalanguage
+open import Calf.CostMonoid
 
 open import Relation.Binary.PropositionalEquality as P
 
@@ -19,7 +20,7 @@ postulate
 -- Open/extensional modality.
 
 ◯ : □ → □
-◯ A = ext → A
+◯ A = (u : ext) → A
 
 infix 10 ◯⁺_
 infix 10 ◯⁻_
@@ -36,6 +37,53 @@ postulate
 ◯⁺ A = ext/val (λ _ → A)
 ◯⁻_ : tp neg → tp neg
 ◯⁻ A = ext/cmp (λ _ → A)
+
+
+◯-CostMonoid : CostMonoid → CostMonoid
+◯-CostMonoid cm =
+  record
+    { ℂ = ◯ ℂ
+    ; _+_ = λ c₁ c₂ u → c₁ u + c₂ u
+    ; zero = λ u → zero
+    ; _≤_ = λ c₁ c₂ → (u : ext) → c₁ u ≤ c₂ u
+    ; isCostMonoid =
+        record
+          { isMonoid =
+              record
+                { isSemigroup =
+                    record
+                      { isMagma =
+                          record
+                            { isEquivalence = isEquivalence
+                            ; ∙-cong = cong₂ _
+                            }
+                      ; assoc = λ c₁ c₂ c₃ → funext/Ω λ u → +-assoc (c₁ u) (c₂ u) (c₃ u)
+                      }
+                ; identity =
+                    (λ c → funext/Ω λ u → +-identityˡ (c u)) ,
+                    (λ c → funext/Ω λ u → +-identityʳ (c u))
+                }
+          ; isCancellative =
+              record
+                { ∙-cancel-≡ =
+                    (λ c₁ c₂ c₃ h → funext/Ω λ u → +-cancelˡ-≡ (c₁ u) (c₂ u) (c₃ u) (cong (λ e → e u) h)) ,
+                    (λ c₁ c₂ c₃ h → funext/Ω λ u → +-cancelʳ-≡ (c₁ u) (c₂ u) (c₃ u) (cong (λ e → e u) h))
+                }
+          ; isPreorder =
+              record
+                { isEquivalence = isEquivalence
+                ; reflexive = λ { refl u → ≤-refl }
+                ; trans = λ h₁ h₂ u → ≤-trans (h₁ u) (h₂ u)
+                }
+          ; isMonotone =
+              record
+                { ∙-mono-≤ = λ h₁ h₂ u → +-mono-≤ (h₁ u) (h₂ u)
+                }
+          }
+    }
+    where
+      open CostMonoid cm
+      open import Data.Product
 
 
 -- Closed/intensional modality.
