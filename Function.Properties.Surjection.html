@@ -1,0 +1,32 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="utf-8"><title>Function.Properties.Surjection</title><link rel="stylesheet" href="Agda.css"></head><body><pre class="Agda"><a id="1" class="Comment">------------------------------------------------------------------------</a>
+<a id="74" class="Comment">-- The Agda standard library</a>
+<a id="103" class="Comment">--</a>
+<a id="106" class="Comment">-- Conversions for surjections</a>
+<a id="137" class="Comment">------------------------------------------------------------------------</a>
+
+<a id="211" class="Symbol">{-#</a> <a id="215" class="Keyword">OPTIONS</a> <a id="223" class="Pragma">--cubical-compatible</a> <a id="244" class="Pragma">--safe</a> <a id="251" class="Symbol">#-}</a>
+
+<a id="256" class="Keyword">module</a> <a id="263" href="Function.Properties.Surjection.html" class="Module">Function.Properties.Surjection</a> <a id="294" class="Keyword">where</a>
+
+<a id="301" class="Keyword">open</a> <a id="306" class="Keyword">import</a> <a id="313" href="Function.Base.html" class="Module">Function.Base</a>
+<a id="327" class="Keyword">open</a> <a id="332" class="Keyword">import</a> <a id="339" href="Function.Bundles.html" class="Module">Function.Bundles</a>
+<a id="356" class="Keyword">open</a> <a id="361" class="Keyword">import</a> <a id="368" href="Level.html" class="Module">Level</a> <a id="374" class="Keyword">using</a> <a id="380" class="Symbol">(</a><a id="381" href="Agda.Primitive.html#591" class="Postulate">Level</a><a id="386" class="Symbol">)</a>
+<a id="388" class="Keyword">open</a> <a id="393" class="Keyword">import</a> <a id="400" href="Data.Product.html" class="Module">Data.Product</a>
+
+<a id="414" class="Keyword">private</a>
+  <a id="424" class="Keyword">variable</a>
+    <a id="437" href="Function.Properties.Surjection.html#437" class="Generalizable">a</a> <a id="439" href="Function.Properties.Surjection.html#439" class="Generalizable">b</a> <a id="441" class="Symbol">:</a> <a id="443" href="Agda.Primitive.html#591" class="Postulate">Level</a>
+    <a id="453" href="Function.Properties.Surjection.html#453" class="Generalizable">A</a> <a id="455" href="Function.Properties.Surjection.html#455" class="Generalizable">B</a> <a id="457" class="Symbol">:</a> <a id="459" href="Agda.Primitive.html#320" class="Primitive">Set</a> <a id="463" href="Function.Properties.Surjection.html#437" class="Generalizable">a</a>
+
+<a id="466" class="Comment">------------------------------------------------------------------------</a>
+<a id="539" class="Comment">-- Conversion functions</a>
+
+<a id="↠⇒↪"></a><a id="564" href="Function.Properties.Surjection.html#564" class="Function">↠⇒↪</a> <a id="568" class="Symbol">:</a> <a id="570" href="Function.Properties.Surjection.html#453" class="Generalizable">A</a> <a id="572" href="Function.Bundles.html#8782" class="Function Operator">↠</a> <a id="574" href="Function.Properties.Surjection.html#455" class="Generalizable">B</a> <a id="576" class="Symbol">→</a> <a id="578" href="Function.Properties.Surjection.html#455" class="Generalizable">B</a> <a id="580" href="Function.Bundles.html#9079" class="Function Operator">↪</a> <a id="582" href="Function.Properties.Surjection.html#453" class="Generalizable">A</a>
+<a id="584" href="Function.Properties.Surjection.html#564" class="Function">↠⇒↪</a> <a id="588" href="Function.Properties.Surjection.html#588" class="Bound">s</a> <a id="590" class="Symbol">=</a> <a id="592" href="Function.Bundles.html#10459" class="Function">mk↪</a> <a id="596" class="Symbol">{</a><a id="597" class="Argument">to</a> <a id="600" class="Symbol">=</a> <a id="602" href="Data.Product.Base.html#617" class="Field">proj₁</a> <a id="608" href="Function.Base.html#1115" class="Function Operator">∘</a> <a id="610" href="Function.Bundles.html#2923" class="Field">surjective</a><a id="620" class="Symbol">}</a> <a id="622" class="Symbol">{</a><a id="623" class="Argument">from</a> <a id="628" class="Symbol">=</a> <a id="630" href="Function.Bundles.html#2854" class="Field">to</a><a id="632" class="Symbol">}</a> <a id="634" class="Symbol">(</a><a id="635" href="Data.Product.Base.html#631" class="Field">proj₂</a> <a id="641" href="Function.Base.html#1115" class="Function Operator">∘</a> <a id="643" href="Function.Bundles.html#2923" class="Field">surjective</a><a id="653" class="Symbol">)</a>
+  <a id="657" class="Keyword">where</a> <a id="663" class="Keyword">open</a> <a id="668" href="Function.Bundles.html#2797" class="Module">Surjection</a> <a id="679" href="Function.Properties.Surjection.html#588" class="Bound">s</a>
+
+<a id="↠⇒⇔"></a><a id="682" href="Function.Properties.Surjection.html#682" class="Function">↠⇒⇔</a> <a id="686" class="Symbol">:</a> <a id="688" href="Function.Properties.Surjection.html#453" class="Generalizable">A</a> <a id="690" href="Function.Bundles.html#8782" class="Function Operator">↠</a> <a id="692" href="Function.Properties.Surjection.html#455" class="Generalizable">B</a> <a id="694" class="Symbol">→</a> <a id="696" href="Function.Properties.Surjection.html#453" class="Generalizable">A</a> <a id="698" href="Function.Bundles.html#8929" class="Function Operator">⇔</a> <a id="700" href="Function.Properties.Surjection.html#455" class="Generalizable">B</a>
+<a id="702" href="Function.Properties.Surjection.html#682" class="Function">↠⇒⇔</a> <a id="706" href="Function.Properties.Surjection.html#706" class="Bound">s</a> <a id="708" class="Symbol">=</a> <a id="710" href="Function.Bundles.html#10052" class="Function">mk⇔</a> <a id="714" href="Function.Bundles.html#2854" class="Field">to</a> <a id="717" class="Symbol">(</a><a id="718" href="Data.Product.Base.html#617" class="Field">proj₁</a> <a id="724" href="Function.Base.html#1115" class="Function Operator">∘</a> <a id="726" href="Function.Bundles.html#2923" class="Field">surjective</a><a id="736" class="Symbol">)</a>
+  <a id="740" class="Keyword">where</a> <a id="746" class="Keyword">open</a> <a id="751" href="Function.Bundles.html#2797" class="Module">Surjection</a> <a id="762" href="Function.Properties.Surjection.html#706" class="Bound">s</a>
+</pre></body></html>
