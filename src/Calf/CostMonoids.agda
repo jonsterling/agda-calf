@@ -119,7 +119,7 @@ ResourceMonoid = record
       ∎
 
     arithmetic : ∀ m n o → o ≤ n → m ∸ (n ∸ o) ≡ (m + o) ∸ n
-    arithmetic m n        .zero    z≤n       = {!   !}
+    arithmetic m       n       .zero   z≤n       = {!   !}
     arithmetic zero    (suc n) (suc o) (s≤s o≤n) = {!   !}
     arithmetic (suc m) (suc n) (suc o) (s≤s o≤n) = {!   !}
 
@@ -257,7 +257,7 @@ ResourceMonoid = record
         r≤q'+[p'∸q] : r ≤ q' + (p' ∸ q)
         r≤q'+[p'∸q] =
           ∸-cancelˡ-≤ {o = q'} q'≤r (m≤m+n q' (p' ∸ q)) $
-          +-cancelˡ-≤ q $
+          +-cancelˡ-≤ q (r ∸ q') ((q' + (p' ∸ q)) ∸ q') $
           begin
             q + (r ∸ q')
           ≤⟨ q+[r∸q']≤p' ⟩
@@ -282,7 +282,7 @@ ResourceMonoid = record
         p'≤q+[r∸q'] : p' ≤ q + (r ∸ q')
         p'≤q+[r∸q'] =
           ∸-cancelˡ-≤ q≤p' (m≤m+n q (r ∸ q')) $
-          +-cancelˡ-≤ q' $
+          +-cancelˡ-≤ q' (p' ∸ q) ((q + (r ∸ q')) ∸ q) $
           {!   !}
       in
       Eq.cong₂
