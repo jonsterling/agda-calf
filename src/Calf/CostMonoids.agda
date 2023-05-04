@@ -284,28 +284,29 @@ cm-× cm₁ cm₂ = record
   ; zero = zero cm₁ , zero cm₂
     ; _≤_ = λ (a₁ , a₂) (b₁ , b₂) → _≤_ cm₁ a₁ b₁ × _≤_ cm₂ a₂ b₂
   ; isCostMonoid = record
-      { isMonoid = record
-          { isSemigroup = record
-            { isMagma = record
-                { isEquivalence = Eq.isEquivalence
-                ; ∙-cong = Eq.cong₂ _
-                }
-            ; assoc =
-                λ (a₁ , a₂) (b₁ , b₂) (c₁ , c₂) → Eq.cong₂ _,_ (+-assoc cm₁ a₁ b₁ c₁) (+-assoc cm₂ a₂ b₂ c₂)
-            }
-          ; identity =
-              (λ (a₁ , a₂) → Eq.cong₂ _,_ (+-identityˡ cm₁ a₁) (+-identityˡ cm₂ a₂)) ,
-              (λ (a₁ , a₂) → Eq.cong₂ _,_ (+-identityʳ cm₁ a₁) (+-identityʳ cm₂ a₂))
-          }
-      ; isPreorder = record
+    { isMonoid = record
+      { isSemigroup = record
+        { isMagma = record
           { isEquivalence = Eq.isEquivalence
-          ; reflexive = λ { refl → ≤-refl cm₁ , ≤-refl cm₂ }
-          ; trans = λ (h₁ , h₂) (h₁' , h₂') → ≤-trans cm₁ h₁ h₁' , ≤-trans cm₂ h₂ h₂'
+          ; ∙-cong = Eq.cong₂ _
           }
-      ; isMonotone = record
-          { ∙-mono-≤ = λ (h₁ , h₂) (h₁' , h₂') → +-mono-≤ cm₁ h₁ h₁' , +-mono-≤ cm₂ h₂ h₂'
-          }
+        ; assoc =
+            λ (a₁ , a₂) (b₁ , b₂) (c₁ , c₂) →
+              Eq.cong₂ _,_ (+-assoc cm₁ a₁ b₁ c₁) (+-assoc cm₂ a₂ b₂ c₂)
+        }
+      ; identity =
+          (λ (a₁ , a₂) → Eq.cong₂ _,_ (+-identityˡ cm₁ a₁) (+-identityˡ cm₂ a₂)) ,
+          (λ (a₁ , a₂) → Eq.cong₂ _,_ (+-identityʳ cm₁ a₁) (+-identityʳ cm₂ a₂))
       }
+    ; isPreorder = record
+      { isEquivalence = Eq.isEquivalence
+      ; reflexive = λ { refl → ≤-refl cm₁ , ≤-refl cm₂ }
+      ; trans = λ (h₁ , h₂) (h₁' , h₂') → ≤-trans cm₁ h₁ h₁' , ≤-trans cm₂ h₂ h₂'
+      }
+    ; isMonotone = record
+      { ∙-mono-≤ = λ (h₁ , h₂) (h₁' , h₂') → +-mono-≤ cm₁ h₁ h₁' , +-mono-≤ cm₂ h₂ h₂'
+      }
+    }
   }
   where
     open CostMonoid
@@ -365,45 +366,49 @@ pcm-× pcm₁ pcm₂ = record
   ; 𝟙 = 𝟙 pcm₁ , 𝟙 pcm₂
   ; _≤_ = Pointwise (_≤_ pcm₁) (_≤_ pcm₂)
   ; isParCostMonoid = record
-      { isMonoid = record
-          { isSemigroup = record
-              { isMagma = record
-                  { isEquivalence = Eq.isEquivalence
-                  ; ∙-cong = Eq.cong₂ _
-                  }
-              ; assoc = λ (a₁ , a₂) (b₁ , b₂) (c₁ , c₂) → Eq.cong₂ _,_ (⊕-assoc pcm₁ a₁ b₁ c₁) (⊕-assoc pcm₂ a₂ b₂ c₂)
-              }
-          ; identity =
-              (λ (a₁ , a₂) → Eq.cong₂ _,_ (⊕-identityˡ pcm₁ a₁) (⊕-identityˡ pcm₂ a₂)) ,
-              (λ (a₁ , a₂) → Eq.cong₂ _,_ (⊕-identityʳ pcm₁ a₁) (⊕-identityʳ pcm₂ a₂))
-          }
-      ; isCommutativeMonoid = record
-          { isMonoid = record
-            { isSemigroup = record
-              { isMagma = record
-                { isEquivalence = Eq.isEquivalence
-                ; ∙-cong = Eq.cong₂ _
-                }
-              ; assoc = λ (a₁ , a₂) (b₁ , b₂) (c₁ , c₂) → Eq.cong₂ _,_ (⊗-assoc pcm₁ a₁ b₁ c₁) (⊗-assoc pcm₂ a₂ b₂ c₂)
-              }
-            ; identity =
-                (λ (a₁ , a₂) → Eq.cong₂ _,_ (⊗-identityˡ pcm₁ a₁) (⊗-identityˡ pcm₂ a₂)) ,
-                (λ (a₁ , a₂) → Eq.cong₂ _,_ (⊗-identityʳ pcm₁ a₁) (⊗-identityʳ pcm₂ a₂))
-            }
-          ; comm = λ (a₁ , a₂) (b₁ , b₂) → Eq.cong₂ _,_ (⊗-comm pcm₁ a₁ b₁) (⊗-comm pcm₂ a₂ b₂)
-          }
-      ; isPreorder = record
+    { isMonoid = record
+      { isSemigroup = record
+        { isMagma = record
           { isEquivalence = Eq.isEquivalence
-          ; reflexive = λ { refl → ≤-refl pcm₁ , ≤-refl pcm₂ }
-          ; trans = λ (h₁ , h₂) (h₁' , h₂') → ≤-trans pcm₁ h₁ h₁' , ≤-trans pcm₂ h₂ h₂'
+          ; ∙-cong = Eq.cong₂ _
           }
-      ; isMonotone-⊕ = record
-          { ∙-mono-≤ = λ (h₁ , h₂) (h₁' , h₂') → ⊕-mono-≤ pcm₁ h₁ h₁' , ⊕-mono-≤ pcm₂ h₂ h₂'
-          }
-      ; isMonotone-⊗ = record
-          { ∙-mono-≤ = λ (h₁ , h₂) (h₁' , h₂') → ⊗-mono-≤ pcm₁ h₁ h₁' , ⊗-mono-≤ pcm₂ h₂ h₂'
-          }
+        ; assoc =
+            λ (a₁ , a₂) (b₁ , b₂) (c₁ , c₂) →
+            Eq.cong₂ _,_ (⊕-assoc pcm₁ a₁ b₁ c₁) (⊕-assoc pcm₂ a₂ b₂ c₂)
+        }
+      ; identity =
+          (λ (a₁ , a₂) → Eq.cong₂ _,_ (⊕-identityˡ pcm₁ a₁) (⊕-identityˡ pcm₂ a₂)) ,
+          (λ (a₁ , a₂) → Eq.cong₂ _,_ (⊕-identityʳ pcm₁ a₁) (⊕-identityʳ pcm₂ a₂))
       }
+    ; isCommutativeMonoid = record
+      { isMonoid = record
+        { isSemigroup = record
+          { isMagma = record
+            { isEquivalence = Eq.isEquivalence
+            ; ∙-cong = Eq.cong₂ _
+            }
+          ; assoc =
+              λ (a₁ , a₂) (b₁ , b₂) (c₁ , c₂) →
+                Eq.cong₂ _,_ (⊗-assoc pcm₁ a₁ b₁ c₁) (⊗-assoc pcm₂ a₂ b₂ c₂)
+          }
+        ; identity =
+            (λ (a₁ , a₂) → Eq.cong₂ _,_ (⊗-identityˡ pcm₁ a₁) (⊗-identityˡ pcm₂ a₂)) ,
+            (λ (a₁ , a₂) → Eq.cong₂ _,_ (⊗-identityʳ pcm₁ a₁) (⊗-identityʳ pcm₂ a₂))
+        }
+      ; comm = λ (a₁ , a₂) (b₁ , b₂) → Eq.cong₂ _,_ (⊗-comm pcm₁ a₁ b₁) (⊗-comm pcm₂ a₂ b₂)
+      }
+    ; isPreorder = record
+      { isEquivalence = Eq.isEquivalence
+      ; reflexive = λ { refl → ≤-refl pcm₁ , ≤-refl pcm₂ }
+      ; trans = λ (h₁ , h₂) (h₁' , h₂') → ≤-trans pcm₁ h₁ h₁' , ≤-trans pcm₂ h₂ h₂'
+      }
+    ; isMonotone-⊕ = record
+      { ∙-mono-≤ = λ (h₁ , h₂) (h₁' , h₂') → ⊕-mono-≤ pcm₁ h₁ h₁' , ⊕-mono-≤ pcm₂ h₂ h₂'
+      }
+    ; isMonotone-⊗ = record
+      { ∙-mono-≤ = λ (h₁ , h₂) (h₁' , h₂') → ⊗-mono-≤ pcm₁ h₁ h₁' , ⊗-mono-≤ pcm₂ h₂ h₂'
+      }
+    }
   }
   where
     open ParCostMonoid
