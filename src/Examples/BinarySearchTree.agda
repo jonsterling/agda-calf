@@ -3,15 +3,14 @@
 module Examples.BinarySearchTree where
 
 open import Calf.CostMonoid
-open import Calf.CostMonoids using (ℕ²-ParCostMonoid)
+open import Calf.CostMonoids using (ℕ-CostMonoid)
 
-parCostMonoid = ℕ²-ParCostMonoid
-open ParCostMonoid parCostMonoid
+costMonoid = ℕ-CostMonoid
+open CostMonoid costMonoid renaming (zero to 𝟘; _+_ to _⊕_)
 
 open import Level using (0ℓ)
 
 open import Calf costMonoid
-open import Calf.ParMetalanguage parCostMonoid
 open import Calf.Types.Unit
 open import Calf.Types.Product
 open import Calf.Types.Sum
@@ -19,8 +18,9 @@ open import Calf.Types.Bool
 open import Calf.Types.Maybe
 open import Calf.Types.Nat
 open import Calf.Types.List
+open import Calf.Types.Bounded costMonoid
 open import Data.String using (String)
-open import Data.Nat as Nat using (_+_; _*_; _<_; _>_; _≤ᵇ_; _<ᵇ_; ⌊_/2⌋; _≡ᵇ_; _≥_)
+open import Data.Nat as Nat using (_+_; _*_; _<_; _>_; _≤ᵇ_; _<ᵇ_; ⌊_/2⌋; _≡ᵇ_; _≥_; _∸_)
 open import Data.Bool as Bool using (not; _∧_)
 import Data.Nat.Properties as Nat
 
@@ -62,7 +62,7 @@ ListMSequence =
     ; join =
         λ {A} l₁ a l₂ →
           let n = length l₁ + 1 + length l₂ in
-          step (F (list A)) (n , n) (ret (l₁ ++ [ a ] ++ l₂))
+          step (F (list A)) n (ret (l₁ ++ [ a ] ++ l₂))
     ; rec = λ {A} {X} → rec {A} {X}
     }
   where
@@ -73,7 +73,7 @@ ListMSequence =
           Π (list A) λ _ → X
         )
     rec {A} {X} z f []      = z
-    rec {A} {X} z f (x ∷ l) = step X (1 , 1) (f [] z x l (rec {A} {X} z f l))
+    rec {A} {X} z f (x ∷ l) = step X 1 (f [] z x l (rec {A} {X} z f l))
 
 
 RedBlackMSequence : MSequence
@@ -134,6 +134,7 @@ RedBlackMSequence =
           F (alrbt A y₂ n₂)
         )
     joinLeft {A} y₁ n₁ t₁ a .red n₂ (red t₂₁ a₁ t₂₂) n₁<n₂ =
+      step (F (alrbt A red n₂)) 1 $
       bind (F (alrbt A red n₂)) (joinLeft _ _ t₁ a _ _ t₂₁ n₁<n₂) λ
         { (valid {y = red} t') → ret (violation t' a₁ t₂₂)
         ; (valid {y = black} t') → ret (valid (red t' a₁ t₂₂)) }
@@ -145,9 +146,54 @@ RedBlackMSequence =
     joinLeft black n₁ t₁ a .black (suc n₂) (black {y₁ = black} t₂₁ a₁ t₂₂) n₁<n₂ | yes refl =
       ret (valid (black (red t₁ a t₂₁) a₁ t₂₂))
     ... | no n₁≢n₂ =
+      step (F (alrbt A black (suc n₂))) 1 $
       bind (F (alrbt A black (suc n₂))) (joinLeft _ _ t₁ a _ _ t₂₁ (Nat.≤∧≢⇒< (Nat.≤-pred n₁<n₂) n₁≢n₂)) λ
         { (violation (red t'₁₁ a'₁ t'₁₂) a' t'₂) → ret (valid (red (black t'₁₁ a'₁ t'₁₂) a' (black t'₂ a₁ t₂₂)))
         ; (valid t') → ret (valid (black t' a₁ t₂₂)) }
+
+    joinLeft/cost : (y : val color) (n₁ n₂ : val nat) → ℂ
+    joinLeft/cost red n₁ n₂ = 1 + (2 * (n₂ ∸ n₁))
+    joinLeft/cost black n₁ n₂ = (2 * (n₂ ∸ n₁))
+
+    joinLeft/is-bounded' : ∀ y₁ n₁ t₁ a y₂ n₂ t₂ n₁<n₂
+        → IsBounded (alrbt A y₂ n₂) (joinLeft y₁ n₁ t₁ a y₂ n₂ t₂ n₁<n₂) (joinLeft/cost y₂ n₁ n₂)
+
+    joinLeft/is-bounded : ∀ {A} y₁ n₁ t₁ a y₂ n₂ t₂ n₁<n₂
+        → IsBounded (alrbt A y₂ n₂) (joinLeft y₁ n₁ t₁ a y₂ n₂ t₂ n₁<n₂) (1 + (2 * (n₂ ∸ n₁)))
+
+    joinLeft/is-bounded' {A} y₁ n₁ t₁ a .red n₂ (red t₂₁ a₁ t₂₂) n₁<n₂ =
+      bound/step 1 (2 * (n₂ ∸ n₁))
+      (Eq.subst
+        (IsBounded _ _)
+        (Nat.+-identityʳ (2 * (n₂ ∸ n₁)))
+        (bound/bind/const (2 * (n₂ ∸ n₁)) 0
+          (joinLeft/is-bounded' _ _ t₁ a _ _ t₂₁ n₁<n₂)
+          λ { (valid (red _ _ _)) → bound/ret
+            ; (valid (black _ _ _)) → bound/ret }))
+    joinLeft/is-bounded' y₁ n₁ t₁ a .black (suc n₂) (black t₂₁ a₁ t₂₂) n₁<n₂ with n₁ Nat.≟ n₂
+    joinLeft/is-bounded' red _ (red _ _ _) _ .black _ (black _ _ _) _ | yes refl =
+      bound/relax (λ u → Nat.z≤n) bound/ret
+    joinLeft/is-bounded' black _ _ _ .black _ (black {y₁ = red} (red _ _ _) _ _) _ | yes refl =
+      bound/relax (λ u → Nat.z≤n) bound/ret
+    joinLeft/is-bounded' black _ _ _ .black _ (black {y₁ = black} _ _ _) _ | yes refl =
+      bound/relax (λ u → Nat.z≤n) bound/ret
+    ...| no n₁≢n₂ =
+      Eq.subst
+        (IsBounded _ _) {x = 2 + 2 * (n₂ ∸ n₁)}
+        (Eq.trans (Eq.sym (Nat.*-suc 2 (n₂ ∸ n₁))) (Eq.cong (2 *_) (Eq.sym (Nat.+-∸-assoc 1 (Nat.≤-pred n₁<n₂)))))
+        (bound/step 1 (1 + 2 * (n₂ ∸ n₁))
+          (Eq.subst
+            (IsBounded _ _) {x = 1 + (2 * (n₂ ∸ n₁)) + 0}
+            (Nat.+-identityʳ (1 + 2 * (n₂ ∸ n₁)))
+            (bound/bind/const (1 + (2 * (n₂ ∸ n₁))) 0
+              (joinLeft/is-bounded _ _ t₁ a _ _ t₂₁ _)
+              λ { (violation (red _ _ _) _ _) → bound/ret
+                ; (valid _) → bound/ret })))
+
+    joinLeft/is-bounded y₁ n₁ t₁ a red n₂ t₂ n₁<n₂ =
+      joinLeft/is-bounded' y₁ n₁ t₁ a red n₂ t₂ n₁<n₂
+    joinLeft/is-bounded y₁ n₁ t₁ a black n₂ t₂ n₁<n₂ =
+      bound/relax (λ u → Nat.n≤1+n _) (joinLeft/is-bounded' y₁ n₁ t₁ a black n₂ t₂ n₁<n₂)
 
     data AlmostRightRBT (A : tp pos) : (left-color : val color) → val nat → Set where
       violation :
@@ -169,6 +215,7 @@ RedBlackMSequence =
           F (arrbt A y₁ n₁)
         )
     joinRight {A} .red n₁ (red t₁₁ a₁ t₁₂) a y₂ n₂ t₂ n₁>n₂ =
+      step (F (arrbt A red n₁)) 1 $
       bind (F (arrbt A red n₁)) (joinRight _ _ t₁₂ a _ _ t₂ n₁>n₂) λ
         { (valid {y = red} t') → ret (violation t₁₁ a₁ t')
         ; (valid {y = black} t') → ret (valid (red t₁₁ a₁ t')) }
@@ -180,9 +227,54 @@ RedBlackMSequence =
     joinRight .black (suc n₁) (black {y₂ = black} t₁₁ a₁ t₁₂) a black n₁ t₂ n₁>n₂ | yes refl =
       ret (valid (black t₁₁ a₁ (red t₁₂ a t₂)))
     ... | no n₁≢n₂ =
+      step (F (arrbt A black (suc n₁))) 1 $
       bind (F (arrbt A black (suc n₁))) (joinRight _ _ t₁₂ a _ _ t₂ (Nat.≤∧≢⇒< (Nat.≤-pred n₁>n₂) (≢-sym n₁≢n₂))) λ
         { (violation t'₁ a' (red t'₂₁ a'₂ t'₂₂)) → ret (valid (red (black t₁₁ a₁ t'₁) a' (black t'₂₁ a'₂ t'₂₂)))
         ; (valid t') → ret (valid (black t₁₁ a₁ t'))  }
+
+    joinRight/cost : (y : val color) (n₁ n₂ : val nat) → ℂ
+    joinRight/cost red n₁ n₂ = 1 + (2 * (n₁ ∸ n₂))
+    joinRight/cost black n₁ n₂ = (2 * (n₁ ∸ n₂))
+
+    joinRight/is-bounded' : ∀ y₁ n₁ t₁ a y₂ n₂ t₂ n₁>n₂
+        → IsBounded (arrbt A y₁ n₁) (joinRight y₁ n₁ t₁ a y₂ n₂ t₂ n₁>n₂) (joinRight/cost y₁ n₁ n₂)
+
+    joinRight/is-bounded : ∀ {A} y₁ n₁ t₁ a y₂ n₂ t₂ n₁>n₂
+        → IsBounded (arrbt A y₁ n₁) (joinRight y₁ n₁ t₁ a y₂ n₂ t₂ n₁>n₂) (1 + (2 * (n₁ ∸ n₂)))
+
+    joinRight/is-bounded' red n₁ (red t₁₁ a₁ t₁₂) a y₂ n₂ t₂ n₁>n₂ =
+      bound/step 1 (2 * (n₁ ∸ n₂))
+      (Eq.subst
+        (IsBounded _ _)
+        (Nat.+-identityʳ (2 * (n₁ ∸ n₂)))
+        (bound/bind/const (2 * (n₁ ∸ n₂)) 0
+          (joinRight/is-bounded' _ _ t₁₂ a _ _ t₂ n₁>n₂)
+          (λ {(valid (red _ _ _)) → bound/ret
+            ; (valid (black _ _ _)) → bound/ret })))
+    joinRight/is-bounded' black (suc n₁) (black t₁₁ a₁ t₁₂) a y₂ n₂ t₂ n₁>n₂ with n₁ Nat.≟ n₂
+    joinRight/is-bounded' black _ (black _ _ _) _ red _ (red _ _ _) _ | yes refl =
+      bound/relax (λ u → Nat.z≤n) bound/ret
+    joinRight/is-bounded' black _ (black {y₂ = red} _ _ (red _ _ _)) _ black _ _ _ | yes refl =
+      bound/relax (λ u → Nat.z≤n) bound/ret
+    joinRight/is-bounded' black _ (black {y₂ = black} _ _ _) _ black _ _ _ | yes refl =
+      bound/relax (λ u → Nat.z≤n) bound/ret
+    ... | no n₁≢n₂ =
+      Eq.subst
+        (IsBounded _ _) {x = 2 + 2 * (n₁ ∸ n₂)}
+        (Eq.trans (Eq.sym (Nat.*-suc 2 (n₁ ∸ n₂))) (Eq.cong (2 *_) (Eq.sym (Nat.+-∸-assoc 1 n₁>n₂))))
+        (bound/step 1 (1 + 2 * (n₁ ∸ n₂))
+          (Eq.subst
+            (IsBounded _ _) {x = 1 + 2 * (n₁ ∸ n₂) + 0}
+            (Nat.+-identityʳ (1 + 2 * (n₁ ∸ n₂)))
+            (bound/bind/const (1 + 2 * (n₁ ∸ n₂)) 0
+              (joinRight/is-bounded _ _ t₁₂ a _ _ t₂ _)
+              λ { (violation _ _ (red _ _ _)) → bound/ret
+                ; (valid _) → bound/ret })))
+
+    joinRight/is-bounded red n₁ t₁ a y₂ n₂ t₂ n₁>n₂ =
+      joinRight/is-bounded' red n₁ t₁ a y₂ n₂ t₂ n₁>n₂
+    joinRight/is-bounded black n₁ t₁ a y₂ n₂ t₂ n₁>n₂ =
+      bound/relax (λ u → Nat.n≤1+n _) (joinRight/is-bounded' black n₁ t₁ a y₂ n₂ t₂ n₁>n₂)
 
     i-join :
       cmp
@@ -204,9 +296,37 @@ RedBlackMSequence =
         { (violation t'₁ a' t'₂) → ret ⟪ black t'₁ a' t'₂ ⟫
         ; (valid t') → ret ⟪ t' ⟫ }
 
+    i-join/is-bounded : ∀ {A} y₁ n₁ t₁ a y₂ n₂ t₂
+        → IsBounded (rbt A) (i-join y₁ n₁ t₁ a y₂ n₂ t₂) (1 + (2 * (n₁ Nat.⊔ n₂ ∸ n₁ Nat.⊓ n₂)))
+    i-join/is-bounded {A} y₁ n₁ t₁ a y₂ n₂ t₂ with Nat.<-cmp n₁ n₂
+    i-join/is-bounded {A} red n₁ t₁ a y₂ .n₁ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
+      bound/relax (λ u → Nat.z≤n) bound/ret
+    i-join/is-bounded {A} black n₁ t₁ a red n₁ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
+      bound/relax (λ u → Nat.z≤n) bound/ret
+    i-join/is-bounded {A} black n₁ t₁ a black n₁ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
+      bound/relax (λ u → Nat.z≤n) bound/ret
+    ... | tri< n₁<n₂ n₁≢n₂ ¬n₁>n₂ =
+      Eq.subst
+        (IsBounded _ _) {x = 1 + 2 * (n₂ ∸ n₁) + 0}
+        (Eq.cong suc (Eq.trans (Nat.+-identityʳ (2 * (n₂ ∸ n₁))) (Eq.cong (2 *_) (Eq.cong₂ (λ x y → x ∸ y) (Eq.sym (Nat.m≤n⇒m⊔n≡n (Nat.<⇒≤ n₁<n₂))) (Eq.sym (Nat.m≤n⇒m⊓n≡m (Nat.<⇒≤ n₁<n₂)))))))
+        (bound/bind/const (1 + 2 * (n₂ ∸ n₁)) 0
+          (joinLeft/is-bounded _ _ t₁ a _ _ t₂ n₁<n₂)
+          λ { (violation _ _ _) → bound/ret
+            ; (valid _) → bound/ret })
+    ... | tri> ¬n₁<n₂ n₁≢n₂ n₁>n₂ =
+      Eq.subst
+        (IsBounded _ _) {x = 1 + 2 * (n₁ ∸ n₂) + 0}
+        (Eq.cong suc (Eq.trans (Nat.+-identityʳ (2 * (n₁ ∸ n₂))) (Eq.cong (2 *_) (Eq.cong₂ (λ x y → x ∸ y) (Eq.sym (Nat.m≥n⇒m⊔n≡m (Nat.<⇒≤ n₁>n₂))) (Eq.sym (Nat.m≥n⇒m⊓n≡n (Nat.<⇒≤ n₁>n₂)))))))
+        (bound/bind/const (1 + 2 * (n₁ ∸ n₂)) 0
+          (joinRight/is-bounded _ _ t₁ a _ _ t₂ n₁>n₂)
+          λ { (violation _ _ _) → bound/ret
+            ; (valid _) → bound/ret })
+
     join : cmp (Π (rbt A) λ _ → Π A λ _ → Π (rbt A) λ _ → F (rbt A))
     join ⟪ t₁ ⟫ a ⟪ t₂ ⟫ = i-join _ _ t₁ a _ _ t₂
 
+    join/is-bounded : ∀ {A} t₁ a t₂ → IsBounded (rbt A) (join t₁ a t₂) (1 + (2 * (RBT.n t₁ Nat.⊔ RBT.n t₂ ∸ RBT.n t₁ Nat.⊓ RBT.n t₂)))
+    join/is-bounded {A} ⟪ t₁ ⟫ a ⟪ t₂ ⟫ = i-join/is-bounded _ _ t₁ a _ _ t₂
 
     i-rec : {A : tp pos} {X : tp neg} →
       cmp
