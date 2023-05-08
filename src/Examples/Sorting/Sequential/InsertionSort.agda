@@ -36,9 +36,9 @@ insert x (y ∷ ys) =
 insert/correct : ∀ x l → Sorted l → ◯ (∃ λ l' → insert x l ≡ ret l' × SortedOf (x ∷ l) l')
 insert/correct x []       []       u = [ x ] , refl , refl , [] ∷ []
 insert/correct x (y ∷ ys) (h ∷ hs) u with x ≤? y
-... | yes x≤y rewrite Equivalence.g (≤ᵇ-reflects-≤ u) (ofʸ x≤y) =
+... | yes x≤y rewrite Equivalence.from (≤ᵇ-reflects-≤ u) (ofʸ x≤y) =
   x ∷ (y ∷ ys) , refl , refl , (x≤y ∷ ≤-≤* x≤y h) ∷ (h ∷ hs)
-... | no ¬x≤y rewrite Equivalence.g (≤ᵇ-reflects-≤ u) (ofⁿ ¬x≤y) =
+... | no ¬x≤y rewrite Equivalence.from (≤ᵇ-reflects-≤ u) (ofⁿ ¬x≤y) =
   let (ys' , h-ys' , x∷ys↭ys' , sorted-ys') = insert/correct x ys hs u in
   y ∷ ys' , Eq.cong (λ e → bind (F (list A)) e (ret ∘ (y ∷_))) h-ys' , (
     let open PermutationReasoning in

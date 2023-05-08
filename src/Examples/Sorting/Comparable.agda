@@ -52,10 +52,10 @@ NatComparable = record
   ; _≤_ = _≤_
   ; _≤ᵇ_ = λ x y → step (F bool) (fromℕ 1) (ret (x ≤ᵇ y))
   ; ≤ᵇ-reflects-≤ = λ u → record
-      { f = reflects u
-      ; g = reflects⁻¹ u
-      ; cong₁ = Eq.cong (reflects u)
-      ; cong₂ = Eq.cong (reflects⁻¹ u)
+      { to = reflects u
+      ; from = reflects⁻¹ u
+      ; to-cong = Eq.cong (reflects u)
+      ; from-cong = Eq.cong (reflects⁻¹ u)
       }
   ; ≤-refl = ≤-refl
   ; ≤-trans = ≤-trans
