@@ -17,7 +17,7 @@ open import Calf.Types.BigO costMonoid
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
-open import Data.Product using (_×_; _,_; ∃)
+open import Data.Product using (_×_; _,_; ∃; proj₁; proj₂)
 open import Data.Sum using (inj₁; inj₂)
 open import Function
 open import Data.Nat as Nat using (ℕ; zero; suc; z≤n; s≤s; _+_; _*_)
@@ -52,7 +52,7 @@ insert/correct x (y ∷ ys) (h ∷ hs) u with x ≤? y
   ) , All-resp-↭ x∷ys↭ys' (≰⇒≥ ¬x≤y ∷ h) ∷ sorted-ys'
 
 insert/cost : cmp (Π A λ _ → Π (list A) λ _ → meta ℂ)
-insert/cost x l = length l
+insert/cost x l = λ _ → length l
 
 insert/is-bounded : ∀ x l → IsBounded (list A) (insert x l) (insert/cost x l)
 insert/is-bounded x []       = bound/ret {list A} [ x ]
@@ -63,20 +63,20 @@ insert/is-bounded x (y ∷ ys) =
       if b
         then ret (x ∷ (y ∷ ys))
         else bind (F (list A)) (insert x ys) (ret ∘ (y ∷_))}
-    1
-    (length ys)
+    (λ _ → 1)
+    (λ _ → length ys)
     (h-cost x y)
     λ { false →
           Eq.subst
             (IsBounded (list A) (bind (F (list A)) (insert x ys) (ret ∘ (y ∷_))))
-            (+-identityʳ (length ys))
+            (+-identityʳ (λ _ → length ys))
             (bound/bind/const {list A} {list A}
               {insert x ys}
               {ret ∘ (y ∷_)}
-              (length ys)
-              zero
+              (λ _ → length ys)
+              (λ _ → zero)
               (insert/is-bounded x ys) λ ys' → bound/ret {list A} (y ∷ ys'))
-      ; true  → bound/relax (z≤n {length ys}) {list A} {ret (x ∷ (y ∷ ys))} (bound/ret {list A} (x ∷ (y ∷ ys)))
+      ; true  → bound/relax (λ _ → z≤n {length ys}) {list A} {ret (x ∷ (y ∷ ys))} (bound/ret {list A} (x ∷ (y ∷ ys)))
       }
 
 sort : cmp (Π (list A) λ _ → F (list A))
@@ -113,37 +113,64 @@ sort/correct (x ∷ xs) u =
   ) , sorted-x∷xs'
 
 sort/cost : cmp (Π (list A) λ _ → meta ℂ)
-sort/cost l = length l ²
+sort/cost l = λ _ → length l ²
+
+Modal : (⋄ : tp pos → tp pos) (A : tp pos) → Set
+Modal ⋄ A = val (⋄ A) ↔ val A
+
+postulate
+  lemma : (A : tp pos) (e : cmp (F A)) (v : val A) → ◯ (e ≡ ret v) →
+    (X : tp neg) (f : val A → cmp X) →
+    bind X e f ≡ bind X e (const (f v))
+
+  lemma' : (A : tp pos) (h : Modal ◯⁺_ A) {e : ◯ (val A)} (u : ext) → Inverse.to h e ≡ e u
+
+  list-modal : Modal ◯⁺_ (list A)
 
 sort/is-bounded : ∀ l → IsBounded (list A) (sort l) (sort/cost l)
 sort/is-bounded []       = bound/ret {list A} []
 sort/is-bounded (x ∷ xs) =
-  Eq.subst
-    (IsBounded (list A) (sort (x ∷ xs)))
-    (N.+-comm (length xs * length (x ∷ xs)) (length (x ∷ xs)))
-    ( bound/bind/const {list A} {list A} {sort xs} {insert x}
-        (length xs * length (x ∷ xs))
-        (length (x ∷ xs))
-        (bound/relax (N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs))) {e = sort xs} (sort/is-bounded xs))
-        λ xs' →
+  let
+    xs' : val (list A)
+    xs' = Inverse.to list-modal (λ u → proj₁ (sort/correct xs u))
+  in
+  Eq.subst₂
+    (IsBounded (list A))
+    {x = bind (F (list A)) (sort xs) (λ _ → insert x xs')}
+    {y = sort (x ∷ xs)}
+    ( Eq.sym $
+      lemma (list A)
+        (sort xs)
+        (Inverse.to list-modal λ u → proj₁ (sort/correct xs u))
+        (λ u → Eq.trans (proj₁ (proj₂ (sort/correct xs u))) (Eq.cong ret (Eq.sym (lemma' (list A) list-modal u))))
+        (F (list A))
+        (insert x)
+    )
+    (funext/Ω λ _ → N.+-comm (length xs * length (x ∷ xs)) (length (x ∷ xs)))
+    ( bound/bind/const {list A} {list A} {sort xs} {λ _ → insert x xs'}
+        (λ _ → length xs * length (x ∷ xs))
+        (λ _ → length (x ∷ xs))
+        (bound/relax (λ _ → N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs))) {e = sort xs} (sort/is-bounded xs))
+        λ _ →
           bound/relax
+            {c = λ _ → length xs'}
+            {c' = λ _ → length (x ∷ xs)}
             ( let open ≤-Reasoning in
-              let (xs'' , sort-xs''≡ , ↭ , sorted) = sort/correct xs {!   !} in
               begin
-                length xs'
-              ≤⟨ N.n≤1+n (length xs') ⟩
-                suc (length xs')
-              ≡⟨ Eq.cong (suc ∘ length) {xs'} {xs''} {!   !} ⟩
-                suc (length xs'')
-              ≡˘⟨ Eq.cong suc (↭-length ↭) ⟩
-                suc (length xs)
+                (λ _ → length xs')
+              ≤⟨ (λ _ → N.n≤1+n (length xs')) ⟩
+                (λ _ → suc (length xs'))
+              ≡⟨ (funext/Ω λ u → Eq.cong (suc ∘ length) (lemma' (list A) list-modal u)) ⟩
+                (λ u → suc (length (proj₁ (sort/correct xs u))))
+              ≡˘⟨ (funext/Ω λ u → Eq.cong suc (↭-length (proj₁ (proj₂ (proj₂ (sort/correct xs u)))))) ⟩
+                (λ _ → suc (length xs))
               ≡⟨⟩
-                length (x ∷ xs)
+                (λ _ → length (x ∷ xs))
               ∎
             )
             {e = insert x xs'}
             (insert/is-bounded x xs')
     )
 
-sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n ²)
+sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → λ _ → n ²)
 sort/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ l _ → sort/is-bounded l
