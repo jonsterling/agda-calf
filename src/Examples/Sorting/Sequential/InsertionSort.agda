@@ -119,9 +119,9 @@ Modal : (⋄ : tp pos → tp pos) (A : tp pos) → Set
 Modal ⋄ A = val (⋄ A) ↔ val A
 
 postulate
-  lemma : (A : tp pos) (e : cmp (F A)) (v : val A) → ◯ (e ≡ ret v) →
+  lemma : (A : tp pos) (h : Modal ◯⁺_ A) (e : cmp (F A)) (v : ext → val A) → ((u : ext) → e ≡ ret (v u)) →
     (X : tp neg) (f : val A → cmp X) →
-    bind X e f ≡ bind X e (const (f v))
+    bind X e f ≡ bind X e (const (f (Inverse.to h v)))
 
   lemma' : (A : tp pos) (h : Modal ◯⁺_ A) {e : ◯ (val A)} (u : ext) → Inverse.to h e ≡ e u
 
@@ -139,10 +139,10 @@ sort/is-bounded (x ∷ xs) =
     {x = bind (F (list A)) (sort xs) (λ _ → insert x xs')}
     {y = sort (x ∷ xs)}
     ( Eq.sym $
-      lemma (list A)
+      lemma (list A) list-modal
         (sort xs)
-        (Inverse.to list-modal λ u → proj₁ (sort/correct xs u))
-        (λ u → Eq.trans (proj₁ (proj₂ (sort/correct xs u))) (Eq.cong ret (Eq.sym (lemma' (list A) list-modal u))))
+        (λ u → proj₁ (sort/correct xs u))
+        (λ u → proj₁ (proj₂ (sort/correct xs u)))
         (F (list A))
         (insert x)
     )
