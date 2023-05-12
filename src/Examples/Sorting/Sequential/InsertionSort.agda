@@ -115,17 +115,41 @@ sort/correct (x ∷ xs) u =
 sort/cost : cmp (Π (list A) λ _ → meta ℂ)
 sort/cost l = λ _ → length l ²
 
+
+η◯ : {A : tp pos} → val A → val (◯⁺ A)
+η◯ a _ = a
+
 Modal : (⋄ : tp pos → tp pos) (A : tp pos) → Set
 Modal ⋄ A = val (⋄ A) ↔ val A
 
+◯⁺-Modal : (A : tp pos) → Modal ◯⁺_ (◯⁺ A)
+◯⁺-Modal A = record
+  { to = λ x u → x u u
+  ; from = λ x u _ → x u
+  ; to-cong = λ h → funext/Ω λ u → Eq.cong (λ x → x u u) h
+  ; from-cong = λ h → funext/Ω λ u → Eq.cong (λ x _ → x _) h
+  ; inverse = (λ _ → refl) , (λ _ → refl)
+  }
+
 postulate
-  lemma : (A : tp pos) (h : Modal ◯⁺_ A) (e : cmp (F A)) (v : ext → val A) → ((u : ext) → e ≡ ret (v u)) →
+  lemma : (A : tp pos) (h : Modal ◯⁺_ A) (e : cmp (F A)) (v : val (◯⁺ A)) → ((u : ext) → e ≡ ret (v u)) →
     (X : tp neg) (f : val A → cmp X) →
     bind X e f ≡ bind X e (λ _ → f (Inverse.to h v))
 
-  lemma' : (A : tp pos) (h : Modal ◯⁺_ A) {e : ◯ (val A)} (u : ext) → Inverse.to h e ≡ e u
-
-  list-modal : Modal ◯⁺_ (list A)
+lemma/◯⁺ : (A : tp pos) (e : cmp (F A)) (v : val (◯⁺ A)) → ((u : ext) → e ≡ ret (v u)) →
+  (X : tp neg) (f : val (◯⁺ A) → cmp X) →
+  bind X e (f ∘ η◯ {A}) ≡ bind X e (λ _ → f v)
+lemma/◯⁺ A e v e≡ret[v] X f =
+  let open ≡-Reasoning in
+  begin
+    bind X e (f ∘ η◯ {A})
+  ≡⟨⟩
+    bind X (bind (F (◯⁺ A)) e (ret ∘ η◯ {A})) f
+  ≡⟨ lemma (◯⁺ A) (◯⁺-Modal A) (bind (F (◯⁺ A)) e (ret ∘ η◯ {A})) (η◯ {◯⁺ A} v) (λ u → Eq.cong (λ e → bind (F (◯⁺ A)) e (ret ∘ η◯ {A})) (e≡ret[v] u)) X f ⟩
+    bind X (bind (F (◯⁺ A)) e (ret ∘ η◯ {A})) (λ _ → f v)
+  ≡⟨⟩
+    bind X e (λ _ → f v)
+  ∎
 
 open import Calf.Types.Unit
 sort/is-bounded : ∀ l → IsBounded (list A) (sort l) (sort/cost l)
@@ -140,9 +164,7 @@ sort/is-bounded (x ∷ xs) =
         bind (F unit) (sort xs) (λ xs' → bind (F unit) (insert x xs') λ _ → result)
       ≤⟨ bind-mono-≲ (≲-refl {x = sort xs}) (λ xs' → insert/is-bounded x xs' result) ⟩
         bind (F unit) (sort xs) (λ xs' → step (F unit) (λ _ → length xs') result)
-      ≡⟨ lemma (list A) list-modal (sort xs) (λ u → proj₁ (sort/correct xs u)) (λ u → proj₁ (proj₂ (sort/correct xs u))) (F unit) (λ xs' → step (F unit) (λ _ → length xs') result) ⟩
-        bind (F unit) (sort xs) (λ _ → step (F unit) (λ u → length (Inverse.to list-modal (λ u → proj₁ (sort/correct xs u)))) result)
-      ≡⟨ Eq.cong (bind (F unit) (sort xs)) (funext λ _ → Eq.cong (λ c → step (F unit) c result) {x = λ u → length (Inverse.to list-modal _)} {y = λ u → length (proj₁ (sort/correct xs u))} (funext/Ω λ u → Eq.cong length (lemma' (list A) list-modal u))) ⟩
+      ≡⟨ lemma/◯⁺ (list A) (sort xs) (λ u → proj₁ (sort/correct xs u)) (λ u → proj₁ (proj₂ (sort/correct xs u))) (F unit) (λ xs' → step (F unit) (λ u → length (xs' u)) result) ⟩
         bind (F unit) (sort xs) (λ _ → step (F unit) (λ u → length (proj₁ (sort/correct xs u))) result)
       ≤⟨ bind-mono-≲ (≲-refl {x = sort xs}) (λ _ → step-mono-≲ (λ u → N.≤-trans (N.≤-reflexive (Eq.sym (↭-length (proj₁ (proj₂ (proj₂ (sort/correct xs u))))))) (N.n≤1+n (length xs))) (≲-refl {x = result})) ⟩
         bind (F unit) (sort xs) (λ _ → step (F unit) (λ _ → length (x ∷ xs)) result)
