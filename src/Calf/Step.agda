@@ -44,9 +44,6 @@ postulate
   dbind/step : ∀ {A} {X : val A → tp neg} {e f n} → dbind {A} X (step (F A) n e) f ≡ step (tbind {A} e X) n (dbind {A} X e f)
   {-# REWRITE bind/step dbind/step #-}
 
-  step-mono-≲ : {X : tp neg} {c₁ c₂ : ℂ} {e₁ e₂ : cmp X} →
-    c₁ ≤ c₂ → _≲_ {X} e₁ e₂ → _≲_ {X} (step X c₁ e₁) (step X c₂ e₂)
-
   step/ext : ∀ X → (e : cmp X) → (c : ℂ) → ◯ (step X c e ≡ e)
   -- sadly the above cannot be made an Agda rewrite rule
 
@@ -57,3 +54,15 @@ postulate
       ; law = λ u → trans (step/ext X (out e) c u) (law e u)
       }
   {-# REWRITE extension/step #-}
+
+postulate
+  step-mono-≲ : {X : tp neg} {c₁ c₂ : ℂ} {e₁ e₂ : cmp X} →
+    c₁ ≤ c₂ → _≲_ {X} e₁ e₂ → _≲_ {X} (step X c₁ e₁) (step X c₂ e₂)
+
+step-monoˡ-≲ : {X : tp neg} {c₁ c₂ : ℂ} (e : cmp X) →
+  c₁ ≤ c₂ → _≲_ {X} (step X c₁ e) (step X c₂ e)
+step-monoˡ-≲ e c₁≤c₂ = step-mono-≲ c₁≤c₂ (≲-refl {x = e})
+
+step-monoʳ-≲ : {X : tp neg} (c : ℂ) {e₁ e₂ : cmp X} →
+  _≲_ {X} e₁ e₂ → _≲_ {X} (step X c e₁) (step X c e₂)
+step-monoʳ-≲ c e₁≲e₂ = step-mono-≲ (≤-refl {x = c}) e₁≲e₂

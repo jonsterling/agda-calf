@@ -98,6 +98,17 @@ postulate
     → ((a : val A) → _≲_ {X a} (f₁ a) (f₂ a))
     → _≲_ {Π A X} f₁ f₂
 
+bind-monoˡ-≲ : {A : tp pos} {X : tp neg} {e₁ e₂ : cmp (F A)} (f : val A → cmp X)
+  → _≲_ {F A} e₁ e₂
+  → _≲_ {X} (bind {A} X e₁ f) (bind {A} X e₂ f)
+bind-monoˡ-≲ f e₁≲e₂ = bind-mono-≲ e₁≲e₂ (λ a → ≲-refl)
+
+bind-monoʳ-≲ : {A : tp pos} {X : tp neg} (e : cmp (F A)) {f₁ f₂ : val A → cmp X}
+  → ((a : val A) → _≲_ {X} (f₁ a) (f₂ a))
+  → _≲_ {X} (bind {A} X e f₁) (bind {A} X e f₂)
+bind-monoʳ-≲ e f₁≲f₂ = bind-mono-≲ (≲-refl {x = e}) f₁≲f₂
+
+
 open import Relation.Binary.Structures
 
 ≲-isPreorder : {X : tp neg} → IsPreorder _≡_ (_≲_ {X})

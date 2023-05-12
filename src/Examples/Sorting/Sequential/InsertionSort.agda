@@ -156,7 +156,7 @@ sort/is-bounded (x ∷ xs) =
       bind (F unit) (bind (F (list A)) (sort xs) (insert x)) (λ _ → result)
     ≡⟨⟩
       bind (F unit) (sort xs) (λ xs' → bind (F unit) (insert x xs') λ _ → result)
-    ≤⟨ bind-mono-≲ (≲-refl {x = sort xs}) (λ xs' → insert/is-bounded x xs' result) ⟩
+    ≤⟨ bind-monoʳ-≲ (sort xs) (λ xs' → insert/is-bounded x xs' result) ⟩
       bind (F unit) (sort xs) (λ xs' → step (F unit) (λ _ → length xs') result)
     ≡⟨ lemma/◯⁺ (list A) (sort xs) (λ u → proj₁ (sort/correct xs u)) (λ u → proj₁ (proj₂ (sort/correct xs u))) (F unit) (λ xs' → step (F unit) (λ u → length (xs' u)) result) ⟩
       bind (F unit) (sort xs) (λ _ → step (F unit) (λ u → length (proj₁ (sort/correct xs u))) result)
@@ -164,7 +164,7 @@ sort/is-bounded (x ∷ xs) =
       bind (F unit) (sort xs) (λ _ → step (F unit) (λ _ → length xs) result)
     ≤⟨ sort/is-bounded xs (step (F unit) (λ _ → length xs) result) ⟩
       step (F unit) (λ _ → length xs * length xs + length xs) result
-    ≤⟨ step-mono-≲ (λ _ → N.+-mono-≤ (N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs))) (N.n≤1+n (length xs))) (≲-refl {x = result}) ⟩
+    ≤⟨ step-monoˡ-≲ result (λ _ → N.+-mono-≤ (N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs))) (N.n≤1+n (length xs))) ⟩
       step (F unit) (λ _ → length xs * length (x ∷ xs) + length (x ∷ xs)) result
     ≡⟨ Eq.cong (λ c → step (F unit) c result) (funext/Ω λ _ → N.+-comm (length xs * length (x ∷ xs)) (length (x ∷ xs))) ⟩
       step (F unit) (λ _ → length (x ∷ xs) ²) result
