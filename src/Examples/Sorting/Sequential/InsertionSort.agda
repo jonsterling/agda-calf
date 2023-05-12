@@ -133,23 +133,18 @@ Modal ⋄ A = val (⋄ A) ↔ val A
 
 postulate
   lemma : (A : tp pos) (h : Modal ◯⁺_ A) (e : cmp (F A)) (v : val (◯⁺ A)) → ((u : ext) → e ≡ ret (v u)) →
-    (X : tp neg) (f : val A → cmp X) →
-    bind X e f ≡ bind X e (λ _ → f (Inverse.to h v))
+    e ≡ bind (F A) e (λ _ → ret (Inverse.to h v))
 
 lemma/◯⁺ : (A : tp pos) (e : cmp (F A)) (v : val (◯⁺ A)) → ((u : ext) → e ≡ ret (v u)) →
   (X : tp neg) (f : val (◯⁺ A) → cmp X) →
   bind X e (f ∘ η◯ {A}) ≡ bind X e (λ _ → f v)
 lemma/◯⁺ A e v e≡ret[v] X f =
-  let open ≡-Reasoning in
-  begin
-    bind X e (f ∘ η◯ {A})
-  ≡⟨⟩
-    bind X (bind (F (◯⁺ A)) e (ret ∘ η◯ {A})) f
-  ≡⟨ lemma (◯⁺ A) (◯⁺-Modal A) (bind (F (◯⁺ A)) e (ret ∘ η◯ {A})) (η◯ {◯⁺ A} v) (λ u → Eq.cong (λ e → bind (F (◯⁺ A)) e (ret ∘ η◯ {A})) (e≡ret[v] u)) X f ⟩
-    bind X (bind (F (◯⁺ A)) e (ret ∘ η◯ {A})) (λ _ → f v)
-  ≡⟨⟩
-    bind X e (λ _ → f v)
-  ∎
+  Eq.cong
+    (λ e → bind X e f)
+    (lemma (◯⁺ A) (◯⁺-Modal A)
+      (bind (F (◯⁺ A)) e (ret ∘ η◯ {A}))
+      (η◯ {◯⁺ A} v)
+      (λ u → Eq.cong (λ e → bind (F (◯⁺ A)) e (ret ∘ η◯ {A})) (e≡ret[v] u)))
 
 open import Calf.Types.Unit
 sort/is-bounded : ∀ l → IsBounded (list A) (sort l) (sort/cost l)
