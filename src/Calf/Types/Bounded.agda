@@ -32,7 +32,7 @@ bound/relax : {c c' : ℂ} → c ≤ c' → ∀ {A e} → IsBounded A e c → Is
 bound/relax h {e = e} = boundg/relax (step-mono-≲ h (≲-refl {x = ret triv})) {e = e}
 
 bound/ret : {A : tp pos} (a : val A) → IsBounded A (ret a) zero
-bound/ret a result = ≲-refl
+bound/ret a = ≲-refl
 
 bound/step : {A : tp pos} (c : ℂ) {c' : ℂ} (e : cmp (F A)) →
   IsBounded A e c' →
@@ -44,14 +44,18 @@ bound/bind/const : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
   IsBounded A e c →
   ((a : val A) → IsBounded B (f a) d) →
   IsBounded B (bind {A} (F B) e f) (c + d)
-bound/bind/const {e = e} {f} c d he hf result =
+bound/bind/const {e = e} {f} c d he hf =
   let open ≲-Reasoning (F unit) in
   begin
-    bind (F unit) e (λ v → bind (F unit) (f v) (λ _ → result))
-  ≤⟨ bind-mono-≲ {e₁ = e} ≲-refl (λ a → hf a result) ⟩
-    bind (F unit) e (λ _ → step (F unit) d result)
-  ≤⟨ bind-mono-≲ {f₁ = ret} (he (step (F unit) d result)) (λ _ → ≲-refl) ⟩
-    step (F unit) (c + d) result
+    bind (F unit) e (λ v → bind (F unit) (f v) (λ _ → ret triv))
+  ≤⟨ bind-monoʳ-≲ e hf ⟩
+    bind (F unit) e (λ _ → step (F unit) d (ret triv))
+  ≡⟨⟩
+    bind (F unit) (bind (F unit) e λ _ → ret triv) (λ _ → step (F unit) d (ret triv))
+  ≤⟨ bind-monoˡ-≲ (λ _ → step (F unit) d (ret triv)) he ⟩
+    bind (F unit) (step (F unit) c (ret triv)) (λ _ → step (F unit) d (ret triv))
+  ≡⟨⟩
+    step (F unit) (c + d) (ret triv)
   ∎
 
 bound/bool : ∀ {A : tp pos} {e0 e1} {p : val bool → ℂ} →
