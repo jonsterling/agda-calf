@@ -150,24 +150,25 @@ open import Calf.Types.Unit
 sort/is-bounded : ∀ l → IsBounded (list A) (sort l) (sort/cost l)
 sort/is-bounded []       = bound/ret {list A} []
 sort/is-bounded (x ∷ xs) =
-  Eq.subst
-    (IsBounded (list A) (sort (x ∷ xs)))
-    (funext/Ω λ _ → N.+-comm (length xs * length (x ∷ xs)) (length (x ∷ xs)))
-    λ result →
-      let open ≲-Reasoning (F unit) in
-      begin
-        bind (F unit) (sort xs) (λ xs' → bind (F unit) (insert x xs') λ _ → result)
-      ≤⟨ bind-mono-≲ (≲-refl {x = sort xs}) (λ xs' → insert/is-bounded x xs' result) ⟩
-        bind (F unit) (sort xs) (λ xs' → step (F unit) (λ _ → length xs') result)
-      ≡⟨ lemma/◯⁺ (list A) (sort xs) (λ u → proj₁ (sort/correct xs u)) (λ u → proj₁ (proj₂ (sort/correct xs u))) (F unit) (λ xs' → step (F unit) (λ u → length (xs' u)) result) ⟩
-        bind (F unit) (sort xs) (λ _ → step (F unit) (λ u → length (proj₁ (sort/correct xs u))) result)
-      ≤⟨ bind-mono-≲ (≲-refl {x = sort xs}) (λ _ → step-mono-≲ (λ u → N.≤-trans (N.≤-reflexive (Eq.sym (↭-length (proj₁ (proj₂ (proj₂ (sort/correct xs u))))))) (N.n≤1+n (length xs))) (≲-refl {x = result})) ⟩
-        bind (F unit) (sort xs) (λ _ → step (F unit) (λ _ → length (x ∷ xs)) result)
-      ≤⟨ sort/is-bounded xs (step (F unit) (λ _ → length (x ∷ xs)) result) ⟩
-        step (F unit) (λ _ → length xs * length xs + length (x ∷ xs)) result
-      ≤⟨ step-mono-≲ (λ _ → N.+-monoˡ-≤ (length (x ∷ xs)) (N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs)))) (≲-refl {x = result}) ⟩
-        step (F unit) (λ _ → length xs * length (x ∷ xs) + length (x ∷ xs)) result
-      ∎
+  λ result →
+    let open ≲-Reasoning (F unit) in
+    begin
+      bind (F unit) (bind (F (list A)) (sort xs) (insert x)) (λ _ → result)
+    ≡⟨⟩
+      bind (F unit) (sort xs) (λ xs' → bind (F unit) (insert x xs') λ _ → result)
+    ≤⟨ bind-mono-≲ (≲-refl {x = sort xs}) (λ xs' → insert/is-bounded x xs' result) ⟩
+      bind (F unit) (sort xs) (λ xs' → step (F unit) (λ _ → length xs') result)
+    ≡⟨ lemma/◯⁺ (list A) (sort xs) (λ u → proj₁ (sort/correct xs u)) (λ u → proj₁ (proj₂ (sort/correct xs u))) (F unit) (λ xs' → step (F unit) (λ u → length (xs' u)) result) ⟩
+      bind (F unit) (sort xs) (λ _ → step (F unit) (λ u → length (proj₁ (sort/correct xs u))) result)
+    ≡˘⟨ Eq.cong (bind (F unit) (sort xs)) (funext λ _ → Eq.cong (λ c → step (F unit) c result) (funext/Ω λ u → ↭-length (proj₁ (proj₂ (proj₂ (sort/correct xs u)))))) ⟩
+      bind (F unit) (sort xs) (λ _ → step (F unit) (λ _ → length xs) result)
+    ≤⟨ sort/is-bounded xs (step (F unit) (λ _ → length xs) result) ⟩
+      step (F unit) (λ _ → length xs * length xs + length xs) result
+    ≤⟨ step-mono-≲ (λ _ → N.+-mono-≤ (N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs))) (N.n≤1+n (length xs))) (≲-refl {x = result}) ⟩
+      step (F unit) (λ _ → length xs * length (x ∷ xs) + length (x ∷ xs)) result
+    ≡⟨ Eq.cong (λ c → step (F unit) c result) (funext/Ω λ _ → N.+-comm (length xs * length (x ∷ xs)) (length (x ∷ xs))) ⟩
+      step (F unit) (λ _ → length (x ∷ xs) ²) result
+    ∎
 
 sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → λ _ → n ²)
 sort/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ l _ → sort/is-bounded l
