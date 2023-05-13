@@ -68,6 +68,10 @@ postulate
   Σ++/decode : ∀ {A} {B : val A → tp pos} → val (Σ++ A B) ≡ Σ (val A) λ x → val (B x)
   {-# REWRITE Σ++/decode #-}
 
+  meta⁺ : Set → tp pos
+  meta⁺/decode : {A : Set} → val (meta⁺ A) ≡ A
+  {-# REWRITE meta⁺/decode #-}
+
   -- agda sets
   meta : Set → tp neg
   meta/out : ∀ {A} → val (U (meta A)) ≡ A
