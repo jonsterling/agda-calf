@@ -23,17 +23,18 @@ open import Relation.Binary.PropositionalEquality as Eq using (_≡_)
 [ ℕ.suc k ]* c = c + [ k ]* c
 
 record given_measured-via_,_∈𝓞_
-  (A : tp pos) {B : tp pos}
+  (A : tp pos) {B : val A → tp pos}
   (∣_∣ : val A → val nat)
-  (f : cmp (Π A λ _ → F B)) (g : ℕ → ℂ) : □
+  (f : cmp (Π A λ a → F (B a))) (g : ℕ → ℂ) : □
   where
     constructor _≤n⇒f[n]≤_g[n]via_
     field
       n' : val nat
       k : val nat
-      h : ∀ x → n' Nat.≤ ∣ x ∣ → IsBounded B (f x) ([ k ]* g ∣ x ∣)
+      h : ∀ a → n' Nat.≤ ∣ a ∣ → IsBounded (B a) (f a) ([ k ]* g ∣ a ∣)
 
-_≤n⇒f[n]≤g[n]via_ : ∀ {A B f ∣_∣ g} → (n' : val nat) → (∀ x → n' Nat.≤ ∣ x ∣ → IsBounded B (f x) (g ∣ x ∣)) → given A measured-via ∣_∣ , f ∈𝓞 g
+_≤n⇒f[n]≤g[n]via_ : ∀ {A : tp pos} {B : val A → tp pos} {f ∣_∣ g} →
+  (n' : val nat) → (∀ a → n' Nat.≤ ∣ a ∣ → IsBounded (B a) (f a) (g ∣ a ∣)) → given A measured-via ∣_∣ , f ∈𝓞 g
 _≤n⇒f[n]≤g[n]via_ {B = B} {f = f} n' h =
-  n' ≤n⇒f[n]≤ 1 g[n]via λ x h≤ →
-    Eq.subst (IsBounded B (f x)) (Eq.sym (+-identityʳ _)) (h x h≤)
+  n' ≤n⇒f[n]≤ 1 g[n]via λ a h≤ →
+    Eq.subst (IsBounded (B a) (f a)) (Eq.sym (+-identityʳ _)) (h a h≤)

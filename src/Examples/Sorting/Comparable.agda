@@ -26,14 +26,12 @@ record Comparable : Set₁ where
   field
     A : tp pos
     _≤_ : val A → val A → Set
-    _≤ᵇ_ : val A → val A → cmp (F bool)
-    ≤ᵇ-reflects-≤ : ∀ {x y b} → ◯ ((x ≤ᵇ y) ≡ ret b ⇔ Reflects (x ≤ y) b)
     ≤-refl : Reflexive _≤_
     ≤-trans : Transitive _≤_
     ≤-total : Total _≤_
-    _≤?_ : Decidable _≤_
     ≤-antisym : Antisymmetric _≡_ _≤_
-    h-cost : (x y : val A) → IsBounded bool (x ≤ᵇ y) (fromℕ 1)
+    _≤?_ : cmp (Π A λ x → Π A λ y → F (meta⁺ (Dec (x ≤ y))))
+    h-cost : (x y : val A) → IsBounded (meta⁺ (Dec (x ≤ y))) (x ≤? y) (fromℕ 1)
 
   _≥_ : val A → val A → Set
   x ≥ y = y ≤ x
@@ -46,23 +44,20 @@ record Comparable : Set₁ where
   ... | inj₁ x≤y = contradiction x≤y ¬x≤y
   ... | inj₂ y≤x = y≤x
 
+  case-≤ : {X : Set} {x y : val A} → (x ≤ y → X) → (x ≰ y → X) → Dec (x ≤ y) → X
+  case-≤ {X} {x} {y} yes-branch no-branch (yes x≤y) = yes-branch x≤y
+  case-≤ {X} {x} {y} yes-branch no-branch (no ¬x≤y) = no-branch ¬x≤y
+
 NatComparable : Comparable
 NatComparable = record
   { A = nat
   ; _≤_ = _≤_
-  ; _≤ᵇ_ = λ x y → step (F bool) (fromℕ 1) (ret (x ≤ᵇ y))
-  ; ≤ᵇ-reflects-≤ = λ u → record
-      { to = reflects u
-      ; from = reflects⁻¹ u
-      ; to-cong = Eq.cong (reflects u)
-      ; from-cong = Eq.cong (reflects⁻¹ u)
-      }
   ; ≤-refl = ≤-refl
   ; ≤-trans = ≤-trans
   ; ≤-total = ≤-total
-  ; _≤?_ = _≤?_
   ; ≤-antisym = ≤-antisym
-  ; h-cost = λ _ _ _ → ≲-refl
+  ; _≤?_ = λ x y → step (F (meta⁺ (Dec (x ≤ y)))) (fromℕ 1) (ret (x ≤? y))
+  ; h-cost = λ _ _ → ≲-refl
   }
   where
     open import Calf.Types.Nat

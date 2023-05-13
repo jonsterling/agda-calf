@@ -8,6 +8,7 @@ open Comparable M
 open import Examples.Sorting.Sequential.Core M
 
 open import Calf costMonoid
+open import Calf.Types.Unit
 open import Calf.Types.Bool
 open import Calf.Types.List
 open import Calf.Types.Eq
@@ -25,150 +26,96 @@ import Data.Nat.Properties as N
 open import Data.Nat.Square
 
 
-insert : cmp (Π A λ _ → Π (list A) λ _ → F (list A))
-insert x []       = ret [ x ]
-insert x (y ∷ ys) =
-  bind (F (list A)) (x ≤ᵇ y) λ b →
-    if b
-      then ret (x ∷ (y ∷ ys))
-      else bind (F (list A)) (insert x ys) (ret ∘ (y ∷_))
-
-insert/correct : ∀ x l → Sorted l → ◯ (∃ λ l' → insert x l ≡ ret l' × SortedOf (x ∷ l) l')
-insert/correct x []       []       u = [ x ] , refl , refl , [] ∷ []
-insert/correct x (y ∷ ys) (h ∷ hs) u with x ≤? y
-... | yes x≤y rewrite Equivalence.from (≤ᵇ-reflects-≤ u) (ofʸ x≤y) =
-  x ∷ (y ∷ ys) , refl , refl , (x≤y ∷ ≤-≤* x≤y h) ∷ (h ∷ hs)
-... | no ¬x≤y rewrite Equivalence.from (≤ᵇ-reflects-≤ u) (ofⁿ ¬x≤y) =
-  let (ys' , h-ys' , x∷ys↭ys' , sorted-ys') = insert/correct x ys hs u in
-  y ∷ ys' , Eq.cong (λ e → bind (F (list A)) e (ret ∘ (y ∷_))) h-ys' , (
-    let open PermutationReasoning in
-    begin
-      x ∷ y ∷ ys
-    <<⟨ refl ⟩
-      y ∷ (x ∷ ys)
-    <⟨ x∷ys↭ys' ⟩
-      y ∷ ys'
-    ∎
-  ) , All-resp-↭ x∷ys↭ys' (≰⇒≥ ¬x≤y ∷ h) ∷ sorted-ys'
+insert : cmp (Π A λ x → Π (list A) λ l → Π (sorted l) λ _ → F (Σ++ (list A) λ l' → sorted-of (x ∷ l) l'))
+insert x []       []       = ret ([ x ] , refl , [] ∷ [])
+insert x (y ∷ ys) (h ∷ hs) =
+  bind (F _) (x ≤? y) $ case-≤
+    (λ x≤y → ret (x ∷ (y ∷ ys) , refl , (x≤y ∷ ≤-≤* x≤y h) ∷ (h ∷ hs)))
+    (λ x≰y →
+      bind (F _) (insert x ys hs) λ (x∷ys' , x∷ys↭x∷ys' , sorted-x∷ys') →
+      ret
+        ( y ∷ x∷ys'
+        , ( let open PermutationReasoning in
+            begin
+              x ∷ y ∷ ys
+            <<⟨ refl ⟩
+              y ∷ (x ∷ ys)
+            <⟨ x∷ys↭x∷ys' ⟩
+              y ∷ x∷ys'
+            ∎
+          )
+        , All-resp-↭ x∷ys↭x∷ys' (≰⇒≥ x≰y ∷ h) ∷ sorted-x∷ys'
+        ))
 
 insert/cost : cmp (Π A λ _ → Π (list A) λ _ → meta ℂ)
-insert/cost x l = λ _ → length l
+insert/cost x l = length l
 
-insert/is-bounded : ∀ x l → IsBounded (list A) (insert x l) (insert/cost x l)
-insert/is-bounded x []       = bound/ret {list A} [ x ]
-insert/is-bounded x (y ∷ ys) =
-  bound/bind/const {bool} {list A}
-    {x ≤ᵇ y}
-    {λ b →
-      if b
-        then ret (x ∷ (y ∷ ys))
-        else bind (F (list A)) (insert x ys) (ret ∘ (y ∷_))}
-    (λ _ → 1)
-    (λ _ → length ys)
+insert/is-bounded : ∀ x l h → IsBounded (Σ++ (list A) λ l' → sorted-of (x ∷ l) l') (insert x l h) (insert/cost x l)
+insert/is-bounded x []       []       = ≲-refl
+insert/is-bounded x (y ∷ ys) (h ∷ hs) =
+  bound/bind/const {_} {Σ++ (list A) λ l' → sorted-of (x ∷ (y ∷ ys)) l'}
+    {x ≤? y}
+    {case-≤ _ _}
+    1
+    (length ys)
     (h-cost x y)
-    λ { false →
-          Eq.subst
-            (IsBounded (list A) (bind (F (list A)) (insert x ys) (ret ∘ (y ∷_))))
-            (+-identityʳ (λ _ → length ys))
-            (bound/bind/const {list A} {list A}
-              {insert x ys}
-              {ret ∘ (y ∷_)}
-              (λ _ → length ys)
-              (λ _ → zero)
-              (insert/is-bounded x ys) λ ys' → bound/ret {list A} (y ∷ ys'))
-      ; true  → bound/relax (λ _ → z≤n {length ys}) {list A} {ret (x ∷ (y ∷ ys))} (bound/ret {list A} (x ∷ (y ∷ ys)))
+    λ { (yes x≤y) → step-monoˡ-≲ (ret _) (z≤n {length ys})
+      ; (no ¬x≤y) → insert/is-bounded x ys hs
       }
 
-sort : cmp (Π (list A) λ _ → F (list A))
-sort []       = ret []
-sort (x ∷ xs) = bind (F (list A)) (sort xs) (insert x)
-
-sort/correct : IsSort sort
-sort/correct []       u = [] , refl , refl , []
-sort/correct (x ∷ xs) u =
-  let (xs'   , h-xs'   , xs↭xs'     , sorted-xs'  ) = sort/correct xs u in
-  let (x∷xs' , h-x∷xs' , x∷xs↭x∷xs' , sorted-x∷xs') = insert/correct x xs' sorted-xs' u in
-  x∷xs' , (
-    let open ≡-Reasoning in
-    begin
-      sort (x ∷ xs)
-    ≡⟨⟩
-      bind (F (list A)) (sort xs) (insert x)
-    ≡⟨ Eq.cong (λ e → bind (F (list A)) e (insert x)) h-xs' ⟩
-      bind (F (list A)) (ret {list A} xs') (insert x)
-    ≡⟨⟩
-      insert x xs'
-    ≡⟨ h-x∷xs' ⟩
-      ret x∷xs'
-    ∎
-  ) , (
-    let open PermutationReasoning in
-    begin
-      x ∷ xs
-    <⟨ xs↭xs' ⟩
-      x ∷ xs'
-    ↭⟨ x∷xs↭x∷xs' ⟩
-      x∷xs'
-    ∎
-  ) , sorted-x∷xs'
+sort : cmp sorting
+sort []       = ret ([] , refl , [])
+sort (x ∷ xs) =
+  bind (F (Σ++ (list A) (sorted-of (x ∷ xs)))) (sort xs) λ (xs' , xs↭xs' , sorted-xs') →
+  bind (F (Σ++ (list A) (sorted-of (x ∷ xs)))) (insert x xs' sorted-xs') λ (x∷xs' , x∷xs↭x∷xs' , sorted-x∷xs') →
+  ret
+    ( x∷xs'
+    , ( let open PermutationReasoning in
+        begin
+          x ∷ xs
+        <⟨ xs↭xs' ⟩
+          x ∷ xs'
+        ↭⟨ x∷xs↭x∷xs' ⟩
+          x∷xs'
+        ∎
+      )
+    , sorted-x∷xs'
+    )
 
 sort/cost : cmp (Π (list A) λ _ → meta ℂ)
-sort/cost l = λ _ → length l ²
+sort/cost l = length l ²
 
-
-η◯ : {A : tp pos} → val A → val (◯⁺ A)
-η◯ a _ = a
-
-Modal : (⋄ : tp pos → tp pos) (A : tp pos) → Set
-Modal ⋄ A = val (⋄ A) ↔ val A
-
-◯⁺-Modal : (A : tp pos) → Modal ◯⁺_ (◯⁺ A)
-◯⁺-Modal A = record
-  { to = λ x u → x u u
-  ; from = λ x u _ → x u
-  ; to-cong = λ h → funext/Ω λ u → Eq.cong (λ x → x u u) h
-  ; from-cong = λ h → funext/Ω λ u → Eq.cong (λ x _ → x _) h
-  ; inverse = (λ _ → refl) , (λ _ → refl)
-  }
-
-postulate
-  lemma : (A : tp pos) (h : Modal ◯⁺_ A) (e : cmp (F A)) (v : val (◯⁺ A)) → ((u : ext) → e ≡ ret (v u)) →
-    e ≡ bind (F A) e (λ _ → ret (Inverse.to h v))
-
-lemma/◯⁺ : (A : tp pos) (e : cmp (F A)) (v : val (◯⁺ A)) → ((u : ext) → e ≡ ret (v u)) →
-  (X : tp neg) (f : val (◯⁺ A) → cmp X) →
-  bind X e (f ∘ η◯ {A}) ≡ bind X e (λ _ → f v)
-lemma/◯⁺ A e v e≡ret[v] X f =
-  Eq.cong
-    (λ e → bind X e f)
-    (lemma (◯⁺ A) (◯⁺-Modal A)
-      (bind (F (◯⁺ A)) e (ret ∘ η◯ {A}))
-      (η◯ {◯⁺ A} v)
-      (λ u → Eq.cong (λ e → bind (F (◯⁺ A)) e (ret ∘ η◯ {A})) (e≡ret[v] u)))
-
-open import Calf.Types.Unit
-sort/is-bounded : ∀ l → IsBounded (list A) (sort l) (sort/cost l)
-sort/is-bounded []       = bound/ret {list A} []
+sort/is-bounded : ∀ l → IsBounded (Σ++ (list A) (sorted-of l)) (sort l) (sort/cost l)
+sort/is-bounded []       = ≲-refl
 sort/is-bounded (x ∷ xs) =
-  λ result →
-    let open ≲-Reasoning (F unit) in
-    begin
-      bind (F unit) (bind (F (list A)) (sort xs) (insert x)) (λ _ → result)
-    ≡⟨⟩
-      bind (F unit) (sort xs) (λ xs' → bind (F unit) (insert x xs') λ _ → result)
-    ≤⟨ bind-monoʳ-≲ (sort xs) (λ xs' → insert/is-bounded x xs' result) ⟩
-      bind (F unit) (sort xs) (λ xs' → step (F unit) (λ _ → length xs') result)
-    ≡⟨ lemma/◯⁺ (list A) (sort xs) (λ u → proj₁ (sort/correct xs u)) (λ u → proj₁ (proj₂ (sort/correct xs u))) (F unit) (λ xs' → step (F unit) (λ u → length (xs' u)) result) ⟩
-      bind (F unit) (sort xs) (λ _ → step (F unit) (λ u → length (proj₁ (sort/correct xs u))) result)
-    ≡˘⟨ Eq.cong (bind (F unit) (sort xs)) (funext λ _ → Eq.cong (λ c → step (F unit) c result) (funext/Ω λ u → ↭-length (proj₁ (proj₂ (proj₂ (sort/correct xs u)))))) ⟩
-      bind (F unit) (sort xs) (λ _ → step (F unit) (λ _ → length xs) result)
-    ≤⟨ sort/is-bounded xs (step (F unit) (λ _ → length xs) result) ⟩
-      step (F unit) (λ _ → length xs * length xs + length xs) result
-    ≤⟨ step-monoˡ-≲ result (λ _ → N.+-mono-≤ (N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs))) (N.n≤1+n (length xs))) ⟩
-      step (F unit) (λ _ → length xs * length (x ∷ xs) + length (x ∷ xs)) result
-    ≡⟨ Eq.cong (λ c → step (F unit) c result) (funext/Ω λ _ → N.+-comm (length xs * length (x ∷ xs)) (length (x ∷ xs))) ⟩
-      step (F unit) (λ _ → length (x ∷ xs) ²) result
-    ∎
+  let open ≲-Reasoning (F unit) in
+  begin
+    ( bind (F unit) (sort xs) λ (xs' , xs↭xs' , sorted-xs') →
+      bind (F unit) (insert x xs' sorted-xs') λ _ →
+      ret triv
+    )
+  ≤⟨ bind-monoʳ-≲ (sort xs) (λ (xs' , xs↭xs' , sorted-xs') → insert/is-bounded x xs' sorted-xs') ⟩
+    ( bind (F unit) (sort xs) λ (xs' , xs↭xs' , sorted-xs') →
+      step (F unit) (length xs') (ret triv)
+    )
+  ≡˘⟨
+    Eq.cong
+      (bind (F unit) (sort xs))
+      (funext λ (xs' , xs↭xs' , sorted-xs') →
+        Eq.cong (λ c → step (F unit) c (ret triv)) (↭-length xs↭xs'))
+  ⟩
+    ( bind (F unit) (sort xs) λ _ →
+      step (F unit) (length xs) (ret triv)
+    )
+  ≤⟨ bind-monoˡ-≲ (λ _ → step (F unit) (length xs) (ret triv)) (sort/is-bounded xs) ⟩
+    step (F unit) ((length xs ²) + length xs) (ret triv)
+  ≤⟨ step-monoˡ-≲ (ret triv) (N.+-mono-≤ (N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs))) (N.n≤1+n (length xs))) ⟩
+    step (F unit) (length xs * length (x ∷ xs) + length (x ∷ xs)) (ret triv)
+  ≡⟨ Eq.cong (λ c → step (F unit) c (ret triv)) (N.+-comm (length xs * length (x ∷ xs)) (length (x ∷ xs))) ⟩
+    step (F unit) (length (x ∷ xs) ²) (ret triv)
+  ≡⟨⟩
+    step (F unit) (sort/cost (x ∷ xs)) (ret triv)
+  ∎
 
-sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → λ _ → n ²)
+sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n ²)
 sort/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ l _ → sort/is-bounded l
