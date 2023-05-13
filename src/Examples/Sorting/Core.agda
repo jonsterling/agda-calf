@@ -93,18 +93,18 @@ sorted-of l l' = prod⁺ (meta⁺ (l ↭ l')) (sorted l')
 sorting : tp neg
 sorting = Π (list A) λ l → F (Σ++ (list A) (sorted-of l))
 
-IsSort⇒≡ : ∀ sort₁ → IsSort sort₁ → ∀ sort₂ → IsSort sort₂ → ◯ (sort₁ ≡ sort₂)
-IsSort⇒≡ sort₁ correct₁ sort₂ correct₂ u =
-  funext λ l →
-    let (l'₁ , ≡₁ , ↭₁ , sorted₁) = correct₁ l u in
-    let (l'₂ , ≡₂ , ↭₂ , sorted₂) = correct₂ l u in
-    begin
-      sort₁ l
-    ≡⟨ ≡₁ ⟩
-      ret l'₁
-    ≡⟨ Eq.cong ret (unique-sorted sorted₁ sorted₂ (trans (↭-sym ↭₁) ↭₂)) ⟩
-      ret l'₂
-    ≡˘⟨ ≡₂ ⟩
-      sort₂ l
-    ∎
-      where open ≡-Reasoning
+-- IsSort⇒≡ : ∀ sort₁ → IsSort sort₁ → ∀ sort₂ → IsSort sort₂ → ◯ (sort₁ ≡ sort₂)
+-- IsSort⇒≡ sort₁ correct₁ sort₂ correct₂ u =
+--   funext λ l →
+--     let (l'₁ , ≡₁ , ↭₁ , sorted₁) = correct₁ l u in
+--     let (l'₂ , ≡₂ , ↭₂ , sorted₂) = correct₂ l u in
+--     begin
+--       sort₁ l
+--     ≡⟨ ≡₁ ⟩
+--       ret l'₁
+--     ≡⟨ Eq.cong ret (unique-sorted sorted₁ sorted₂ (trans (↭-sym ↭₁) ↭₂)) ⟩
+--       ret l'₂
+--     ≡˘⟨ ≡₂ ⟩
+--       sort₂ l
+--     ∎
+--       where open ≡-Reasoning
