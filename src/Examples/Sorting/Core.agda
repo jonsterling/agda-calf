@@ -12,6 +12,7 @@ module Examples.Sorting.Core
 open Comparable M
 
 open import Calf costMonoid
+open import Calf.Types.Product
 open import Calf.Types.List
 
 open import Relation.Nullary
@@ -44,6 +45,9 @@ _≤*_ x = All (x ≤_)
 data Sorted : val (list A) → Set where
   [] : Sorted []
   _∷_ : ∀ {y ys} → y ≤* ys → Sorted ys → Sorted (y ∷ ys)
+
+sorted : val (list A) → tp pos
+sorted l = meta⁺ (Sorted l)
 
 short-sorted : {l : val (list A)} → length l Nat.≤ 1 → Sorted l
 short-sorted {[]} _ = []
@@ -83,14 +87,11 @@ uncons₁ (h ∷ sorted) = h
 uncons₂ : ∀ {x xs} → Sorted (x ∷ xs) → Sorted xs
 uncons₂ (h ∷ sorted) = sorted
 
-SortedOf : val (list A) → val (list A) → Set
-SortedOf l l' = l ↭ l' × Sorted l'
+sorted-of : val (list A) → val (list A) → tp pos
+sorted-of l l' = prod⁺ (meta⁺ (l ↭ l')) (sorted l')
 
-SortResult : cmp (Π (list A) λ _ → F (list A)) → val (list A) → Set
-SortResult sort l = ◯ (∃ λ l' → sort l ≡ ret l' × SortedOf l l')
-
-IsSort : cmp (Π (list A) λ _ → F (list A)) → Set
-IsSort sort = ∀ l → SortResult sort l
+sorting : tp neg
+sorting = Π (list A) λ l → F (Σ++ (list A) (sorted-of l))
 
 IsSort⇒≡ : ∀ sort₁ → IsSort sort₁ → ∀ sort₂ → IsSort sort₂ → ◯ (sort₁ ≡ sort₂)
 IsSort⇒≡ sort₁ correct₁ sort₂ correct₂ u =
