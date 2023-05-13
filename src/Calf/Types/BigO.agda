@@ -38,3 +38,7 @@ _≤n⇒f[n]≤g[n]via_ : ∀ {A : tp pos} {B : val A → tp pos} {f ∣_∣ g} 
 _≤n⇒f[n]≤g[n]via_ {B = B} {f = f} n' h =
   n' ≤n⇒f[n]≤ 1 g[n]via λ a h≤ →
     Eq.subst (IsBounded (B a) (f a)) (Eq.sym (+-identityʳ _)) (h a h≤)
+
+f[n]≤g[n]via_ : ∀ {A : tp pos} {B : val A → tp pos} {f ∣_∣ g} →
+  (∀ a → IsBounded (B a) (f a) (g ∣ a ∣)) → given A measured-via ∣_∣ , f ∈𝓞 g
+f[n]≤g[n]via h = 0 ≤n⇒f[n]≤g[n]via (λ a _ → h a)

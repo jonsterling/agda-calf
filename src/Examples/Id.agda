@@ -29,7 +29,7 @@ module Easy where
   id/is-bounded n = bound/ret {nat} n
 
   id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → 0)
-  id/asymptotic = 0 ≤n⇒f[n]≤ 0 g[n]via λ n _ → id/is-bounded n
+  id/asymptotic = f[n]≤g[n]via id/is-bounded
 
 module Hard where
   id : cmp (Π nat λ _ → F nat)

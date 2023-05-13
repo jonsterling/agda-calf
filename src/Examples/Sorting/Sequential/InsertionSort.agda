@@ -118,4 +118,4 @@ sort/is-bounded (x ∷ xs) =
   ∎
 
 sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n ²)
-sort/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ l _ → sort/is-bounded l
+sort/asymptotic = f[n]≤g[n]via sort/is-bounded

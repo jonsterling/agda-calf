@@ -254,7 +254,7 @@ sort≤sort/cost/closed : ∀ l → IsBounded (list A) (sort l) (sort/cost/close
 sort≤sort/cost/closed l = sort/clocked≤sort/clocked/cost/closed (sort/depth l) l N.≤-refl
 
 sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n * ⌈log₂ n ⌉)
-sort/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ l _ →
+sort/asymptotic = f[n]≤g[n]via λ l →
   bound/relax
     (λ u → ≤-reflexive (N.*-comm ⌈log₂ length l ⌉ (length l)))
     (sort≤sort/cost/closed l)

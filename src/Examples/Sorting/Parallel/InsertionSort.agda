@@ -189,4 +189,4 @@ sort≤sort/cost/closed : ∀ l → IsBounded (list A) (sort l) (sort/cost/close
 sort≤sort/cost/closed l = bound/relax (sort/cost≤sort/cost/closed l) (sort≤sort/cost l)
 
 sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n  ² , n  ²)
-sort/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ l _ → sort≤sort/cost/closed l
+sort/asymptotic = f[n]≤g[n]via sort≤sort/cost/closed
