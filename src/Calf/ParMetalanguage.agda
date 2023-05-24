@@ -30,6 +30,16 @@ postulate
 &/join/𝟘 = &/join {p₁ = 𝟘} {p₂ = 𝟘}
 {-# REWRITE &/join/𝟘 #-}
 
+&/join/𝟘ˡ : ∀ {A₁ A₂} {v₁ v₂ p₂} →
+  ret v₁ & step (F A₂) p₂ (ret v₂) ≡ step (F (Σ++ A₁ λ _ → A₂)) (𝟘 ⊗ p₂) (ret (v₁ , v₂))
+&/join/𝟘ˡ = &/join {p₁ = 𝟘}
+{-# REWRITE &/join/𝟘ˡ #-}
+
+&/join/𝟘ʳ : ∀ {A₁ A₂} {v₁ v₂ p₁} →
+  step (F A₁) p₁ (ret v₁) & ret v₂ ≡ step (F (Σ++ A₁ λ _ → A₂)) (p₁ ⊗ 𝟘) (ret (v₁ , v₂))
+&/join/𝟘ʳ = &/join {p₂ = 𝟘}
+{-# REWRITE &/join/𝟘ʳ #-}
+
 bind/& : ∀ {A₁ A₂} {X} {v₁ v₂ f} (p₁ p₂ : ℂ) →
   bind {Σ++ A₁ λ _ → A₂} X (step (F A₁) p₁ (ret v₁) & step (F A₂) p₂ (ret v₂)) f ≡ step X (p₁ ⊗ p₂) (f (v₁ , v₂))
 bind/& _ _ = refl
