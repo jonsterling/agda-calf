@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --rewriting #-}
+{-# OPTIONS --cubical-compatible --prop --rewriting #-}
 
 module Examples.Sequence.ArrayCostMonoid where
 

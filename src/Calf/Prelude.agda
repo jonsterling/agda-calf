@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --without-K --rewriting #-}
+{-# OPTIONS --cubical-compatible --prop --rewriting #-}
 
 module Calf.Prelude where
 

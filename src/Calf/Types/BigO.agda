@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --without-K --rewriting #-}
+{-# OPTIONS --cubical-compatible --prop --rewriting #-}
 
 -- Big-O bound on the cost of a computation.
 
