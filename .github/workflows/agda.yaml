@@ -3,15 +3,24 @@ on:
   push:
     branches:
       - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  pull_request:
 
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    timeout-minutes: 60
+
     strategy:
       matrix:
         agda-ref: ["v2.6.3"]
-        stdlib-ref: ["v1.7.1"]
+        stdlib-ref: ["fc473ec905ab1a11a16718a7e8b628f1ab7eb435"]
         ghc-ver: ["8.10.2"]
         cabal-ver: ["3.4.0.0"]
     steps:
@@ -84,8 +93,8 @@ jobs:
         cp -f -R main/ ~/main-build/
 
     - name: Deploy html to github pages
+      if: ${{ github.event_name == 'push' }}
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: main/docs
-
