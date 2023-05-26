@@ -3,7 +3,7 @@
 module Examples.Sequence.ArrayEx2 where
 
 open import Calf.CostMonoid
-open import Examples.Sequence.CostGraph
+open import Calf.CostGraph
 open import Examples.Sequence.ArrayCostMonoid
 
 parCostMonoid = CostGraph-ParCostMonoid ArrayStep

@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical-compatible --prop --rewriting #-}
+{-# OPTIONS --cubical-compatible --safe #-}
 
 -- Common cost monoids.
 

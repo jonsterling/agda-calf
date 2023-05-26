@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical-compatible --prop --rewriting #-}
+{-# OPTIONS --cubical-compatible --safe #-}
 
 -- Definition of a cost monoid.
 
