@@ -5,7 +5,7 @@ module CalfMonad.CostMonads ℓ ℓ′ where
 open Agda.Primitive
 open import Data.Product               using (_×_; _,_)
 open import Data.Unit.Polymorphic.Base using (tt)
-open import Relation.Binary.PropositionalEquality.Core using (refl;sym; trans; cong; cong₂)
+open import Relation.Binary.PropositionalEquality.Core using (refl; sym; trans; cong; cong₂)
 
 open import CalfMonad.CostMonad ℓ ℓ′ (ℓ ⊔ ℓ′)
 open import CalfMonad.CostMonoid ℓ

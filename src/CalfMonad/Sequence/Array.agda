@@ -20,7 +20,7 @@ open import Function.Equality    using (_⟨$⟩_)
 open import Function.Equivalence using (Equivalence)
 open import Relation.Binary.PropositionalEquality.Core using (subst; sym)
 
-open import CalfMonad.Sequence.ArraySig ℓ ℓ′ ℓ″ costMonoid costMonad
+open import CalfMonad.Sequence.ArraySig ℓ′ ℓ″ monad
 
 array : ARRAY
 array = record

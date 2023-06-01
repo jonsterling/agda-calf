@@ -1,11 +1,10 @@
 {-# OPTIONS --cubical-compatible --safe #-}
 
-open import CalfMonad.CostMonoid using (CostMonoid)
-open import CalfMonad.CostMonad  using (CostMonad)
+open import CalfMonad.Monad using (Monad)
 
-module CalfMonad.Sequence.ArraySig ℓ ℓ′ ℓ″ (costMonoid : CostMonoid ℓ) (costMonad : CostMonad ℓ ℓ′ ℓ″ costMonoid) where
+module CalfMonad.Sequence.ArraySig ℓ ℓ′ (monad : Monad ℓ ℓ′) where
 
-open CostMonad costMonad
+open Monad monad
 
 open Agda.Primitive
 open import Data.Bool.Base   using (Bool; false; true; _∨_)
@@ -17,14 +16,14 @@ open import Relation.Nullary using (does)
 
 private
   variable
-    A : Set ℓ′
+    A : Set ℓ
     n : ℕ
     S : Set
 
-record ARRAY : Set (lsuc ℓ′ ⊔ ℓ″) where
+record ARRAY : Set (lsuc ℓ ⊔ ℓ′) where
   field
-    Array        : (A : Set ℓ′) (n : ℕ)                            → Set ℓ′
-    ArrayBuilder : (A : Set ℓ′) (n : ℕ) (S : Set) (m : Vec Bool n) → Set ℓ′
+    Array        : (A : Set ℓ) (n : ℕ)                            → Set ℓ
+    ArrayBuilder : (A : Set ℓ) (n : ℕ) (S : Set) (m : Vec Bool n) → Set ℓ
 
     nth : (as : Array A n) (i : Fin n) → M A
 
