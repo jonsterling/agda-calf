@@ -4,12 +4,11 @@ module CalfMonad.Sequence.ArrayCostMonoid ℓ where
 
 open Agda.Primitive
 open import Data.Fin.Base              using (Fin)
-open import Data.List.Base             using ([_])
+open import Data.List.Base             using (List; [_])
 open import Data.Nat.Base              using (ℕ)
-open import Data.Product               using (_,_)
-open import Data.Unit.Polymorphic.Base using (tt)
+open import Data.Product               using (_×_; _,_)
+open import Data.Unit.Polymorphic.Base using (⊤; tt)
 
-open import CalfMonad.CostMonoid
 open import CalfMonad.CostMonoids
 
 data ArrayStep : Set (lsuc ℓ) where
@@ -17,67 +16,34 @@ data ArrayStep : Set (lsuc ℓ) where
   write : (A : Set ℓ) (n : ℕ) (i : Fin n) (a : A) → ArrayStep
   alloc : (A : Set ℓ) (n : ℕ)                     → ArrayStep
 
-record ArrayCostMonoid ℓ′ : Set (lsuc (ℓ ⊔ ℓ′)) where
+record ArrayCostMonoid {ℓ′} (ℂ : Set ℓ′) : Set (lsuc ℓ ⊔ ℓ′) where
   field
-    costMonoid : CostMonoid ℓ′
+    arrayStep : ArrayStep → ℂ
 
-  open CostMonoid costMonoid public
+open ArrayCostMonoid
 
-  field
-    arrayStep : (s : ArrayStep) → ℂ
+⊤-ArrayCostMonoid : ∀ ℓ′ → ArrayCostMonoid {ℓ′} ⊤
+⊤-ArrayCostMonoid ℓ′ .arrayStep _ = tt
 
-⊤-ArrayCostMonoid : ∀ ℓ′ → ArrayCostMonoid ℓ′
-⊤-ArrayCostMonoid ℓ′ = record
-  { costMonoid = ⊤-CostMonoid ℓ′
-  ; arrayStep = λ where
-    (read  A n i a) → tt
-    (write A n i a) → tt
-    (alloc A n    ) → tt
-  }
+ℕ-ArrayCostMonoid : ArrayCostMonoid ℕ
+ℕ-ArrayCostMonoid .arrayStep (read  A n i a) = 1
+ℕ-ArrayCostMonoid .arrayStep (write A n i a) = 1
+ℕ-ArrayCostMonoid .arrayStep (alloc A n    ) = 0
 
-ℕ-ArrayCostMonoid : ArrayCostMonoid lzero
-ℕ-ArrayCostMonoid = record
-  { costMonoid = ℕ-CostMonoid
-  ; arrayStep = λ where
-    (read  A n i a) → 1
-    (write A n i a) → 1
-    (alloc A n    ) → 0
-  }
+List-ArrayCostMonoid : ∀ {ℓ′} {ℂ : Set ℓ′} → (ArrayStep → ℂ) → ArrayCostMonoid (List ℂ)
+List-ArrayCostMonoid arrayStep .arrayStep s = [ arrayStep s ]
 
-List-ArrayCostMonoid : ∀ {ℓ′} (ℂ : Set ℓ′) (arrayStep : (s : ArrayStep) → ℂ) → ArrayCostMonoid ℓ′
-List-ArrayCostMonoid ℂ arrayStep = record
-  { costMonoid = List-CostMonoid ℂ
-  ; arrayStep = λ s → [ arrayStep s ]
-  }
+ArrayStep-List-ArrayCostMonoid : ArrayCostMonoid (List ArrayStep)
+ArrayStep-List-ArrayCostMonoid = List-ArrayCostMonoid λ s → s
 
-ArrayStep-List-ArrayCostMonoid : ArrayCostMonoid (lsuc ℓ)
-ArrayStep-List-ArrayCostMonoid = List-ArrayCostMonoid ArrayStep λ s → s
+×-ArrayCostMonoid : ∀ {ℓ₁ ℓ₂} {ℂ₁ : Set ℓ₁} {ℂ₂ : Set ℓ₂} → ArrayCostMonoid ℂ₁ → ArrayCostMonoid ℂ₂ → ArrayCostMonoid (ℂ₁ × ℂ₂)
+×-ArrayCostMonoid arrayCostMonoid₁ arrayCostMonoid₂ .arrayStep s = arrayCostMonoid₁ .arrayStep s , arrayCostMonoid₂ .arrayStep s
 
-×-ArrayCostMonoid : ∀ {ℓ′ ℓ″} → ArrayCostMonoid ℓ′ → ArrayCostMonoid ℓ″ → ArrayCostMonoid (ℓ′ ⊔ ℓ″)
-×-ArrayCostMonoid arrayCostMonoid arrayCostMonoid′ = record
-  { costMonoid = ×-CostMonoid costMonoid costMonoid′
-  ; arrayStep = λ s → arrayStep s , arrayStep′ s
-  }
-  where
-    open ArrayCostMonoid arrayCostMonoid
-    open ArrayCostMonoid arrayCostMonoid′ renaming
-      (costMonoid to costMonoid′;
-       arrayStep to arrayStep′)
+CostGraph-ArrayCostMonoid : ∀ {ℓ′} {ℂ : Set ℓ′} → (ArrayStep → ℂ) → ArrayCostMonoid (CostGraph ℂ)
+CostGraph-ArrayCostMonoid arrayStep .arrayStep s = [ CostGraph.base (arrayStep s) ]
 
-CostGraph-ArrayCostMonoid : ∀ {ℓ′} (ℂ : Set ℓ′) (arrayStep : (s : ArrayStep) → ℂ) → ArrayCostMonoid ℓ′
-CostGraph-ArrayCostMonoid ℂ arrayStep = record
-  { costMonoid = ParCostMonoid.costMonoid (CostGraph-ParCostMonoid ℂ)
-  ; arrayStep = λ s → [ CostGraph.base (arrayStep s) ]
-  }
+ArrayStep-CostGraph-ArrayCostMonoid : ArrayCostMonoid (CostGraph ArrayStep)
+ArrayStep-CostGraph-ArrayCostMonoid = CostGraph-ArrayCostMonoid λ s → s
 
-ArrayStep-CostGraph-ArrayCostMonoid : ArrayCostMonoid (lsuc ℓ)
-ArrayStep-CostGraph-ArrayCostMonoid = CostGraph-ArrayCostMonoid ArrayStep λ s → s
-
-ℕ²-ArrayCostMonoid : ArrayCostMonoid lzero
-ℕ²-ArrayCostMonoid = record
-  { costMonoid = ParCostMonoid.costMonoid ℕ²-ParCostMonoid
-  ; arrayStep = λ where
-    (read  A n i a) → 1 , 1
-    (write A n i a) → 1 , 1
-    (alloc A n    ) → 0 , 0
-  }
+ℕ²-ArrayCostMonoid : ArrayCostMonoid (ℕ × ℕ)
+ℕ²-ArrayCostMonoid = ×-ArrayCostMonoid ℕ-ArrayCostMonoid ℕ-ArrayCostMonoid

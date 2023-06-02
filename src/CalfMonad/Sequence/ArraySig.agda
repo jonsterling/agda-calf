@@ -1,10 +1,6 @@
 {-# OPTIONS --cubical-compatible --safe #-}
 
-open import CalfMonad.Monad using (Monad)
-
-module CalfMonad.Sequence.ArraySig ℓ ℓ′ (monad : Monad ℓ ℓ′) where
-
-open Monad monad
+module CalfMonad.Sequence.ArraySig {ℓ ℓ′} (M : Set ℓ → Set ℓ′) where
 
 open Agda.Primitive
 open import Data.Bool.Base   using (Bool; false; true; _∨_)

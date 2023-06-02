@@ -2,7 +2,7 @@
 
 module CalfMonad.CostMonoids where
 
-open import Data.List.Base             using (List; []; [_]; _++_)
+open import Data.List.Base             using (List; []; _∷_; [_]; _++_)
 open import Data.List.Properties       using (++-assoc; ++-identityˡ; ++-identityʳ)
 open import Data.Nat.Base              using (ℕ; _+_; _⊔_)
 open import Data.Nat.Properties        using (+-assoc; +-identityˡ; +-identityʳ)
@@ -12,94 +12,67 @@ open import Relation.Binary.PropositionalEquality.Core using (refl; cong₂)
 
 open import CalfMonad.CostMonoid
 
-⊤-CostMonoid : ∀ ℓ → CostMonoid ℓ
-⊤-CostMonoid ℓ = record
-  { ℂ = ⊤
-  ; _⊕_ = λ p q → tt
-  ; 𝟘 = tt
-  ; ⊕-assoc = λ p q r → refl
-  ; ⊕-identityˡ = λ p → refl
-  ; ⊕-identityʳ = λ p → refl
-  }
+open CostMonoid
+open ParCostMonoid
 
-ℕ-CostMonoid : CostMonoid _
-ℕ-CostMonoid = record
-  { ℂ = ℕ
-  ; _⊕_ = _+_
-  ; 𝟘 = 0
-  ; ⊕-assoc = +-assoc
-  ; ⊕-identityˡ = +-identityˡ
-  ; ⊕-identityʳ = +-identityʳ
-  }
+⊤-CostMonoid : ∀ ℓ → CostMonoid {ℓ} ⊤
+⊤-CostMonoid ℓ ._⊕_ p q = tt
+⊤-CostMonoid ℓ .𝟘 = tt
+⊤-CostMonoid ℓ .⊕-assoc p q r = refl
+⊤-CostMonoid ℓ .⊕-identityˡ p = refl
+⊤-CostMonoid ℓ .⊕-identityʳ p = refl
 
-List-CostMonoid : ∀ {ℓ} → Set ℓ → CostMonoid ℓ
-List-CostMonoid ℂ = record
-  { ℂ = List ℂ
-  ; _⊕_ = _++_
-  ; 𝟘 = []
-  ; ⊕-assoc = ++-assoc
-  ; ⊕-identityˡ = ++-identityˡ
-  ; ⊕-identityʳ = ++-identityʳ
-  }
+ℕ-CostMonoid : CostMonoid ℕ
+ℕ-CostMonoid ._⊕_ = _+_
+ℕ-CostMonoid .𝟘 = 0
+ℕ-CostMonoid .⊕-assoc = +-assoc
+ℕ-CostMonoid .⊕-identityˡ = +-identityˡ
+ℕ-CostMonoid .⊕-identityʳ = +-identityʳ
 
-×-CostMonoid : ∀ {ℓ ℓ′} → CostMonoid ℓ → CostMonoid ℓ′ → CostMonoid _
-×-CostMonoid costMonoid costMonoid′ = record
-  { ℂ = ℂ × ℂ′
-  ; _⊕_ = λ (p , p′) (q , q′) → p ⊕ q , p′ ⊕′ q′
-  ; 𝟘 = (𝟘 , 𝟘′)
-  ; ⊕-assoc = λ (p , p′) (q , q′) (r , r′) → cong₂ _,_ (⊕-assoc p q r) (⊕-assoc′ p′ q′ r′)
-  ; ⊕-identityˡ = λ (p , p′) → cong₂ _,_ (⊕-identityˡ p) (⊕-identityˡ′ p′)
-  ; ⊕-identityʳ = λ (p , p′) → cong₂ _,_ (⊕-identityʳ p) (⊕-identityʳ′ p′)
-  }
-  where
-    open CostMonoid costMonoid
-    open CostMonoid costMonoid′ renaming
-      (ℂ to ℂ′; _⊕_ to _⊕′_; 𝟘 to 𝟘′;
-       ⊕-assoc to ⊕-assoc′;
-       ⊕-identityˡ to ⊕-identityˡ′;
-       ⊕-identityʳ to ⊕-identityʳ′)
+List-CostMonoid : ∀ {ℓ} (ℂ : Set ℓ) → CostMonoid (List ℂ)
+List-CostMonoid ℂ ._⊕_ = _++_
+List-CostMonoid ℂ .𝟘 = []
+List-CostMonoid ℂ .⊕-assoc = ++-assoc
+List-CostMonoid ℂ .⊕-identityˡ = ++-identityˡ
+List-CostMonoid ℂ .⊕-identityʳ = ++-identityʳ
 
-sequentialParCostMonoid : ∀ {ℓ} → CostMonoid ℓ → ParCostMonoid ℓ
-sequentialParCostMonoid costMonoid = record
-  { costMonoid = costMonoid
-  ; _⊗_ = _⊕_
-  }
-  where
-    open CostMonoid costMonoid
+×-CostMonoid : ∀ {ℓ₁ ℓ₂} {ℂ₁ : Set ℓ₁} {ℂ₂ : Set ℓ₂} → CostMonoid ℂ₁ → CostMonoid ℂ₂ → CostMonoid (ℂ₁ × ℂ₂)
+×-CostMonoid costMonoid₁ costMonoid₂ ._⊕_ (p₁ , p₂) (q₁ , q₂) = costMonoid₁ ._⊕_ p₁ q₁ , costMonoid₂ ._⊕_ p₂ q₂
+×-CostMonoid costMonoid₁ costMonoid₂ .𝟘 = costMonoid₁ .𝟘 , costMonoid₂ .𝟘
+×-CostMonoid costMonoid₁ costMonoid₂ .⊕-assoc (p₁ , p₂) (q₁ , q₂) (r₁ , r₂) = cong₂ _,_ (costMonoid₁ .⊕-assoc p₁ q₁ r₁) (costMonoid₂ .⊕-assoc p₂ q₂ r₂)
+×-CostMonoid costMonoid₁ costMonoid₂ .⊕-identityˡ (p₁ , p₂) = cong₂ _,_ (costMonoid₁ .⊕-identityˡ p₁) (costMonoid₂ .⊕-identityˡ p₂)
+×-CostMonoid costMonoid₁ costMonoid₂ .⊕-identityʳ (p₁ , p₂) = cong₂ _,_ (costMonoid₁ .⊕-identityʳ p₁) (costMonoid₂ .⊕-identityʳ p₂)
 
-ℕ-ParCostMonoid : ParCostMonoid _
-ℕ-ParCostMonoid = record
-  { costMonoid = ℕ-CostMonoid
-  ; _⊗_ = _⊔_
-  }
+sequentialParCostMonoid : ∀ {ℓ} {ℂ : Set ℓ} → CostMonoid ℂ → ParCostMonoid ℂ
+sequentialParCostMonoid costMonoid ._⊗_ = costMonoid ._⊕_
+
+ℕ-ParCostMonoid : ParCostMonoid ℕ
+ℕ-ParCostMonoid ._⊗_ = _⊔_
 
 module CostGraph {ℓ} (ℂ : Set ℓ) where
+  infixr 6 _⊗ᵍ_
+  infixr 5 _∷ᵍ_
+
   CostGraph : Set ℓ
 
   data CostGraphBase : Set ℓ where
     base : ℂ → CostGraphBase
-    _⊗_ : CostGraph → CostGraph → CostGraphBase
+    _⊗ᵍ_ : CostGraph → CostGraph → CostGraphBase
 
   CostGraph = List CostGraphBase
 
-CostGraph-ParCostMonoid : ∀ {ℓ} → Set ℓ → ParCostMonoid ℓ
-CostGraph-ParCostMonoid ℂ = record
-  { costMonoid = record (List-CostMonoid CostGraphBase) { ℂ = CostGraph }
-  ; _⊗_ = λ p q → [ p ⊗ q ]
-  }
-  where
-    open CostGraph ℂ
+  pattern _∷ᵍ_ p q = base p ∷ q
 
-×-ParCostMonoid : ∀ {ℓ ℓ′} → ParCostMonoid ℓ → ParCostMonoid ℓ′ → ParCostMonoid _
-×-ParCostMonoid parCostMonoid parCostMonoid′ = record
-  { costMonoid = ×-CostMonoid costMonoid costMonoid′
-  ; _⊗_ = λ (p , p′) (q , q′) → p ⊗ q , p′ ⊗′ q′
-  }
-  where
-    open ParCostMonoid parCostMonoid
-    open ParCostMonoid parCostMonoid′ renaming
-      (costMonoid to costMonoid′;
-       _⊗_ to _⊗′_)
+open CostGraph using (CostGraph; CostGraphBase; _∷ᵍ_; _⊗ᵍ_) public
 
-ℕ²-ParCostMonoid : ParCostMonoid _
+CostGraph-CostMonoid : ∀ {ℓ} (ℂ : Set ℓ) → CostMonoid (CostGraph ℂ)
+CostGraph-CostMonoid ℂ = List-CostMonoid (CostGraphBase ℂ)
+
+CostGraph-ParCostMonoid : ∀ {ℓ} (ℂ : Set ℓ) → ParCostMonoid (CostGraph ℂ)
+CostGraph-ParCostMonoid ℂ ._⊗_ p q = [ p ⊗ᵍ q ]
+
+×-ParCostMonoid : ∀ {ℓ₁ ℓ₂} {ℂ₁ : Set ℓ₁} {ℂ₂ : Set ℓ₂} → ParCostMonoid ℂ₁ → ParCostMonoid ℂ₂ → ParCostMonoid (ℂ₁ × ℂ₂)
+×-ParCostMonoid costMonoid₁ costMonoid₂ ._⊗_ (p₁ , p₂) (q₁ , q₂) = costMonoid₁ ._⊗_ p₁ q₁ , costMonoid₂ ._⊗_ p₂ q₂
+
+ℕ²-ParCostMonoid : ParCostMonoid (ℕ × ℕ)
 ℕ²-ParCostMonoid = ×-ParCostMonoid (sequentialParCostMonoid ℕ-CostMonoid) ℕ-ParCostMonoid

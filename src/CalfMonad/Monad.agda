@@ -1,15 +1,14 @@
 {-# OPTIONS --cubical-compatible --safe #-}
 
-module CalfMonad.Monad ℓ ℓ′ where
+module CalfMonad.Monad where
 
 open Agda.Primitive
 open import Agda.Builtin.Equality
 
-record Monad : Set (lsuc (ℓ ⊔ ℓ′)) where
+record Monad {ℓ ℓ′} (M : Set ℓ → Set ℓ′) : Set (lsuc ℓ ⊔ ℓ′) where
   infix 6 _>>=_ _>>_ _<*>_
 
   field
-    M : Set ℓ → Set ℓ′
     pure : ∀ {A} → A → M A
     _>>=_ : ∀ {A B} → M A → (A → M B) → M B
 
