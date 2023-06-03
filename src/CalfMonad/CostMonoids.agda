@@ -7,7 +7,7 @@ open import Data.List.Properties       using (++-assoc; ++-identityˡ; ++-identi
 open import Data.Nat.Base              using (ℕ; _+_; _⊔_)
 open import Data.Nat.Properties        using (+-assoc; +-identityˡ; +-identityʳ)
 open import Data.Product               using (_×_; _,_)
-open import Data.Unit.Polymorphic.Base using (⊤; tt)
+open import Data.Unit.Polymorphic.Base using (⊤)
 open import Relation.Binary.PropositionalEquality.Core using (refl; cong₂)
 
 open import CalfMonad.CostMonoid
@@ -16,8 +16,8 @@ open CostMonoid
 open ParCostMonoid
 
 ⊤-CostMonoid : ∀ ℓ → CostMonoid {ℓ} ⊤
-⊤-CostMonoid ℓ ._⊕_ p q = tt
-⊤-CostMonoid ℓ .𝟘 = tt
+⊤-CostMonoid ℓ ._⊕_ p q = _
+⊤-CostMonoid ℓ .𝟘 = _
 ⊤-CostMonoid ℓ .⊕-assoc p q r = refl
 ⊤-CostMonoid ℓ .⊕-identityˡ p = refl
 ⊤-CostMonoid ℓ .⊕-identityʳ p = refl

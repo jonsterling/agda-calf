@@ -5,7 +5,7 @@ module CalfMonad.CostMonoid where
 open import Agda.Builtin.Equality
 
 record CostMonoid {ℓ} (ℂ : Set ℓ) : Set ℓ where
-  infixr 5 _⊕_
+  infix 5 _⊕_
 
   field
     _⊕_ : ℂ → ℂ → ℂ
@@ -16,7 +16,7 @@ record CostMonoid {ℓ} (ℂ : Set ℓ) : Set ℓ where
     ⊕-identityʳ : ∀ p → p ⊕ 𝟘 ≡ p
 
 record ParCostMonoid {ℓ} (ℂ : Set ℓ) : Set ℓ where
-  infixr 6 _⊗_
+  infix 5 _⊗_
 
   field
     _⊗_ : ℂ → ℂ → ℂ
