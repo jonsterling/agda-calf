@@ -50,147 +50,130 @@
   <a id="1293" class="Keyword">record</a> <a id="1300" href="Calf.CostMonoid.html#1300" class="Record">IsCostMonoid</a> <a id="1313" class="Symbol">(</a><a id="1314" href="Calf.CostMonoid.html#1314" class="Bound Operator">_+_</a> <a id="1318" class="Symbol">:</a> <a id="1320" href="Algebra.Core.html#527" class="Function">Op₂</a> <a id="1324" href="Calf.CostMonoid.html#362" class="Bound">ℂ</a><a id="1325" class="Symbol">)</a> <a id="1327" class="Symbol">(</a><a id="1328" href="Calf.CostMonoid.html#1328" class="Bound">zero</a> <a id="1333" class="Symbol">:</a> <a id="1335" href="Calf.CostMonoid.html#362" class="Bound">ℂ</a><a id="1336" class="Symbol">)</a> <a id="1338" class="Symbol">(</a><a id="1339" href="Calf.CostMonoid.html#1339" class="Bound Operator">_≤_</a> <a id="1343" class="Symbol">:</a> <a id="1345" href="Calf.CostMonoid.html#379" class="Function">Relation</a><a id="1353" class="Symbol">)</a> <a id="1355" class="Symbol">:</a> <a id="1357" href="Agda.Primitive.html#320" class="Primitive">Set</a> <a id="1361" class="Keyword">where</a>
     <a id="1371" class="Keyword">field</a>
       <a id="1383" href="Calf.CostMonoid.html#1383" class="Field">isMonoid</a>       <a id="1398" class="Symbol">:</a> <a id="1400" href="Algebra.Structures.html#3875" class="Record">IsMonoid</a> <a id="1409" href="Calf.CostMonoid.html#1314" class="Bound Operator">_+_</a> <a id="1413" href="Calf.CostMonoid.html#1328" class="Bound">zero</a>
-      <a id="1424" href="Calf.CostMonoid.html#1424" class="Field">isCancellative</a> <a id="1439" class="Symbol">:</a> <a id="1441" href="Calf.CostMonoid.html#581" class="Record">IsCancellative</a> <a id="1456" href="Calf.CostMonoid.html#1314" class="Bound Operator">_+_</a>
-      <a id="1466" href="Calf.CostMonoid.html#1466" class="Field">isPreorder</a>     <a id="1481" class="Symbol">:</a> <a id="1483" href="Relation.Binary.Structures.html#2186" class="Record">IsPreorder</a> <a id="1494" href="Calf.CostMonoid.html#1339" class="Bound Operator">_≤_</a>
-      <a id="1504" href="Calf.CostMonoid.html#1504" class="Field">isMonotone</a>     <a id="1519" class="Symbol">:</a> <a id="1521" href="Calf.CostMonoid.html#829" class="Record">IsMonotone</a> <a id="1532" href="Calf.CostMonoid.html#1314" class="Bound Operator">_+_</a> <a id="1536" href="Calf.CostMonoid.html#1339" class="Bound Operator">_≤_</a> <a id="1540" href="Calf.CostMonoid.html#1466" class="Field">isPreorder</a>
+      <a id="1424" href="Calf.CostMonoid.html#1424" class="Field">isPreorder</a>     <a id="1439" class="Symbol">:</a> <a id="1441" href="Relation.Binary.Structures.html#2186" class="Record">IsPreorder</a> <a id="1452" href="Calf.CostMonoid.html#1339" class="Bound Operator">_≤_</a>
+      <a id="1462" href="Calf.CostMonoid.html#1462" class="Field">isMonotone</a>     <a id="1477" class="Symbol">:</a> <a id="1479" href="Calf.CostMonoid.html#829" class="Record">IsMonotone</a> <a id="1490" href="Calf.CostMonoid.html#1314" class="Bound Operator">_+_</a> <a id="1494" href="Calf.CostMonoid.html#1339" class="Bound Operator">_≤_</a> <a id="1498" href="Calf.CostMonoid.html#1424" class="Field">isPreorder</a>
 
-    <a id="1556" class="Keyword">open</a> <a id="1561" href="Algebra.Structures.html#3875" class="Module">IsMonoid</a> <a id="1570" href="Calf.CostMonoid.html#1383" class="Field">isMonoid</a> <a id="1579" class="Keyword">public</a>
-      <a id="1592" class="Keyword">using</a> <a id="1598" class="Symbol">()</a>
-      <a id="1607" class="Keyword">renaming</a> <a id="1616" class="Symbol">(</a>
-        <a id="1626" href="Algebra.Structures.html#4037" class="Function">identityˡ</a> <a id="1636" class="Symbol">to</a> <a id="1639" class="Function">+-identityˡ</a><a id="1650" class="Symbol">;</a>
-        <a id="1660" href="Algebra.Structures.html#4098" class="Function">identityʳ</a> <a id="1670" class="Symbol">to</a> <a id="1673" class="Function">+-identityʳ</a><a id="1684" class="Symbol">;</a>
-        <a id="1694" href="Algebra.Structures.html#2878" class="Function">assoc</a> <a id="1700" class="Symbol">to</a> <a id="1703" class="Function">+-assoc</a>
-      <a id="1717" class="Symbol">)</a>
+    <a id="1514" class="Keyword">open</a> <a id="1519" href="Algebra.Structures.html#3875" class="Module">IsMonoid</a> <a id="1528" href="Calf.CostMonoid.html#1383" class="Field">isMonoid</a> <a id="1537" class="Keyword">public</a>
+      <a id="1550" class="Keyword">using</a> <a id="1556" class="Symbol">()</a>
+      <a id="1565" class="Keyword">renaming</a> <a id="1574" class="Symbol">(</a>
+        <a id="1584" href="Algebra.Structures.html#4037" class="Function">identityˡ</a> <a id="1594" class="Symbol">to</a> <a id="1597" class="Function">+-identityˡ</a><a id="1608" class="Symbol">;</a>
+        <a id="1618" href="Algebra.Structures.html#4098" class="Function">identityʳ</a> <a id="1628" class="Symbol">to</a> <a id="1631" class="Function">+-identityʳ</a><a id="1642" class="Symbol">;</a>
+        <a id="1652" href="Algebra.Structures.html#2878" class="Function">assoc</a> <a id="1658" class="Symbol">to</a> <a id="1661" class="Function">+-assoc</a>
+      <a id="1675" class="Symbol">)</a>
 
-    <a id="1724" class="Keyword">open</a> <a id="1729" href="Calf.CostMonoid.html#581" class="Module">IsCancellative</a> <a id="1744" href="Calf.CostMonoid.html#1424" class="Field">isCancellative</a> <a id="1759" class="Keyword">public</a>
-      <a id="1772" class="Keyword">renaming</a> <a id="1781" class="Symbol">(</a>
-        <a id="1791" href="Calf.CostMonoid.html#638" class="Field">∙-cancel-≡</a> <a id="1802" class="Symbol">to</a> <a id="1805" class="Field">+-cancel-≡</a><a id="1815" class="Symbol">;</a>
-        <a id="1825" href="Calf.CostMonoid.html#673" class="Function">∙-cancelˡ-≡</a> <a id="1837" class="Symbol">to</a> <a id="1840" class="Function">+-cancelˡ-≡</a><a id="1851" class="Symbol">;</a>
-        <a id="1861" href="Calf.CostMonoid.html#748" class="Function">∙-cancelʳ-≡</a> <a id="1873" class="Symbol">to</a> <a id="1876" class="Function">+-cancelʳ-≡</a>
-      <a id="1894" class="Symbol">)</a>
+    <a id="1682" class="Keyword">open</a> <a id="1687" href="Relation.Binary.Structures.html#2186" class="Module">IsPreorder</a> <a id="1698" href="Calf.CostMonoid.html#1424" class="Field">isPreorder</a> <a id="1709" class="Keyword">public</a>
+      <a id="1722" class="Keyword">using</a> <a id="1728" class="Symbol">()</a>
+      <a id="1737" class="Keyword">renaming</a> <a id="1746" class="Symbol">(</a><a id="1747" href="Relation.Binary.Structures.html#2354" class="Field">reflexive</a> <a id="1757" class="Symbol">to</a> <a id="1760" class="Field">≤-reflexive</a><a id="1771" class="Symbol">;</a> <a id="1773" href="Relation.Binary.Structures.html#2461" class="Function">refl</a> <a id="1778" class="Symbol">to</a> <a id="1781" class="Function">≤-refl</a><a id="1787" class="Symbol">;</a> <a id="1789" href="Relation.Binary.Structures.html#2384" class="Field">trans</a> <a id="1795" class="Symbol">to</a> <a id="1798" class="Field">≤-trans</a><a id="1805" class="Symbol">)</a>
 
-    <a id="1901" class="Keyword">open</a> <a id="1906" href="Relation.Binary.Structures.html#2186" class="Module">IsPreorder</a> <a id="1917" href="Calf.CostMonoid.html#1466" class="Field">isPreorder</a> <a id="1928" class="Keyword">public</a>
-      <a id="1941" class="Keyword">using</a> <a id="1947" class="Symbol">()</a>
-      <a id="1956" class="Keyword">renaming</a> <a id="1965" class="Symbol">(</a><a id="1966" href="Relation.Binary.Structures.html#2354" class="Field">reflexive</a> <a id="1976" class="Symbol">to</a> <a id="1979" class="Field">≤-reflexive</a><a id="1990" class="Symbol">;</a> <a id="1992" href="Relation.Binary.Structures.html#2461" class="Function">refl</a> <a id="1997" class="Symbol">to</a> <a id="2000" class="Function">≤-refl</a><a id="2006" class="Symbol">;</a> <a id="2008" href="Relation.Binary.Structures.html#2384" class="Field">trans</a> <a id="2014" class="Symbol">to</a> <a id="2017" class="Field">≤-trans</a><a id="2024" class="Symbol">)</a>
+    <a id="1812" class="Keyword">open</a> <a id="1817" href="Calf.CostMonoid.html#829" class="Module">IsMonotone</a> <a id="1828" href="Calf.CostMonoid.html#1462" class="Field">isMonotone</a> <a id="1839" class="Keyword">public</a>
+      <a id="1852" class="Keyword">renaming</a> <a id="1861" class="Symbol">(</a>
+        <a id="1871" href="Calf.CostMonoid.html#929" class="Field">∙-mono-≤</a> <a id="1880" class="Symbol">to</a> <a id="1883" class="Field">+-mono-≤</a><a id="1891" class="Symbol">;</a>
+        <a id="1901" href="Calf.CostMonoid.html#1099" class="Function">∙-monoˡ-≤</a> <a id="1911" class="Symbol">to</a> <a id="1914" class="Function">+-monoˡ-≤</a><a id="1923" class="Symbol">;</a>
+        <a id="1933" href="Calf.CostMonoid.html#1197" class="Function">∙-monoʳ-≤</a> <a id="1943" class="Symbol">to</a> <a id="1946" class="Function">+-monoʳ-≤</a>
+      <a id="1962" class="Symbol">)</a>
 
-    <a id="2031" class="Keyword">open</a> <a id="2036" href="Calf.CostMonoid.html#829" class="Module">IsMonotone</a> <a id="2047" href="Calf.CostMonoid.html#1504" class="Field">isMonotone</a> <a id="2058" class="Keyword">public</a>
-      <a id="2071" class="Keyword">renaming</a> <a id="2080" class="Symbol">(</a>
-        <a id="2090" href="Calf.CostMonoid.html#929" class="Field">∙-mono-≤</a> <a id="2099" class="Symbol">to</a> <a id="2102" class="Field">+-mono-≤</a><a id="2110" class="Symbol">;</a>
-        <a id="2120" href="Calf.CostMonoid.html#1099" class="Function">∙-monoˡ-≤</a> <a id="2130" class="Symbol">to</a> <a id="2133" class="Function">+-monoˡ-≤</a><a id="2142" class="Symbol">;</a>
-        <a id="2152" href="Calf.CostMonoid.html#1197" class="Function">∙-monoʳ-≤</a> <a id="2162" class="Symbol">to</a> <a id="2165" class="Function">+-monoʳ-≤</a>
-      <a id="2181" class="Symbol">)</a>
+  <a id="1967" class="Keyword">record</a> <a id="1974" href="Calf.CostMonoid.html#1974" class="Record">IsParCostMonoid</a> <a id="1990" class="Symbol">(</a><a id="1991" href="Calf.CostMonoid.html#1991" class="Bound Operator">_⊕_</a> <a id="1995" class="Symbol">:</a> <a id="1997" href="Algebra.Core.html#527" class="Function">Op₂</a> <a id="2001" href="Calf.CostMonoid.html#362" class="Bound">ℂ</a><a id="2002" class="Symbol">)</a> <a id="2004" class="Symbol">(</a><a id="2005" href="Calf.CostMonoid.html#2005" class="Bound">𝟘</a> <a id="2007" class="Symbol">:</a> <a id="2009" href="Calf.CostMonoid.html#362" class="Bound">ℂ</a><a id="2010" class="Symbol">)</a> <a id="2012" class="Symbol">(</a><a id="2013" href="Calf.CostMonoid.html#2013" class="Bound Operator">_⊗_</a> <a id="2017" class="Symbol">:</a> <a id="2019" href="Algebra.Core.html#527" class="Function">Op₂</a> <a id="2023" href="Calf.CostMonoid.html#362" class="Bound">ℂ</a><a id="2024" class="Symbol">)</a> <a id="2026" class="Symbol">(</a><a id="2027" href="Calf.CostMonoid.html#2027" class="Bound">𝟙</a> <a id="2029" class="Symbol">:</a> <a id="2031" href="Calf.CostMonoid.html#362" class="Bound">ℂ</a><a id="2032" class="Symbol">)</a> <a id="2034" class="Symbol">(</a><a id="2035" href="Calf.CostMonoid.html#2035" class="Bound Operator">_≤_</a> <a id="2039" class="Symbol">:</a> <a id="2041" href="Calf.CostMonoid.html#379" class="Function">Relation</a><a id="2049" class="Symbol">)</a> <a id="2051" class="Symbol">:</a> <a id="2053" href="Agda.Primitive.html#320" class="Primitive">Set</a> <a id="2057" class="Keyword">where</a>
+    <a id="2067" class="Keyword">field</a>
+      <a id="2079" href="Calf.CostMonoid.html#2079" class="Field">isMonoid</a>            <a id="2099" class="Symbol">:</a> <a id="2101" href="Algebra.Structures.html#3875" class="Record">IsMonoid</a> <a id="2110" href="Calf.CostMonoid.html#1991" class="Bound Operator">_⊕_</a> <a id="2114" href="Calf.CostMonoid.html#2005" class="Bound">𝟘</a>
+      <a id="2122" href="Calf.CostMonoid.html#2122" class="Field">isCommutativeMonoid</a> <a id="2142" class="Symbol">:</a> <a id="2144" href="Algebra.Structures.html#4285" class="Record">IsCommutativeMonoid</a> <a id="2164" href="Calf.CostMonoid.html#2013" class="Bound Operator">_⊗_</a> <a id="2168" href="Calf.CostMonoid.html#2027" class="Bound">𝟙</a>
+      <a id="2176" href="Calf.CostMonoid.html#2176" class="Field">isPreorder</a>          <a id="2196" class="Symbol">:</a> <a id="2198" href="Relation.Binary.Structures.html#2186" class="Record">IsPreorder</a> <a id="2209" href="Calf.CostMonoid.html#2035" class="Bound Operator">_≤_</a>
+      <a id="2219" href="Calf.CostMonoid.html#2219" class="Field">isMonotone-⊕</a>        <a id="2239" class="Symbol">:</a> <a id="2241" href="Calf.CostMonoid.html#829" class="Record">IsMonotone</a> <a id="2252" href="Calf.CostMonoid.html#1991" class="Bound Operator">_⊕_</a> <a id="2256" href="Calf.CostMonoid.html#2035" class="Bound Operator">_≤_</a> <a id="2260" href="Calf.CostMonoid.html#2176" class="Field">isPreorder</a>
+      <a id="2277" href="Calf.CostMonoid.html#2277" class="Field">isMonotone-⊗</a>        <a id="2297" class="Symbol">:</a> <a id="2299" href="Calf.CostMonoid.html#829" class="Record">IsMonotone</a> <a id="2310" href="Calf.CostMonoid.html#2013" class="Bound Operator">_⊗_</a> <a id="2314" href="Calf.CostMonoid.html#2035" class="Bound Operator">_≤_</a> <a id="2318" href="Calf.CostMonoid.html#2176" class="Field">isPreorder</a>
 
-  <a id="2186" class="Keyword">record</a> <a id="2193" href="Calf.CostMonoid.html#2193" class="Record">IsParCostMonoid</a> <a id="2209" class="Symbol">(</a><a id="2210" href="Calf.CostMonoid.html#2210" class="Bound Operator">_⊕_</a> <a id="2214" class="Symbol">:</a> <a id="2216" href="Algebra.Core.html#527" class="Function">Op₂</a> <a id="2220" href="Calf.CostMonoid.html#362" class="Bound">ℂ</a><a id="2221" class="Symbol">)</a> <a id="2223" class="Symbol">(</a><a id="2224" href="Calf.CostMonoid.html#2224" class="Bound">𝟘</a> <a id="2226" class="Symbol">:</a> <a id="2228" href="Calf.CostMonoid.html#362" class="Bound">ℂ</a><a id="2229" class="Symbol">)</a> <a id="2231" class="Symbol">(</a><a id="2232" href="Calf.CostMonoid.html#2232" class="Bound Operator">_⊗_</a> <a id="2236" class="Symbol">:</a> <a id="2238" href="Algebra.Core.html#527" class="Function">Op₂</a> <a id="2242" href="Calf.CostMonoid.html#362" class="Bound">ℂ</a><a id="2243" class="Symbol">)</a> <a id="2245" class="Symbol">(</a><a id="2246" href="Calf.CostMonoid.html#2246" class="Bound">𝟙</a> <a id="2248" class="Symbol">:</a> <a id="2250" href="Calf.CostMonoid.html#362" class="Bound">ℂ</a><a id="2251" class="Symbol">)</a> <a id="2253" class="Symbol">(</a><a id="2254" href="Calf.CostMonoid.html#2254" class="Bound Operator">_≤_</a> <a id="2258" class="Symbol">:</a> <a id="2260" href="Calf.CostMonoid.html#379" class="Function">Relation</a><a id="2268" class="Symbol">)</a> <a id="2270" class="Symbol">:</a> <a id="2272" href="Agda.Primitive.html#320" class="Primitive">Set</a> <a id="2276" class="Keyword">where</a>
-    <a id="2286" class="Keyword">field</a>
-      <a id="2298" href="Calf.CostMonoid.html#2298" class="Field">isMonoid</a>            <a id="2318" class="Symbol">:</a> <a id="2320" href="Algebra.Structures.html#3875" class="Record">IsMonoid</a> <a id="2329" href="Calf.CostMonoid.html#2210" class="Bound Operator">_⊕_</a> <a id="2333" href="Calf.CostMonoid.html#2224" class="Bound">𝟘</a>
-      <a id="2341" href="Calf.CostMonoid.html#2341" class="Field">isCommutativeMonoid</a> <a id="2361" class="Symbol">:</a> <a id="2363" href="Algebra.Structures.html#4285" class="Record">IsCommutativeMonoid</a> <a id="2383" href="Calf.CostMonoid.html#2232" class="Bound Operator">_⊗_</a> <a id="2387" href="Calf.CostMonoid.html#2246" class="Bound">𝟙</a>
-      <a id="2395" href="Calf.CostMonoid.html#2395" class="Field">isCancellative</a>      <a id="2415" class="Symbol">:</a> <a id="2417" href="Calf.CostMonoid.html#581" class="Record">IsCancellative</a> <a id="2432" href="Calf.CostMonoid.html#2210" class="Bound Operator">_⊕_</a>
-      <a id="2442" href="Calf.CostMonoid.html#2442" class="Field">isPreorder</a>          <a id="2462" class="Symbol">:</a> <a id="2464" href="Relation.Binary.Structures.html#2186" class="Record">IsPreorder</a> <a id="2475" href="Calf.CostMonoid.html#2254" class="Bound Operator">_≤_</a>
-      <a id="2485" href="Calf.CostMonoid.html#2485" class="Field">isMonotone-⊕</a>        <a id="2505" class="Symbol">:</a> <a id="2507" href="Calf.CostMonoid.html#829" class="Record">IsMonotone</a> <a id="2518" href="Calf.CostMonoid.html#2210" class="Bound Operator">_⊕_</a> <a id="2522" href="Calf.CostMonoid.html#2254" class="Bound Operator">_≤_</a> <a id="2526" href="Calf.CostMonoid.html#2442" class="Field">isPreorder</a>
-      <a id="2543" href="Calf.CostMonoid.html#2543" class="Field">isMonotone-⊗</a>        <a id="2563" class="Symbol">:</a> <a id="2565" href="Calf.CostMonoid.html#829" class="Record">IsMonotone</a> <a id="2576" href="Calf.CostMonoid.html#2232" class="Bound Operator">_⊗_</a> <a id="2580" href="Calf.CostMonoid.html#2254" class="Bound Operator">_≤_</a> <a id="2584" href="Calf.CostMonoid.html#2442" class="Field">isPreorder</a>
+    <a id="2334" class="Keyword">open</a> <a id="2339" href="Algebra.Structures.html#3875" class="Module">IsMonoid</a> <a id="2348" href="Calf.CostMonoid.html#2079" class="Field">isMonoid</a> <a id="2357" class="Keyword">public</a>
+      <a id="2370" class="Keyword">using</a> <a id="2376" class="Symbol">()</a>
+      <a id="2385" class="Keyword">renaming</a> <a id="2394" class="Symbol">(</a>
+        <a id="2404" href="Algebra.Structures.html#4037" class="Function">identityˡ</a> <a id="2414" class="Symbol">to</a> <a id="2417" class="Function">⊕-identityˡ</a><a id="2428" class="Symbol">;</a>
+        <a id="2438" href="Algebra.Structures.html#4098" class="Function">identityʳ</a> <a id="2448" class="Symbol">to</a> <a id="2451" class="Function">⊕-identityʳ</a><a id="2462" class="Symbol">;</a>
+        <a id="2472" href="Algebra.Structures.html#2878" class="Function">assoc</a> <a id="2478" class="Symbol">to</a> <a id="2481" class="Function">⊕-assoc</a>
+      <a id="2495" class="Symbol">)</a>
 
-    <a id="2600" class="Keyword">open</a> <a id="2605" href="Algebra.Structures.html#3875" class="Module">IsMonoid</a> <a id="2614" href="Calf.CostMonoid.html#2298" class="Field">isMonoid</a> <a id="2623" class="Keyword">public</a>
-      <a id="2636" class="Keyword">using</a> <a id="2642" class="Symbol">()</a>
-      <a id="2651" class="Keyword">renaming</a> <a id="2660" class="Symbol">(</a>
-        <a id="2670" href="Algebra.Structures.html#4037" class="Function">identityˡ</a> <a id="2680" class="Symbol">to</a> <a id="2683" class="Function">⊕-identityˡ</a><a id="2694" class="Symbol">;</a>
-        <a id="2704" href="Algebra.Structures.html#4098" class="Function">identityʳ</a> <a id="2714" class="Symbol">to</a> <a id="2717" class="Function">⊕-identityʳ</a><a id="2728" class="Symbol">;</a>
-        <a id="2738" href="Algebra.Structures.html#2878" class="Function">assoc</a> <a id="2744" class="Symbol">to</a> <a id="2747" class="Function">⊕-assoc</a>
-      <a id="2761" class="Symbol">)</a>
+    <a id="2502" class="Keyword">open</a> <a id="2507" href="Algebra.Structures.html#4285" class="Module">IsCommutativeMonoid</a> <a id="2527" href="Calf.CostMonoid.html#2122" class="Field">isCommutativeMonoid</a> <a id="2547" class="Keyword">public</a>
+      <a id="2560" class="Keyword">using</a> <a id="2566" class="Symbol">()</a>
+      <a id="2575" class="Keyword">renaming</a> <a id="2584" class="Symbol">(</a>
+        <a id="2594" href="Algebra.Structures.html#4037" class="Function">identityˡ</a> <a id="2604" class="Symbol">to</a> <a id="2607" class="Function">⊗-identityˡ</a><a id="2618" class="Symbol">;</a>
+        <a id="2628" href="Algebra.Structures.html#4098" class="Function">identityʳ</a> <a id="2638" class="Symbol">to</a> <a id="2641" class="Function">⊗-identityʳ</a><a id="2652" class="Symbol">;</a>
+        <a id="2662" href="Algebra.Structures.html#2878" class="Function">assoc</a> <a id="2668" class="Symbol">to</a> <a id="2671" class="Function">⊗-assoc</a><a id="2678" class="Symbol">;</a>
+        <a id="2688" href="Algebra.Structures.html#4385" class="Field">comm</a> <a id="2693" class="Symbol">to</a> <a id="2696" class="Field">⊗-comm</a>
+      <a id="2709" class="Symbol">)</a>
 
-    <a id="2768" class="Keyword">open</a> <a id="2773" href="Algebra.Structures.html#4285" class="Module">IsCommutativeMonoid</a> <a id="2793" href="Calf.CostMonoid.html#2341" class="Field">isCommutativeMonoid</a> <a id="2813" class="Keyword">public</a>
-      <a id="2826" class="Keyword">using</a> <a id="2832" class="Symbol">()</a>
-      <a id="2841" class="Keyword">renaming</a> <a id="2850" class="Symbol">(</a>
-        <a id="2860" href="Algebra.Structures.html#4037" class="Function">identityˡ</a> <a id="2870" class="Symbol">to</a> <a id="2873" class="Function">⊗-identityˡ</a><a id="2884" class="Symbol">;</a>
-        <a id="2894" href="Algebra.Structures.html#4098" class="Function">identityʳ</a> <a id="2904" class="Symbol">to</a> <a id="2907" class="Function">⊗-identityʳ</a><a id="2918" class="Symbol">;</a>
-        <a id="2928" href="Algebra.Structures.html#2878" class="Function">assoc</a> <a id="2934" class="Symbol">to</a> <a id="2937" class="Function">⊗-assoc</a><a id="2944" class="Symbol">;</a>
-        <a id="2954" href="Algebra.Structures.html#4385" class="Field">comm</a> <a id="2959" class="Symbol">to</a> <a id="2962" class="Field">⊗-comm</a>
-      <a id="2975" class="Symbol">)</a>
+    <a id="2716" class="Keyword">open</a> <a id="2721" href="Relation.Binary.Structures.html#2186" class="Module">IsPreorder</a> <a id="2732" href="Calf.CostMonoid.html#2176" class="Field">isPreorder</a> <a id="2743" class="Keyword">public</a>
+      <a id="2756" class="Keyword">using</a> <a id="2762" class="Symbol">()</a>
+      <a id="2771" class="Keyword">renaming</a> <a id="2780" class="Symbol">(</a><a id="2781" href="Relation.Binary.Structures.html#2354" class="Field">reflexive</a> <a id="2791" class="Symbol">to</a> <a id="2794" class="Field">≤-reflexive</a><a id="2805" class="Symbol">;</a> <a id="2807" href="Relation.Binary.Structures.html#2461" class="Function">refl</a> <a id="2812" class="Symbol">to</a> <a id="2815" class="Function">≤-refl</a><a id="2821" class="Symbol">;</a> <a id="2823" href="Relation.Binary.Structures.html#2384" class="Field">trans</a> <a id="2829" class="Symbol">to</a> <a id="2832" class="Field">≤-trans</a><a id="2839" class="Symbol">)</a>
 
-    <a id="2982" class="Keyword">open</a> <a id="2987" href="Calf.CostMonoid.html#581" class="Module">IsCancellative</a> <a id="3002" href="Calf.CostMonoid.html#2395" class="Field">isCancellative</a> <a id="3017" class="Keyword">public</a>
-      <a id="3030" class="Keyword">renaming</a> <a id="3039" class="Symbol">(</a>
-        <a id="3049" href="Calf.CostMonoid.html#638" class="Field">∙-cancel-≡</a> <a id="3060" class="Symbol">to</a> <a id="3063" class="Field">⊕-cancel-≡</a><a id="3073" class="Symbol">;</a>
-        <a id="3083" href="Calf.CostMonoid.html#673" class="Function">∙-cancelˡ-≡</a> <a id="3095" class="Symbol">to</a> <a id="3098" class="Function">⊕-cancelˡ-≡</a><a id="3109" class="Symbol">;</a>
-        <a id="3119" href="Calf.CostMonoid.html#748" class="Function">∙-cancelʳ-≡</a> <a id="3131" class="Symbol">to</a> <a id="3134" class="Function">⊕-cancelʳ-≡</a>
-      <a id="3152" class="Symbol">)</a>
+    <a id="2846" class="Keyword">open</a> <a id="2851" href="Calf.CostMonoid.html#829" class="Module">IsMonotone</a> <a id="2862" href="Calf.CostMonoid.html#2219" class="Field">isMonotone-⊕</a> <a id="2875" class="Keyword">public</a>
+      <a id="2888" class="Keyword">renaming</a> <a id="2897" class="Symbol">(</a>
+        <a id="2907" href="Calf.CostMonoid.html#929" class="Field">∙-mono-≤</a> <a id="2916" class="Symbol">to</a> <a id="2919" class="Field">⊕-mono-≤</a><a id="2927" class="Symbol">;</a>
+        <a id="2937" href="Calf.CostMonoid.html#1099" class="Function">∙-monoˡ-≤</a> <a id="2947" class="Symbol">to</a> <a id="2950" class="Function">⊕-monoˡ-≤</a><a id="2959" class="Symbol">;</a>
+        <a id="2969" href="Calf.CostMonoid.html#1197" class="Function">∙-monoʳ-≤</a> <a id="2979" class="Symbol">to</a> <a id="2982" class="Function">⊕-monoʳ-≤</a>
+      <a id="2998" class="Symbol">)</a>
 
-    <a id="3159" class="Keyword">open</a> <a id="3164" href="Relation.Binary.Structures.html#2186" class="Module">IsPreorder</a> <a id="3175" href="Calf.CostMonoid.html#2442" class="Field">isPreorder</a> <a id="3186" class="Keyword">public</a>
-      <a id="3199" class="Keyword">using</a> <a id="3205" class="Symbol">()</a>
-      <a id="3214" class="Keyword">renaming</a> <a id="3223" class="Symbol">(</a><a id="3224" href="Relation.Binary.Structures.html#2354" class="Field">reflexive</a> <a id="3234" class="Symbol">to</a> <a id="3237" class="Field">≤-reflexive</a><a id="3248" class="Symbol">;</a> <a id="3250" href="Relation.Binary.Structures.html#2461" class="Function">refl</a> <a id="3255" class="Symbol">to</a> <a id="3258" class="Function">≤-refl</a><a id="3264" class="Symbol">;</a> <a id="3266" href="Relation.Binary.Structures.html#2384" class="Field">trans</a> <a id="3272" class="Symbol">to</a> <a id="3275" class="Field">≤-trans</a><a id="3282" class="Symbol">)</a>
+    <a id="3005" class="Keyword">open</a> <a id="3010" href="Calf.CostMonoid.html#829" class="Module">IsMonotone</a> <a id="3021" href="Calf.CostMonoid.html#2277" class="Field">isMonotone-⊗</a> <a id="3034" class="Keyword">public</a>
+      <a id="3047" class="Keyword">renaming</a> <a id="3056" class="Symbol">(</a>
+        <a id="3066" href="Calf.CostMonoid.html#929" class="Field">∙-mono-≤</a> <a id="3075" class="Symbol">to</a> <a id="3078" class="Field">⊗-mono-≤</a><a id="3086" class="Symbol">;</a>
+        <a id="3096" href="Calf.CostMonoid.html#1099" class="Function">∙-monoˡ-≤</a> <a id="3106" class="Symbol">to</a> <a id="3109" class="Function">⊗-monoˡ-≤</a><a id="3118" class="Symbol">;</a>
+        <a id="3128" href="Calf.CostMonoid.html#1197" class="Function">∙-monoʳ-≤</a> <a id="3138" class="Symbol">to</a> <a id="3141" class="Function">⊗-monoʳ-≤</a>
+      <a id="3157" class="Symbol">)</a>
 
-    <a id="3289" class="Keyword">open</a> <a id="3294" href="Calf.CostMonoid.html#829" class="Module">IsMonotone</a> <a id="3305" href="Calf.CostMonoid.html#2485" class="Field">isMonotone-⊕</a> <a id="3318" class="Keyword">public</a>
-      <a id="3331" class="Keyword">renaming</a> <a id="3340" class="Symbol">(</a>
-        <a id="3350" href="Calf.CostMonoid.html#929" class="Field">∙-mono-≤</a> <a id="3359" class="Symbol">to</a> <a id="3362" class="Field">⊕-mono-≤</a><a id="3370" class="Symbol">;</a>
-        <a id="3380" href="Calf.CostMonoid.html#1099" class="Function">∙-monoˡ-≤</a> <a id="3390" class="Symbol">to</a> <a id="3393" class="Function">⊕-monoˡ-≤</a><a id="3402" class="Symbol">;</a>
-        <a id="3412" href="Calf.CostMonoid.html#1197" class="Function">∙-monoʳ-≤</a> <a id="3422" class="Symbol">to</a> <a id="3425" class="Function">⊕-monoʳ-≤</a>
-      <a id="3441" class="Symbol">)</a>
+<a id="3160" class="Keyword">record</a> <a id="CostMonoid"></a><a id="3167" href="Calf.CostMonoid.html#3167" class="Record">CostMonoid</a> <a id="3178" class="Symbol">:</a> <a id="3180" href="Agda.Primitive.html#320" class="Primitive">Set₁</a> <a id="3185" class="Keyword">where</a>
+  <a id="3193" class="Keyword">infixl</a> <a id="3200" class="Number">6</a> <a id="3202" href="Calf.CostMonoid.html#3242" class="Field Operator">_+_</a>
 
-    <a id="3448" class="Keyword">open</a> <a id="3453" href="Calf.CostMonoid.html#829" class="Module">IsMonotone</a> <a id="3464" href="Calf.CostMonoid.html#2543" class="Field">isMonotone-⊗</a> <a id="3477" class="Keyword">public</a>
-      <a id="3490" class="Keyword">renaming</a> <a id="3499" class="Symbol">(</a>
-        <a id="3509" href="Calf.CostMonoid.html#929" class="Field">∙-mono-≤</a> <a id="3518" class="Symbol">to</a> <a id="3521" class="Field">⊗-mono-≤</a><a id="3529" class="Symbol">;</a>
-        <a id="3539" href="Calf.CostMonoid.html#1099" class="Function">∙-monoˡ-≤</a> <a id="3549" class="Symbol">to</a> <a id="3552" class="Function">⊗-monoˡ-≤</a><a id="3561" class="Symbol">;</a>
-        <a id="3571" href="Calf.CostMonoid.html#1197" class="Function">∙-monoʳ-≤</a> <a id="3581" class="Symbol">to</a> <a id="3584" class="Function">⊗-monoʳ-≤</a>
-      <a id="3600" class="Symbol">)</a>
+  <a id="3209" class="Keyword">field</a>
+    <a id="CostMonoid.ℂ"></a><a id="3219" href="Calf.CostMonoid.html#3219" class="Field">ℂ</a>            <a id="3232" class="Symbol">:</a> <a id="3234" href="Agda.Primitive.html#320" class="Primitive">Set</a>
+    <a id="CostMonoid._+_"></a><a id="3242" href="Calf.CostMonoid.html#3242" class="Field Operator">_+_</a>          <a id="3255" class="Symbol">:</a> <a id="3257" href="Algebra.Core.html#527" class="Function">Op₂</a> <a id="3261" href="Calf.CostMonoid.html#3219" class="Field">ℂ</a>
+    <a id="CostMonoid.zero"></a><a id="3267" href="Calf.CostMonoid.html#3267" class="Field">zero</a>         <a id="3280" class="Symbol">:</a> <a id="3282" href="Calf.CostMonoid.html#3219" class="Field">ℂ</a>
+    <a id="CostMonoid._≤_"></a><a id="3288" href="Calf.CostMonoid.html#3288" class="Field Operator">_≤_</a>          <a id="3301" class="Symbol">:</a> <a id="3303" href="Calf.CostMonoid.html#379" class="Function">Relation</a>
+    <a id="CostMonoid.isCostMonoid"></a><a id="3316" href="Calf.CostMonoid.html#3316" class="Field">isCostMonoid</a> <a id="3329" class="Symbol">:</a> <a id="3331" href="Calf.CostMonoid.html#1300" class="Record">IsCostMonoid</a> <a id="3344" href="Calf.CostMonoid.html#3242" class="Field Operator">_+_</a> <a id="3348" href="Calf.CostMonoid.html#3267" class="Field">zero</a> <a id="3353" href="Calf.CostMonoid.html#3288" class="Field Operator">_≤_</a>
 
-<a id="3603" class="Keyword">record</a> <a id="CostMonoid"></a><a id="3610" href="Calf.CostMonoid.html#3610" class="Record">CostMonoid</a> <a id="3621" class="Symbol">:</a> <a id="3623" href="Agda.Primitive.html#320" class="Primitive">Set₁</a> <a id="3628" class="Keyword">where</a>
-  <a id="3636" class="Keyword">infixl</a> <a id="3643" class="Number">6</a> <a id="3645" href="Calf.CostMonoid.html#3685" class="Field Operator">_+_</a>
+  <a id="3360" class="Keyword">open</a> <a id="3365" href="Calf.CostMonoid.html#1300" class="Module">IsCostMonoid</a> <a id="3378" href="Calf.CostMonoid.html#3316" class="Field">isCostMonoid</a> <a id="3391" class="Keyword">public</a>
 
-  <a id="3652" class="Keyword">field</a>
-    <a id="CostMonoid.ℂ"></a><a id="3662" href="Calf.CostMonoid.html#3662" class="Field">ℂ</a>            <a id="3675" class="Symbol">:</a> <a id="3677" href="Agda.Primitive.html#320" class="Primitive">Set</a>
-    <a id="CostMonoid._+_"></a><a id="3685" href="Calf.CostMonoid.html#3685" class="Field Operator">_+_</a>          <a id="3698" class="Symbol">:</a> <a id="3700" href="Algebra.Core.html#527" class="Function">Op₂</a> <a id="3704" href="Calf.CostMonoid.html#3662" class="Field">ℂ</a>
-    <a id="CostMonoid.zero"></a><a id="3710" href="Calf.CostMonoid.html#3710" class="Field">zero</a>         <a id="3723" class="Symbol">:</a> <a id="3725" href="Calf.CostMonoid.html#3662" class="Field">ℂ</a>
-    <a id="CostMonoid._≤_"></a><a id="3731" href="Calf.CostMonoid.html#3731" class="Field Operator">_≤_</a>          <a id="3744" class="Symbol">:</a> <a id="3746" href="Calf.CostMonoid.html#379" class="Function">Relation</a>
-    <a id="CostMonoid.isCostMonoid"></a><a id="3759" href="Calf.CostMonoid.html#3759" class="Field">isCostMonoid</a> <a id="3772" class="Symbol">:</a> <a id="3774" href="Calf.CostMonoid.html#1300" class="Record">IsCostMonoid</a> <a id="3787" href="Calf.CostMonoid.html#3685" class="Field Operator">_+_</a> <a id="3791" href="Calf.CostMonoid.html#3710" class="Field">zero</a> <a id="3796" href="Calf.CostMonoid.html#3731" class="Field Operator">_≤_</a>
+  <a id="3401" class="Keyword">module</a> <a id="CostMonoid.≤-Reasoning"></a><a id="3408" href="Calf.CostMonoid.html#3408" class="Module">≤-Reasoning</a> <a id="3420" class="Keyword">where</a>
+    <a id="3430" class="Keyword">open</a> <a id="3435" class="Keyword">import</a> <a id="3442" href="Relation.Binary.Reasoning.Base.Triple.html" class="Module">Relation.Binary.Reasoning.Base.Triple</a>
+      <a id="3486" href="Calf.CostMonoid.html#1424" class="Function">isPreorder</a>
+      <a id="3503" href="Calf.CostMonoid.html#1798" class="Function">≤-trans</a>
+      <a id="3517" class="Symbol">(</a><a id="3518" href="Relation.Binary.PropositionalEquality.Core.html#2152" class="Function">resp₂</a> <a id="3524" href="Calf.CostMonoid.html#3288" class="Field Operator">_≤_</a><a id="3527" class="Symbol">)</a>
+      <a id="3535" class="Symbol">(λ</a> <a id="3538" href="Calf.CostMonoid.html#3538" class="Bound">h</a> <a id="3540" class="Symbol">→</a> <a id="3542" href="Calf.CostMonoid.html#3538" class="Bound">h</a><a id="3543" class="Symbol">)</a>
+      <a id="3551" href="Calf.CostMonoid.html#1798" class="Function">≤-trans</a>
+      <a id="3565" href="Calf.CostMonoid.html#1798" class="Function">≤-trans</a>
+      <a id="3579" class="Keyword">public</a>
+      <a id="3592" class="Keyword">hiding</a> <a id="3599" class="Symbol">(</a><a id="3600" href="Relation.Binary.Reasoning.Base.Triple.html#4054" class="Function">step-≈</a><a id="3606" class="Symbol">;</a> <a id="3608" href="Relation.Binary.Reasoning.Base.Triple.html#4377" class="Function">step-≈˘</a><a id="3615" class="Symbol">;</a> <a id="3617" href="Relation.Binary.Reasoning.Base.Triple.html#3479" class="Function">step-&lt;</a><a id="3623" class="Symbol">)</a>
 
-  <a id="3803" class="Keyword">open</a> <a id="3808" href="Calf.CostMonoid.html#1300" class="Module">IsCostMonoid</a> <a id="3821" href="Calf.CostMonoid.html#3759" class="Field">isCostMonoid</a> <a id="3834" class="Keyword">public</a>
+<a id="3626" class="Keyword">record</a> <a id="ParCostMonoid"></a><a id="3633" href="Calf.CostMonoid.html#3633" class="Record">ParCostMonoid</a> <a id="3647" class="Symbol">:</a> <a id="3649" href="Agda.Primitive.html#320" class="Primitive">Set₁</a> <a id="3654" class="Keyword">where</a>
+  <a id="3662" class="Keyword">infixl</a> <a id="3669" class="Number">7</a> <a id="3671" href="Calf.CostMonoid.html#3781" class="Field Operator">_⊗_</a>
+  <a id="3677" class="Keyword">infixl</a> <a id="3684" class="Number">6</a> <a id="3686" href="Calf.CostMonoid.html#3729" class="Field Operator">_⊕_</a>
 
-  <a id="3844" class="Keyword">module</a> <a id="CostMonoid.≤-Reasoning"></a><a id="3851" href="Calf.CostMonoid.html#3851" class="Module">≤-Reasoning</a> <a id="3863" class="Keyword">where</a>
-    <a id="3873" class="Keyword">open</a> <a id="3878" class="Keyword">import</a> <a id="3885" href="Relation.Binary.Reasoning.Base.Triple.html" class="Module">Relation.Binary.Reasoning.Base.Triple</a>
-      <a id="3929" href="Calf.CostMonoid.html#1466" class="Function">isPreorder</a>
-      <a id="3946" href="Calf.CostMonoid.html#2017" class="Function">≤-trans</a>
-      <a id="3960" class="Symbol">(</a><a id="3961" href="Relation.Binary.PropositionalEquality.Core.html#2152" class="Function">resp₂</a> <a id="3967" href="Calf.CostMonoid.html#3731" class="Field Operator">_≤_</a><a id="3970" class="Symbol">)</a>
-      <a id="3978" class="Symbol">(λ</a> <a id="3981" href="Calf.CostMonoid.html#3981" class="Bound">h</a> <a id="3983" class="Symbol">→</a> <a id="3985" href="Calf.CostMonoid.html#3981" class="Bound">h</a><a id="3986" class="Symbol">)</a>
-      <a id="3994" href="Calf.CostMonoid.html#2017" class="Function">≤-trans</a>
-      <a id="4008" href="Calf.CostMonoid.html#2017" class="Function">≤-trans</a>
-      <a id="4022" class="Keyword">public</a>
-      <a id="4035" class="Keyword">hiding</a> <a id="4042" class="Symbol">(</a><a id="4043" href="Relation.Binary.Reasoning.Base.Triple.html#4054" class="Function">step-≈</a><a id="4049" class="Symbol">;</a> <a id="4051" href="Relation.Binary.Reasoning.Base.Triple.html#4377" class="Function">step-≈˘</a><a id="4058" class="Symbol">;</a> <a id="4060" href="Relation.Binary.Reasoning.Base.Triple.html#3479" class="Function">step-&lt;</a><a id="4066" class="Symbol">)</a>
+  <a id="3693" class="Keyword">field</a>
+    <a id="ParCostMonoid.ℂ"></a><a id="3703" href="Calf.CostMonoid.html#3703" class="Field">ℂ</a>               <a id="3719" class="Symbol">:</a> <a id="3721" href="Agda.Primitive.html#320" class="Primitive">Set</a>
+    <a id="ParCostMonoid._⊕_"></a><a id="3729" href="Calf.CostMonoid.html#3729" class="Field Operator">_⊕_</a>             <a id="3745" class="Symbol">:</a> <a id="3747" href="Algebra.Core.html#527" class="Function">Op₂</a> <a id="3751" href="Calf.CostMonoid.html#3703" class="Field">ℂ</a>
+    <a id="ParCostMonoid.𝟘"></a><a id="3757" href="Calf.CostMonoid.html#3757" class="Field">𝟘</a>               <a id="3773" class="Symbol">:</a> <a id="3775" href="Calf.CostMonoid.html#3703" class="Field">ℂ</a>
+    <a id="ParCostMonoid._⊗_"></a><a id="3781" href="Calf.CostMonoid.html#3781" class="Field Operator">_⊗_</a>             <a id="3797" class="Symbol">:</a> <a id="3799" href="Algebra.Core.html#527" class="Function">Op₂</a> <a id="3803" href="Calf.CostMonoid.html#3703" class="Field">ℂ</a>
+    <a id="ParCostMonoid.𝟙"></a><a id="3809" href="Calf.CostMonoid.html#3809" class="Field">𝟙</a>               <a id="3825" class="Symbol">:</a> <a id="3827" href="Calf.CostMonoid.html#3703" class="Field">ℂ</a>
+    <a id="ParCostMonoid._≤_"></a><a id="3833" href="Calf.CostMonoid.html#3833" class="Field Operator">_≤_</a>             <a id="3849" class="Symbol">:</a> <a id="3851" href="Calf.CostMonoid.html#379" class="Function">Relation</a>
+    <a id="ParCostMonoid.isParCostMonoid"></a><a id="3864" href="Calf.CostMonoid.html#3864" class="Field">isParCostMonoid</a> <a id="3880" class="Symbol">:</a> <a id="3882" href="Calf.CostMonoid.html#1974" class="Record">IsParCostMonoid</a> <a id="3898" href="Calf.CostMonoid.html#3729" class="Field Operator">_⊕_</a> <a id="3902" href="Calf.CostMonoid.html#3757" class="Field">𝟘</a> <a id="3904" href="Calf.CostMonoid.html#3781" class="Field Operator">_⊗_</a> <a id="3908" href="Calf.CostMonoid.html#3809" class="Field">𝟙</a> <a id="3910" href="Calf.CostMonoid.html#3833" class="Field Operator">_≤_</a>
 
-<a id="4069" class="Keyword">record</a> <a id="ParCostMonoid"></a><a id="4076" href="Calf.CostMonoid.html#4076" class="Record">ParCostMonoid</a> <a id="4090" class="Symbol">:</a> <a id="4092" href="Agda.Primitive.html#320" class="Primitive">Set₁</a> <a id="4097" class="Keyword">where</a>
-  <a id="4105" class="Keyword">infixl</a> <a id="4112" class="Number">7</a> <a id="4114" href="Calf.CostMonoid.html#4224" class="Field Operator">_⊗_</a>
-  <a id="4120" class="Keyword">infixl</a> <a id="4127" class="Number">6</a> <a id="4129" href="Calf.CostMonoid.html#4172" class="Field Operator">_⊕_</a>
+  <a id="3917" class="Keyword">open</a> <a id="3922" href="Calf.CostMonoid.html#1974" class="Module">IsParCostMonoid</a> <a id="3938" href="Calf.CostMonoid.html#3864" class="Field">isParCostMonoid</a> <a id="3954" class="Keyword">public</a>
 
-  <a id="4136" class="Keyword">field</a>
-    <a id="ParCostMonoid.ℂ"></a><a id="4146" href="Calf.CostMonoid.html#4146" class="Field">ℂ</a>               <a id="4162" class="Symbol">:</a> <a id="4164" href="Agda.Primitive.html#320" class="Primitive">Set</a>
-    <a id="ParCostMonoid._⊕_"></a><a id="4172" href="Calf.CostMonoid.html#4172" class="Field Operator">_⊕_</a>             <a id="4188" class="Symbol">:</a> <a id="4190" href="Algebra.Core.html#527" class="Function">Op₂</a> <a id="4194" href="Calf.CostMonoid.html#4146" class="Field">ℂ</a>
-    <a id="ParCostMonoid.𝟘"></a><a id="4200" href="Calf.CostMonoid.html#4200" class="Field">𝟘</a>               <a id="4216" class="Symbol">:</a> <a id="4218" href="Calf.CostMonoid.html#4146" class="Field">ℂ</a>
-    <a id="ParCostMonoid._⊗_"></a><a id="4224" href="Calf.CostMonoid.html#4224" class="Field Operator">_⊗_</a>             <a id="4240" class="Symbol">:</a> <a id="4242" href="Algebra.Core.html#527" class="Function">Op₂</a> <a id="4246" href="Calf.CostMonoid.html#4146" class="Field">ℂ</a>
-    <a id="ParCostMonoid.𝟙"></a><a id="4252" href="Calf.CostMonoid.html#4252" class="Field">𝟙</a>               <a id="4268" class="Symbol">:</a> <a id="4270" href="Calf.CostMonoid.html#4146" class="Field">ℂ</a>
-    <a id="ParCostMonoid._≤_"></a><a id="4276" href="Calf.CostMonoid.html#4276" class="Field Operator">_≤_</a>             <a id="4292" class="Symbol">:</a> <a id="4294" href="Calf.CostMonoid.html#379" class="Function">Relation</a>
-    <a id="ParCostMonoid.isParCostMonoid"></a><a id="4307" href="Calf.CostMonoid.html#4307" class="Field">isParCostMonoid</a> <a id="4323" class="Symbol">:</a> <a id="4325" href="Calf.CostMonoid.html#2193" class="Record">IsParCostMonoid</a> <a id="4341" href="Calf.CostMonoid.html#4172" class="Field Operator">_⊕_</a> <a id="4345" href="Calf.CostMonoid.html#4200" class="Field">𝟘</a> <a id="4347" href="Calf.CostMonoid.html#4224" class="Field Operator">_⊗_</a> <a id="4351" href="Calf.CostMonoid.html#4252" class="Field">𝟙</a> <a id="4353" href="Calf.CostMonoid.html#4276" class="Field Operator">_≤_</a>
+  <a id="ParCostMonoid.costMonoid"></a><a id="3964" href="Calf.CostMonoid.html#3964" class="Function">costMonoid</a> <a id="3975" class="Symbol">:</a> <a id="3977" href="Calf.CostMonoid.html#3167" class="Record">CostMonoid</a>
+  <a id="3990" href="Calf.CostMonoid.html#3964" class="Function">costMonoid</a> <a id="4001" class="Symbol">=</a> <a id="4003" class="Keyword">record</a>
+    <a id="4014" class="Symbol">{</a> <a id="4016" href="Calf.CostMonoid.html#3219" class="Field">ℂ</a> <a id="4018" class="Symbol">=</a> <a id="4020" href="Calf.CostMonoid.html#3703" class="Field">ℂ</a>
+    <a id="4026" class="Symbol">;</a> <a id="4028" href="Calf.CostMonoid.html#3242" class="Field Operator">_+_</a> <a id="4032" class="Symbol">=</a> <a id="4034" href="Calf.CostMonoid.html#3729" class="Field Operator">_⊕_</a>
+    <a id="4042" class="Symbol">;</a> <a id="4044" href="Calf.CostMonoid.html#3267" class="Field">zero</a> <a id="4049" class="Symbol">=</a> <a id="4051" href="Calf.CostMonoid.html#3757" class="Field">𝟘</a>
+    <a id="4057" class="Symbol">;</a> <a id="4059" href="Calf.CostMonoid.html#3288" class="Field Operator">_≤_</a> <a id="4063" class="Symbol">=</a> <a id="4065" href="Calf.CostMonoid.html#3833" class="Field Operator">_≤_</a>
+    <a id="4073" class="Symbol">;</a> <a id="4075" href="Calf.CostMonoid.html#3316" class="Field">isCostMonoid</a> <a id="4088" class="Symbol">=</a> <a id="4090" class="Keyword">record</a>
+      <a id="4103" class="Symbol">{</a> <a id="4105" href="Calf.CostMonoid.html#1383" class="Field">isMonoid</a> <a id="4114" class="Symbol">=</a> <a id="4116" href="Calf.CostMonoid.html#2079" class="Function">isMonoid</a>
+      <a id="4131" class="Symbol">;</a> <a id="4133" href="Calf.CostMonoid.html#1424" class="Field">isPreorder</a> <a id="4144" class="Symbol">=</a> <a id="4146" href="Calf.CostMonoid.html#2176" class="Function">isPreorder</a>
+      <a id="4163" class="Symbol">;</a> <a id="4165" href="Calf.CostMonoid.html#1462" class="Field">isMonotone</a> <a id="4176" class="Symbol">=</a> <a id="4178" href="Calf.CostMonoid.html#2219" class="Function">isMonotone-⊕</a>
+      <a id="4197" class="Symbol">}</a>
+    <a id="4203" class="Symbol">}</a>
 
-  <a id="4360" class="Keyword">open</a> <a id="4365" href="Calf.CostMonoid.html#2193" class="Module">IsParCostMonoid</a> <a id="4381" href="Calf.CostMonoid.html#4307" class="Field">isParCostMonoid</a> <a id="4397" class="Keyword">public</a>
-
-  <a id="ParCostMonoid.costMonoid"></a><a id="4407" href="Calf.CostMonoid.html#4407" class="Function">costMonoid</a> <a id="4418" class="Symbol">:</a> <a id="4420" href="Calf.CostMonoid.html#3610" class="Record">CostMonoid</a>
-  <a id="4433" href="Calf.CostMonoid.html#4407" class="Function">costMonoid</a> <a id="4444" class="Symbol">=</a> <a id="4446" class="Keyword">record</a>
-    <a id="4457" class="Symbol">{</a> <a id="4459" href="Calf.CostMonoid.html#3662" class="Field">ℂ</a> <a id="4461" class="Symbol">=</a> <a id="4463" href="Calf.CostMonoid.html#4146" class="Field">ℂ</a>
-    <a id="4469" class="Symbol">;</a> <a id="4471" href="Calf.CostMonoid.html#3685" class="Field Operator">_+_</a> <a id="4475" class="Symbol">=</a> <a id="4477" href="Calf.CostMonoid.html#4172" class="Field Operator">_⊕_</a>
-    <a id="4485" class="Symbol">;</a> <a id="4487" href="Calf.CostMonoid.html#3710" class="Field">zero</a> <a id="4492" class="Symbol">=</a> <a id="4494" href="Calf.CostMonoid.html#4200" class="Field">𝟘</a>
-    <a id="4500" class="Symbol">;</a> <a id="4502" href="Calf.CostMonoid.html#3731" class="Field Operator">_≤_</a> <a id="4506" class="Symbol">=</a> <a id="4508" href="Calf.CostMonoid.html#4276" class="Field Operator">_≤_</a>
-    <a id="4516" class="Symbol">;</a> <a id="4518" href="Calf.CostMonoid.html#3759" class="Field">isCostMonoid</a> <a id="4531" class="Symbol">=</a> <a id="4533" class="Keyword">record</a>
-      <a id="4546" class="Symbol">{</a> <a id="4548" href="Calf.CostMonoid.html#1383" class="Field">isMonoid</a> <a id="4557" class="Symbol">=</a> <a id="4559" href="Calf.CostMonoid.html#2298" class="Function">isMonoid</a>
-      <a id="4574" class="Symbol">;</a> <a id="4576" href="Calf.CostMonoid.html#1466" class="Field">isPreorder</a> <a id="4587" class="Symbol">=</a> <a id="4589" href="Calf.CostMonoid.html#2442" class="Function">isPreorder</a>
-      <a id="4606" class="Symbol">;</a> <a id="4608" href="Calf.CostMonoid.html#1424" class="Field">isCancellative</a> <a id="4623" class="Symbol">=</a> <a id="4625" href="Calf.CostMonoid.html#2395" class="Function">isCancellative</a>
-      <a id="4646" class="Symbol">;</a> <a id="4648" href="Calf.CostMonoid.html#1504" class="Field">isMonotone</a> <a id="4659" class="Symbol">=</a> <a id="4661" href="Calf.CostMonoid.html#2485" class="Function">isMonotone-⊕</a>
-      <a id="4680" class="Symbol">}</a>
-    <a id="4686" class="Symbol">}</a>
-
-  <a id="4691" class="Keyword">module</a> <a id="ParCostMonoid.≤-Reasoning"></a><a id="4698" href="Calf.CostMonoid.html#4698" class="Module">≤-Reasoning</a> <a id="4710" class="Keyword">where</a>
-    <a id="4720" class="Keyword">open</a> <a id="4725" class="Keyword">import</a> <a id="4732" href="Relation.Binary.Reasoning.Base.Triple.html" class="Module">Relation.Binary.Reasoning.Base.Triple</a>
-      <a id="4776" href="Calf.CostMonoid.html#2442" class="Function">isPreorder</a>
-      <a id="4793" href="Calf.CostMonoid.html#3275" class="Function">≤-trans</a>
-      <a id="4807" class="Symbol">(</a><a id="4808" href="Relation.Binary.PropositionalEquality.Core.html#2152" class="Function">resp₂</a> <a id="4814" href="Calf.CostMonoid.html#4276" class="Field Operator">_≤_</a><a id="4817" class="Symbol">)</a>
-      <a id="4825" class="Symbol">(λ</a> <a id="4828" href="Calf.CostMonoid.html#4828" class="Bound">h</a> <a id="4830" class="Symbol">→</a> <a id="4832" href="Calf.CostMonoid.html#4828" class="Bound">h</a><a id="4833" class="Symbol">)</a>
-      <a id="4841" href="Calf.CostMonoid.html#3275" class="Function">≤-trans</a>
-      <a id="4855" href="Calf.CostMonoid.html#3275" class="Function">≤-trans</a>
-      <a id="4869" class="Keyword">public</a>
-      <a id="4882" class="Keyword">hiding</a> <a id="4889" class="Symbol">(</a><a id="4890" href="Relation.Binary.Reasoning.Base.Triple.html#4054" class="Function">step-≈</a><a id="4896" class="Symbol">;</a> <a id="4898" href="Relation.Binary.Reasoning.Base.Triple.html#4377" class="Function">step-≈˘</a><a id="4905" class="Symbol">;</a> <a id="4907" href="Relation.Binary.Reasoning.Base.Triple.html#3479" class="Function">step-&lt;</a><a id="4913" class="Symbol">)</a>
+  <a id="4208" class="Keyword">module</a> <a id="ParCostMonoid.≤-Reasoning"></a><a id="4215" href="Calf.CostMonoid.html#4215" class="Module">≤-Reasoning</a> <a id="4227" class="Keyword">where</a>
+    <a id="4237" class="Keyword">open</a> <a id="4242" class="Keyword">import</a> <a id="4249" href="Relation.Binary.Reasoning.Base.Triple.html" class="Module">Relation.Binary.Reasoning.Base.Triple</a>
+      <a id="4293" href="Calf.CostMonoid.html#2176" class="Function">isPreorder</a>
+      <a id="4310" href="Calf.CostMonoid.html#2832" class="Function">≤-trans</a>
+      <a id="4324" class="Symbol">(</a><a id="4325" href="Relation.Binary.PropositionalEquality.Core.html#2152" class="Function">resp₂</a> <a id="4331" href="Calf.CostMonoid.html#3833" class="Field Operator">_≤_</a><a id="4334" class="Symbol">)</a>
+      <a id="4342" class="Symbol">(λ</a> <a id="4345" href="Calf.CostMonoid.html#4345" class="Bound">h</a> <a id="4347" class="Symbol">→</a> <a id="4349" href="Calf.CostMonoid.html#4345" class="Bound">h</a><a id="4350" class="Symbol">)</a>
+      <a id="4358" href="Calf.CostMonoid.html#2832" class="Function">≤-trans</a>
+      <a id="4372" href="Calf.CostMonoid.html#2832" class="Function">≤-trans</a>
+      <a id="4386" class="Keyword">public</a>
+      <a id="4399" class="Keyword">hiding</a> <a id="4406" class="Symbol">(</a><a id="4407" href="Relation.Binary.Reasoning.Base.Triple.html#4054" class="Function">step-≈</a><a id="4413" class="Symbol">;</a> <a id="4415" href="Relation.Binary.Reasoning.Base.Triple.html#4377" class="Function">step-≈˘</a><a id="4422" class="Symbol">;</a> <a id="4424" href="Relation.Binary.Reasoning.Base.Triple.html#3479" class="Function">step-&lt;</a><a id="4430" class="Symbol">)</a>
 </pre></body></html>
