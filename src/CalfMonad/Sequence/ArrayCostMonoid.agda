@@ -8,13 +8,14 @@ open import Data.List.Base             using (List; [_])
 open import Data.Nat.Base              using (ℕ)
 open import Data.Product               using (_×_; _,_)
 open import Data.Unit.Polymorphic.Base using (⊤; tt)
+open import Data.Vec.Base              using (Vec)
 
 open import CalfMonad.CostMonoids
 
 data ArrayStep : Set (lsuc ℓ) where
-  read  : (A : Set ℓ) (n : ℕ) (i : Fin n) (a : A) → ArrayStep
-  write : (A : Set ℓ) (n : ℕ) (i : Fin n) (a : A) → ArrayStep
-  alloc : (A : Set ℓ) (n : ℕ)                     → ArrayStep
+  read  : (A : Set ℓ) (n : ℕ) (as : Vec A n) (i : Fin n) → ArrayStep
+  write : (A : Set ℓ) (n : ℕ) (i : Fin n)    (a : A)     → ArrayStep
+  alloc : (A : Set ℓ) (n : ℕ)                            → ArrayStep
 
 record ArrayCostMonoid {ℓ′} (ℂ : Set ℓ′) : Set (lsuc ℓ ⊔ ℓ′) where
   field
@@ -26,9 +27,9 @@ open ArrayCostMonoid
 ⊤-ArrayCostMonoid ℓ′ .arrayStep _ = tt
 
 ℕ-ArrayCostMonoid : ArrayCostMonoid ℕ
-ℕ-ArrayCostMonoid .arrayStep (read  A n i a) = 1
-ℕ-ArrayCostMonoid .arrayStep (write A n i a) = 1
-ℕ-ArrayCostMonoid .arrayStep (alloc A n    ) = 0
+ℕ-ArrayCostMonoid .arrayStep (read  A n as i) = 1
+ℕ-ArrayCostMonoid .arrayStep (write A n i  a) = 1
+ℕ-ArrayCostMonoid .arrayStep (alloc A n     ) = 0
 
 List-ArrayCostMonoid : ∀ {ℓ′} {ℂ : Set ℓ′} → (ArrayStep → ℂ) → ArrayCostMonoid (List ℂ)
 List-ArrayCostMonoid arrayStep .arrayStep s = [ arrayStep s ]

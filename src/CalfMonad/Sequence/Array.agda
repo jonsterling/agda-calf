@@ -34,9 +34,8 @@ array .Array = Vec
 array .ArrayBuilder A n S m = ∀ i → T (lookup m i) → A
 
 array .nth {A} {n} as i = do
-  let a = lookup as i
-  step $ arrayStep $ read A n i a
-  pure a
+  step $ arrayStep $ read A n as i
+  pure $ lookup as i
 
 array .empty = pure λ i p → ⊥-elim $ subst T (lookup∘tabulate _ i) p
 
