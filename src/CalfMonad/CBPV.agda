@@ -10,27 +10,18 @@ open Agda.Primitive
 open import Agda.Builtin.Equality
 open import Axiom.Extensionality.Propositional using (Extensionality)
 
-data tp+ : Set (lsuc ℓ)
-data tp- : Set (lsuc ℓ)
+tp+ : Set (lsuc ℓ)
+tp+ = Set ℓ
 
-val : tp+ → Set ℓ
-cmp : tp- → Set ℓ
-
-data tp+ where
-  U : tp- → tp+
-  meta : Set ℓ → tp+
-
-data tp- where
+data tp- : Set (lsuc ℓ) where
   F : tp+ → tp-
-  Π : ∀ A → (val A → tp-) → tp-
+  Π : (A : tp+) → (A → tp-) → tp-
 
-val (U X) = cmp X
-val (meta A) = A
+U : tp- → tp+
+U (F A) = M A
+U (Π A X) = ∀ a → U (X a)
 
-cmp (F A) = M (val A)
-cmp (Π A X) = ∀ a → cmp (X a)
-
-bind : ∀ {A X} → cmp (F A) → (val A → cmp X) → cmp X
+bind : ∀ {A X} → U (F A) → (A → U X) → U X
 bind {A} {F B} = _>>=_
 bind {A} {Π B X} e f b = bind {A} {X b} e λ a → f a b
 
