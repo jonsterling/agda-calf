@@ -15,7 +15,7 @@ open CostMonad
 open ParCostMonad
 open ≡-Reasoning
 
-module WriterMonadT {ℓ ℓ′ ℓ″} {M = M′ : Set (ℓ ⊔ ℓ″) → Set ℓ′} {ℂ : Set ℓ″} (monad′ : Monad M′) (costMonoid : CostMonoid ℂ) where
+module WriterMonadT ℓ {ℓ′ ℓ″} {M = M′ : Set (ℓ ⊔ ℓ″) → Set ℓ′} {ℂ : Set ℓ″} (monad′ : Monad M′) (costMonoid : CostMonoid ℂ) where
   open Monad monad′
   open CostMonoid costMonoid
 
@@ -72,4 +72,4 @@ module WriterMonadT {ℓ ℓ′ ℓ″} {M = M′ : Set (ℓ ⊔ ℓ″) → Set
       (pure (𝟘 , a , b) >>= λ (𝟘′ , a,b) → pure ((p ⊗ q) ⊕ 𝟘′ , a,b))                                                                                                                                                      ≡˘⟨ pure->>= (p ⊗ q , _) _ ⟩
       (pure (p ⊗ q , _) >>= λ (pq , _) → pure (𝟘 , a , b) >>= λ (𝟘′ , a,b) → pure (pq ⊕ 𝟘′ , a,b))                                                                                                                         ∎
 
-module WriterMonad {ℓ ℓ′} {ℂ : Set ℓ′} (costMonoid : CostMonoid ℂ) = WriterMonadT {ℓ} (IdentityMonad.monad _) costMonoid
+module WriterMonad ℓ {ℓ′} {ℂ : Set ℓ′} (costMonoid : CostMonoid ℂ) = WriterMonadT ℓ (IdentityMonad.monad _) costMonoid

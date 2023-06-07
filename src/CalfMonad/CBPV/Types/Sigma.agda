@@ -4,7 +4,7 @@ open import CalfMonad.Monad
 
 module CalfMonad.CBPV.Types.Sigma {ℓ} {M : Set ℓ → Set ℓ} (monad : Monad M) where
 
-open import Agda.Builtin.Sigma using (Σ; _,_) public
+open import Agda.Builtin.Sigma using (Σ; _,_; fst; snd) public
 
 open import CalfMonad.CBPV monad
 

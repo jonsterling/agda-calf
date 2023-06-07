@@ -2,45 +2,59 @@
 
 module CalfMonad.Sequence.ArrayEx where
 
+open Agda.Primitive
+open import Agda.Builtin.List
+open import Agda.Builtin.Nat
+open import Agda.Builtin.Sigma
+open import Data.Fin.Base     using (Fin)
 open import Data.Fin.Patterns using (0F; 1F; 2F)
-open import Data.List.Base    using ([]; _∷_)
-open import Data.Nat.Base     using (ℕ)
-open import Data.Product      using (_,_)
 open import Data.Vec.Base     using ([]; _∷_)
 
-open import CalfMonad.CostMonad
-open import CalfMonad.CostMonads
-open import CalfMonad.CostMonoid
 open import CalfMonad.CostMonoids
 open import CalfMonad.Monad
-open import CalfMonad.Sequence.Array
+open import CalfMonad.Monads
+open import CalfMonad.NondetMonads
 open import CalfMonad.Sequence.ArrayCostMonoid
 open import CalfMonad.Sequence.ArraySig
+import CalfMonad.CostMonads as CostMonads
+import CalfMonad.Sequence.Array as Array
 
-module Ex {ℓ} {M : Set → Set ℓ} (monad : Monad M) (array : ARRAY M) where
-  open Monad monad
-  open ARRAY array
+data ArrayStep′ : Set where
+  read  : ∀ {n} (i : Fin n) → ArrayStep′
+  write : ∀ {n} (i : Fin n) → ArrayStep′
+  alloc : (n : Nat)         → ArrayStep′
 
-  ex : M (Array ℕ 3)
-  ex = build do
-    b₁  ← assign 0F 1
-    b₃  ← assign 2F 3
-    b₂  ← assign 1F 2
-    b₁₃ ← join b₁ b₃
-    join b₁₃ b₂
+open CostMonads.WriterMonadT _ (ListMonad.monad lzero) (CostGraph-CostMonoid ArrayStep′)
 
-open Ex (WriterMonad.monad (List-CostMonoid _)) (array (WriterMonad.costMonad (List-CostMonoid _)) (ArrayStep-List-ArrayCostMonoid _)) public
+Array = Array.Array
+  (parCostMonad (CostGraph-ParCostMonoid _))
+  (CostGraph-ArrayCostMonoid monad λ { (read as i) → read i ; (write i a) → write i ; (alloc A n) → alloc n })
+  (WriterMonadT.nondetMonad _ (ListMonad.monad _) (CostGraph-CostMonoid _) (ListMonad.nondetMonad _))
 
-module Ex′ {ℓ ℓ′} {M : Set → Set ℓ} {ℂ : Set ℓ′} {monad : Monad M} {costMonoid : CostMonoid ℂ} {costMonad : CostMonad monad costMonoid} {parCostMonoid : ParCostMonoid ℂ} (parCostMonad : ParCostMonad costMonad parCostMonoid) (array : ARRAY M) where
-  open Monad monad
-  open ParCostMonad parCostMonad
-  open ARRAY array
+module Ex {M : Set → Set} {monad : Monad M} (Array : ARRAY monad) where
+  open ARRAY Array
 
-  ex′ : M (Array ℕ 3)
-  ex′ = build do
-    b₁ , b₃ ← assign 0F 1 & assign 2F 3
-    b₂      ← assign 1F 2
-    b₁₃     ← join b₁ b₃
-    join b₁₃ b₂
+  open import CalfMonad.CBPV monad
+  open import CalfMonad.CBPV.Types.Nat monad
 
-open Ex′ (WriterMonad.parCostMonad (CostGraph-CostMonoid _) (CostGraph-ParCostMonoid _)) (array (WriterMonad.costMonad (CostGraph-CostMonoid _)) (ArrayStep-CostGraph-ArrayCostMonoid _)) public
+  ex : cmp (F (array nat 3))
+  ex = build _ (seq _
+    _ (seq _ _ (assign _ 0F 1) _ (assign _ 2F 3))
+    _ (seq _ _ (assign _ 1F 4) _ (assign _ 1F 2))
+    )
+
+open Ex Array public
+
+module Ex′ {M : Set → Set} {monad : Monad M} (Array : ARRAY monad) where
+  open ARRAY Array
+
+  open import CalfMonad.CBPV monad
+  open import CalfMonad.CBPV.Types.Nat monad
+
+  ex′ : cmp (F (array nat 3))
+  ex′ = build _ (seq _
+    _ (par _ _ (assign _ 0F 1) _ (assign _ 2F 3))
+    _ (par _ _ (assign _ 1F 4) _ (assign _ 1F 2))
+    )
+
+open Ex′ Array public
