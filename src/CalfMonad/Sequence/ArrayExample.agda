@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical-compatible --safe #-}
 
-module CalfMonad.Sequence.ArrayEx where
+module CalfMonad.Sequence.ArrayExample where
 
 open Agda.Primitive
 open import Agda.Builtin.List

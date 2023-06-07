@@ -13,26 +13,24 @@ open import Axiom.Extensionality.Propositional using (Extensionality)
 tp+ : Set (lsuc ℓ)
 tp+ = Set ℓ
 
-data tp- : Set (lsuc ℓ) where
-  F : tp+ → tp-
-  Π : (A : tp+) → (A → tp-) → tp-
+record tp- : Set (lsuc ℓ) where
+  field
+    U : tp+
+    bind : {A : tp+} → M A → (A → U) → U
 
-U : tp- → tp+
+    pure-bind : Extensionality ℓ ℓ → ∀ {A} a f → bind {A} (pure a) f ≡ f a
+    >>=-bind : Extensionality ℓ ℓ → ∀ {A B} e f g → bind {B} (e >>= f) g ≡ bind {A} e λ a → bind (f a) g
+
+open tp- public
+
+F : tp+ → tp-
 U (F A) = M A
+bind (F B) = _>>=_
+pure-bind (F B) ext = pure->>=
+>>=-bind (F B) ext = >>=->>=
+
+Π : (A : tp+) → (A → tp-) → tp-
 U (Π A X) = ∀ a → U (X a)
-
-bind : ∀ {A X} → U (F A) → (A → U X) → U X
-bind {A} {F B} = _>>=_
-bind {A} {Π B X} e f b = bind {A} {X b} e λ a → f a b
-
-module _ (ext : Extensionality ℓ ℓ) where
-  pure-bind : ∀ {A X} a f → bind {A} {X} (pure a) f ≡ f a
-  pure-bind {A} {F B} = pure->>=
-  pure-bind {A} {Π B X} a f = ext λ b → pure-bind {A} {X b} a λ a → f a b
-
-  bind-bind : ∀ {A B X} e f g → bind {B} {X} (bind {A} {F B} e f) g ≡ bind {A} {X} e λ a → bind {B} {X} (f a) g
-  bind-bind {A} {B} {F C} = >>=->>=
-  bind-bind {A} {B} {Π C X} e f g = ext λ c → bind-bind {A} {B} {X c} e f λ b → g b c
-
-infixr 3 Π
-syntax Π A (λ _ → X) = A ⇒ X
+bind (Π B X) e f b = bind (X b) e λ a → f a b
+pure-bind (Π B X) ext a f = ext λ b → pure-bind (X b) ext a λ a → f a b
+>>=-bind (Π C X) ext e f g = ext λ c → >>=-bind (X c) ext e f λ b → g b c
