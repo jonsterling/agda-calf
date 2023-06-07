@@ -4,7 +4,7 @@ module CalfMonad.CostMonads where
 
 open Agda.Primitive
 open import Data.Product               using (_×_; _,_)
-open import Relation.Binary.PropositionalEquality.Core using (module ≡-Reasoning; _≡_; cong; cong₂; refl)
+open import Relation.Binary.PropositionalEquality.Core using (module ≡-Reasoning; _≡_; cong; cong₂)
 
 open import CalfMonad.CostMonad
 open import CalfMonad.CostMonoid
@@ -14,6 +14,30 @@ open import CalfMonad.Monads
 open CostMonad
 open ParCostMonad
 open ≡-Reasoning
+
+module ZeroCostMonad {ℓ ℓ′ ℓ″} {M : Set ℓ → Set ℓ′} {ℂ : Set ℓ″} (monad : Monad M) (costMonoid : CostMonoid ℂ) where
+  open Monad monad
+
+  costMonad : CostMonad monad costMonoid
+  costMonad .step p = pure _
+  costMonad .step-𝟘 = begin
+    pure _ ∎
+  costMonad .step-⊕ p q = begin
+    pure _                    ≡˘⟨ pure->>= _ _ ⟩
+    (pure _ >>= λ _ → pure _) ∎
+
+  module _ (parCostMonoid : ParCostMonoid ℂ) where
+    parCostMonad : ParCostMonad costMonad parCostMonoid
+    parCostMonad ._&_ x y = x >>= λ a → y >>= λ b → pure (a , b)
+    parCostMonad .step-pure-&-step-pure p q a b = begin
+      ((pure _ >>= λ _ → pure a) >>= λ a → (pure _ >>= λ _ → pure b) >>= λ b → pure (a , b)) ≡⟨ >>=->>= _ _ _ ⟩
+      (pure _ >>= λ _ → pure a >>= λ a → (pure _ >>= λ _ → pure b) >>= λ b → pure (a , b))   ≡⟨ pure->>= _ _ ⟩
+      (pure a >>= λ a → (pure _ >>= λ _ → pure b) >>= λ b → pure (a , b))                    ≡⟨ pure->>= a _ ⟩
+      ((pure _ >>= λ _ → pure b) >>= λ b → pure (a , b))                                     ≡⟨ >>=->>= _ _ _ ⟩
+      (pure _ >>= λ _ → pure b >>= λ b → pure (a , b))                                       ≡⟨ pure->>= _ _ ⟩
+      (pure b >>= λ b → pure (a , b))                                                        ≡⟨ pure->>= b _ ⟩
+      pure (a , b)                                                                           ≡˘⟨ pure->>= _ _ ⟩
+      (pure _ >>= λ _ → pure (a , b))                                                        ∎
 
 module WriterMonadT ℓ {ℓ′ ℓ″} {M = M′ : Set (ℓ ⊔ ℓ″) → Set ℓ′} {ℂ : Set ℓ″} (monad′ : Monad M′) (costMonoid : CostMonoid ℂ) where
   open Monad monad′
@@ -48,7 +72,8 @@ module WriterMonadT ℓ {ℓ′ ℓ″} {M = M′ : Set (ℓ ⊔ ℓ″) → Set
 
   costMonad : CostMonad monad costMonoid
   costMonad .step p = pure (p , _)
-  costMonad .step-𝟘 = refl
+  costMonad .step-𝟘 = begin
+    pure (𝟘 , _) ∎
   costMonad .step-⊕ p q = begin
     pure (p ⊕ q , _)                                                             ≡˘⟨ pure->>= (q , _) _ ⟩
     (pure (q , _) >>= λ (q , _) → pure (p ⊕ q , _))                              ≡˘⟨ pure->>= (p , _) _ ⟩
