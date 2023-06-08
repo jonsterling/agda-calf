@@ -26,12 +26,12 @@ open import Data.Vec.Properties                        using (lookup∘tabulate)
 open import Data.Vec.Relation.Unary.All as All         using (All)
 open import Function.Base                              using (_$_; case_of_)
 open import Level                                      using (lift)
-open import Relation.Binary.PropositionalEquality.Core using (subst; sym)
+open import Relation.Binary.PropositionalEquality.Core using (_≡_; cong; refl; subst; sym; trans)
 open import Relation.Nullary                           using (does)
 
 open import CalfMonad.CBPV monad
 
-open import CalfMonad.Sequence.ArraySig monad
+open import CalfMonad.Sequence.ArraySig monad (∀ p → step p ≡ pure _)
 
 private
   Init : Set ℓ → Bool → Set ℓ
@@ -47,9 +47,15 @@ array : ARRAY
 array .Array = Vec
 array .ArrayBuilder A n m = F (All (Init A) m)
 
+array .mk u v = v
+
+array .mk/ext u as = as , refl
+
 array .nth as i = do
   step $ arrayStep $ read as i
   pure $ lookup as i
+
+array .nth-mk u v i = trans (cong (_>>= _) $ u _) (pure->>= _ _)
 
 array .empty = pure $ tabulate′ _
 

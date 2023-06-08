@@ -22,7 +22,7 @@ open import CalfMonad.Sequence.ArraySig
 
 open WriterMonadT lzero (ListMonad.monad _) (CostGraph-CostMonoid ArrayStep)
 
-module Ex (array : ARRAY monad) where
+module Ex {ℓ} {φ : Set ℓ} (array : ARRAY monad φ) where
   open ARRAY array
 
   ex : M (Array Nat 3)
