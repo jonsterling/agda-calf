@@ -6,7 +6,7 @@ open import CalfMonad.NondetMonad
 
 open import CalfMonad.Sequence.ArrayCostMonoid
 
-module CalfMonad.Sequence.Array {ℓ M ℂ monad costMonoid costMonad parCostMonoid} (parCostMonad : ParCostMonad {_} {_} {ℓ} {M} {ℂ} {monad} {costMonoid} costMonad parCostMonoid) (arrayCostMonoid : ArrayCostMonoid ℂ) (nondetMonad : NondetMonad M) where
+module CalfMonad.Sequence.Array {ℓ ℓ′ ℓ″ M ℂ monad costMonoid costMonad parCostMonoid} (parCostMonad : ParCostMonad {ℓ} {ℓ′} {ℓ″} {M} {ℂ} {monad} {costMonoid} costMonad parCostMonoid) (arrayCostMonoid : ArrayCostMonoid ℓ ℂ) (nondetMonad : NondetMonad M) where
 
 open Monad monad
 open CostMonad costMonad
@@ -15,12 +15,12 @@ open ArrayCostMonoid arrayCostMonoid
 open NondetMonad nondetMonad
 
 open import Agda.Builtin.Sigma
-open import Agda.Builtin.Unit
 open import Data.Bool.Base                             using (Bool; _∨_; false; true)
 open import Data.Fin.Base                              using (Fin; fromℕ<; toℕ)
 open import Data.Fin.Properties                        using (_≟_; fromℕ<-toℕ; toℕ<n)
 open import Data.Nat.Base                              using (_<‴_; _≤_; suc; ≤‴-refl; ≤‴-step)
 open import Data.Nat.Properties                        using (+-cancelˡ-≤; <⇒≤; ≤-refl; ≤‴⇒≤; ≤⇒≤‴)
+open import Data.Unit.Polymorphic                      using (⊤)
 open import Data.Vec.Base                              using (Vec; lookup; tabulate)
 open import Data.Vec.Properties                        using (lookup∘tabulate)
 open import Data.Vec.Relation.Unary.All as All         using (All)
@@ -34,11 +34,11 @@ open import CalfMonad.CBPV monad
 open import CalfMonad.Sequence.ArraySig monad
 
 private
-  Init : Set → Bool → Set
+  Init : Set ℓ → Bool → Set ℓ
   Init A false = ⊤
   Init A true  = A
 
-  tabulate′ : ∀ {A : Set} {P : A → Set} {n} {f : Fin n → A} → (∀ i → P (f i)) → All P (tabulate f)
+  tabulate′ : ∀ {A : Set} {P : A → Set ℓ} {n} {f : Fin n → A} → (∀ i → P (f i)) → All P (tabulate f)
   tabulate′ {P = P} g = All.tabulate λ i → subst P (sym $ lookup∘tabulate _ i) $ g i
 
 open ARRAY

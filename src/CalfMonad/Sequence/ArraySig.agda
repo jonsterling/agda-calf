@@ -2,8 +2,9 @@
 
 open import CalfMonad.Monad
 
-module CalfMonad.Sequence.ArraySig {M} (monad : Monad M) where
+module CalfMonad.Sequence.ArraySig {ℓ ℓ′ M} (monad : Monad {ℓ} {ℓ′} M) where
 
+open Agda.Primitive
 open import Agda.Builtin.Nat
 open import Data.Bool.Base      using (Bool; _∨_; false; true)
 open import Data.Fin.Base       using (Fin)
@@ -18,7 +19,7 @@ private
     A : tp+
     n : Nat
 
-record ARRAY : Set₁ where
+record ARRAY : Set (lsuc (ℓ ⊔ ℓ′)) where
   field
     Array        : (A : tp+) (n : Nat)                  → tp+
     ArrayBuilder : (A : tp+) (n : Nat) (m : Vec Bool n) → tp-

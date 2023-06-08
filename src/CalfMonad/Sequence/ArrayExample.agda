@@ -17,15 +17,10 @@ open import CalfMonad.NondetMonads as NondetMonads using (module ListMonad)
 import CalfMonad.CBPV as CBPV
 
 open import CalfMonad.Sequence.Array
-open import CalfMonad.Sequence.ArrayCostMonoid
+open import CalfMonad.Sequence.ArrayCostMonoid lzero
 open import CalfMonad.Sequence.ArraySig
 
-data ArrayStep′ : Set where
-  read  : {n : Nat} (i : Fin n) → ArrayStep′
-  write : {n : Nat} (i : Fin n) → ArrayStep′
-  alloc : (n : Nat)             → ArrayStep′
-
-open WriterMonadT _ (ListMonad.monad lzero) (CostGraph-CostMonoid ArrayStep′)
+open WriterMonadT lzero (ListMonad.monad _) (CostGraph-CostMonoid ArrayStep)
 
 module Ex (array : ARRAY monad) where
   open ARRAY array
@@ -40,6 +35,6 @@ module Ex (array : ARRAY monad) where
 
 open Ex (array
   (parCostMonad (CostGraph-ParCostMonoid _))
-  (CostGraph-ArrayCostMonoid λ { (read as i) → read i ; (write i a) → write i ; (alloc A n) → alloc n })
+  ArrayStep-CostGraph-ArrayCostMonoid
   (NondetMonads.WriterMonadT.nondetMonad _ (ListMonad.monad _) (CostGraph-CostMonoid _) (ListMonad.nondetMonad _))
   ) public
