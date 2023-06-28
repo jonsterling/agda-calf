@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting --guardedness #-}
-
 module Examples.Amortized where
 
 open import Calf.CostMonoid

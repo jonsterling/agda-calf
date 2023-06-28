@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting #-}
-
 open import Examples.Sorting.Parallel.Comparable
 
 module Examples.Sorting.Parallel.MergeSort (M : Comparable) where

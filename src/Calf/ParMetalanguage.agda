@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --without-K --rewriting #-}
+{-# OPTIONS --without-K #-}
 
 -- The basic CBPV metalanguage, extended with parallelism.
 
