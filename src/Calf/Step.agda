@@ -56,12 +56,13 @@ postulate
   {-# REWRITE extension/step #-}
 
 postulate
-  step-mono-≲ : {X : tp neg} {c₁ c₂ : ℂ} {e₁ e₂ : cmp X} →
-    c₁ ≤ c₂ → _≲_ {X} e₁ e₂ → _≲_ {X} (step X c₁ e₁) (step X c₂ e₂)
+  step-monoˡ-≲ : {X : tp neg} {c₁ c₂ : ℂ} (e : cmp X) →
+    c₁ ≤ c₂ → _≲_ {X} (step X c₁ e) (step X c₂ e)
 
-step-monoˡ-≲ : {X : tp neg} {c₁ c₂ : ℂ} (e : cmp X) →
-  c₁ ≤ c₂ → _≲_ {X} (step X c₁ e) (step X c₂ e)
-step-monoˡ-≲ e c₁≤c₂ = step-mono-≲ c₁≤c₂ (≲-refl {x = e})
+step-mono-≲ : {X : tp neg} {c₁ c₂ : ℂ} {e₁ e₂ : cmp X} →
+  c₁ ≤ c₂ → _≲_ {X} e₁ e₂ → _≲_ {X} (step X c₁ e₁) (step X c₂ e₂)
+step-mono-≲ {X} {c₂ = c₂} {e₁ = e₁} c₁≤c₂ e₁≲e₂ =
+  ≲-trans (step-monoˡ-≲ e₁ c₁≤c₂) (≲-mono (step X c₂) e₁≲e₂)
 
 step-monoʳ-≲ : {X : tp neg} (c : ℂ) {e₁ e₂ : cmp X} →
   _≲_ {X} e₁ e₂ → _≲_ {X} (step X c e₁) (step X c e₂)
