@@ -1,18 +1,16 @@
 <!DOCTYPE HTML>
-<html><head><meta charset="utf-8"><title>Examples.Sorting.Sequential.Comparable</title><link rel="stylesheet" href="Agda.css"></head><body><pre class="Agda"><a id="1" class="Symbol">{-#</a> <a id="5" class="Keyword">OPTIONS</a> <a id="13" class="Pragma">--prop</a> <a id="20" class="Pragma">--rewriting</a> <a id="32" class="Symbol">#-}</a>
+<html><head><meta charset="utf-8"><title>Examples.Sorting.Sequential.Comparable</title><link rel="stylesheet" href="Agda.css"></head><body><pre class="Agda"><a id="1" class="Keyword">module</a> <a id="8" href="Examples.Sorting.Sequential.Comparable.html" class="Module">Examples.Sorting.Sequential.Comparable</a> <a id="47" class="Keyword">where</a>
 
-<a id="37" class="Keyword">module</a> <a id="44" href="Examples.Sorting.Sequential.Comparable.html" class="Module">Examples.Sorting.Sequential.Comparable</a> <a id="83" class="Keyword">where</a>
+<a id="54" class="Keyword">open</a> <a id="59" class="Keyword">import</a> <a id="66" href="Calf.CostMonoid.html" class="Module">Calf.CostMonoid</a>
+<a id="82" class="Keyword">open</a> <a id="87" class="Keyword">import</a> <a id="94" href="Calf.CostMonoids.html" class="Module">Calf.CostMonoids</a>
 
-<a id="90" class="Keyword">open</a> <a id="95" class="Keyword">import</a> <a id="102" href="Calf.CostMonoid.html" class="Module">Calf.CostMonoid</a>
-<a id="118" class="Keyword">open</a> <a id="123" class="Keyword">import</a> <a id="130" href="Calf.CostMonoids.html" class="Module">Calf.CostMonoids</a>
+<a id="costMonoid"></a><a id="112" href="Examples.Sorting.Sequential.Comparable.html#112" class="Function">costMonoid</a> <a id="123" class="Symbol">=</a> <a id="125" href="Calf.CostMonoids.html#293" class="Function">ℕ-CostMonoid</a>
 
-<a id="costMonoid"></a><a id="148" href="Examples.Sorting.Sequential.Comparable.html#148" class="Function">costMonoid</a> <a id="159" class="Symbol">=</a> <a id="161" href="Calf.CostMonoids.html#312" class="Function">ℕ-CostMonoid</a>
+<a id="139" class="Keyword">open</a> <a id="144" class="Keyword">import</a> <a id="151" href="Data.Nat.html" class="Module">Data.Nat</a> <a id="160" class="Keyword">using</a> <a id="166" class="Symbol">(</a><a id="167" href="Agda.Builtin.Nat.html#186" class="Datatype">ℕ</a><a id="168" class="Symbol">)</a>
+<a id="170" class="Keyword">open</a> <a id="175" href="Calf.CostMonoid.html#3148" class="Module">CostMonoid</a> <a id="186" href="Examples.Sorting.Sequential.Comparable.html#112" class="Function">costMonoid</a> <a id="197" class="Keyword">using</a> <a id="203" class="Symbol">(</a><a id="204" href="Calf.CostMonoid.html#3200" class="Field">ℂ</a><a id="205" class="Symbol">)</a>
 
-<a id="175" class="Keyword">open</a> <a id="180" class="Keyword">import</a> <a id="187" href="Data.Nat.html" class="Module">Data.Nat</a> <a id="196" class="Keyword">using</a> <a id="202" class="Symbol">(</a><a id="203" href="Agda.Builtin.Nat.html#186" class="Datatype">ℕ</a><a id="204" class="Symbol">)</a>
-<a id="206" class="Keyword">open</a> <a id="211" href="Calf.CostMonoid.html#3167" class="Module">CostMonoid</a> <a id="222" href="Examples.Sorting.Sequential.Comparable.html#148" class="Function">costMonoid</a> <a id="233" class="Keyword">using</a> <a id="239" class="Symbol">(</a><a id="240" href="Calf.CostMonoid.html#3219" class="Field">ℂ</a><a id="241" class="Symbol">)</a>
+<a id="fromℕ"></a><a id="208" href="Examples.Sorting.Sequential.Comparable.html#208" class="Function">fromℕ</a> <a id="214" class="Symbol">:</a> <a id="216" href="Agda.Builtin.Nat.html#186" class="Datatype">ℕ</a> <a id="218" class="Symbol">→</a> <a id="220" href="Calf.CostMonoid.html#3200" class="Function">ℂ</a>
+<a id="222" href="Examples.Sorting.Sequential.Comparable.html#208" class="Function">fromℕ</a> <a id="228" href="Examples.Sorting.Sequential.Comparable.html#228" class="Bound">n</a> <a id="230" class="Symbol">=</a> <a id="232" href="Examples.Sorting.Sequential.Comparable.html#228" class="Bound">n</a>
 
-<a id="fromℕ"></a><a id="244" href="Examples.Sorting.Sequential.Comparable.html#244" class="Function">fromℕ</a> <a id="250" class="Symbol">:</a> <a id="252" href="Agda.Builtin.Nat.html#186" class="Datatype">ℕ</a> <a id="254" class="Symbol">→</a> <a id="256" href="Calf.CostMonoid.html#3219" class="Function">ℂ</a>
-<a id="258" href="Examples.Sorting.Sequential.Comparable.html#244" class="Function">fromℕ</a> <a id="264" href="Examples.Sorting.Sequential.Comparable.html#264" class="Bound">n</a> <a id="266" class="Symbol">=</a> <a id="268" href="Examples.Sorting.Sequential.Comparable.html#264" class="Bound">n</a>
-
-<a id="271" class="Keyword">open</a> <a id="276" class="Keyword">import</a> <a id="283" href="Examples.Sorting.Comparable.html" class="Module">Examples.Sorting.Comparable</a> <a id="311" href="Examples.Sorting.Sequential.Comparable.html#148" class="Function">costMonoid</a> <a id="322" href="Examples.Sorting.Sequential.Comparable.html#244" class="Function">fromℕ</a> <a id="328" class="Keyword">public</a>
+<a id="235" class="Keyword">open</a> <a id="240" class="Keyword">import</a> <a id="247" href="Examples.Sorting.Comparable.html" class="Module">Examples.Sorting.Comparable</a> <a id="275" href="Examples.Sorting.Sequential.Comparable.html#112" class="Function">costMonoid</a> <a id="286" href="Examples.Sorting.Sequential.Comparable.html#208" class="Function">fromℕ</a> <a id="292" class="Keyword">public</a>
 </pre></body></html>
