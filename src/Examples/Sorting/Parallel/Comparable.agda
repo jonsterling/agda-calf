@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting #-}
-
 module Examples.Sorting.Parallel.Comparable where
 
 open import Calf.CostMonoid

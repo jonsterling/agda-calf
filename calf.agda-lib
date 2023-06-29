@@ -1,3 +1,4 @@
 name: calf
 depend: standard-library
 include: src
+flags: --prop --rewriting --guardedness

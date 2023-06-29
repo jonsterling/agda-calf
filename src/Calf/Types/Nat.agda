@@ -1,4 +1,4 @@
-{-# OPTIONS --without-K --prop --rewriting #-}
+{-# OPTIONS --without-K #-}
 
 module Calf.Types.Nat where
 

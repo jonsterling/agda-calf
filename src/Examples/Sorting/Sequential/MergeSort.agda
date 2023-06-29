@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting #-}
-
 open import Examples.Sorting.Sequential.Comparable
 
 module Examples.Sorting.Sequential.MergeSort (M : Comparable) where
