@@ -12,6 +12,7 @@ open import Calf.Types.Unit
 open import Calf.Types.Bool
 open import Calf.Types.List
 open import Calf.Types.Eq
+open import Calf.Types.BoundedG costMonoid
 open import Calf.Types.Bounded costMonoid
 open import Calf.Types.BigO costMonoid
 
@@ -47,10 +48,10 @@ insert x (y ∷ ys) (h ∷ hs) =
         , All-resp-↭ x∷ys↭x∷ys' (≰⇒≥ x≰y ∷ h) ∷ sorted-x∷ys'
         ))
 
-insert/cost : cmp (Π A λ _ → Π (list A) λ _ → meta ℂ)
-insert/cost x l = length l
+insert/cost : cmp (Π A λ _ → Π (list A) λ _ → F unit)
+insert/cost x l = step⋆ (length l)
 
-insert/is-bounded : ∀ x l h → IsBounded (Σ++ (list A) λ l' → sorted-of (x ∷ l) l') (insert x l h) (insert/cost x l)
+insert/is-bounded : ∀ x l h → IsBoundedG (Σ++ (list A) λ l' → sorted-of (x ∷ l) l') (insert x l h) (insert/cost x l)
 insert/is-bounded x []       []       = ≲-refl
 insert/is-bounded x (y ∷ ys) (h ∷ hs) =
   bound/bind/const {_} {Σ++ (list A) λ l' → sorted-of (x ∷ (y ∷ ys)) l'}
@@ -82,10 +83,10 @@ sort (x ∷ xs) =
     , sorted-x∷xs'
     )
 
-sort/cost : cmp (Π (list A) λ _ → meta ℂ)
-sort/cost l = length l ²
+sort/cost : cmp (Π (list A) λ _ → F unit)
+sort/cost l = step⋆ (length l ²)
 
-sort/is-bounded : ∀ l → IsBounded (Σ++ (list A) (sorted-of l)) (sort l) (sort/cost l)
+sort/is-bounded : ∀ l → IsBoundedG (Σ++ (list A) (sorted-of l)) (sort l) (sort/cost l)
 sort/is-bounded []       = ≲-refl
 sort/is-bounded (x ∷ xs) =
   let open ≲-Reasoning (F unit) in
@@ -96,25 +97,24 @@ sort/is-bounded (x ∷ xs) =
     )
   ≤⟨ bind-monoʳ-≲ (sort xs) (λ (xs' , xs↭xs' , sorted-xs') → insert/is-bounded x xs' sorted-xs') ⟩
     ( bind (F unit) (sort xs) λ (xs' , xs↭xs' , sorted-xs') →
-      step (F unit) (length xs') (ret triv)
+      step⋆ (length xs')
     )
   ≡˘⟨
     Eq.cong
       (bind (F unit) (sort xs))
-      (funext λ (xs' , xs↭xs' , sorted-xs') →
-        Eq.cong (λ c → step (F unit) c (ret triv)) (↭-length xs↭xs'))
+      (funext λ (xs' , xs↭xs' , sorted-xs') → Eq.cong step⋆ (↭-length xs↭xs'))
   ⟩
     ( bind (F unit) (sort xs) λ _ →
-      step (F unit) (length xs) (ret triv)
+      step⋆ (length xs)
     )
-  ≤⟨ bind-monoˡ-≲ (λ _ → step (F unit) (length xs) (ret triv)) (sort/is-bounded xs) ⟩
-    step (F unit) ((length xs ²) + length xs) (ret triv)
+  ≤⟨ bind-monoˡ-≲ (λ _ → step⋆ (length xs)) (sort/is-bounded xs) ⟩
+    step⋆ ((length xs ²) + length xs)
   ≤⟨ step-monoˡ-≲ (ret triv) (N.+-mono-≤ (N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs))) (N.n≤1+n (length xs))) ⟩
-    step (F unit) (length xs * length (x ∷ xs) + length (x ∷ xs)) (ret triv)
-  ≡⟨ Eq.cong (λ c → step (F unit) c (ret triv)) (N.+-comm (length xs * length (x ∷ xs)) (length (x ∷ xs))) ⟩
-    step (F unit) (length (x ∷ xs) ²) (ret triv)
+    step⋆ (length xs * length (x ∷ xs) + length (x ∷ xs))
+  ≡⟨ Eq.cong step⋆ (N.+-comm (length xs * length (x ∷ xs)) (length (x ∷ xs))) ⟩
+    step⋆ (length (x ∷ xs) ²)
   ≡⟨⟩
-    step (F unit) (sort/cost (x ∷ xs)) (ret triv)
+    sort/cost (x ∷ xs)
   ∎
 
 sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n ²)

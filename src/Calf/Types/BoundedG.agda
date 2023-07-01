@@ -24,6 +24,9 @@ open import Relation.Binary.PropositionalEquality as Eq using (_≡_)
 IsBoundedG : (A : tp pos) → cmp (F A) → cmp (F unit) → Set
 IsBoundedG A e b = _≲_ {F unit} (bind (F unit) e λ _ → ret triv) b
 
+step⋆ : ℂ → cmp (F unit)
+step⋆ c = step (F unit) c (ret triv)
+
 
 boundg/relax : {b b' : cmp (F unit)}
   → _≲_ {F unit} b b'
