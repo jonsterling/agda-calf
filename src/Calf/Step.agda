@@ -47,13 +47,6 @@ postulate
   step/ext : ∀ X → (e : cmp X) → (c : ℂ) → ◯ (step X c e ≡ e)
   -- sadly the above cannot be made an Agda rewrite rule
 
-  extension/step : ∀ {X spec c e} →
-    step [ X ∣ ext ↪ spec ] c e ≡
-    record
-      { out = step X c (out e)
-      ; law = λ u → trans (step/ext X (out e) c u) (law e u)
-      }
-  {-# REWRITE extension/step #-}
 
 postulate
   step-monoˡ-≲ : {X : tp neg} {c₁ c₂ : ℂ} (e : cmp X) →
