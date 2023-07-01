@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting #-}
-
 module Examples.Gcd.Euclid where
 
 open import Calf.CostMonoid

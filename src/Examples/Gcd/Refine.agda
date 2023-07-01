@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting #-}
-
 module Examples.Gcd.Refine where
 
 open import Calf.CostMonoid

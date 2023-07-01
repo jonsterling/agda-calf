@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --without-K --rewriting #-}
+{-# OPTIONS --without-K #-}
 
 -- The phase distinction for extension.
 

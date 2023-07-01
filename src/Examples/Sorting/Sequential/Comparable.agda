@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting #-}
-
 module Examples.Sorting.Sequential.Comparable where
 
 open import Calf.CostMonoid public

@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --without-K #-}
+{-# OPTIONS --without-K #-}
 
 module Data.Nat.Square where
 

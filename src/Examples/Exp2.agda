@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting #-}
-
 module Examples.Exp2 where
 
 open import Calf.CostMonoid

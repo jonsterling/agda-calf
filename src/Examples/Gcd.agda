@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting #-}
-
 module Examples.Gcd where
 
 open import Examples.Gcd.Euclid public
