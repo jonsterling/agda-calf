@@ -22,16 +22,6 @@ module _ {ℂ : Set} where
   open import Algebra.Structures _≈_ public
   open import Relation.Binary.Structures _≈_
 
-  record IsCancellative (_∙_ : Op₂ ℂ) : Set where
-    field
-      ∙-cancel-≡ : Cancellative _∙_
-
-    ∙-cancelˡ-≡ : LeftCancellative _∙_
-    ∙-cancelˡ-≡ = proj₁ ∙-cancel-≡
-
-    ∙-cancelʳ-≡ : RightCancellative _∙_
-    ∙-cancelʳ-≡ = proj₂ ∙-cancel-≡
-
   record IsMonotone (_∙_ : Op₂ ℂ) (_≤_ : Relation) (isPreorder : IsPreorder _≤_) : Set where
     field
       ∙-mono-≤ : _∙_ Preserves₂ _≤_ ⟶ _≤_ ⟶ _≤_

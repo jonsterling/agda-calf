@@ -63,12 +63,6 @@ postulate
                     (λ c → funext/Ω λ u → +-identityˡ (c u)) ,
                     (λ c → funext/Ω λ u → +-identityʳ (c u))
                 }
-          ; isCancellative =
-              record
-                { ∙-cancel-≡ =
-                    (λ c₁ c₂ c₃ h → funext/Ω λ u → +-cancelˡ-≡ (c₁ u) (c₂ u) (c₃ u) (cong (λ e → e u) h)) ,
-                    (λ c₁ c₂ c₃ h → funext/Ω λ u → +-cancelʳ-≡ (c₁ u) (c₂ u) (c₃ u) (cong (λ e → e u) h))
-                }
           ; isPreorder =
               record
                 { isEquivalence = isEquivalence
