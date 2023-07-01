@@ -90,8 +90,14 @@ uncons₂ (h ∷ sorted) = sorted
 sorted-of : val (list A) → val (list A) → tp pos
 sorted-of l l' = prod⁺ (meta⁺ (l ↭ l')) (sorted l')
 
+sort-result : val (list A) → tp pos
+sort-result l = Σ++ (list A) (sorted-of l)
+
 sorting : tp neg
-sorting = Π (list A) λ l → F (Σ++ (list A) (sorted-of l))
+sorting = Π (list A) λ l → F (sort-result l)
+
+IsTotal : cmp sorting → Set
+IsTotal sort = (l : val (list A)) → ◯ (∃ λ r → sort l ≡ ret r)
 
 -- IsSort⇒≡ : ∀ sort₁ → IsSort sort₁ → ∀ sort₂ → IsSort sort₂ → ◯ (sort₁ ≡ sort₂)
 -- IsSort⇒≡ sort₁ correct₁ sort₂ correct₂ u =

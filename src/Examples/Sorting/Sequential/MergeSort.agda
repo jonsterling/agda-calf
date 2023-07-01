@@ -8,10 +8,13 @@ open Comparable M
 open import Examples.Sorting.Sequential.Core M
 
 open import Calf costMonoid
+open import Calf.Types.Unit
+open import Calf.Types.Product
 open import Calf.Types.Bool
 open import Calf.Types.Nat
 open import Calf.Types.List
 open import Calf.Types.Eq
+open import Calf.Types.BoundedG costMonoid
 open import Calf.Types.Bounded costMonoid
 open import Calf.Types.BigO costMonoid
 
@@ -30,231 +33,143 @@ open import Data.Nat.Log2
 open import Examples.Sorting.Sequential.MergeSort.Split M public
 open import Examples.Sorting.Sequential.MergeSort.Merge M public
 
-sort/clocked : cmp (Π nat λ _ → Π (list A) λ _ → F (list A))
-sort/clocked zero    l = ret l
-sort/clocked (suc k) l =
-  bind (F (list A)) (split l) λ (l₁ , l₂) →
-    bind (F (list A)) (sort/clocked k l₁) λ l₁' →
-      bind (F (list A)) (sort/clocked k l₂) λ l₂' →
-        merge (l₁' , l₂')
-
-sort/clocked/correct : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → SortResult (sort/clocked k) l
-sort/clocked/correct zero    l h u = l , refl , refl , short-sorted (⌈log₂n⌉≡0⇒n≤1 (N.n≤0⇒n≡0 h))
-sort/clocked/correct (suc k) l h u =
-  let (l₁ , l₂ , ≡ , length₁ , length₂ , ↭) = split/correct l u in
-  let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ (
-                                    let open ≤-Reasoning in
-                                    begin
-                                      ⌈log₂ length l₁ ⌉
-                                    ≡⟨ Eq.cong ⌈log₂_⌉ length₁ ⟩
-                                      ⌈log₂ ⌊ length l /2⌋ ⌉
-                                    ≤⟨ log₂-mono (N.⌊n/2⌋≤⌈n/2⌉ (length l)) ⟩
-                                      ⌈log₂ ⌈ length l /2⌉ ⌉
-                                    ≤⟨ log₂-suc (length l) h ⟩
-                                      k
-                                    ∎
-                                  ) u in
-  let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ (
-                                    let open ≤-Reasoning in
-                                    begin
-                                      ⌈log₂ length l₂ ⌉
-                                    ≡⟨ Eq.cong ⌈log₂_⌉ length₂ ⟩
-                                      ⌈log₂ ⌈ length l /2⌉ ⌉
-                                    ≤⟨ log₂-suc (length l) h ⟩
-                                      k
-                                    ∎
-                                  ) u in
-  let (l' , ≡' , h-sorted) = merge/correct l₁' l₂' u
-      (↭' , sorted) = h-sorted sorted₁ sorted₂
+sort/clocked : cmp $ Π nat λ k → Π (list A) λ l → Π (meta⁺ (⌈log₂ length l ⌉ Nat.≤ k)) λ _ → F (sort-result l)
+sort/clocked zero    l h = ret (l , refl , short-sorted (⌈log₂n⌉≡0⇒n≤1 (N.n≤0⇒n≡0 h)))
+sort/clocked (suc k) l h =
+  bind (F (sort-result l)) (split l) λ ((l₁ , l₂) , length₁ , length₂ , l↭l₁++l₂) →
+  let
+    h₁ , h₂ =
+      let open ≤-Reasoning in
+      (begin
+        ⌈log₂ length l₁ ⌉
+      ≡⟨ Eq.cong ⌈log₂_⌉ length₁ ⟩
+        ⌈log₂ ⌊ length l /2⌋ ⌉
+      ≤⟨ log₂-mono (N.⌊n/2⌋≤⌈n/2⌉ (length l)) ⟩
+        ⌈log₂ ⌈ length l /2⌉ ⌉
+      ≤⟨ log₂-suc (length l) h ⟩
+        k
+      ∎) ,
+      (begin
+        ⌈log₂ length l₂ ⌉
+      ≡⟨ Eq.cong ⌈log₂_⌉ length₂ ⟩
+        ⌈log₂ ⌈ length l /2⌉ ⌉
+      ≤⟨ log₂-suc (length l) h ⟩
+        k
+      ∎)
   in
-  l' , (
-    let open ≡-Reasoning in
-    begin
-      sort/clocked (suc k) l
-    ≡⟨⟩
-      (bind (F (list A)) (split l) λ (l₁ , l₂) →
-        bind (F (list A)) (sort/clocked k l₁) λ l₁' →
-          bind (F (list A)) (sort/clocked k l₂) λ l₂' →
-            merge (l₁' , l₂'))
-    ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) ≡ ⟩
-      (bind (F (list A)) (sort/clocked k l₁) λ l₁' →
-        bind (F (list A)) (sort/clocked k l₂) λ l₂' →
-          merge (l₁' , l₂'))
-    ≡⟨ Eq.cong (λ e → bind (F (list A)) e λ l₁' → bind (F (list A)) (sort/clocked k l₂) λ l₂' → merge (l₁' , l₂')) ≡₁ ⟩
-      (bind (F (list A)) (sort/clocked k l₂) λ l₂' →
-        merge (l₁' , l₂'))
-    ≡⟨ Eq.cong (λ e → bind (F (list A)) e λ l₂' → merge (l₁' , l₂')) ≡₂ ⟩
-      merge (l₁' , l₂')
-    ≡⟨ ≡' ⟩
-      ret l'
-    ∎
-  ) , (
-    let open PermutationReasoning in
-    begin
-      l
-    ↭⟨ ↭ ⟩
-      l₁ ++ l₂
-    ↭⟨ ++⁺-↭ ↭₁ ↭₂ ⟩
-      l₁' ++ l₂'
-    ↭⟨ ↭' ⟩
-      l'
-    ∎
-  ) , sorted
-
-sort/clocked/cost : cmp (Π nat λ _ → Π (list A) λ _ → cost)
-sort/clocked/cost zero    l = zero
-sort/clocked/cost (suc k) l =
-  bind cost (split l) λ (l₁ , l₂) → split/cost l +
-    bind cost (sort/clocked k l₁) λ l₁' → sort/clocked/cost k l₁ +
-      bind cost (sort/clocked k l₂) λ l₂' → sort/clocked/cost k l₂ +
-        merge/cost/closed (l₁' , l₂')
-
-sort/clocked/cost/closed : cmp (Π nat λ _ → Π (list A) λ _ → cost)
-sort/clocked/cost/closed k l = k * length l
-
-sort/clocked/cost≡sort/clocked/cost/closed : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → ◯ (sort/clocked/cost k l ≡ sort/clocked/cost/closed k l)
-sort/clocked/cost≡sort/clocked/cost/closed zero    l h u = refl
-sort/clocked/cost≡sort/clocked/cost/closed (suc k) l h u =
-  let (l₁ , l₂ , ≡ , length₁ , length₂ , ↭) = split/correct l u in
-  let h₁ : ⌈log₂ length l₁ ⌉ Nat.≤ k
-      h₁ =
-        let open ≤-Reasoning in
-        begin
-          ⌈log₂ length l₁ ⌉
-        ≡⟨ Eq.cong ⌈log₂_⌉ length₁ ⟩
-          ⌈log₂ ⌊ length l /2⌋ ⌉
-        ≤⟨ log₂-mono (N.⌊n/2⌋≤⌈n/2⌉ (length l)) ⟩
-          ⌈log₂ ⌈ length l /2⌉ ⌉
-        ≤⟨ log₂-suc (length l) h ⟩
-          k
-        ∎
-
-      h₂ : ⌈log₂ length l₂ ⌉ Nat.≤ k
-      h₂ =
-        let open ≤-Reasoning in
-        begin
-          ⌈log₂ length l₂ ⌉
-        ≡⟨ Eq.cong ⌈log₂_⌉ length₂ ⟩
-          ⌈log₂ ⌈ length l /2⌉ ⌉
-        ≤⟨ log₂-suc (length l) h ⟩
-          k
-        ∎
+  bind (F (sort-result l)) (sort/clocked k l₁ h₁) λ (l₁' , l₁↭l₁' , sorted-l₁') →
+  bind (F (sort-result l)) (sort/clocked k l₂ h₂) λ (l₂' , l₂↭l₂' , sorted-l₂') →
+  bind (F (sort-result l)) (merge (l₁' , l₂') (sorted-l₁' , sorted-l₂')) λ (l' , l₁'++l₂'↭l , l'-sorted) →
+  let
+    l↭l' =
+      let open PermutationReasoning in
+      begin
+        l
+      ↭⟨ l↭l₁++l₂ ⟩
+        l₁ ++ l₂
+      ↭⟨ ++⁺-↭ l₁↭l₁' l₂↭l₂' ⟩
+        l₁' ++ l₂'
+      ↭⟨ l₁'++l₂'↭l ⟩
+        l'
+      ∎
   in
-  let (l₁' , ≡₁ , ↭₁ , sorted₁) = sort/clocked/correct k l₁ h₁ u in
-  let (l₂' , ≡₂ , ↭₂ , sorted₂) = sort/clocked/correct k l₂ h₂ u in
-  let open ≡-Reasoning in
-  begin
-    sort/clocked/cost (suc k) l
-  ≡⟨⟩
-    (bind cost (split l) λ (l₁ , l₂) → split/cost l +
-      bind cost (sort/clocked k l₁) λ l₁' → sort/clocked/cost k l₁ +
-        bind cost (sort/clocked k l₂) λ l₂' → sort/clocked/cost k l₂ +
-          merge/cost/closed (l₁' , l₂'))
-  ≡⟨ Eq.cong (λ e → bind cost e _) (≡) ⟩
-    (split/cost l +
-      bind cost (sort/clocked k l₁) λ l₁' → sort/clocked/cost k l₁ +
-        bind cost (sort/clocked k l₂) λ l₂' → sort/clocked/cost k l₂ +
-          merge/cost/closed (l₁' , l₂'))
-  ≡⟨⟩
-    (0 +
-      bind cost (sort/clocked k l₁) λ l₁' → sort/clocked/cost k l₁ +
-        bind cost (sort/clocked k l₂) λ l₂' → sort/clocked/cost k l₂ +
-          merge/cost/closed (l₁' , l₂'))
-  ≡⟨ N.+-identityˡ _ ⟩
-    (bind cost (sort/clocked k l₁) λ l₁' → sort/clocked/cost k l₁ +
-      bind cost (sort/clocked k l₂) λ l₂' → sort/clocked/cost k l₂ +
-        merge/cost/closed (l₁' , l₂'))
-  ≡⟨
-    Eq.cong
-      (λ e →
-        bind cost e λ l₁' → sort/clocked/cost k l₁ +
-          bind cost (sort/clocked k l₂) λ l₂' → sort/clocked/cost k l₂ +
-            merge/cost/closed (l₁' , l₂'))
-      ≡₁
-  ⟩
-    (sort/clocked/cost k l₁ +
-      bind cost (sort/clocked k l₂) λ l₂' → sort/clocked/cost k l₂ +
-        merge/cost/closed (l₁' , l₂'))
-  ≡⟨
-    Eq.cong
-      (λ e →
-        sort/clocked/cost k l₁ +
-          bind cost e λ l₂' → sort/clocked/cost k l₂ +
-            merge/cost/closed (l₁' , l₂'))
-      ≡₂
-  ⟩
-    sort/clocked/cost k l₁ + (sort/clocked/cost k l₂ + merge/cost/closed (l₁' , l₂'))
-  ≡˘⟨ N.+-assoc (sort/clocked/cost k l₁) (sort/clocked/cost k l₂) (merge/cost/closed (l₁' , l₂')) ⟩
-    (sort/clocked/cost k l₁ + sort/clocked/cost k l₂) + merge/cost/closed (l₁' , l₂')
-  ≡⟨
-    Eq.cong (_+ merge/cost/closed (l₁' , l₂')) (
-      Eq.cong₂ _+_
-        (sort/clocked/cost≡sort/clocked/cost/closed k l₁ h₁ u)
-        (sort/clocked/cost≡sort/clocked/cost/closed k l₂ h₂ u)
+  ret (l' , l↭l' , l'-sorted)
+
+sort/clocked/cost : cmp $ Π nat λ k → Π (list A) λ l → Π (meta⁺ (⌈log₂ length l ⌉ Nat.≤ k)) λ _ → F unit
+sort/clocked/cost k l _ = step⋆ (k * length l)
+
+sort/clocked/is-bounded : ∀ k l h → IsBoundedG (sort-result l) (sort/clocked k l h) (sort/clocked/cost k l h)
+sort/clocked/is-bounded zero    l h = ≲-refl
+sort/clocked/is-bounded (suc k) l h =
+  bound/bind/const
+    {e = split l}
+    {f = λ ((l₁ , l₂) , length₁ , length₂ , l↭l₁++l₂) →
+      bind (F (sort-result l)) (sort/clocked k l₁ _) λ (l₁' , l₁↭l₁' , sorted-l₁') →
+      bind (F (sort-result l)) (sort/clocked k l₂ _) λ (l₂' , l₂↭l₂' , sorted-l₂') →
+      bind (F (sort-result l)) (merge (l₁' , l₂') (sorted-l₁' , sorted-l₂')) λ (l' , l₁'++l₂'↭l , l'-sorted) →
+      ret {sort-result l} (l' , ↭-trans l↭l₁++l₂ (↭-trans (_↭_.trans (++⁺ʳ-↭ l₂ l₁↭l₁') (++⁺ˡ-↭ l₁' l₂↭l₂')) (↭-trans l₁'++l₂'↭l _↭_.refl)) , l'-sorted)
+    }
+    0
+    (suc k * length l)
+    (split/is-bounded l)
+    λ ((l₁ , l₂) , length₁ , length₂ , l↭l₁++l₂) →
+  Eq.subst
+    (IsBounded (sort-result l) $
+      bind (F (sort-result l)) (sort/clocked k l₁ _) λ (l₁' , l₁↭l₁' , sorted-l₁') →
+      bind (F (sort-result l)) (sort/clocked k l₂ _) λ (l₂' , l₂↭l₂' , sorted-l₂') →
+      bind (F (sort-result l)) (merge (l₁' , l₂') (sorted-l₁' , sorted-l₂')) λ (l' , l₁'++l₂'↭l , l'-sorted) →
+      ret {sort-result l} (l' , ↭-trans l↭l₁++l₂ (↭-trans (_↭_.trans (++⁺ʳ-↭ l₂ l₁↭l₁') (++⁺ˡ-↭ l₁' l₂↭l₂')) (↭-trans l₁'++l₂'↭l _↭_.refl)) , l'-sorted)
     )
-  ⟩
-    (sort/clocked/cost/closed k l₁ + sort/clocked/cost/closed k l₂) + merge/cost/closed (l₁' , l₂')
-  ≡⟨⟩
-    (sort/clocked/cost/closed k l₁ + sort/clocked/cost/closed k l₂) + (length l₁' + length l₂')
-  ≡˘⟨
-    Eq.cong ((sort/clocked/cost/closed k l₁ + sort/clocked/cost/closed k l₂) +_) (
-      Eq.cong₂ _+_ (↭-length ↭₁) (↭-length ↭₂)
+    (let open ≡-Reasoning in
+    begin
+      k * length l₁ + (k * length l₂ + (length l₁ + length l₂))
+    ≡˘⟨ N.+-assoc (k * length l₁) (k * length l₂) (length l₁ + length l₂) ⟩
+      (k * length l₁ + k * length l₂) + (length l₁ + length l₂)
+    ≡˘⟨ Eq.cong (_+ (length l₁ + length l₂)) (N.*-distribˡ-+ k (length l₁) (length l₂)) ⟩
+      k * (length l₁ + length l₂) + (length l₁ + length l₂)
+    ≡˘⟨ N.+-comm (length l₁ + length l₂) (k * (length l₁ + length l₂)) ⟩
+      suc k * (length l₁ + length l₂)
+    ≡˘⟨ Eq.cong (suc k *_) (length-++ l₁) ⟩
+      suc k * (length (l₁ ++ l₂))
+    ≡˘⟨ Eq.cong (suc k *_) (↭-length l↭l₁++l₂) ⟩
+      suc k * length l
+    ∎) $
+  bound/bind/const
+    {e = sort/clocked k l₁ _}
+    {f = λ (l₁' , l₁↭l₁' , sorted-l₁') →
+      bind (F (sort-result l)) (sort/clocked k l₂ _) λ (l₂' , l₂↭l₂' , sorted-l₂') →
+      bind (F (sort-result l)) (merge (l₁' , l₂') (sorted-l₁' , sorted-l₂')) λ (l' , l₁'++l₂'↭l , l'-sorted) →
+      ret {sort-result l} (l' , ↭-trans l↭l₁++l₂ (↭-trans (_↭_.trans (++⁺ʳ-↭ l₂ l₁↭l₁') (++⁺ˡ-↭ l₁' l₂↭l₂')) (↭-trans l₁'++l₂'↭l _↭_.refl)) , l'-sorted)
+    }
+    (k * length l₁)
+    (k * length l₂ + (length l₁ + length l₂))
+    (sort/clocked/is-bounded k l₁ _)
+    λ (l₁' , l₁↭l₁' , sorted-l₁') →
+  bound/bind/const
+    {e = sort/clocked k l₂ _}
+    {f = λ (l₂' , l₂↭l₂' , sorted-l₂') →
+      bind (F (sort-result l)) (merge (l₁' , l₂') (sorted-l₁' , sorted-l₂')) λ (l' , l₁'++l₂'↭l , l'-sorted) →
+      ret {sort-result l} (l' , ↭-trans l↭l₁++l₂ (↭-trans (_↭_.trans (++⁺ʳ-↭ l₂ l₁↭l₁') (++⁺ˡ-↭ l₁' l₂↭l₂')) (↭-trans l₁'++l₂'↭l _↭_.refl)) , l'-sorted)
+    }
+    (k * length l₂)
+    (length l₁ + length l₂)
+    (sort/clocked/is-bounded k l₂ _)
+    λ (l₂' , l₂↭l₂' , sorted-l₂') →
+  Eq.subst
+    (IsBounded (sort-result l) $
+      bind (F (sort-result l)) (merge (l₁' , l₂') (sorted-l₁' , sorted-l₂')) λ (l' , l₁'++l₂'↭l , l'-sorted) →
+      ret {sort-result l} (l' , ↭-trans l↭l₁++l₂ (↭-trans (_↭_.trans (++⁺ʳ-↭ l₂ l₁↭l₁') (++⁺ˡ-↭ l₁' l₂↭l₂')) (↭-trans l₁'++l₂'↭l _↭_.refl)) , l'-sorted)
     )
-  ⟩
-    (sort/clocked/cost/closed k l₁ + sort/clocked/cost/closed k l₂) + (length l₁ + length l₂)
-  ≡⟨⟩
-    (k * length l₁ + k * length l₂) + (length l₁ + length l₂)
-  ≡⟨
-    Eq.cong₂
-      (λ n₁ n₂ → k * n₁ + k * n₂ + (n₁ + n₂))
-      length₁
-      length₂
-  ⟩
-    (k * ⌊ length l /2⌋ + k * ⌈ length l /2⌉) + (⌊ length l /2⌋ + ⌈ length l /2⌉)
-  ≡⟨ N.+-comm _ (⌊ length l /2⌋ + ⌈ length l /2⌉) ⟩
-    (⌊ length l /2⌋ + ⌈ length l /2⌉) + (k * ⌊ length l /2⌋ + k * ⌈ length l /2⌉)
-  ≡˘⟨ Eq.cong ((⌊ length l /2⌋ + ⌈ length l /2⌉) +_) (N.*-distribˡ-+ k _ _) ⟩
-    (⌊ length l /2⌋ + ⌈ length l /2⌉) + k * (⌊ length l /2⌋ + ⌈ length l /2⌉)
-  ≡⟨⟩
-    suc k * (⌊ length l /2⌋ + ⌈ length l /2⌉)
-  ≡⟨ Eq.cong (suc k *_) (N.⌊n/2⌋+⌈n/2⌉≡n (length l)) ⟩
-    suc k * length l
-  ∎
+    (let open ≡-Reasoning in
+    begin
+      length l₁' + length l₂' + 0
+    ≡⟨ N.+-identityʳ (length l₁' + length l₂') ⟩
+      length l₁' + length l₂'
+    ≡˘⟨ Eq.cong₂ _+_ (↭-length l₁↭l₁') (↭-length l₂↭l₂') ⟩
+      length l₁ + length l₂
+    ∎) $
+  bound/bind/const {B = sort-result l}
+    {e = merge (l₁' , l₂') _}
+    {f = λ (l' , l₁'++l₂'↭l , l'-sorted) →
+      ret {sort-result l} (l' , ↭-trans l↭l₁++l₂ (↭-trans (_↭_.trans (++⁺ʳ-↭ l₂ l₁↭l₁') (++⁺ˡ-↭ l₁' l₂↭l₂')) (↭-trans l₁'++l₂'↭l _↭_.refl)) , l'-sorted)}
+    (length l₁' + length l₂')
+    0
+    (merge/is-bounded (l₁' , l₂') _)
+    λ _ →
+  ≲-refl
 
-sort/clocked≤sort/clocked/cost : ∀ k l → IsBounded (list A) (sort/clocked k l) (sort/clocked/cost k l)
-sort/clocked≤sort/clocked/cost zero l = bound/ret
-sort/clocked≤sort/clocked/cost (suc k) l =
-  bound/bind _ _ (split≤split/cost l) λ (l₁ , l₂) →
-    bound/bind _ _ (sort/clocked≤sort/clocked/cost k l₁) λ l₁' →
-      bound/bind _ _ (sort/clocked≤sort/clocked/cost k l₂) λ l₂' →
-        merge≤merge/cost/closed (l₁' , l₂')
-
-sort/clocked≤sort/clocked/cost/closed : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → IsBounded (list A) (sort/clocked k l) (sort/clocked/cost/closed k l)
-sort/clocked≤sort/clocked/cost/closed k l h = bound/relax (λ u → N.≤-reflexive (sort/clocked/cost≡sort/clocked/cost/closed k l h u)) (sort/clocked≤sort/clocked/cost k l)
-
-sort/depth : cmp (Π (list A) λ _ → meta ℕ)
-sort/depth l = ⌈log₂ length l ⌉
-
-sort : cmp (Π (list A) λ _ → F (list A))
-sort l = sort/clocked (sort/depth l) l
-
-sort/correct : IsSort sort
-sort/correct l = sort/clocked/correct (sort/depth l) l N.≤-refl
+sort : cmp (Π (list A) λ l → F (sort-result l))
+sort l = sort/clocked ⌈log₂ length l ⌉ l N.≤-refl
 
 sort/cost : cmp (Π (list A) λ _ → cost)
-sort/cost l = sort/clocked/cost (sort/depth l) l
+sort/cost l = sort/clocked/cost ⌈log₂ length l ⌉ l N.≤-refl
 
-sort/cost/closed : cmp (Π (list A) λ _ → cost)
-sort/cost/closed l = sort/clocked/cost/closed (sort/depth l) l
-
-sort≤sort/cost : ∀ l → IsBounded (list A) (sort l) (sort/cost l)
-sort≤sort/cost l = sort/clocked≤sort/clocked/cost (sort/depth l) l
-
-sort≤sort/cost/closed : ∀ l → IsBounded (list A) (sort l) (sort/cost/closed l)
-sort≤sort/cost/closed l = sort/clocked≤sort/clocked/cost/closed (sort/depth l) l N.≤-refl
+sort/is-bounded : ∀ l → IsBoundedG (sort-result l) (sort l) (sort/cost l)
+sort/is-bounded l = sort/clocked/is-bounded ⌈log₂ length l ⌉ l N.≤-refl
 
 sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n * ⌈log₂ n ⌉)
 sort/asymptotic = f[n]≤g[n]via λ l →
-  bound/relax
-    (λ u → ≤-reflexive (N.*-comm ⌈log₂ length l ⌉ (length l)))
-    (sort≤sort/cost/closed l)
+  Eq.subst
+    (IsBounded (sort-result l) (sort l))
+    (N.*-comm ⌈log₂ length l ⌉ (length l))
+    (sort/is-bounded l)
