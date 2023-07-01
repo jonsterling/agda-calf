@@ -18,21 +18,10 @@ test/shuffled = 4 ∷ 8 ∷ 12 ∷ 16 ∷ 13 ∷ 3 ∷ 5 ∷ 14 ∷ 9 ∷ 6 ∷ 
 module Ex/InsertionSort where
   import Examples.Sorting.Sequential.InsertionSort NatComparable as Sort
 
-  list' = list nat
-
-  ex/insert : cmp (F list')
   ex/insert = Sort.insert 3 (1 ∷ 2 ∷ 4 ∷ [])
-
-  ex/sort : cmp (F list')
   ex/sort = Sort.sort (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ [])
-
-  ex/sort/forward : cmp (F list')
   ex/sort/forward = Sort.sort test/forward  -- cost: 15
-
-  ex/sort/backward : cmp (F list')
   ex/sort/backward = Sort.sort test/backward  -- cost: 120
-
-  ex/sort/shuffled : cmp (F list')
   ex/sort/shuffled = Sort.sort test/shuffled  -- cost: 76
 
 module Ex/MergeSort where

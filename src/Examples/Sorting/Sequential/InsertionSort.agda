@@ -8,7 +8,6 @@ open Comparable M
 open import Examples.Sorting.Sequential.Core M
 
 open import Calf costMonoid
-open import Calf.Types.Unit
 open import Calf.Types.Bool
 open import Calf.Types.List
 open import Calf.Types.Eq
@@ -48,7 +47,7 @@ insert x (y ∷ ys) (h ∷ hs) =
         , All-resp-↭ x∷ys↭x∷ys' (≰⇒≥ x≰y ∷ h) ∷ sorted-x∷ys'
         ))
 
-insert/cost : cmp (Π A λ _ → Π (list A) λ _ → F unit)
+insert/cost : cmp (Π A λ _ → Π (list A) λ _ → cost)
 insert/cost x l = step⋆ (length l)
 
 insert/is-bounded : ∀ x l h → IsBoundedG (Σ++ (list A) λ l' → sorted-of (x ∷ l) l') (insert x l h) (insert/cost x l)
@@ -83,33 +82,33 @@ sort (x ∷ xs) =
     , sorted-x∷xs'
     )
 
-sort/cost : cmp (Π (list A) λ _ → F unit)
+sort/cost : cmp (Π (list A) λ _ → cost)
 sort/cost l = step⋆ (length l ²)
 
 sort/is-bounded : ∀ l → IsBoundedG (Σ++ (list A) (sorted-of l)) (sort l) (sort/cost l)
 sort/is-bounded []       = ≲-refl
 sort/is-bounded (x ∷ xs) =
-  let open ≲-Reasoning (F unit) in
+  let open ≲-Reasoning cost in
   begin
-    ( bind (F unit) (sort xs) λ (xs' , xs↭xs' , sorted-xs') →
-      bind (F unit) (insert x xs' sorted-xs') λ _ →
-      ret triv
+    ( bind cost (sort xs) λ (xs' , xs↭xs' , sorted-xs') →
+      bind cost (insert x xs' sorted-xs') λ _ →
+      step⋆ zero
     )
   ≤⟨ bind-monoʳ-≲ (sort xs) (λ (xs' , xs↭xs' , sorted-xs') → insert/is-bounded x xs' sorted-xs') ⟩
-    ( bind (F unit) (sort xs) λ (xs' , xs↭xs' , sorted-xs') →
+    ( bind cost (sort xs) λ (xs' , xs↭xs' , sorted-xs') →
       step⋆ (length xs')
     )
   ≡˘⟨
     Eq.cong
-      (bind (F unit) (sort xs))
+      (bind cost (sort xs))
       (funext λ (xs' , xs↭xs' , sorted-xs') → Eq.cong step⋆ (↭-length xs↭xs'))
   ⟩
-    ( bind (F unit) (sort xs) λ _ →
+    ( bind cost (sort xs) λ _ →
       step⋆ (length xs)
     )
   ≤⟨ bind-monoˡ-≲ (λ _ → step⋆ (length xs)) (sort/is-bounded xs) ⟩
     step⋆ ((length xs ²) + length xs)
-  ≤⟨ step-monoˡ-≲ (ret triv) (N.+-mono-≤ (N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs))) (N.n≤1+n (length xs))) ⟩
+  ≤⟨ step⋆-mono-≲ (N.+-mono-≤ (N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs))) (N.n≤1+n (length xs))) ⟩
     step⋆ (length xs * length (x ∷ xs) + length (x ∷ xs))
   ≡⟨ Eq.cong step⋆ (N.+-comm (length xs * length (x ∷ xs)) (length (x ∷ xs))) ⟩
     step⋆ (length (x ∷ xs) ²)
