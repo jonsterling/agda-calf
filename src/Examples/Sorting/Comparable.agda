@@ -29,6 +29,7 @@ record Comparable : Set₁ where
     ≤-total : Total _≤_
     ≤-antisym : Antisymmetric _≡_ _≤_
     _≤?_ : cmp (Π A λ x → Π A λ y → F (meta⁺ (Dec (x ≤ y))))
+    ≤?-total : (x y : val A) → ◯ (∃ λ p → x ≤? y ≡ ret p)
     h-cost : (x y : val A) → IsBounded (meta⁺ (Dec (x ≤ y))) (x ≤? y) (fromℕ 1)
 
   _≥_ : val A → val A → Set
@@ -55,6 +56,7 @@ NatComparable = record
   ; ≤-total = ≤-total
   ; ≤-antisym = ≤-antisym
   ; _≤?_ = λ x y → step (F (meta⁺ (Dec (x ≤ y)))) (fromℕ 1) (ret (x ≤? y))
+  ; ≤?-total = λ x y u → (x ≤? y) , (step/ext (F _) (ret _) (fromℕ 1) u)
   ; h-cost = λ _ _ → ≲-refl
   }
   where

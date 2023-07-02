@@ -45,6 +45,12 @@ insert x (y ∷ ys) (h ∷ hs) =
         , All-resp-↭ x∷ys↭x∷ys' (≰⇒≥ x≰y ∷ h) ∷ sorted-x∷ys'
         ))
 
+insert/total : ∀ x l h → IsValuable (insert x l h)
+insert/total x []       []       u = ↓ refl
+insert/total x (y ∷ ys) (h ∷ hs) u with ≤?-total x y u
+... | yes x≤y , ≡ret rewrite ≡ret = ↓ refl
+... | no x≰y , ≡ret rewrite ≡ret | Valuable.proof (insert/total x ys hs u) = ↓ refl
+
 insert/cost : cmp (Π A λ _ → Π (list A) λ _ → cost)
 insert/cost x l = step⋆ (length l)
 
@@ -61,24 +67,42 @@ insert/is-bounded x (y ∷ ys) (h ∷ hs) =
       ; (no ¬x≤y) → insert/is-bounded x ys hs
       }
 
+
 sort : cmp sorting
 sort []       = ret ([] , refl , [])
 sort (x ∷ xs) =
   bind (F (Σ++ (list A) (sorted-of (x ∷ xs)))) (sort xs) λ (xs' , xs↭xs' , sorted-xs') →
   bind (F (Σ++ (list A) (sorted-of (x ∷ xs)))) (insert x xs' sorted-xs') λ (x∷xs' , x∷xs↭x∷xs' , sorted-x∷xs') →
-  ret
-    ( x∷xs'
-    , ( let open PermutationReasoning in
-        begin
-          x ∷ xs
-        <⟨ xs↭xs' ⟩
-          x ∷ xs'
-        ↭⟨ x∷xs↭x∷xs' ⟩
-          x∷xs'
-        ∎
-      )
-    , sorted-x∷xs'
+  ret (x∷xs' , trans (prep x xs↭xs') x∷xs↭x∷xs' , sorted-x∷xs')
+
+sort/total : IsTotal sort
+sort/total []       u = ↓ refl
+sort/total (x ∷ xs) u = ↓
+  let (xs' , xs↭xs' , sorted-xs') = Valuable.value (sort/total xs u) in
+  let (x∷xs' , x∷xs↭x∷xs' , sorted-x∷xs') = Valuable.value (insert/total x xs' sorted-xs' u) in
+  let open ≡-Reasoning in
+  begin
+    sort (x ∷ xs)
+  ≡⟨
+    Eq.cong
+      (λ e →
+        bind (F (Σ++ (list A) (sorted-of (x ∷ xs)))) e λ (xs' , xs↭xs' , sorted-xs') →
+        bind (F (Σ++ (list A) (sorted-of (x ∷ xs)))) (insert x xs' sorted-xs') λ (x∷xs' , x∷xs↭x∷xs' , sorted-x∷xs') →
+        ret (x∷xs' , trans (prep x xs↭xs') x∷xs↭x∷xs' , sorted-x∷xs'))
+      (Valuable.proof (sort/total xs u))
+  ⟩
+    ( bind (F (Σ++ (list A) (sorted-of (x ∷ xs)))) (insert x xs' sorted-xs') λ (x∷xs' , x∷xs↭x∷xs' , sorted-x∷xs') →
+      ret (x∷xs' , _ , sorted-x∷xs')
     )
+  ≡⟨
+    Eq.cong
+      (λ e →
+        bind (F (Σ++ (list A) (sorted-of (x ∷ xs)))) e λ (x∷xs' , x∷xs↭x∷xs' , sorted-x∷xs') →
+        ret (x∷xs' , trans (prep x xs↭xs') x∷xs↭x∷xs' , sorted-x∷xs'))
+      (Valuable.proof (insert/total x xs' sorted-xs' u))
+  ⟩
+    ret _
+  ∎
 
 sort/cost : cmp (Π (list A) λ _ → cost)
 sort/cost l = step⋆ (length l ²)

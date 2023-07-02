@@ -39,5 +39,5 @@ module SortEquivalence (M : Comparable) where
   import Examples.Sorting.Sequential.InsertionSort M as ISort
   import Examples.Sorting.Sequential.MergeSort     M as MSort
 
-  isort≡msort : ◯ (ISort.sort ≡ MSort.sort)
-  isort≡msort = IsSort⇒≡ ISort.sort ISort.sort/correct MSort.sort MSort.sort/correct
+  isort≡msort : ◯ (ISort.sort algorithm ≡ MSort.sort algorithm)
+  isort≡msort = IsSort⇒≡ ISort.sort ISort.sort/total MSort.sort MSort.sort/total

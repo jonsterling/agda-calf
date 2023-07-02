@@ -94,21 +94,34 @@ sort-result l = Σ++ (list A) (sorted-of l)
 sorting : tp neg
 sorting = Π (list A) λ l → F (sort-result l)
 
-IsTotal : cmp sorting → Set
-IsTotal sort = (l : val (list A)) → ◯ (∃ λ r → sort l ≡ ret r)
+record Valuable {A : tp pos} (e : cmp (F A)) : Set where
+  constructor ↓_
+  field
+    {value} : val A
+    proof : e ≡ ret value
 
--- IsSort⇒≡ : ∀ sort₁ → IsSort sort₁ → ∀ sort₂ → IsSort sort₂ → ◯ (sort₁ ≡ sort₂)
--- IsSort⇒≡ sort₁ correct₁ sort₂ correct₂ u =
---   funext λ l →
---     let (l'₁ , ≡₁ , ↭₁ , sorted₁) = correct₁ l u in
---     let (l'₂ , ≡₂ , ↭₂ , sorted₂) = correct₂ l u in
---     begin
---       sort₁ l
---     ≡⟨ ≡₁ ⟩
---       ret l'₁
---     ≡⟨ Eq.cong ret (unique-sorted sorted₁ sorted₂ (trans (↭-sym ↭₁) ↭₂)) ⟩
---       ret l'₂
---     ≡˘⟨ ≡₂ ⟩
---       sort₂ l
---     ∎
---       where open ≡-Reasoning
+IsValuable : {A : tp pos} → cmp (F A) → Set
+IsValuable e = ◯ (Valuable e)
+
+IsTotal : cmp sorting → Set
+IsTotal sort = (l : val (list A)) → IsValuable (sort l)
+
+-- discard proofs, which may be different
+_algorithm : cmp sorting → cmp (Π (list A) λ _ → F (list A))
+_algorithm sort l = bind (F (list A)) (sort l) λ (l' , _) → ret l'
+
+IsSort⇒≡ : ∀ sort₁ → IsTotal sort₁ → ∀ sort₂ → IsTotal sort₂ → ◯ (sort₁ algorithm ≡ sort₂ algorithm)
+IsSort⇒≡ sort₁ total₁ sort₂ total₂ u =
+  funext λ l →
+    let (l₁' , l↭l₁' , sorted₁) = Valuable.value (total₁ l u) in
+    let (l₂' , l↭l₂' , sorted₂) = Valuable.value (total₂ l u) in
+    begin
+      (sort₁ algorithm) l
+    ≡⟨ Eq.cong (λ e → bind (F (list A)) e λ (l' , _) → ret l') (Valuable.proof (total₁ l u)) ⟩
+      ret l₁'
+    ≡⟨ Eq.cong ret (unique-sorted sorted₁ sorted₂ (trans (↭-sym l↭l₁') l↭l₂')) ⟩
+      ret l₂'
+    ≡˘⟨ Eq.cong (λ e → bind (F (list A)) e λ (l' , _) → ret l') (Valuable.proof (total₂ l u)) ⟩
+      (sort₂ algorithm) l
+    ∎
+      where open ≡-Reasoning

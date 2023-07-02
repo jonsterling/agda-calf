@@ -58,20 +58,77 @@ sort/clocked (suc k) l h =
   bind (F (sort-result l)) (sort/clocked k l₁ h₁) λ (l₁' , l₁↭l₁' , sorted-l₁') →
   bind (F (sort-result l)) (sort/clocked k l₂ h₂) λ (l₂' , l₂↭l₂' , sorted-l₂') →
   bind (F (sort-result l)) (merge (l₁' , l₂') (sorted-l₁' , sorted-l₂')) λ (l' , l₁'++l₂'↭l , l'-sorted) →
+  ret (l' , trans l↭l₁++l₂ (trans (++⁺-↭ l₁↭l₁' l₂↭l₂') l₁'++l₂'↭l) , l'-sorted)
+
+sort/clocked/total : ∀ k l h → IsValuable (sort/clocked k l h)
+sort/clocked/total zero    l h u = ↓ refl
+sort/clocked/total (suc k) l h u rewrite Valuable.proof (split/total l u) = ↓
   let
-    l↭l' =
-      let open PermutationReasoning in
-      begin
-        l
-      ↭⟨ l↭l₁++l₂ ⟩
-        l₁ ++ l₂
-      ↭⟨ ++⁺-↭ l₁↭l₁' l₂↭l₂' ⟩
-        l₁' ++ l₂'
-      ↭⟨ l₁'++l₂'↭l ⟩
-        l'
-      ∎
+    ((l₁ , l₂) , length₁ , length₂ , l↭l₁++l₂) = Valuable.value (split/total l u)
+    h₁ , h₂ =
+      let open ≤-Reasoning in
+      (begin
+        ⌈log₂ length l₁ ⌉
+      ≡⟨ Eq.cong ⌈log₂_⌉ length₁ ⟩
+        ⌈log₂ ⌊ length l /2⌋ ⌉
+      ≤⟨ log₂-mono (N.⌊n/2⌋≤⌈n/2⌉ (length l)) ⟩
+        ⌈log₂ ⌈ length l /2⌉ ⌉
+      ≤⟨ log₂-suc (length l) h ⟩
+        k
+      ∎) ,
+      (begin
+        ⌈log₂ length l₂ ⌉
+      ≡⟨ Eq.cong ⌈log₂_⌉ length₂ ⟩
+        ⌈log₂ ⌈ length l /2⌉ ⌉
+      ≤⟨ log₂-suc (length l) h ⟩
+        k
+      ∎)
+    (l₁' , l₁↭l₁' , sorted-l₁') = Valuable.value (sort/clocked/total k l₁ h₁ u)
+    (l₂' , l₂↭l₂' , sorted-l₂') = Valuable.value (sort/clocked/total k l₂ h₂ u)
   in
-  ret (l' , l↭l' , l'-sorted)
+  let open ≡-Reasoning in
+  begin
+    ( bind (F (sort-result l)) (sort/clocked k l₁ h₁) λ (l₁' , l₁↭l₁' , sorted-l₁') →
+      bind (F (sort-result l)) (sort/clocked k l₂ h₂) λ (l₂' , l₂↭l₂' , sorted-l₂') →
+      bind (F (sort-result l)) (merge (l₁' , l₂') (sorted-l₁' , sorted-l₂')) λ (l' , l₁'++l₂'↭l , l'-sorted) →
+      ret (l' , trans l↭l₁++l₂ (trans (++⁺-↭ l₁↭l₁' l₂↭l₂') l₁'++l₂'↭l) , l'-sorted)
+    )
+  ≡⟨
+    Eq.cong
+      (λ e →
+        bind (F (sort-result l)) e λ (l₁' , l₁↭l₁' , sorted-l₁') →
+        bind (F (sort-result l)) (sort/clocked k l₂ h₂) λ (l₂' , l₂↭l₂' , sorted-l₂') →
+        bind (F (sort-result l)) (merge (l₁' , l₂') (sorted-l₁' , sorted-l₂')) λ (l' , l₁'++l₂'↭l , l'-sorted) →
+        ret (l' , trans l↭l₁++l₂ (trans (++⁺-↭ l₁↭l₁' l₂↭l₂') l₁'++l₂'↭l) , l'-sorted)
+      )
+      (Valuable.proof (sort/clocked/total k l₁ h₁ u))
+  ⟩
+    ( bind (F (sort-result l)) (sort/clocked k l₂ h₂) λ (l₂' , l₂↭l₂' , sorted-l₂') →
+      bind (F (sort-result l)) (merge (l₁' , l₂') (sorted-l₁' , sorted-l₂')) λ (l' , l₁'++l₂'↭l , l'-sorted) →
+      ret (l' , trans l↭l₁++l₂ (trans (++⁺-↭ l₁↭l₁' l₂↭l₂') l₁'++l₂'↭l) , l'-sorted)
+    )
+  ≡⟨
+    Eq.cong
+      (λ e →
+        bind (F (sort-result l)) e λ (l₂' , l₂↭l₂' , sorted-l₂') →
+        bind (F (sort-result l)) (merge (l₁' , l₂') (sorted-l₁' , sorted-l₂')) λ (l' , l₁'++l₂'↭l , l'-sorted) →
+        ret (l' , trans l↭l₁++l₂ (trans (++⁺-↭ l₁↭l₁' l₂↭l₂') l₁'++l₂'↭l) , l'-sorted)
+      )
+      (Valuable.proof (sort/clocked/total k l₂ h₂ u))
+  ⟩
+    ( bind (F (sort-result l)) (merge (l₁' , l₂') (sorted-l₁' , sorted-l₂')) λ (l' , l₁'++l₂'↭l , l'-sorted) →
+      ret (l' , trans l↭l₁++l₂ (trans (++⁺-↭ l₁↭l₁' l₂↭l₂') l₁'++l₂'↭l) , l'-sorted)
+    )
+  ≡⟨
+    Eq.cong
+      (λ e →
+        bind (F (sort-result l)) e λ (l' , l₁'++l₂'↭l , l'-sorted) →
+        ret (l' , trans l↭l₁++l₂ (trans (++⁺-↭ l₁↭l₁' l₂↭l₂') l₁'++l₂'↭l) , l'-sorted)
+      )
+      (Valuable.proof (merge/total (l₁' , l₂') (sorted-l₁' , sorted-l₂') u))
+  ⟩
+    ret _
+  ∎
 
 sort/clocked/cost : cmp $ Π nat λ k → Π (list A) λ l → Π (meta⁺ (⌈log₂ length l ⌉ Nat.≤ k)) λ _ → F unit
 sort/clocked/cost k l _ = step⋆ (k * length l)
@@ -156,8 +213,12 @@ sort/clocked/is-bounded (suc k) l h =
     λ _ →
   ≲-refl
 
+
 sort : cmp (Π (list A) λ l → F (sort-result l))
 sort l = sort/clocked ⌈log₂ length l ⌉ l N.≤-refl
+
+sort/total : IsTotal sort
+sort/total l = sort/clocked/total ⌈log₂ length l ⌉ l N.≤-refl
 
 sort/cost : cmp (Π (list A) λ _ → cost)
 sort/cost l = sort/clocked/cost ⌈log₂ length l ⌉ l N.≤-refl

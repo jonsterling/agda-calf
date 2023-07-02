@@ -25,6 +25,22 @@ import Data.Nat.Properties as N
 
 open import Examples.Sorting.Sequential.MergeSort.Split M
 
+
+prep' : ∀ {x : val A} {xs} y {ys l} → x ∷ xs ++ ys ↭ l → x ∷ xs ++ y ∷ ys ↭ y ∷ l
+prep' {x} {xs} y {ys} {l} h =
+  let open PermutationReasoning in
+  begin
+    (x ∷ xs ++ y ∷ ys)
+  ↭⟨ ++-comm-↭ (x ∷ xs) (y ∷ ys) ⟩
+    (y ∷ ys ++ x ∷ xs)
+  ≡⟨⟩
+    y ∷ (ys ++ x ∷ xs)
+  <⟨ ++-comm-↭ ys (x ∷ xs) ⟩
+    y ∷ (x ∷ xs ++ ys)
+  <⟨ h ⟩
+    y ∷ l
+  ∎
+
 merge/type : val pair → tp pos
 merge/type (l₁ , l₂) = Σ++ (list A) λ l → sorted-of (l₁ ++ l₂) l
 
@@ -51,24 +67,20 @@ merge/clocked (suc k) (x ∷ xs , y ∷ ys) (h₁ ∷ sorted₁ , h₂ ∷ sorte
         (merge/clocked k (x ∷ xs , ys) (h₁ ∷ sorted₁ , sorted₂) h') λ (l , l↭x∷xs++ys , l-sorted) →
         ret (y ∷ l , prep' y l↭x∷xs++ys , All-resp-↭ l↭x∷xs++ys (++⁺-All (y≤x ∷ ≤-≤* y≤x h₁) h₂) ∷ l-sorted)
     )
-  where
-    prep' : ∀ {x : val A} {xs} y {ys l} → x ∷ xs ++ ys ↭ l → x ∷ xs ++ y ∷ ys ↭ y ∷ l
-    prep' {x} {xs} y {ys} {l} h =
-      let open PermutationReasoning in
-      begin
-        (x ∷ xs ++ y ∷ ys)
-      ↭⟨ ++-comm-↭ (x ∷ xs) (y ∷ ys) ⟩
-        (y ∷ ys ++ x ∷ xs)
-      ≡⟨⟩
-        y ∷ (ys ++ x ∷ xs)
-      <⟨ ++-comm-↭ ys (x ∷ xs) ⟩
-        y ∷ (x ∷ xs ++ ys)
-      <⟨ h ⟩
-        y ∷ l
-      ∎
 
--- -- merge/clocked/correct : ∀ k l₁ l₂ →
--- --   ◯ (∃ λ l → merge/clocked k (l₁ , l₂) ≡ ret l × (length l₁ + length l₂ Nat.≤ k → Sorted l₁ → Sorted l₂ → SortedOf (l₁ ++ l₂) l))
+merge/clocked/total : ∀ k p s h → IsValuable (merge/clocked k p s h)
+merge/clocked/total zero    ([]     , []    ) (sorted₁      , sorted₂     ) h u = ↓ refl
+merge/clocked/total (suc k) ([]     , l₂    ) ([]           , sorted₂     ) h u = ↓ refl
+merge/clocked/total (suc k) (x ∷ xs , []    ) (sorted₁      , sorted₂     ) h u = ↓ refl
+merge/clocked/total (suc k) (x ∷ xs , y ∷ ys) (h₁ ∷ sorted₁ , h₂ ∷ sorted₂) h u with ≤?-total x y u
+... | yes x≤y , ≡ret
+  rewrite ≡ret
+    | Valuable.proof (merge/clocked/total k (xs , y ∷ ys) (sorted₁ , h₂ ∷ sorted₂) (N.suc-injective h) u)
+  = ↓ refl
+... | no x≰y , ≡ret
+  rewrite ≡ret
+    | Valuable.proof (merge/clocked/total k (x ∷ xs , ys) (h₁ ∷ sorted₁ , sorted₂) (Eq.trans (Eq.sym (N.+-suc (length xs) (length ys))) (N.suc-injective h)) u)
+  = ↓ refl
 
 merge/clocked/cost : cmp $
   Π nat λ k → Π pair λ (l₁ , l₂) →
@@ -92,17 +104,15 @@ merge/clocked/is-bounded (suc k) (x ∷ xs , y ∷ ys) (h₁ ∷ sorted₁ , h�
       ; (no ¬p) → bind-mono-≲ (merge/clocked/is-bounded k (x ∷ xs , ys) _ _) (λ _ → ≲-refl)
       }
 
+
 merge : cmp $
   Π pair λ (l₁ , l₂) →
   Π (prod⁺ (sorted l₁) (sorted l₂)) λ _ →
   F (merge/type (l₁ , l₂))
 merge (l₁ , l₂) s = merge/clocked (length l₁ + length l₂) (l₁ , l₂) s refl
 
--- -- merge/correct : ∀ l₁ l₂ →
--- --   ◯ (∃ λ l → merge (l₁ , l₂) ≡ ret l × (Sorted l₁ → Sorted l₂ → SortedOf (l₁ ++ l₂) l))
--- -- merge/correct l₁ l₂ u =
--- --   let (l , ≡ , h-sorted) = merge/clocked/correct (length l₁ + length l₂) l₁ l₂ u in
--- --   l , ≡ , h-sorted N.≤-refl
+merge/total : ∀ p s → IsValuable (merge p s)
+merge/total (l₁ , l₂) s = merge/clocked/total (length l₁ + length l₂) (l₁ , l₂) s refl
 
 merge/cost : cmp $
   Π pair λ (l₁ , l₂) →
