@@ -76,7 +76,7 @@ module Simple where
       quit : Simple.quit s₁ ≡ Simple.quit s₂
       next : Simple.next s₁ ≈ Simple.next s₂
 
-  ≈-cong : (c : cmp cost) {x y : Simple} → x ≈ y → step simple c x ≈ step simple c y
+  ≈-cong : (c : ℂ) {x y : Simple} → x ≈ y → step simple c x ≈ step simple c y
   _≈_.quit (≈-cong c h) = Eq.cong (step (F unit) c) (_≈_.quit h)
   _≈_.next (≈-cong c h) = ≈-cong c (_≈_.next h)
 
@@ -372,7 +372,7 @@ module DynamicArray where
           (U (meta (proj₁ (DynamicArray.get d₁ i) ≡ proj₁ (DynamicArray.get d₂ i)))) ⋉
           (meta (proj₂ (DynamicArray.get d₁ i) ≈ proj₂ (DynamicArray.get d₂ i)))
 
-  ≈-cong : (c : cmp cost) {x y : DynamicArray A} → x ≈ y → step (dynamic-array A) c x ≈ step (dynamic-array A) c y
+  ≈-cong : (c : ℂ) {x y : DynamicArray A} → x ≈ y → step (dynamic-array A) c x ≈ step (dynamic-array A) c y
   _≈_.quit (≈-cong c h) = Eq.cong (step (F unit) c) (_≈_.quit h)
   _≈_.append (≈-cong c h) a = ≈-cong c (_≈_.append h a)
   _≈_.get (≈-cong c h) i = proj₁ (_≈_.get h i) , ≈-cong c (proj₂ (_≈_.get h i))
