@@ -7,7 +7,7 @@ import Examples.Id
 import Examples.Sorting.Sequential
 
 -- Parallel
--- import Examples.TreeSum
+import Examples.TreeSum
 -- import Examples.Exp2
 -- import Examples.Sorting.Parallel
 
