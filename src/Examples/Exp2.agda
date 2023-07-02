@@ -123,7 +123,7 @@ module Slow where
   exp₂≤exp₂/cost/closed n = bound/relax (exp₂/cost≤exp₂/cost/closed n) (exp₂≤exp₂/cost n)
 
   exp₂/asymptotic : given nat measured-via (λ n → n) , exp₂ ∈𝓞(λ n → 2 ^ n , n)
-  exp₂/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ n _ → bound/relax (λ u → N.pred[n]≤n , N.≤-refl) (exp₂≤exp₂/cost/closed n)
+  exp₂/asymptotic = f[n]≤g[n]via λ n → bound/relax (λ u → N.pred[n]≤n , N.≤-refl) (exp₂≤exp₂/cost/closed n)
 
 module Fast where
 
