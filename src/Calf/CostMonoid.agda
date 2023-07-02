@@ -36,7 +36,7 @@ module _ {ℂ : Set} where
     ∙-monoʳ-≤ : ∀ n → (n ∙_) Preserves _≤_ ⟶ _≤_
     ∙-monoʳ-≤ n m≤o = ∙-mono-≤ (≤-refl {n}) m≤o
 
-  record IsCostMonoid (_+_ : Op₂ ℂ) (zero : ℂ) (_≤_ : Relation) : Set where
+  record IsCostMonoid (zero : ℂ) (_+_ : Op₂ ℂ) (_≤_ : Relation) : Set where
     field
       isMonoid       : IsMonoid _+_ zero
       isPreorder     : IsPreorder _≤_
@@ -61,10 +61,10 @@ module _ {ℂ : Set} where
         ∙-monoʳ-≤ to +-monoʳ-≤
       )
 
-  record IsParCostMonoid (_⊕_ : Op₂ ℂ) (𝟘 : ℂ) (_⊗_ : Op₂ ℂ) (𝟙 : ℂ) (_≤_ : Relation) : Set where
+  record IsParCostMonoid (𝟘 : ℂ) (_⊕_ : Op₂ ℂ) (_⊗_ : Op₂ ℂ) (_≤_ : Relation) : Set where
     field
       isMonoid            : IsMonoid _⊕_ 𝟘
-      isCommutativeMonoid : IsCommutativeMonoid _⊗_ 𝟙
+      isCommutativeMonoid : IsCommutativeMonoid _⊗_ 𝟘
       isPreorder          : IsPreorder _≤_
       isMonotone-⊕        : IsMonotone _⊕_ _≤_ isPreorder
       isMonotone-⊗        : IsMonotone _⊗_ _≤_ isPreorder
@@ -109,10 +109,10 @@ record CostMonoid : Set₁ where
 
   field
     ℂ            : Set
-    _+_          : Op₂ ℂ
     zero         : ℂ
+    _+_          : Op₂ ℂ
     _≤_          : Relation
-    isCostMonoid : IsCostMonoid _+_ zero _≤_
+    isCostMonoid : IsCostMonoid zero _+_ _≤_
 
   open IsCostMonoid isCostMonoid public
 
@@ -133,12 +133,11 @@ record ParCostMonoid : Set₁ where
 
   field
     ℂ               : Set
-    _⊕_             : Op₂ ℂ
     𝟘               : ℂ
+    _⊕_             : Op₂ ℂ
     _⊗_             : Op₂ ℂ
-    𝟙               : ℂ
     _≤_             : Relation
-    isParCostMonoid : IsParCostMonoid _⊕_ 𝟘 _⊗_ 𝟙 _≤_
+    isParCostMonoid : IsParCostMonoid 𝟘 _⊕_ _⊗_ _≤_
 
   open IsParCostMonoid isParCostMonoid public
 
