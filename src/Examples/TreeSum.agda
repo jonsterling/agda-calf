@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting #-}
-
 module Examples.TreeSum where
 
 open import Calf.CostMonoid

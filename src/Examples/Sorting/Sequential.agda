@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting #-}
-
 module Examples.Sorting.Sequential where
 
 open import Examples.Sorting.Sequential.Comparable

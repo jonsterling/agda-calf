@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting #-}
-
 open import Calf.CostMonoid
 open import Data.Nat using (ℕ)
 

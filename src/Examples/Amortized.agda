@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting --guardedness #-}
-
 module Examples.Amortized where
 
 open import Calf.CostMonoid
@@ -38,6 +36,11 @@ variable
 _⋉_ : tp pos → tp neg → tp neg
 A ⋉ X = Σ+- A (const X)
 
+infix 3 _⇒_ _⇔_
+_⇒_ _⇔_ : tp neg → tp neg → tp neg
+X ⇒ Y = Π (U X) λ _ → Y
+X ⇔ Y = prod⁻ (X ⇒ Y) (Y ⇒ X)
+
 
 module Simple where
   postulate
@@ -45,19 +48,19 @@ module Simple where
   record Simple : Set where
     coinductive
     field
-      here : cmp (F unit)
+      quit : cmp (F unit)
       next : cmp simple
   postulate
     simple/decode : val (U simple) ≡ Simple
     {-# REWRITE simple/decode #-}
 
-    here/step : ∀ {c e} → Simple.here (step simple c e) ≡ step (F unit) c (Simple.here e)
+    quit/step : ∀ {c e} → Simple.quit (step simple c e) ≡ step (F unit) c (Simple.quit e)
     next/step : ∀ {c e} → Simple.next (step simple c e) ≡ step simple   c (Simple.next e)
-    {-# REWRITE here/step next/step #-}
+    {-# REWRITE quit/step next/step #-}
 
   {-# TERMINATING #-}
   every : cmp simple
-  Simple.here every = ret triv
+  Simple.quit every = ret triv
   Simple.next every = step simple 1 every
 
   Φ : val bool → ℂ
@@ -66,25 +69,48 @@ module Simple where
 
   {-# TERMINATING #-}
   alternating : cmp (Π bool λ _ → simple)
-  Simple.here (alternating b) = step (F unit) (Φ b) (ret triv)
+  Simple.quit (alternating b) = step (F unit) (Φ b) (ret triv)
   Simple.next (alternating false) = step simple 2 (alternating true)
   Simple.next (alternating true ) = alternating false
 
   record _≈_ (s₁ s₂ : cmp simple) : Set where
     coinductive
     field
-      here : Simple.here s₁ ≡ Simple.here s₂
+      quit : Simple.quit s₁ ≡ Simple.quit s₂
       next : Simple.next s₁ ≈ Simple.next s₂
 
   ≈-cong : (c : cmp cost) {x y : Simple} → x ≈ y → step simple c x ≈ step simple c y
-  _≈_.here (≈-cong c h) = Eq.cong (step (F unit) c) (_≈_.here h)
+  _≈_.quit (≈-cong c h) = Eq.cong (step (F unit) c) (_≈_.quit h)
   _≈_.next (≈-cong c h) = ≈-cong c (_≈_.next h)
 
   {-# TERMINATING #-}
   every≈alternating : ∀ b → alternating b ≈ step simple (Φ b) every
-  _≈_.here (every≈alternating _) = refl
+  _≈_.quit (every≈alternating _) = refl
   _≈_.next (every≈alternating false) = ≈-cong 2 (every≈alternating true)
   _≈_.next (every≈alternating true ) = every≈alternating false
+
+  simple-program : tp pos
+  simple-program = nat
+
+  {-# TERMINATING #-}
+  ψ : cmp (Π simple-program λ _ → Π (U simple) λ _ → F unit)
+  ψ zero    s = Simple.quit s
+  ψ (suc n) s = ψ n (Simple.next s)
+
+  _≈'_ : (q₁ q₂ : cmp simple) → Set
+  s₁ ≈' s₂ = cmp (Π simple-program λ p → meta (ψ p s₁ ≡ ψ p s₂))
+
+  {-# TERMINATING #-}
+  classic-amortization : {s₁ s₂ : cmp simple} → cmp (meta (s₁ ≈ s₂) ⇔ meta (s₁ ≈' s₂))
+  classic-amortization = forward , backward
+    where
+      forward : {s₁ s₂ : cmp simple} → s₁ ≈ s₂ → s₁ ≈' s₂
+      forward h zero    = _≈_.quit h
+      forward h (suc n) = forward (_≈_.next h) n
+
+      backward : {s₁ s₂ : cmp simple} → s₁ ≈' s₂ → s₁ ≈ s₂
+      _≈_.quit (backward classic) = classic zero
+      _≈_.next (backward classic) = backward (λ n → classic (suc n))
 
 
 module Queue where
@@ -274,11 +300,6 @@ module Queue where
 
   _≈'_ : (q₁ q₂ : cmp (queue X)) → Set
   q₁ ≈' q₂ = (A : tp pos) → cmp (Π (queue-program A) λ p → meta (ψ p q₁ ≡ ψ p q₂))
-
-  infix 3 _⇒_ _⇔_
-  _⇒_ _⇔_ : tp neg → tp neg → tp neg
-  X ⇒ Y = Π (U X) λ _ → Y
-  X ⇔ Y = prod⁻ (X ⇒ Y) (Y ⇒ X)
 
   {-# TERMINATING #-}
   classic-amortization : {q₁ q₂ : cmp (queue X)} → cmp (meta (q₁ ≈ q₂) ⇔ meta (q₁ ≈' q₂))

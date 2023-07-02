@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --without-K --rewriting #-}
+{-# OPTIONS --without-K #-}
 
 -- Definition of a cost monoid.
 
@@ -49,7 +49,6 @@ module _ {ℂ : Set} where
   record IsCostMonoid (_+_ : Op₂ ℂ) (zero : ℂ) (_≤_ : Relation) : Set where
     field
       isMonoid       : IsMonoid _+_ zero
-      isCancellative : IsCancellative _+_
       isPreorder     : IsPreorder _≤_
       isMonotone     : IsMonotone _+_ _≤_ isPreorder
 
@@ -59,13 +58,6 @@ module _ {ℂ : Set} where
         identityˡ to +-identityˡ;
         identityʳ to +-identityʳ;
         assoc to +-assoc
-      )
-
-    open IsCancellative isCancellative public
-      renaming (
-        ∙-cancel-≡ to +-cancel-≡;
-        ∙-cancelˡ-≡ to +-cancelˡ-≡;
-        ∙-cancelʳ-≡ to +-cancelʳ-≡
       )
 
     open IsPreorder isPreorder public
@@ -83,7 +75,6 @@ module _ {ℂ : Set} where
     field
       isMonoid            : IsMonoid _⊕_ 𝟘
       isCommutativeMonoid : IsCommutativeMonoid _⊗_ 𝟙
-      isCancellative      : IsCancellative _⊕_
       isPreorder          : IsPreorder _≤_
       isMonotone-⊕        : IsMonotone _⊕_ _≤_ isPreorder
       isMonotone-⊗        : IsMonotone _⊗_ _≤_ isPreorder
@@ -103,13 +94,6 @@ module _ {ℂ : Set} where
         identityʳ to ⊗-identityʳ;
         assoc to ⊗-assoc;
         comm to ⊗-comm
-      )
-
-    open IsCancellative isCancellative public
-      renaming (
-        ∙-cancel-≡ to ⊕-cancel-≡;
-        ∙-cancelˡ-≡ to ⊕-cancelˡ-≡;
-        ∙-cancelʳ-≡ to ⊕-cancelʳ-≡
       )
 
     open IsPreorder isPreorder public
@@ -177,7 +161,6 @@ record ParCostMonoid : Set₁ where
     ; isCostMonoid = record
       { isMonoid = isMonoid
       ; isPreorder = isPreorder
-      ; isCancellative = isCancellative
       ; isMonotone = isMonotone-⊕
       }
     }
