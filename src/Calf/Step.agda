@@ -14,16 +14,13 @@ open import Calf.PhaseDistinction
 open import Relation.Binary.PropositionalEquality
 open import Calf.Types.Product
 
-cost : tp neg
-cost = meta ℂ
-
 postulate
-  step : ∀ (B : tp neg) → cmp cost → cmp B → cmp B
-  step/id : ∀ {B : tp neg} {e : cmp B} →
-    step B zero e ≡ e
+  step : (X : tp neg) → ℂ → cmp X → cmp X
+  step/id : ∀ {X : tp neg} {e : cmp X} →
+    step X zero e ≡ e
   {-# REWRITE step/id #-}
-  step/concat : ∀ {B e p q} →
-    step B p (step B q e) ≡ step B (p + q) e
+  step/concat : ∀ {X e p q} →
+    step X p (step X q e) ≡ step X (p + q) e
   {-# REWRITE step/concat #-}
 
   Π/step : ∀ {A} {X : val A → tp neg} {f : cmp (Π A X)} {n} → step (Π A X) n f ≡ λ x → step (X x) n (f x)
@@ -46,10 +43,16 @@ postulate
   step/ext : ∀ X → (e : cmp X) → (c : ℂ) → ◯ (step X c e ≡ e)
   -- sadly the above cannot be made an Agda rewrite rule
 
-  extension/step : ∀ {X spec c e} →
-    step [ X ∣ ext ↪ spec ] c e ≡
-    record
-      { out = step X c (out e)
-      ; law = λ u → trans (step/ext X (out e) c u) (law e u)
-      }
-  {-# REWRITE extension/step #-}
+
+postulate
+  step-monoˡ-≲ : {X : tp neg} {c₁ c₂ : ℂ} (e : cmp X) →
+    c₁ ≤ c₂ → _≲_ {X} (step X c₁ e) (step X c₂ e)
+
+step-mono-≲ : {X : tp neg} {c₁ c₂ : ℂ} {e₁ e₂ : cmp X} →
+  c₁ ≤ c₂ → _≲_ {X} e₁ e₂ → _≲_ {X} (step X c₁ e₁) (step X c₂ e₂)
+step-mono-≲ {X} {c₂ = c₂} {e₁ = e₁} c₁≤c₂ e₁≲e₂ =
+  ≲-trans (step-monoˡ-≲ e₁ c₁≤c₂) (≲-mono (step X c₂) e₁≲e₂)
+
+step-monoʳ-≲ : {X : tp neg} (c : ℂ) {e₁ e₂ : cmp X} →
+  _≲_ {X} e₁ e₂ → _≲_ {X} (step X c e₁) (step X c e₂)
+step-monoʳ-≲ c e₁≲e₂ = step-mono-≲ (≤-refl {x = c}) e₁≲e₂

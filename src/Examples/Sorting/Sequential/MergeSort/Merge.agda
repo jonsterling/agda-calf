@@ -6,10 +6,13 @@ open Comparable M
 open import Examples.Sorting.Sequential.Core M
 
 open import Calf costMonoid
+open import Calf.Types.Unit
+open import Calf.Types.Product
 open import Calf.Types.Bool
 open import Calf.Types.Nat
 open import Calf.Types.List
 open import Calf.Types.Eq
+open import Calf.Types.BoundedG costMonoid
 open import Calf.Types.Bounded costMonoid
 
 open import Relation.Nullary
@@ -22,163 +25,100 @@ import Data.Nat.Properties as N
 
 open import Examples.Sorting.Sequential.MergeSort.Split M
 
-merge/clocked : cmp (Π nat λ _ → Π pair λ _ → F (list A))
-merge/clocked zero    (l₁     , l₂    ) = ret (l₁ ++ l₂)
-merge/clocked (suc k) ([]     , l₂    ) = ret l₂
-merge/clocked (suc k) (x ∷ xs , []    ) = ret (x ∷ xs)
-merge/clocked (suc k) (x ∷ xs , y ∷ ys) =
-  bind (F (list A)) (x ≤ᵇ y) λ b →
-    if b
-      then (bind (F (list A)) (merge/clocked k (xs , y ∷ ys)) (ret ∘ (x ∷_)))
-      else (bind (F (list A)) (merge/clocked k (x ∷ xs , ys)) (ret ∘ (y ∷_)))
 
-merge/clocked/correct : ∀ k l₁ l₂ →
-  ◯ (∃ λ l → merge/clocked k (l₁ , l₂) ≡ ret l × (length l₁ + length l₂ Nat.≤ k → Sorted l₁ → Sorted l₂ → SortedOf (l₁ ++ l₂) l))
-merge/clocked/correct zero    l₁       l₂       u = l₁ ++ l₂ , refl , λ { h [] [] → refl , [] }
-merge/clocked/correct (suc k) []       l₂       u = l₂ , refl , λ { h [] sorted₂ → refl , sorted₂ }
-merge/clocked/correct (suc k) (x ∷ xs) []       u = x ∷ xs , refl , λ { h sorted₁ [] → ++-identityʳ (x ∷ xs) , sorted₁ }
-merge/clocked/correct (suc k) (x ∷ xs) (y ∷ ys) u with h-cost x y
-merge/clocked/correct (suc k) (x ∷ xs) (y ∷ ys) u | ⇓ b withCost q [ _ , h-eq ] rewrite eq/ref h-eq
-  with ≤ᵇ-reflects-≤ u (Eq.trans (eq/ref h-eq) (step/ext (F bool) (ret b) q u))
-merge/clocked/correct (suc k) (x ∷ xs) (y ∷ ys) u | ⇓ false withCost q [ _ , h-eq ] | ofⁿ ¬p =
-  let (l , ≡ , h-sorted) = merge/clocked/correct k (x ∷ xs) ys u in
-  y ∷ l , (
-    let open ≡-Reasoning in
-    begin
-      step (F (list A)) q (bind (F (list A)) (merge/clocked k (x ∷ xs , ys)) (ret ∘ (y ∷_)))
-    ≡⟨ step/ext (F (list A)) (bind (F (list A)) (merge/clocked k (x ∷ xs , ys)) (ret ∘ (y ∷_))) q u ⟩
-      bind (F (list A)) (merge/clocked k (x ∷ xs , ys)) (ret ∘ (y ∷_))
-    ≡⟨ Eq.cong (λ e → bind (F (list A)) e (ret ∘ (y ∷_))) ≡ ⟩
-      ret (y ∷ l)
-    ∎
-  ) , (
-    λ { (s≤s h) (h₁ ∷ sorted₁) (h₂ ∷ sorted₂) →
-      let h = Eq.subst (Nat._≤ k) (N.+-suc (length xs) (length ys)) h in
-      let (↭ , sorted) = h-sorted h (h₁ ∷ sorted₁) sorted₂ in
-      (
-        let open PermutationReasoning in
-        begin
-          (x ∷ xs ++ y ∷ ys)
-        ↭⟨ ++-comm-↭ (x ∷ xs) (y ∷ ys) ⟩
-          (y ∷ ys ++ x ∷ xs)
-        ≡⟨⟩
-          y ∷ (ys ++ x ∷ xs)
-        <⟨ ++-comm-↭ ys (x ∷ xs) ⟩
-          y ∷ (x ∷ xs ++ ys)
-        <⟨ ↭ ⟩
-          y ∷ l
-        ∎
-      ) , (
-        let p = ≰⇒≥ ¬p in
-        All-resp-↭ (↭) (++⁺-All (p ∷ ≤-≤* p h₁) h₂) ∷ sorted
-      )
-    }
-  )
-merge/clocked/correct (suc k) (x ∷ xs) (y ∷ ys) u | ⇓ true withCost q [ _ , h-eq ] | ofʸ p =
-  let (l , ≡ , h-sorted) = merge/clocked/correct k xs (y ∷ ys) u in
-  x ∷ l , (
-    let open ≡-Reasoning in
-    begin
-      step (F (list A)) q (bind (F (list A)) (merge/clocked k (xs , y ∷ ys)) (ret ∘ (x ∷_)))
-    ≡⟨ step/ext (F (list A)) (bind (F (list A)) (merge/clocked k (xs , y ∷ ys)) (ret ∘ (x ∷_))) q u ⟩
-      bind (F (list A)) (merge/clocked k (xs , y ∷ ys)) (ret ∘ (x ∷_))
-    ≡⟨ Eq.cong (λ e → bind (F (list A)) e (ret ∘ (x ∷_))) ≡ ⟩
-      ret (x ∷ l)
-    ∎
-  ) , (
-    λ { (s≤s h) (h₁ ∷ sorted₁) (h₂ ∷ sorted₂) →
-      let (↭ , sorted) = h-sorted h sorted₁ (h₂ ∷ sorted₂)  in
-      prep x ↭ , All-resp-↭ (↭) (++⁺-All h₁ (p ∷ ≤-≤* p h₂)) ∷ sorted
-    }
-  )
+prep' : ∀ {x : val A} {xs} y {ys l} → x ∷ xs ++ ys ↭ l → x ∷ xs ++ y ∷ ys ↭ y ∷ l
+prep' {x} {xs} y {ys} {l} h =
+  let open PermutationReasoning in
+  begin
+    (x ∷ xs ++ y ∷ ys)
+  ↭⟨ ++-comm-↭ (x ∷ xs) (y ∷ ys) ⟩
+    (y ∷ ys ++ x ∷ xs)
+  ≡⟨⟩
+    y ∷ (ys ++ x ∷ xs)
+  <⟨ ++-comm-↭ ys (x ∷ xs) ⟩
+    y ∷ (x ∷ xs ++ ys)
+  <⟨ h ⟩
+    y ∷ l
+  ∎
 
-merge/clocked/cost : cmp (Π nat λ _ → Π pair λ _ → cost)
-merge/clocked/cost zero    (l₁     , l₂    ) = zero
-merge/clocked/cost (suc k) ([]     , l₂    ) = zero
-merge/clocked/cost (suc k) (x ∷ xs , []    ) = zero
-merge/clocked/cost (suc k) (x ∷ xs , y ∷ ys) =
-  bind cost (x ≤ᵇ y) λ b →
-    1 + (
-      if b
-        then (bind cost (merge/clocked k (xs , y ∷ ys)) (λ l → merge/clocked/cost k (xs , y ∷ ys) + 0))
-        else (bind cost (merge/clocked k (x ∷ xs , ys)) (λ l → merge/clocked/cost k (x ∷ xs , ys) + 0))
+merge/type : val pair → tp pos
+merge/type (l₁ , l₂) = Σ++ (list A) λ l → sorted-of (l₁ ++ l₂) l
+
+merge/clocked : cmp $
+  Π nat λ k → Π pair λ (l₁ , l₂) →
+  Π (prod⁺ (sorted l₁) (sorted l₂)) λ _ →
+  Π (meta⁺ (length l₁ + length l₂ ≡ k)) λ _ →
+  F (merge/type (l₁ , l₂))
+merge/clocked zero    ([]     , []    ) (sorted₁      , sorted₂     ) h = ret ([] , refl , [])
+merge/clocked (suc k) ([]     , l₂    ) ([]           , sorted₂     ) h = ret (l₂ , refl , sorted₂)
+merge/clocked (suc k) (x ∷ xs , []    ) (sorted₁      , sorted₂     ) h = ret (x ∷ xs , ++-identityʳ (x ∷ xs) , sorted₁)
+merge/clocked (suc k) (x ∷ xs , y ∷ ys) (h₁ ∷ sorted₁ , h₂ ∷ sorted₂) h =
+  bind (F (merge/type (x ∷ xs , y ∷ ys))) (x ≤? y) $ case-≤
+    (λ x≤y →
+      let h' = N.suc-injective h in
+      bind (F (merge/type (x ∷ xs , y ∷ ys)))
+        (merge/clocked k (xs , y ∷ ys) (sorted₁ , h₂ ∷ sorted₂) h') λ (l , l↭xs++y∷ys , l-sorted) →
+        ret (x ∷ l , prep x l↭xs++y∷ys , All-resp-↭ l↭xs++y∷ys (++⁺-All h₁ (x≤y ∷ ≤-≤* x≤y h₂)) ∷ l-sorted)
+    )
+    (λ x≰y →
+      let y≤x = ≰⇒≥ x≰y in
+      let h' = Eq.trans (Eq.sym (N.+-suc (length xs) (length ys))) (N.suc-injective h) in
+      bind (F (merge/type (x ∷ xs , y ∷ ys)))
+        (merge/clocked k (x ∷ xs , ys) (h₁ ∷ sorted₁ , sorted₂) h') λ (l , l↭x∷xs++ys , l-sorted) →
+        ret (y ∷ l , prep' y l↭x∷xs++ys , All-resp-↭ l↭x∷xs++ys (++⁺-All (y≤x ∷ ≤-≤* y≤x h₁) h₂) ∷ l-sorted)
     )
 
-merge/clocked/cost/closed : cmp (Π nat λ _ → Π pair λ _ → cost)
-merge/clocked/cost/closed k _ = k
+merge/clocked/total : ∀ k p s h → IsValuable (merge/clocked k p s h)
+merge/clocked/total zero    ([]     , []    ) (sorted₁      , sorted₂     ) h u = ↓ refl
+merge/clocked/total (suc k) ([]     , l₂    ) ([]           , sorted₂     ) h u = ↓ refl
+merge/clocked/total (suc k) (x ∷ xs , []    ) (sorted₁      , sorted₂     ) h u = ↓ refl
+merge/clocked/total (suc k) (x ∷ xs , y ∷ ys) (h₁ ∷ sorted₁ , h₂ ∷ sorted₂) h u with ≤?-total x y u
+... | yes x≤y , ≡ret
+  rewrite ≡ret
+    | Valuable.proof (merge/clocked/total k (xs , y ∷ ys) (sorted₁ , h₂ ∷ sorted₂) (N.suc-injective h) u)
+  = ↓ refl
+... | no x≰y , ≡ret
+  rewrite ≡ret
+    | Valuable.proof (merge/clocked/total k (x ∷ xs , ys) (h₁ ∷ sorted₁ , sorted₂) (Eq.trans (Eq.sym (N.+-suc (length xs) (length ys))) (N.suc-injective h)) u)
+  = ↓ refl
 
-merge/clocked/cost≤merge/clocked/cost/closed : ∀ k p → ◯ (merge/clocked/cost k p Nat.≤ merge/clocked/cost/closed k p)
-merge/clocked/cost≤merge/clocked/cost/closed zero    (l₁     , l₂    ) u = N.≤-refl
-merge/clocked/cost≤merge/clocked/cost/closed (suc k) ([]     , l₂    ) u = z≤n
-merge/clocked/cost≤merge/clocked/cost/closed (suc k) (x ∷ xs , []    ) u = z≤n
-merge/clocked/cost≤merge/clocked/cost/closed (suc k) (x ∷ xs , y ∷ ys) u with h-cost x y
-... | ⇓ false withCost q [ _ , h-eq ] rewrite eq/ref h-eq =
-  let (l , ≡ , _) = merge/clocked/correct k (x ∷ xs) ys u in
-  begin
-    step cost q (1 + bind cost (merge/clocked k (x ∷ xs , ys)) (λ l → merge/clocked/cost k (x ∷ xs , ys) + 0))
-  ≡⟨ step/ext cost _ q u ⟩
-    1 + bind cost (merge/clocked k (x ∷ xs , ys)) (λ l → merge/clocked/cost k (x ∷ xs , ys) + 0)
-  ≡⟨⟩
-    suc (bind cost (merge/clocked k (x ∷ xs , ys)) (λ l → merge/clocked/cost k (x ∷ xs , ys) + 0))
-  ≡⟨ Eq.cong (λ e → suc (bind cost e λ l → merge/clocked/cost k (x ∷ xs , ys) + 0)) (≡) ⟩
-    suc (merge/clocked/cost k (x ∷ xs , ys) + 0)
-  ≡⟨ Eq.cong suc (N.+-identityʳ _) ⟩
-    suc (merge/clocked/cost k (x ∷ xs , ys))
-  ≤⟨ s≤s (merge/clocked/cost≤merge/clocked/cost/closed k (x ∷ xs , ys) u) ⟩
-    suc (merge/clocked/cost/closed k (x ∷ xs , ys))
-  ≡⟨⟩
-    suc k
-  ∎
-    where open ≤-Reasoning
-... | ⇓ true withCost q [ _ , h-eq ] rewrite eq/ref h-eq =
-  let (l , ≡ , _) = merge/clocked/correct k xs (y ∷ ys) u in
-  begin
-    step cost q (1 + bind cost (merge/clocked k (xs , y ∷ ys)) (λ l → merge/clocked/cost k (xs , y ∷ ys) + 0))
-  ≡⟨ step/ext cost _ q u ⟩
-    1 + bind cost (merge/clocked k (xs , y ∷ ys)) (λ l → merge/clocked/cost k (xs , y ∷ ys) + 0)
-  ≡⟨⟩
-    suc (bind cost (merge/clocked k (xs , y ∷ ys)) (λ l → merge/clocked/cost k (xs , y ∷ ys) + 0))
-  ≡⟨ Eq.cong (λ e → suc (bind cost e λ l → merge/clocked/cost k (xs , y ∷ ys) + 0)) (≡) ⟩
-    suc (merge/clocked/cost k (xs , y ∷ ys) + 0)
-  ≡⟨ Eq.cong suc (N.+-identityʳ _) ⟩
-    suc (merge/clocked/cost k (xs , y ∷ ys))
-  ≤⟨ s≤s (merge/clocked/cost≤merge/clocked/cost/closed k (xs , y ∷ ys) u) ⟩
-    suc (merge/clocked/cost/closed k (xs , y ∷ ys))
-  ≡⟨⟩
-    suc k
-  ∎
-    where open ≤-Reasoning
+merge/clocked/cost : cmp $
+  Π nat λ k → Π pair λ (l₁ , l₂) →
+  Π (prod⁺ (sorted l₁) (sorted l₂)) λ _ →
+  Π (meta⁺ (length l₁ + length l₂ ≡ k)) λ _ →
+  F unit
+merge/clocked/cost k _ _ _ = step⋆ k
 
-merge/clocked≤merge/clocked/cost : ∀ k p → IsBounded (list A) (merge/clocked k p) (merge/clocked/cost k p)
-merge/clocked≤merge/clocked/cost zero    (l₁     , l₂    ) = bound/ret
-merge/clocked≤merge/clocked/cost (suc k) ([]     , l₂    ) = bound/ret
-merge/clocked≤merge/clocked/cost (suc k) (x ∷ xs , []    ) = bound/ret
-merge/clocked≤merge/clocked/cost (suc k) (x ∷ xs , y ∷ ys) =
-  bound/bind 1 _ (h-cost x y) λ b →
-    bound/bool {p = λ b → if_then_else_ b _ _} b
-      (bound/bind (merge/clocked/cost k (x ∷ xs , ys)) _ (merge/clocked≤merge/clocked/cost k (x ∷ xs , ys)) λ l → bound/ret {a = y ∷ l})
-      (bound/bind (merge/clocked/cost k (xs , y ∷ ys)) _ (merge/clocked≤merge/clocked/cost k (xs , y ∷ ys)) λ l → bound/ret {a = x ∷ l})
+merge/clocked/is-bounded : ∀ k p s h → IsBoundedG (merge/type p) (merge/clocked k p s h) (merge/clocked/cost k p s h)
+merge/clocked/is-bounded zero    ([]     , []    ) (sorted₁      , sorted₂     ) h = ≲-refl
+merge/clocked/is-bounded (suc k) ([]     , l₂    ) ([]           , sorted₂     ) h = step⋆-mono-≲ (z≤n {suc k})
+merge/clocked/is-bounded (suc k) (x ∷ xs , []    ) (sorted₁      , []          ) h = step⋆-mono-≲ (z≤n {suc k})
+merge/clocked/is-bounded (suc k) (x ∷ xs , y ∷ ys) (h₁ ∷ sorted₁ , h₂ ∷ sorted₂) h =
+  bound/bind/const
+    {e = x ≤? y}
+    {f = case-≤ (λ _ → bind (F (merge/type (x ∷ xs , y ∷ ys))) (merge/clocked k (xs , y ∷ ys) _ _) _) _}
+    1
+    k
+    (h-cost x y)
+    λ { (yes p) → bind-mono-≲ (merge/clocked/is-bounded k (xs , y ∷ ys) _ _) (λ _ → ≲-refl)
+      ; (no ¬p) → bind-mono-≲ (merge/clocked/is-bounded k (x ∷ xs , ys) _ _) (λ _ → ≲-refl)
+      }
 
-merge/clocked≤merge/clocked/cost/closed : ∀ k p → IsBounded (list A) (merge/clocked k p) (merge/clocked/cost/closed k p)
-merge/clocked≤merge/clocked/cost/closed k p = bound/relax (merge/clocked/cost≤merge/clocked/cost/closed k p) (merge/clocked≤merge/clocked/cost k p)
 
-merge : cmp (Π pair λ _ → F (list A))
-merge (l₁ , l₂) = merge/clocked (length l₁ + length l₂) (l₁ , l₂)
+merge : cmp $
+  Π pair λ (l₁ , l₂) →
+  Π (prod⁺ (sorted l₁) (sorted l₂)) λ _ →
+  F (merge/type (l₁ , l₂))
+merge (l₁ , l₂) s = merge/clocked (length l₁ + length l₂) (l₁ , l₂) s refl
 
-merge/correct : ∀ l₁ l₂ →
-  ◯ (∃ λ l → merge (l₁ , l₂) ≡ ret l × (Sorted l₁ → Sorted l₂ → SortedOf (l₁ ++ l₂) l))
-merge/correct l₁ l₂ u =
-  let (l , ≡ , h-sorted) = merge/clocked/correct (length l₁ + length l₂) l₁ l₂ u in
-  l , ≡ , h-sorted N.≤-refl
+merge/total : ∀ p s → IsValuable (merge p s)
+merge/total (l₁ , l₂) s = merge/clocked/total (length l₁ + length l₂) (l₁ , l₂) s refl
 
-merge/cost : cmp (Π pair λ _ → cost)
-merge/cost (l₁ , l₂) = merge/clocked/cost (length l₁ + length l₂) (l₁ , l₂)
+merge/cost : cmp $
+  Π pair λ (l₁ , l₂) →
+  Π (prod⁺ (sorted l₁) (sorted l₂)) λ _ →
+  cost
+merge/cost (l₁ , l₂) s = merge/clocked/cost (length l₁ + length l₂) (l₁ , l₂) s refl
 
-merge/cost/closed : cmp (Π pair λ _ → cost)
-merge/cost/closed (l₁ , l₂) = merge/clocked/cost/closed (length l₁ + length l₂) (l₁ , l₂)
-
-merge≤merge/cost : ∀ p → IsBounded (list A) (merge p) (merge/cost p)
-merge≤merge/cost (l₁ , l₂) = merge/clocked≤merge/clocked/cost (length l₁ + length l₂) (l₁ , l₂)
-
-merge≤merge/cost/closed : ∀ p → IsBounded (list A) (merge p) (merge/cost/closed p)
-merge≤merge/cost/closed (l₁ , l₂) = merge/clocked≤merge/clocked/cost/closed (length l₁ + length l₂) (l₁ , l₂)
+merge/is-bounded : ∀ p s → IsBoundedG (merge/type p) (merge p s) (merge/cost p s)
+merge/is-bounded (l₁ , l₂) s = merge/clocked/is-bounded (length l₁ + length l₂) (l₁ , l₂) s refl

@@ -20,14 +20,14 @@ module Easy where
   id/correct : ∀ n → ◯ (id n ≡ ret n)
   id/correct n u = refl
 
-  id/cost : cmp (Π nat λ _ → cost)
+  id/cost : cmp (Π nat λ _ → meta ℂ)
   id/cost n = 0
 
-  id≤id/cost : ∀ n → IsBounded nat (id n) (id/cost n)
-  id≤id/cost n = bound/ret
+  id/is-bounded : ∀ n → IsBounded nat (id n) (id/cost n)
+  id/is-bounded n = bound/ret {nat} n
 
   id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → 0)
-  id/asymptotic = 0 ≤n⇒f[n]≤ 0 g[n]via λ n _ → id≤id/cost n
+  id/asymptotic = f[n]≤g[n]via id/is-bounded
 
 module Hard where
   id : cmp (Π nat λ _ → F nat)
@@ -56,53 +56,19 @@ module Hard where
     ∎
       where open ≡-Reasoning
 
-  id/cost : cmp (Π nat λ _ → cost)
-  id/cost zero    = 0
-  id/cost (suc n) =
-    1 + (
-      bind cost (id n) λ n' → id/cost n +
-        0
-    )
+  id/cost : cmp (Π nat λ _ → meta ℂ)
+  id/cost n = n
 
-  id/cost/closed : cmp (Π nat λ _ → cost)
-  id/cost/closed n = n
-
-  id/cost≤id/cost/closed : ∀ n → ◯ (id/cost n ≤ id/cost/closed n)
-  id/cost≤id/cost/closed zero    u = ≤-refl
-  id/cost≤id/cost/closed (suc n) u =
-    begin
-      id/cost (suc n)
-    ≡⟨⟩
-      1 + (
-        bind cost (id n) λ n' → id/cost n +
-          0
-      )
-    ≡⟨ Eq.cong (λ e → 1 + bind cost e λ n' → id/cost n + 0) (id/correct n u) ⟩
-      1 + (id/cost n + 0)
-    ≡⟨ Eq.cong suc (+-identityʳ _) ⟩
-      1 + id/cost n
-    ≤⟨ +-monoʳ-≤ 1 (id/cost≤id/cost/closed n u) ⟩
-      1 + id/cost/closed n
-    ≡⟨⟩
-      suc n
-    ≡⟨⟩
-      id/cost/closed (suc n)
-    ∎
-      where open ≤-Reasoning
-
-  id≤id/cost : ∀ n → IsBounded nat (id n) (id/cost n)
-  id≤id/cost zero    = bound/ret
-  id≤id/cost (suc n) =
-    bound/step 1 _ (
-      bound/bind (id/cost n) _ (id≤id/cost n) λ n →
-        bound/ret {a = suc n}
-    )
-
-  id≤id/cost/closed : ∀ n → IsBounded nat (id n) (id/cost/closed n)
-  id≤id/cost/closed n = bound/relax (id/cost≤id/cost/closed n) (id≤id/cost n)
+  id/is-bounded : ∀ n → IsBounded nat (id n) (id/cost n)
+  id/is-bounded zero = bound/ret {nat} 0
+  id/is-bounded (suc n) =
+    bound/step
+      1
+      (bind (F nat) (id n) λ n' → ret (suc n'))
+      (id/is-bounded n)
 
   id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → n)
-  id/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ n _ → id≤id/cost/closed n
+  id/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ n _ → id/is-bounded n
 
 easy≡hard : ◯ (Easy.id ≡ Hard.id)
 easy≡hard u =
