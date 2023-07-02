@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting --guardedness #-}
-
 module index where
 
 -- Calf language implementation:

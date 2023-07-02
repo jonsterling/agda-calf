@@ -1,4 +1,4 @@
-{-# OPTIONS --prop --without-K --rewriting #-}
+{-# OPTIONS --without-K #-}
 
 -- Common cost monoids.
 
@@ -13,8 +13,8 @@ open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; modu
 ℕ-CostMonoid : CostMonoid
 ℕ-CostMonoid = record
   { ℂ = ℕ
-  ; _+_ = _+_
   ; zero = zero
+  ; _+_ = _+_
   ; _≤_ = _≤_
   ; isCostMonoid = record
     { isMonoid = +-0-isMonoid
@@ -29,8 +29,8 @@ open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; modu
 ℕ⊔-CostMonoid : CostMonoid
 ℕ⊔-CostMonoid = record
   { ℂ = ℕ
-  ; _+_ = _⊔_
   ; zero = zero
+  ; _+_ = _⊔_
   ; _≤_ = _≤_
   ; isCostMonoid = record
     { isMonoid = ⊔-0-isMonoid
@@ -45,8 +45,8 @@ open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; modu
 ℤ-CostMonoid : CostMonoid
 ℤ-CostMonoid = record
   { ℂ = ℤ
-  ; _+_ = _+_
   ; zero = 0ℤ
+  ; _+_ = _+_
   ; _≤_ = _≤_
   ; isCostMonoid = record
     { isMonoid = +-0-isMonoid
@@ -61,8 +61,8 @@ open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; modu
 ℚ-CostMonoid : CostMonoid
 ℚ-CostMonoid = record
   { ℂ = ℚ
-  ; _+_ = _+_
   ; zero = 0ℚ
+  ; _+_ = _+_
   ; _≤_ = _≤_
   ; isCostMonoid = record
     { isMonoid = +-0-isMonoid
@@ -77,8 +77,8 @@ open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; modu
 ResourceMonoid : CostMonoid
 ResourceMonoid = record
   { ℂ = ℕ × ℕ
-  ; _+_ = _·_
   ; zero = 0 , 0
+  ; _+_ = _·_
   ; _≤_ = _≤ᵣ_
   ; isCostMonoid = record
     { isMonoid = record
@@ -262,8 +262,8 @@ ResourceMonoid = record
 List-CostMonoid : Set → CostMonoid
 List-CostMonoid A = record
   { ℂ = List A
-  ; _+_ = _++_
   ; zero = []
+  ; _+_ = _++_
   ; _≤_ = _⊆_
   ; isCostMonoid = record
     { isMonoid = ++-isMonoid
@@ -280,9 +280,9 @@ List-CostMonoid A = record
 cm-× : CostMonoid → CostMonoid → CostMonoid
 cm-× cm₁ cm₂ = record
   { ℂ = ℂ cm₁ × ℂ cm₂
-  ; _+_ = λ (a₁ , a₂) (b₁ , b₂) → _+_ cm₁ a₁ b₁ , _+_ cm₂ a₂ b₂
   ; zero = zero cm₁ , zero cm₂
-    ; _≤_ = λ (a₁ , a₂) (b₁ , b₂) → _≤_ cm₁ a₁ b₁ × _≤_ cm₂ a₂ b₂
+  ; _+_ = λ (a₁ , a₂) (b₁ , b₂) → _+_ cm₁ a₁ b₁ , _+_ cm₂ a₂ b₂
+  ; _≤_ = λ (a₁ , a₂) (b₁ , b₂) → _≤_ cm₁ a₁ b₁ × _≤_ cm₂ a₂ b₂
   ; isCostMonoid = record
     { isMonoid = record
       { isSemigroup = record
@@ -318,10 +318,9 @@ sequentialParCostMonoid :
   → ParCostMonoid
 sequentialParCostMonoid cm isCommutativeMonoid = record
   { ℂ = ℂ
-  ; _⊕_ = _+_
   ; 𝟘 = zero
+  ; _⊕_ = _+_
   ; _⊗_ = _+_
-  ; 𝟙 = zero
   ; _≤_ = _≤_
   ; isParCostMonoid = record
     { isMonoid = isMonoid
@@ -340,10 +339,9 @@ sequentialParCostMonoid cm isCommutativeMonoid = record
 ℕ-Span-ParCostMonoid : ParCostMonoid
 ℕ-Span-ParCostMonoid = record
   { ℂ = ℕ
-  ; _⊕_ = _+_
   ; 𝟘 = 0
+  ; _⊕_ = _+_
   ; _⊗_ = _⊔_
-  ; 𝟙 = 0
   ; _≤_ = _≤_
   ; isParCostMonoid = record
     { isMonoid = +-0-isMonoid
@@ -360,10 +358,9 @@ sequentialParCostMonoid cm isCommutativeMonoid = record
 pcm-× : ParCostMonoid → ParCostMonoid → ParCostMonoid
 pcm-× pcm₁ pcm₂ = record
   { ℂ = ℂ pcm₁ × ℂ pcm₂
-  ; _⊕_ = λ (a₁ , a₂) (b₁ , b₂) → _⊕_ pcm₁ a₁ b₁ , _⊕_ pcm₂ a₂ b₂
   ; 𝟘 = 𝟘 pcm₁ , 𝟘 pcm₂
+  ; _⊕_ = λ (a₁ , a₂) (b₁ , b₂) → _⊕_ pcm₁ a₁ b₁ , _⊕_ pcm₂ a₂ b₂
   ; _⊗_ = λ (a₁ , a₂) (b₁ , b₂) → _⊗_ pcm₁ a₁ b₁ , _⊗_ pcm₂ a₂ b₂
-  ; 𝟙 = 𝟙 pcm₁ , 𝟙 pcm₂
   ; _≤_ = Pointwise (_≤_ pcm₁) (_≤_ pcm₂)
   ; isParCostMonoid = record
     { isMonoid = record

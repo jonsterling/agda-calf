@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting #-}
-
 module Examples.Sorting.Sequential where
 
 open import Examples.Sorting.Sequential.Comparable
@@ -18,44 +16,20 @@ test/shuffled = 4 ∷ 8 ∷ 12 ∷ 16 ∷ 13 ∷ 3 ∷ 5 ∷ 14 ∷ 9 ∷ 6 ∷ 
 module Ex/InsertionSort where
   import Examples.Sorting.Sequential.InsertionSort NatComparable as Sort
 
-  list' = list nat
-
-  ex/insert : cmp (F list')
   ex/insert = Sort.insert 3 (1 ∷ 2 ∷ 4 ∷ [])
-
-  ex/sort : cmp (F list')
   ex/sort = Sort.sort (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ [])
-
-  ex/sort/forward : cmp (F list')
   ex/sort/forward = Sort.sort test/forward  -- cost: 15
-
-  ex/sort/backward : cmp (F list')
   ex/sort/backward = Sort.sort test/backward  -- cost: 120
-
-  ex/sort/shuffled : cmp (F list')
   ex/sort/shuffled = Sort.sort test/shuffled  -- cost: 76
 
 module Ex/MergeSort where
   import Examples.Sorting.Sequential.MergeSort NatComparable as Sort
 
-  list' = list nat
-
-  ex/split : cmp (F Sort.pair)
   ex/split = Sort.split (6 ∷ 2 ∷ 8 ∷ 3 ∷ 1 ∷ 8 ∷ 5 ∷ [])
-
-  ex/merge : cmp (F list')
   ex/merge = Sort.merge (2 ∷ 3 ∷ 6 ∷ 8 ∷ [] , 1 ∷ 5 ∷ 8 ∷ [])
-
-  ex/sort : cmp (F list')
   ex/sort = Sort.sort (1 ∷ 5 ∷ 3 ∷ 1 ∷ 2 ∷ [])
-
-  ex/sort/forward : cmp (F list')
   ex/sort/forward = Sort.sort test/forward  -- cost: 32
-
-  ex/sort/backward : cmp (F list')
   ex/sort/backward = Sort.sort test/backward  -- cost: 32
-
-  ex/sort/shuffled : cmp (F list')
   ex/sort/shuffled = Sort.sort test/shuffled  -- cost: 47
 
 module SortEquivalence (M : Comparable) where
@@ -65,5 +39,5 @@ module SortEquivalence (M : Comparable) where
   import Examples.Sorting.Sequential.InsertionSort M as ISort
   import Examples.Sorting.Sequential.MergeSort     M as MSort
 
-  isort≡msort : ◯ (ISort.sort ≡ MSort.sort)
-  isort≡msort = IsSort⇒≡ ISort.sort ISort.sort/correct MSort.sort MSort.sort/correct
+  isort≡msort : ◯ (ISort.sort algorithm ≡ MSort.sort algorithm)
+  isort≡msort = IsSort⇒≡ ISort.sort ISort.sort/total MSort.sort MSort.sort/total

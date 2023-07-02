@@ -1,8 +1,6 @@
-{-# OPTIONS --prop --rewriting #-}
-
 module Examples.Sorting.Sequential.Comparable where
 
-open import Calf.CostMonoid
+open import Calf.CostMonoid public
 open import Calf.CostMonoids
 
 costMonoid = ℕ-CostMonoid

@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting #-}
-
 open import Calf.CostMonoid
 
 module Calf.Types.BoundedFunction (costMonoid : CostMonoid) where

@@ -1,5 +1,3 @@
-{-# OPTIONS --prop --rewriting #-}
-
 open import Calf.CostMonoid
 open import Data.Nat using (ℕ)
 open import Examples.Sorting.Comparable
@@ -12,6 +10,7 @@ module Examples.Sorting.Core
 open Comparable M
 
 open import Calf costMonoid
+open import Calf.Types.Product
 open import Calf.Types.List
 
 open import Relation.Nullary
@@ -34,17 +33,6 @@ open import Data.List.Relation.Unary.All using (All; []; _∷_; map; lookup) pub
 open import Data.List.Relation.Unary.All.Properties as AllP using () renaming (++⁺ to ++⁺-All) public
 open import Data.List.Relation.Unary.Any using (Any; here; there)
 
-_≥_ : val A → val A → Set
-x ≥ y = y ≤ x
-
-_≰_ : val A → val A → Set
-x ≰ y = ¬ x ≤ y
-
-≰⇒≥ : _≰_ ⇒ _≥_
-≰⇒≥ {x} {y} h with ≤-total x y
-... | inj₁ h₁ = contradiction h₁ h
-... | inj₂ h₂ = h₂
-
 
 _≤*_ : val A → val (list A) → Set
 _≤*_ x = All (x ≤_)
@@ -55,6 +43,9 @@ _≤*_ x = All (x ≤_)
 data Sorted : val (list A) → Set where
   [] : Sorted []
   _∷_ : ∀ {y ys} → y ≤* ys → Sorted ys → Sorted (y ∷ ys)
+
+sorted : val (list A) → tp pos
+sorted l = meta⁺ (Sorted l)
 
 short-sorted : {l : val (list A)} → length l Nat.≤ 1 → Sorted l
 short-sorted {[]} _ = []
@@ -94,27 +85,43 @@ uncons₁ (h ∷ sorted) = h
 uncons₂ : ∀ {x xs} → Sorted (x ∷ xs) → Sorted xs
 uncons₂ (h ∷ sorted) = sorted
 
-SortedOf : val (list A) → val (list A) → Set
-SortedOf l l' = l ↭ l' × Sorted l'
+sorted-of : val (list A) → val (list A) → tp pos
+sorted-of l l' = prod⁺ (meta⁺ (l ↭ l')) (sorted l')
 
-SortResult : cmp (Π (list A) λ _ → F (list A)) → val (list A) → Set
-SortResult sort l = ◯ (∃ λ l' → sort l ≡ ret l' × SortedOf l l')
+sort-result : val (list A) → tp pos
+sort-result l = Σ++ (list A) (sorted-of l)
 
-IsSort : cmp (Π (list A) λ _ → F (list A)) → Set
-IsSort sort = ∀ l → SortResult sort l
+sorting : tp neg
+sorting = Π (list A) λ l → F (sort-result l)
 
-IsSort⇒≡ : ∀ sort₁ → IsSort sort₁ → ∀ sort₂ → IsSort sort₂ → ◯ (sort₁ ≡ sort₂)
-IsSort⇒≡ sort₁ correct₁ sort₂ correct₂ u =
+record Valuable {A : tp pos} (e : cmp (F A)) : Set where
+  constructor ↓_
+  field
+    {value} : val A
+    proof : e ≡ ret value
+
+IsValuable : {A : tp pos} → cmp (F A) → Set
+IsValuable e = ◯ (Valuable e)
+
+IsTotal : cmp sorting → Set
+IsTotal sort = (l : val (list A)) → IsValuable (sort l)
+
+-- discard proofs, which may be different
+_algorithm : cmp sorting → cmp (Π (list A) λ _ → F (list A))
+_algorithm sort l = bind (F (list A)) (sort l) λ (l' , _) → ret l'
+
+IsSort⇒≡ : ∀ sort₁ → IsTotal sort₁ → ∀ sort₂ → IsTotal sort₂ → ◯ (sort₁ algorithm ≡ sort₂ algorithm)
+IsSort⇒≡ sort₁ total₁ sort₂ total₂ u =
   funext λ l →
-    let (l'₁ , ≡₁ , ↭₁ , sorted₁) = correct₁ l u in
-    let (l'₂ , ≡₂ , ↭₂ , sorted₂) = correct₂ l u in
+    let (l₁' , l↭l₁' , sorted₁) = Valuable.value (total₁ l u) in
+    let (l₂' , l↭l₂' , sorted₂) = Valuable.value (total₂ l u) in
     begin
-      sort₁ l
-    ≡⟨ ≡₁ ⟩
-      ret l'₁
-    ≡⟨ Eq.cong ret (unique-sorted sorted₁ sorted₂ (trans (↭-sym ↭₁) ↭₂)) ⟩
-      ret l'₂
-    ≡˘⟨ ≡₂ ⟩
-      sort₂ l
+      (sort₁ algorithm) l
+    ≡⟨ Eq.cong (λ e → bind (F (list A)) e λ (l' , _) → ret l') (Valuable.proof (total₁ l u)) ⟩
+      ret l₁'
+    ≡⟨ Eq.cong ret (unique-sorted sorted₁ sorted₂ (trans (↭-sym l↭l₁') l↭l₂')) ⟩
+      ret l₂'
+    ≡˘⟨ Eq.cong (λ e → bind (F (list A)) e λ (l' , _) → ret l') (Valuable.proof (total₂ l u)) ⟩
+      (sort₂ algorithm) l
     ∎
       where open ≡-Reasoning
