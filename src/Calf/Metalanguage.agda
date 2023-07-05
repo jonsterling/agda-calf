@@ -88,6 +88,14 @@ postulate
     → ((a : val A) → _≲_ {X a} (f₁ a) (f₂ a))
     → _≲_ {Π A X} f₁ f₂
 
+≲-reflexive : {X : tp neg} → _≡_ ⇒ _≲_ {X}
+≲-reflexive refl = ≲-refl
+
+≲-syntax : {X : tp neg} → cmp X → cmp X → □
+≲-syntax {X} = _≲_ {X}
+
+syntax ≲-syntax {X} e₁ e₂ = e₁ ≲[ X ] e₂
+
 bind-mono-≲ : {A : tp pos} {X : tp neg} {e₁ e₂ : cmp (F A)} {f₁ f₂ : val A → cmp X}
   → _≲_ {F A} e₁ e₂
   → ((a : val A) → _≲_ {X} (f₁ a) (f₂ a))
