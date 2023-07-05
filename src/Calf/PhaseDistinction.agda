@@ -16,6 +16,8 @@ open import Relation.Binary.PropositionalEquality as P
 postulate
   ext : Ω
 
+  ≲-ext-≡ : {X : tp neg} {e₁ e₂ : cmp X} → ext → e₁ ≲[ X ] e₂ → e₁ ≡ e₂
+
 
 -- Open/extensional modality.
 
