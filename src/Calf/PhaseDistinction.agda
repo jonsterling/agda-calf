@@ -87,20 +87,20 @@ postulate
   η : ∀ {A} → val A → val (● A)
   ∗ : ∀ {A} → ext → val (● A)
   η≡∗ : ∀ {A} (a : val A) u → η {A} a ≡ ∗ u
-  ●/ind : ∀ {A} (a : val (● A)) (X : val (● A) → tp neg)
-    (x0 : (a : val A) → cmp (X (η a))) →
-    (x1 : (u : ext) → cmp (X (∗ u))) →
-    ((a : val A) → (u : ext) → P.subst (λ a → cmp (X a)) (η≡∗ a u) (x0 a) ≡ x1 u ) →
-    cmp (X a)
-  ●/ind/β₁ : ∀ {A} (a : val A) (X : val (● A) → tp neg)
-    (x0 : (a : val A) → cmp (X (η a))) →
-    (x1 : (u : ext) → cmp (X (∗ u))) →
-    (h : (a : val A) → (u : ext) → P.subst (λ a → cmp (X a)) (η≡∗ a u) (x0 a) ≡ x1 u ) →
+  ●/ind : ∀ {A} (a : val (● A)) (X : val (● A) → □)
+    (x0 : (a : val A) → X (η a)) →
+    (x1 : (u : ext) → X (∗ u)) →
+    ((a : val A) → (u : ext) → P.subst (λ a → X a) (η≡∗ a u) (x0 a) ≡ x1 u ) →
+    X a
+  ●/ind/β₁ : ∀ {A} (a : val A) (X : val (● A) → □)
+    (x0 : (a : val A) → X (η a)) →
+    (x1 : (u : ext) → X (∗ u)) →
+    (h : (a : val A) → (u : ext) → P.subst (λ a → X a) (η≡∗ a u) (x0 a) ≡ x1 u ) →
     ●/ind (η a) X x0 x1 h ≡ x0 a
   {-# REWRITE ●/ind/β₁ #-}
-  ●/ind/β₂ : ∀ {A} (u : ext) (X : val (● A) → tp neg)
-    (x0 : (a : val A) → cmp (X (η a))) →
-    (x1 : (u : ext) → cmp (X (∗ u))) →
-    (h : (a : val A) → (u : ext) → P.subst (λ a → cmp (X a)) (η≡∗ a u) (x0 a) ≡ x1 u ) →
+  ●/ind/β₂ : ∀ {A} (u : ext) (X : val (● A) → □)
+    (x0 : (a : val A) → X (η a)) →
+    (x1 : (u : ext) → X (∗ u)) →
+    (h : (a : val A) → (u : ext) → P.subst (λ a → X a) (η≡∗ a u) (x0 a) ≡ x1 u ) →
     ●/ind (∗ u) X x0 x1 h ≡ x1 u
   {-# REWRITE ●/ind/β₂ #-}
