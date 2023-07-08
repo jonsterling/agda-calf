@@ -28,9 +28,9 @@ oblivious {A} {B} f c e = funext/Ω (λ u →
 unique : ∀ {A} → (a : val (● A)) → (u : ext) → a ≡ ∗ u
 unique {A} a u =
   eq/ref
-  (●/ind {A} a (λ a → F (eq (● A) a (∗ u)))
-  (λ a → ret (eq/intro (η≡∗ a u)))
-  (λ u → ret (eq/intro refl))
+  (●/ind {A} a (λ a → val (eq (● A) a (∗ u)))
+  (λ a → eq/intro (η≡∗ a u))
+  (λ u → eq/intro refl)
   (λ a u → eq/uni _ _ u))
 
 constant : ∀ {A B} (f : val (● A) → val (◯⁺ B)) →
