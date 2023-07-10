@@ -19,17 +19,6 @@ open import Data.Product
 add : cmp (Π nat λ _ → Π nat λ _ → F nat)
 add m n = step (F nat) (1 , 1) (ret (m + n))
 
-add/cost : cmp (Π nat λ _ → Π nat λ _ → meta ℂ)
-add/cost m n = (1 , 1)
-
-add/is-bounded : ∀ m n → IsBounded nat (add m n) (add/cost m n)
-add/is-bounded m n =
-  bound/step
-    {nat}
-    (1 , 1)
-    (ret (m + n))
-    (bound/ret {nat} (m + n))
-
 
 data Tree : Set where
   leaf : val nat → Tree
