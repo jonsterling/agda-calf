@@ -23,6 +23,12 @@ record CostMonad {ℓ ℓ′ ℓ″} {M : Set ℓ → Set ℓ′} {ℂ : Set ℓ
   step-𝟘->> : ∀ {A} (x : M A) → step 𝟘 >> x ≡ x
   step-𝟘->> x = trans (cong (_>>= _) step-𝟘) (pure->>= _ _)
 
+  ext : Set (ℓ′ ⊔ ℓ″)
+  ext = ∀ p → step p ≡ pure _
+
+  ext/step->> : ext → ∀ {A} p (x : M A) → step p >> x ≡ x
+  ext/step->> u p x = trans (cong (_>>= _) (u p)) (pure->>= _ _)
+
 record ParCostMonad {ℓ ℓ′ ℓ″} {M : Set ℓ → Set ℓ′} {ℂ : Set ℓ″} {monad : Monad M} {costMonoid : CostMonoid ℂ} (costMonad : CostMonad monad costMonoid) (parCostMonoid : ParCostMonoid ℂ) : Set (lsuc ℓ ⊔ ℓ′ ⊔ ℓ″) where
   infix 5 _&_
 

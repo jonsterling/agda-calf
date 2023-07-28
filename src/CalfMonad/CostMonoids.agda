@@ -22,6 +22,9 @@ open ParCostMonoid
 ⊤-CostMonoid ℓ .⊕-identityˡ p = refl
 ⊤-CostMonoid ℓ .⊕-identityʳ p = refl
 
+⊤-Step : ∀ {ℓ′} (A : Set ℓ′) ℓ → A → ⊤ {ℓ}
+⊤-Step A ℓ a = _
+
 ℕ-CostMonoid : CostMonoid ℕ
 ℕ-CostMonoid ._⊕_ = _+_
 ℕ-CostMonoid .𝟘 = 0
@@ -36,12 +39,18 @@ List-CostMonoid ℂ .⊕-assoc = ++-assoc
 List-CostMonoid ℂ .⊕-identityˡ = ++-identityˡ
 List-CostMonoid ℂ .⊕-identityʳ = ++-identityʳ
 
+List-Step : ∀ {ℓ′} {A : Set ℓ′} {ℓ} {ℂ : Set ℓ} → (A → ℂ) → A → List ℂ
+List-Step step a = [ step a ]
+
 ×-CostMonoid : ∀ {ℓ₁ ℓ₂} {ℂ₁ : Set ℓ₁} {ℂ₂ : Set ℓ₂} → CostMonoid ℂ₁ → CostMonoid ℂ₂ → CostMonoid (ℂ₁ × ℂ₂)
 ×-CostMonoid costMonoid₁ costMonoid₂ ._⊕_ (p₁ , p₂) (q₁ , q₂) = costMonoid₁ ._⊕_ p₁ q₁ , costMonoid₂ ._⊕_ p₂ q₂
 ×-CostMonoid costMonoid₁ costMonoid₂ .𝟘 = costMonoid₁ .𝟘 , costMonoid₂ .𝟘
 ×-CostMonoid costMonoid₁ costMonoid₂ .⊕-assoc (p₁ , p₂) (q₁ , q₂) (r₁ , r₂) = cong₂ _,_ (costMonoid₁ .⊕-assoc p₁ q₁ r₁) (costMonoid₂ .⊕-assoc p₂ q₂ r₂)
 ×-CostMonoid costMonoid₁ costMonoid₂ .⊕-identityˡ (p₁ , p₂) = cong₂ _,_ (costMonoid₁ .⊕-identityˡ p₁) (costMonoid₂ .⊕-identityˡ p₂)
 ×-CostMonoid costMonoid₁ costMonoid₂ .⊕-identityʳ (p₁ , p₂) = cong₂ _,_ (costMonoid₁ .⊕-identityʳ p₁) (costMonoid₂ .⊕-identityʳ p₂)
+
+×-Step : ∀ {ℓ} {A : Set ℓ} {ℓ₁ ℓ₂} {ℂ₁ : Set ℓ₁} {ℂ₂ : Set ℓ₂} → (A → ℂ₁) → (A → ℂ₂) → A → ℂ₁ × ℂ₂
+×-Step step₁ step₂ a = step₁ a , step₂ a
 
 sequentialParCostMonoid : ∀ {ℓ} {ℂ : Set ℓ} → CostMonoid ℂ → ParCostMonoid ℂ
 sequentialParCostMonoid costMonoid ._⊗_ = costMonoid ._⊕_
@@ -70,6 +79,9 @@ CostGraph-CostMonoid ℂ = List-CostMonoid (CostGraphBase ℂ)
 
 CostGraph-ParCostMonoid : ∀ {ℓ} (ℂ : Set ℓ) → ParCostMonoid (CostGraph ℂ)
 CostGraph-ParCostMonoid ℂ ._⊗_ p q = [ p ⊗ᵍ q ]
+
+CostGraph-Step : ∀ {ℓ′} {A : Set ℓ′} {ℓ} {ℂ : Set ℓ} → (A → ℂ) → A → CostGraph ℂ
+CostGraph-Step step a = step a ∷ᵍ []
 
 ×-ParCostMonoid : ∀ {ℓ₁ ℓ₂} {ℂ₁ : Set ℓ₁} {ℂ₂ : Set ℓ₂} → ParCostMonoid ℂ₁ → ParCostMonoid ℂ₂ → ParCostMonoid (ℂ₁ × ℂ₂)
 ×-ParCostMonoid costMonoid₁ costMonoid₂ ._⊗_ (p₁ , p₂) (q₁ , q₂) = costMonoid₁ ._⊗_ p₁ q₁ , costMonoid₂ ._⊗_ p₂ q₂
