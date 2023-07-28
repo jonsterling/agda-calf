@@ -106,13 +106,13 @@ module _ {ℓ′ M} (monad : Monad {ℓ} {ℓ′} M) (nondetMonad : NondetMonad 
       record ARRAY : Set (lsuc ℓ ⊔ lsuc ℓ′ ⊔ ℓ″) where
         field
           ArrayBuilder : ∀ (A : tp+) n (m : Vec Bool n) → tp-
-          ArrayBuilder/ext : ∀ (u : ext) {m} → U (ArrayBuilder A n m) ↔ M (Spec.ArrayBuilder A n m) -- TODO: equiv as tp-
+          ArrayBuilder/ext : ∀ (u : ext) {m} → ArrayBuilder A n m ↔⁻ F (Spec.ArrayBuilder A n m)
 
         ArrayBuilder/ext/toSpec : ∀ (u : ext) {m} (b : U (ArrayBuilder A n m)) → M (Spec.ArrayBuilder A n m)
-        ArrayBuilder/ext/toSpec u = ArrayBuilder/ext u .Inverse.to ⟨$⟩_
+        ArrayBuilder/ext/toSpec u = ArrayBuilder/ext u .Inverse⁻.to $⁻_
 
         ArrayBuilder/ext/fromSpec : ∀ (u : ext) {m} (b : M (Spec.ArrayBuilder A n m)) → U (ArrayBuilder A n m)
-        ArrayBuilder/ext/fromSpec u = ArrayBuilder/ext u .Inverse.from ⟨$⟩_
+        ArrayBuilder/ext/fromSpec u = ArrayBuilder/ext u .Inverse⁻.from $⁻_
 
         ArrayBuilder′ : ∀ (A : tp+) n (m : Fin n → Bool) → Set ℓ′
         ArrayBuilder′ A n m = U (ArrayBuilder A n (tabulate m))
@@ -154,10 +154,10 @@ module _ {ℓ′ M} (monad : Monad {ℓ} {ℓ′} M) (nondetMonad : NondetMonad 
           ext/fromSpec = ArrayBuilder/ext/fromSpec
 
           ext/fromSpec-toSpec : ∀ u {m} b → ext/fromSpec u (ext/toSpec u {m} b) ≡ b
-          ext/fromSpec-toSpec u = ArrayBuilder/ext u .Inverse.left-inverse-of
+          ext/fromSpec-toSpec u = ArrayBuilder/ext u .Inverse⁻.left-inverse-of
 
           ext/toSpec-fromSpec : ∀ u {m} b → ext/toSpec u (ext/fromSpec u {m} b) ≡ b
-          ext/toSpec-fromSpec u = ArrayBuilder/ext u .Inverse.right-inverse-of
+          ext/toSpec-fromSpec u = ArrayBuilder/ext u .Inverse⁻.right-inverse-of
 
           empty : ArrayBuilder′ A n λ i → false
           empty = ArrayBuilder/empty
@@ -214,8 +214,8 @@ module _ {ℓ′ M} (monad : Monad {ℓ} {ℓ′} M) (nondetMonad : NondetMonad 
 
       array : ARRAY
 
-      array .ArrayBuilder A n m = F _
-      array .ArrayBuilder/ext u = id
+      array .ArrayBuilder = _
+      array .ArrayBuilder/ext u = Inverse⁻.id
 
       array .ArrayBuilder/empty = _
       array .ArrayBuilder/empty/ext u = refl

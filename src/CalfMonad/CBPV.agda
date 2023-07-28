@@ -10,8 +10,8 @@ open Agda.Primitive
 open import Agda.Builtin.List
 open import Axiom.Extensionality.Propositional         using (Extensionality)
 open import Data.List.Relation.Unary.All               using (All; []; _∷_; map)
-open import Function.Base                              using (id)
-open import Relation.Binary.PropositionalEquality.Core using (module ≡-Reasoning; _≡_)
+open import Function.Base                              using () renaming (id to id⁺)
+open import Relation.Binary.PropositionalEquality.Core using (module ≡-Reasoning; _≡_; cong)
 
 tp+ : Set (lsuc ℓ)
 tp+ = Set ℓ
@@ -32,7 +32,7 @@ bind (F B) = _>>=_
 pure-bind (F B) ext = pure->>=
 >>=-bind (F C) ext = >>=->>=
 
-seqbind : ∀ X {As : List tp+} → All M As → (All id As → U X) → U X
+seqbind : ∀ X {As : List tp+} → All M As → (All id⁺ As → U X) → U X
 seqbind X [] f = f []
 seqbind X (e ∷ es) f = bind X e λ a → seqbind X es λ as → f (a ∷ as)
 
@@ -45,3 +45,53 @@ pure-seqbind X ext (a ∷ as) f = begin
   bind X (pure a) (λ a → seqbind X (map pure as) λ as → f (a ∷ as)) ≡⟨ pure-bind X ext a _ ⟩
   seqbind X (map pure as) (λ as → f (a ∷ as))                       ≡⟨ pure-seqbind X ext as _ ⟩
   f (a ∷ as)                                                        ∎
+
+record _→⁻_ (X Y : tp-) : Set (lsuc ℓ ⊔ ℓ′) where
+  field
+    _$⁻_ : U X → U Y
+    $⁻-bind : ∀ {A} e f → _$⁻_ (bind X {A} e f) ≡ bind Y e λ a → _$⁻_ (f a)
+
+open _→⁻_ public
+
+id⁻ : ∀ {X} → X →⁻ X
+id⁻ $⁻ x = x
+id⁻ {X} .$⁻-bind e f = begin
+  bind X e f ∎
+
+_∘⁻_ : ∀ {X Y Z} → Y →⁻ Z → X →⁻ Y → X →⁻ Z
+(f ∘⁻ g) $⁻ x = f $⁻ (g $⁻ x)
+_∘⁻_ {X} {Y} {Z} f g .$⁻-bind e h = begin
+  f $⁻ (g $⁻ bind X e h)           ≡⟨ cong (f $⁻_) (g .$⁻-bind e h) ⟩
+  f $⁻ (bind Y e (λ a → g $⁻ h a)) ≡⟨ f .$⁻-bind e _ ⟩
+  bind Z e (λ a → f $⁻ (g $⁻ h a)) ∎
+
+record _↔⁻_ (X Y : tp-) : Set (lsuc ℓ ⊔ ℓ′) where
+  field
+    to : X →⁻ Y
+    from : Y →⁻ X
+
+    left-inverse-of : ∀ x → from $⁻ (to $⁻ x) ≡ x
+    right-inverse-of : ∀ y → to $⁻ (from $⁻ y) ≡ y
+
+module Inverse⁻ where
+  open _↔⁻_ public
+
+  id : ∀ {X} → X ↔⁻ X
+  id .to = id⁻
+  id .from = id⁻
+  id .left-inverse-of x = begin
+    x ∎
+  id .right-inverse-of x = begin
+    x ∎
+
+  _∘_ : ∀ {X Y Z} → Y ↔⁻ Z → X ↔⁻ Y → X ↔⁻ Z
+  (f ∘ g) .to = f .to ∘⁻ g .to
+  (f ∘ g) .from = g .from ∘⁻ f .from
+  (f ∘ g) .left-inverse-of x = begin
+    g .from $⁻ (f .from $⁻ (f .to $⁻ (g .to $⁻ x))) ≡⟨ cong (g .from $⁻_) (f .left-inverse-of _) ⟩
+    g .from $⁻ (g .to $⁻ x)                         ≡⟨ g .left-inverse-of x ⟩
+    x                                               ∎
+  (f ∘ g) .right-inverse-of z = begin
+    f .to $⁻ (g .to $⁻ (g .from $⁻ (f .from $⁻ z))) ≡⟨ cong (f .to $⁻_) (g .right-inverse-of _) ⟩
+    f .to $⁻ (f .from $⁻ z)                         ≡⟨ f .right-inverse-of z ⟩
+    z                                               ∎
