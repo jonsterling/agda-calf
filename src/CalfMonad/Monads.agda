@@ -2,14 +2,15 @@
 
 module CalfMonad.Monads where
 
-open import Data.List.Base       using (List; [_]; concat; map)
-open import Data.List.Properties using (++-identityʳ; concat-[-]; concat-concat; concat-map; map-compose; map-cong)
-open import Function.Base        using (_∘_)
+open import Data.List.Base                             using (List; [_]; concat; map)
+open import Data.List.Properties                       using (++-identityʳ; concat-[-]; concat-concat; concat-map; map-compose; map-cong)
+open import Function.Base                              using (_∘_)
 open import Relation.Binary.PropositionalEquality.Core using (module ≡-Reasoning; cong; refl)
 
 open import CalfMonad.Monad
 
 open Monad
+open MonadLift
 open ≡-Reasoning
 
 module IdentityMonad ℓ where
@@ -23,6 +24,9 @@ module IdentityMonad ℓ where
   monad .pure->>= a f = refl
   monad .>>=-pure a = refl
   monad .>>=->>= a f g = refl
+
+  monadLift : ∀ {ℓ = ℓ′} {ℓ′ = ℓ″} {M = M′} → MonadLift {ℓ} {ℓ} {ℓ′} {ℓ″} M M′
+  monadLift .lift a f = f a
 
 module ListMonad ℓ where
   M : Set ℓ → Set ℓ

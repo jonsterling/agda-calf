@@ -9,7 +9,7 @@ open import Agda.Builtin.Sigma
 open import Data.Fin.Patterns using (0F; 1F; 2F)
 open import Data.Vec.Base     using ([]; _∷_)
 
-import CalfMonad.CostMonads as CostMonads
+open import CalfMonad.CostMonads
 open import CalfMonad.CostMonoids
 open import CalfMonad.Monad
 open import CalfMonad.Monads
@@ -17,14 +17,8 @@ open import CalfMonad.NondetMonads
 
 open import CalfMonad.Sequence.Array lzero
 
-open CostMonads.WriterMonadT lzero (ListMonad.monad _) (CostGraph-CostMonoid ArrayStep)
-
-open Imp
-  monad
-  (WriterMonadT.nondetMonad _ (ListMonad.monad _) (CostGraph-CostMonoid _) (ListMonad.nondetMonad _))
-  (parCostMonad (CostGraph-ParCostMonoid _))
-  (CostGraph-Step λ s → s)
-
+open WriterMonadT lzero (ListMonad.monad _) (CostGraph-CostMonoid ArrayStep)
+open Imp monad (MonadLift.nondetMonad monad monadLift (ListMonad.nondetMonad _)) (parCostMonad (CostGraph-ParCostMonoid _)) (CostGraph-Step λ s → s)
 open Array
 open ArrayBuilder
 

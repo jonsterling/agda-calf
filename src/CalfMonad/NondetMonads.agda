@@ -7,16 +7,14 @@ open import Agda.Builtin.Bool
 open import Agda.Builtin.List
 open import Level using (lift; lower)
 
-open import CalfMonad.CostMonoid
-open import CalfMonad.Monad
 open import CalfMonad.NondetMonad
-import CalfMonad.CostMonads as CostMonads
+import CalfMonad.Monad as Monad
 import CalfMonad.Monads as Monads
 
 open NondetMonad
 
-module DetMonad {ℓ ℓ′} {M : Set ℓ → Set ℓ′} (monad : Monad M) where
-  open Monad monad
+module DetMonad {ℓ ℓ′} {M : Set ℓ → Set ℓ′} (monad : Monad.Monad M) where
+  open Monad.Monad monad
 
   nondetMonad : NondetMonad M
   nondetMonad .branch = pure (lift false)
@@ -27,9 +25,8 @@ module ListMonad ℓ where
   nondetMonad : NondetMonad M
   nondetMonad .branch = lift false ∷ lift true ∷ []
 
-module WriterMonadT ℓ {ℓ′ ℓ″} {M = M′ : Set (ℓ ⊔ ℓ″) → Set ℓ′} {ℂ : Set ℓ″} (monad′ : Monad M′) (costMonoid : CostMonoid ℂ) (nondetMonad′ : NondetMonad M′) where
-  open Monad monad′
-  open CostMonads.WriterMonadT ℓ monad′ costMonoid
+module MonadLift {ℓ ℓ′ ℓ″ ℓ‴ M M′} (monad : Monad.Monad M′) (monadLift : Monad.MonadLift {ℓ} {ℓ′} {ℓ″} {ℓ‴} M M′) (nondetMonad′ : NondetMonad {ℓ} {ℓ′} M) where
+  open Monad.Monad monad
 
-  nondetMonad : NondetMonad M
-  nondetMonad .branch = nondetMonad′ .branch >>= λ b → monad .Monad.pure (lift (lower b))
+  nondetMonad : NondetMonad {ℓ″} {ℓ‴} M′
+  nondetMonad .branch = monadLift .Monad.MonadLift.lift (nondetMonad′ .branch) λ b → pure (lift (lower b))

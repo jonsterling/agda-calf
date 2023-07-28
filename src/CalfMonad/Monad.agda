@@ -22,3 +22,7 @@ record Monad {ℓ ℓ′} (M : Set ℓ → Set ℓ′) : Set (lsuc ℓ ⊔ ℓ�
 
   _<*>_ : ∀ {A B} → M (A → B) → M A → M B
   x <*> y = x >>= λ f → y >>= λ a → pure (f a)
+
+record MonadLift {ℓ ℓ′ ℓ″ ℓ‴} (M : Set ℓ → Set ℓ′) (M′ : Set ℓ″ → Set ℓ‴) : Set (lsuc ℓ ⊔ ℓ′ ⊔ lsuc ℓ″ ⊔ ℓ‴) where
+  field
+    lift : ∀ {A B} → M A → (A → M′ B) → M′ B

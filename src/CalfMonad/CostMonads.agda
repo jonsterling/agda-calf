@@ -3,7 +3,7 @@
 module CalfMonad.CostMonads where
 
 open Agda.Primitive
-open import Data.Product               using (_×_; _,_)
+open import Data.Product                               using (_×_; _,_)
 open import Relation.Binary.PropositionalEquality.Core using (module ≡-Reasoning; _≡_; cong; cong₂)
 
 open import CalfMonad.CostMonad
@@ -11,6 +11,7 @@ open import CalfMonad.CostMonoid
 open import CalfMonad.Monad
 open import CalfMonad.Monads
 
+open MonadLift
 open CostMonad
 open ParCostMonad
 open ≡-Reasoning
@@ -69,6 +70,9 @@ module WriterMonadT ℓ {ℓ′ ℓ″} {M = M′ : Set (ℓ ⊔ ℓ″) → Set
     (x >>= λ (p , a) → f a >>= λ (q , b) → g b >>= λ (r , c) → pure (q ⊕ r , c) >>= λ (qr , c) → pure (p ⊕ qr , c))   ≡˘⟨ >>=-cong x (λ (p , a) → >>=-cong (f a) λ (q , b) → >>=->>= (g b) _ _) ⟩
     (x >>= λ (p , a) → f a >>= λ (q , b) → (g b >>= λ (r , c) → pure (q ⊕ r , c)) >>= λ (qr , c) → pure (p ⊕ qr , c)) ≡˘⟨ >>=-cong x (λ (p , a) → >>=->>= (f a) _ _) ⟩
     (x >>= λ (p , a) → (f a >>= λ (q , b) → g b >>= λ (r , c) → pure (q ⊕ r , c)) >>= λ (qr , c) → pure (p ⊕ qr , c)) ∎
+
+  monadLift : MonadLift M′ M
+  monadLift .lift = _>>=_
 
   costMonad : CostMonad monad costMonoid
   costMonad .step p = pure (p , _)

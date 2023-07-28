@@ -2,12 +2,12 @@
 
 module CalfMonad.CostMonoids where
 
-open import Data.List.Base             using (List; []; _∷_; [_]; _++_)
-open import Data.List.Properties       using (++-assoc; ++-identityˡ; ++-identityʳ)
-open import Data.Nat.Base              using (ℕ; _+_; _⊔_)
-open import Data.Nat.Properties        using (+-assoc; +-identityˡ; +-identityʳ)
-open import Data.Product               using (_×_; _,_)
-open import Data.Unit.Polymorphic.Base using (⊤)
+open import Data.List.Base                             using (List; []; _∷_; [_]; _++_)
+open import Data.List.Properties                       using (++-assoc; ++-identityˡ; ++-identityʳ)
+open import Data.Nat.Base                              using (ℕ; _+_; _⊔_)
+open import Data.Nat.Properties                        using (+-assoc; +-identityˡ; +-identityʳ)
+open import Data.Product                               using (_×_; _,_)
+open import Data.Unit.Polymorphic.Base                 using (⊤)
 open import Relation.Binary.PropositionalEquality.Core using (refl; cong₂)
 
 open import CalfMonad.CostMonoid

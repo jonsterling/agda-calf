@@ -3,8 +3,8 @@
 module CalfMonad.CostMonad where
 
 open Agda.Primitive
-open import Data.Product               using (_×_; _,_)
-open import Data.Unit.Polymorphic.Base using (⊤)
+open import Data.Product                               using (_×_; _,_)
+open import Data.Unit.Polymorphic.Base                 using (⊤)
 open import Relation.Binary.PropositionalEquality.Core using (_≡_; cong; sym; trans)
 
 open import CalfMonad.CostMonoid
