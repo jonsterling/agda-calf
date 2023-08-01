@@ -5,24 +5,23 @@ module CalfMonad.Sequence.Array ℓ where
 open Agda.Primitive
 open import Agda.Builtin.Nat
 open import Data.Bool.Base                                  using (Bool; _∨_; false; if_then_else_; true)
-open import Data.Fin.Base                                   using (Fin)
-open import Data.Fin.Properties                             using (_≟_)
-open import Data.List.Relation.Unary.All.Properties as LAll using ()
+open import Data.Fin.Base                                   using (Fin; toℕ)
 open import Data.Product                                    using (_×_; _,_)
 open import Data.Unit.Polymorphic.Base                      using (⊤)
 open import Data.Vec.Base                                   using (Vec; lookup; tabulate)
+open import Data.Vec.Properties                             using (lookup∘tabulate; tabulate-cong)
 open import Data.Vec.Relation.Unary.All             as All  using (All)
 open import Data.Vec.Relation.Unary.All.Properties          using (tabulate⁺; tabulate⁻)
 open import Function.Equality                               using (_⟨$⟩_)
 open import Function.Inverse                                using (Inverse; _↔_; id)
 open import Level                                           using (lift)
-open import Relation.Binary.PropositionalEquality.Core      using (_≡_; refl; subst; sym)
-open import Relation.Nullary.Decidable.Core                 using (⌊_⌋)
+open import Relation.Binary.PropositionalEquality.Core      using (_≡_; cong₂; refl; subst)
 
 open import CalfMonad.CostMonad
 open import CalfMonad.CostMonoids
 open import CalfMonad.Monad
 open import CalfMonad.NondetMonad
+open import CalfMonad.Util using (Prod)
 
 data ArrayStep : Set (lsuc ℓ) where
   read  : {A : Set ℓ} {n : Nat} (as : Vec A n) (i : Fin n) → ArrayStep
@@ -41,6 +40,8 @@ module _ {ℓ′ M} (monad : Monad {ℓ} {ℓ′} M) (nondetMonad : NondetMonad 
   open Monad monad
   open NondetMonad nondetMonad
 
+  module Util = CalfMonad.Util.Monad monad
+
   open import CalfMonad.CBPV monad
 
   module Spec where
@@ -54,11 +55,11 @@ module _ {ℓ′ M} (monad : Monad {ℓ} {ℓ′} M) (nondetMonad : NondetMonad 
       empty : ArrayBuilder′ A n λ i → false
       empty = tabulate⁺ _
 
-      assign : ∀ i (a : A) → ArrayBuilder′ A n λ j → ⌊ i ≟ j ⌋
+      assign : (i : Fin n) (a : A) → ArrayBuilder′ A n λ j → toℕ i == toℕ j
       assign i a = tabulate⁺ f
         where
-          f : ∀ j → if ⌊ i ≟ j ⌋ then A else ⊤
-          f j with ⌊ i ≟ j ⌋
+          f : ∀ j → if toℕ i == toℕ j then A else ⊤
+          f j with toℕ i == toℕ j
           ...    | false = _
           ...    | true  = a
 
@@ -73,7 +74,7 @@ module _ {ℓ′ M} (monad : Monad {ℓ} {ℓ′} M) (nondetMonad : NondetMonad 
           ...    | true           | true           | a₁                 | a₂ = a₂
 
       par : ∀ {m₁} (b₁ : ArrayBuilder A n m₁) {m₂} (b₂ : ArrayBuilder A n m₂) → M (ArrayBuilder′ A n λ i → lookup m₁ i ∨ lookup m₂ i)
-      par {m₁} b₁ {m₂} b₂ = seqbind (F _) (LAll.tabulate⁺ f) λ as → pure (tabulate⁺ (LAll.tabulate⁻ as))
+      par {m₁} b₁ {m₂} b₂ = bind (F _) (Util.seq (Prod.tabulate f)) λ as → pure (tabulate⁺ (Prod.lookup as))
         where
           f : ∀ i → M (if lookup m₁ i ∨ lookup m₂ i then A else ⊤)
           f i with lookup m₁ i with lookup m₂ i with All.lookup i b₁ with All.lookup i b₂
@@ -121,7 +122,7 @@ module _ {ℓ′ M} (monad : Monad {ℓ} {ℓ′} M) (nondetMonad : NondetMonad 
           ArrayBuilder/empty : ArrayBuilder′ A n λ i → false
           ArrayBuilder/empty/ext : ∀ u → ArrayBuilder/empty {A} {n} ≡ ArrayBuilder/ext/fromSpec u (pure Spec.ArrayBuilder.empty)
 
-          ArrayBuilder/assign : ∀ i (a : A) → ArrayBuilder′ A n λ j → ⌊ i ≟ j ⌋
+          ArrayBuilder/assign : ∀ i (a : A) → ArrayBuilder′ A n λ j → toℕ {n} i == toℕ j
           ArrayBuilder/assign/ext : ∀ u i a → ArrayBuilder/assign {A} {n} i a ≡ ArrayBuilder/ext/fromSpec u (pure (Spec.ArrayBuilder.assign i a))
 
           ArrayBuilder/seq : ∀ {m₁} (b₁ : U (ArrayBuilder A n m₁)) {m₂} (b₂ : U (ArrayBuilder A n m₂)) → ArrayBuilder′ A n λ i → lookup m₁ i ∨ lookup m₂ i
@@ -165,7 +166,7 @@ module _ {ℓ′ M} (monad : Monad {ℓ} {ℓ′} M) (nondetMonad : NondetMonad 
           empty/ext : ∀ u → empty ≡ ext/fromSpec u (pure Spec.ArrayBuilder.empty)
           empty/ext = ArrayBuilder/empty/ext
 
-          assign : ∀ i (a : A) → ArrayBuilder′ A n λ j → ⌊ i ≟ j ⌋
+          assign : ∀ i (a : A) → ArrayBuilder′ A n λ j → toℕ {n} i == toℕ j
           assign = ArrayBuilder/assign
 
           assign/ext : ∀ u i a → assign i a ≡ ext/fromSpec u (pure (Spec.ArrayBuilder.assign i a))
@@ -182,6 +183,15 @@ module _ {ℓ′ M} (monad : Monad {ℓ} {ℓ′} M) (nondetMonad : NondetMonad 
 
           par/ext : ∀ u {m₁} b₁ {m₂} b₂ → par {m₁} b₁ {m₂} b₂ ≡ ext/fromSpec u ((ext/toSpec u b₁ & ext/toSpec u b₂) >>= λ (b₁ , b₂) → Spec.ArrayBuilder.par b₁ b₂)
           par/ext = ArrayBuilder/par/ext
+
+          cast : ∀ {m m′} → (∀ i → m i ≡ m′ i) → ArrayBuilder′ A n m → ArrayBuilder′ A n m′
+          cast eq = subst (λ m → U (ArrayBuilder A n m)) (tabulate-cong eq)
+
+          seq′ : ∀ {m₁} (b₁ : ArrayBuilder′ A n m₁) {m₂} (b₂ : ArrayBuilder′ A n m₂) → ArrayBuilder′ A n λ i → m₁ i ∨ m₂ i
+          seq′ b₁ b₂ = cast (λ i → cong₂ _∨_ (lookup∘tabulate _ i) (lookup∘tabulate _ i)) (seq b₁ b₂)
+
+          par′ : ∀ {m₁} (b₁ : ArrayBuilder′ A n m₁) {m₂} (b₂ : ArrayBuilder′ A n m₂) → ArrayBuilder′ A n λ i → m₁ i ∨ m₂ i
+          par′ b₁ b₂ = cast (λ i → cong₂ _∨_ (lookup∘tabulate _ i) (lookup∘tabulate _ i)) (par b₁ b₂)
 
         module Array {A n} where
           ext/toSpec : (u : ext) (as : Array A n) → Spec.Array A n

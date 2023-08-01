@@ -4,7 +4,7 @@ open Agda.Primitive
 
 open import CalfMonad.Monad
 
-module CalfMonad.CBPV.Pi {ℓ ℓ′} {M : Set ℓ → Set (ℓ ⊔ ℓ′)} (monad : Monad M) where
+module CalfMonad.CBPV.Pi {ℓ ℓ′ M} (monad : Monad {ℓ} {ℓ ⊔ ℓ′} M) where
 
 open import CalfMonad.CBPV monad
 

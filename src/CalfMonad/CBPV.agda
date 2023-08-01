@@ -2,16 +2,13 @@
 
 open import CalfMonad.Monad
 
-module CalfMonad.CBPV {ℓ ℓ′} {M : Set ℓ → Set ℓ′} (monad : Monad M) where
+module CalfMonad.CBPV {ℓ ℓ′ M} (monad : Monad {ℓ} {ℓ′} M) where
 
 open Monad monad
 
 open Agda.Primitive
-open import Agda.Builtin.List
 open import Axiom.Extensionality.Propositional         using (Extensionality)
-open import Data.List.Relation.Unary.All               using (All; []; _∷_; map)
-open import Function.Base                              using () renaming (id to id⁺)
-open import Relation.Binary.PropositionalEquality.Core using (module ≡-Reasoning; _≡_; cong)
+open import Relation.Binary.PropositionalEquality.Core using (module ≡-Reasoning; _≡_; cong; refl)
 
 tp+ : Set (lsuc ℓ)
 tp+ = Set ℓ
@@ -32,20 +29,6 @@ bind (F B) = _>>=_
 pure-bind (F B) ext = pure->>=
 >>=-bind (F C) ext = >>=->>=
 
-seqbind : ∀ X {As : List tp+} → All M As → (All id⁺ As → U X) → U X
-seqbind X [] f = f []
-seqbind X (e ∷ es) f = bind X e λ a → seqbind X es λ as → f (a ∷ as)
-
-open ≡-Reasoning
-
-pure-seqbind : ∀ X → Extensionality ℓ ℓ′ → ∀ {As} as f → seqbind X {As} (map pure as) f ≡ f as
-pure-seqbind X ext [] f = begin
-  f [] ∎
-pure-seqbind X ext (a ∷ as) f = begin
-  bind X (pure a) (λ a → seqbind X (map pure as) λ as → f (a ∷ as)) ≡⟨ pure-bind X ext a _ ⟩
-  seqbind X (map pure as) (λ as → f (a ∷ as))                       ≡⟨ pure-seqbind X ext as _ ⟩
-  f (a ∷ as)                                                        ∎
-
 record _→⁻_ (X Y : tp-) : Set (lsuc ℓ ⊔ ℓ′) where
   field
     _$⁻_ : U X → U Y
@@ -55,8 +38,9 @@ open _→⁻_ public
 
 id⁻ : ∀ {X} → X →⁻ X
 id⁻ $⁻ x = x
-id⁻ {X} .$⁻-bind e f = begin
-  bind X e f ∎
+id⁻ {X} .$⁻-bind e f = refl
+
+open ≡-Reasoning
 
 _∘⁻_ : ∀ {X Y Z} → Y →⁻ Z → X →⁻ Y → X →⁻ Z
 (f ∘⁻ g) $⁻ x = f $⁻ (g $⁻ x)
@@ -79,10 +63,8 @@ module Inverse⁻ where
   id : ∀ {X} → X ↔⁻ X
   id .to = id⁻
   id .from = id⁻
-  id .left-inverse-of x = begin
-    x ∎
-  id .right-inverse-of x = begin
-    x ∎
+  id .left-inverse-of x = refl
+  id .right-inverse-of x = refl
 
   _∘_ : ∀ {X Y Z} → Y ↔⁻ Z → X ↔⁻ Y → X ↔⁻ Z
   (f ∘ g) .to = f .to ∘⁻ g .to
