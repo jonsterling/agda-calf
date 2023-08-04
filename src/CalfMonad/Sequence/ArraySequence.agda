@@ -9,18 +9,17 @@ module CalfMonad.Sequence.ArraySequence {ℓ ℓ′ ℓ″ M ℂ monad costMonoi
 open ARRAY array
 
 open import Agda.Builtin.Equality
-open import Data.Bool.Base                             using (T; false; true)
-open import Data.Bool.Properties                       using (T-∨)
-open import Data.Empty                                 using (⊥-elim)
-open import Data.Fin.Base                              using (Fin; fromℕ<″; toℕ)
-open import Data.Fin.Properties                        using (toℕ-fromℕ<″; toℕ<n)
-open import Data.Nat.Base                              using (_<_; _<ᵇ_; _≤_; _≡ᵇ_; _≤ᵇ_; _≤‴_; ℕ; ≤‴-refl; ≤‴-step)
-open import Data.Nat.Properties                        using (0≤‴n; <⇒<ᵇ; <⇒≤; <⇒≱; <ᵇ⇒<; m≤n⇒m<n∨m≡n; ≤-reflexive; ≡ᵇ⇒≡; ≡⇒≡ᵇ; ≤ᵇ⇒≤; ≤⇒≤ᵇ; ≤‴⇒≤″)
-open import Data.Sum.Base                              using ([_,_]; _⊎_; swap)
-open import Data.Sum.Function.Propositional            using (_⊎-⇔_)
-open import Function.Equality                          using (_⟨$⟩_)
-open import Function.Equivalence                       using (Equivalence; _⇔_; _∘_; equivalence; sym)
-open import Relation.Binary.PropositionalEquality.Core using (_≡_; refl; subst)
+open import Data.Bool.Base                  using (Bool; T; _∨_; false; true)
+open import Data.Bool.Properties            using (T-∨)
+open import Data.Empty                      using (⊥-elim)
+open import Data.Fin.Base                   using (Fin; fromℕ<″; toℕ)
+open import Data.Fin.Properties             using (toℕ-fromℕ<″; toℕ<n)
+open import Data.Nat.Base                   using (_<_; _≤_; _≡ᵇ_; _≤ᵇ_; _≤‴_; ℕ; ≤‴-refl; ≤‴-step)
+open import Data.Nat.Properties             using (0≤‴n; <⇒≤; <⇒≱; m≤n⇒m<n∨m≡n; ≤-reflexive; ≡ᵇ⇒≡; ≡⇒≡ᵇ; ≤ᵇ⇒≤; ≤⇒≤ᵇ; ≤‴⇒≤″)
+open import Data.Sum.Base                   using ([_,_]; _⊎_; swap)
+open import Data.Sum.Function.Propositional using (_⊎-⇔_)
+open import Function.Equality               using (_⟨$⟩_)
+open import Function.Equivalence            using (Equivalence; _⇔_; _∘_; equivalence; sym)
 
 open import CalfMonad.CBPV monad
 
@@ -32,9 +31,6 @@ private
   T-inj {false} {true}  eqv = ⊥-elim (Equivalence.from eqv ⟨$⟩ _)
 
   module _ {m n} where
-    <ᵇ⇔< : T (m <ᵇ n) ⇔ m < n
-    <ᵇ⇔< = equivalence (<ᵇ⇒< m n) <⇒<ᵇ
-
     ≡ᵇ⇔≡ : T (m ≡ᵇ n) ⇔ m ≡ n
     ≡ᵇ⇔≡ = equivalence (≡ᵇ⇒≡ m n) (≡⇒≡ᵇ m n)
 
@@ -55,15 +51,19 @@ module Seq {A n} where
   nth = Array.nth
 
   tabulate : (f : (i : Fin n) → M A) → M (Seq A n)
-  tabulate f = Array.build (b 0≤‴n)
+  tabulate f = Array.build (ArrayBuilder.cast (cmp-≡ 0≤‴n) (b 0≤‴n))
     where
-      b : ∀ {i} → i ≤‴ n → ArrayBuilder′ A n λ j → i ≤ᵇ toℕ j
-      b ≤‴-refl =
-        ArrayBuilder.cast (λ i → T-inj (sym ≤ᵇ⇔≤ ∘ equivalence ⊥-elim (<⇒≱ (toℕ<n i))))
-        ArrayBuilder.empty
-      b (≤‴-step le) =
-        ArrayBuilder.cast (λ j → T-inj (sym ≤ᵇ⇔≤ ∘ sym m≤n⇔m<n∨m≡n ∘ <ᵇ⇔< ⊎-⇔ subst (λ x → T (toℕ i ≡ᵇ _) ⇔ x ≡ _) (toℕ-fromℕ<″ (≤‴⇒≤″ le)) ≡ᵇ⇔≡ ∘ swap-⇔ ∘ T-∨))
-        (ArrayBuilder.par′ (bind (ArrayBuilder A n _) (f i) (ArrayBuilder.assign i)) (b le))
+      cmp : ∀ {i} → i ≤‴ n → Fin n → Bool
+      cmp ≤‴-refl j = false
+      cmp (≤‴-step le) j = (toℕ (fromℕ<″ _ (≤‴⇒≤″ le)) ≡ᵇ toℕ j) ∨ cmp le j
+
+      cmp-≡ : ∀ {i} le j → cmp {i} le j ≡ (i ≤ᵇ toℕ j)
+      cmp-≡ ≤‴-refl j = T-inj (sym ≤ᵇ⇔≤ ∘ equivalence ⊥-elim (<⇒≱ (toℕ<n j)))
+      cmp-≡ (≤‴-step le) j rewrite cmp-≡ le j rewrite toℕ-fromℕ<″ (≤‴⇒≤″ le) = T-inj (sym ≤ᵇ⇔≤ ∘ sym m≤n⇔m<n∨m≡n ∘ ≤ᵇ⇔≤ {n = toℕ j} ⊎-⇔ ≡ᵇ⇔≡ ∘ swap-⇔ ∘ T-∨)
+
+      b : ∀ {i} le → ArrayBuilder′ A n (cmp {i} le)
+      b ≤‴-refl = ArrayBuilder.empty
+      b (≤‴-step le) = ArrayBuilder.par′ (bind (ArrayBuilder A n _) (f i) (ArrayBuilder.assign i)) (b le)
         where
           i : Fin n
           i = fromℕ<″ _ (≤‴⇒≤″ le)
