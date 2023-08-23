@@ -6,13 +6,19 @@ open import Agda.Builtin.Nat
 open import Data.Fin.Base                              using (Fin; suc; zero)
 open import Data.Product                               using (_×_; _,_)
 open import Data.Unit.Polymorphic.Base                 using (⊤)
-open import Relation.Binary.PropositionalEquality.Core using (module ≡-Reasoning; _≡_; cong)
+open import Data.Vec.Relation.Unary.All                using (_∷_)
+open import Data.Vec.Relation.Unary.All.Properties     using (tabulate⁺)
+open import Relation.Binary.PropositionalEquality.Core using (module ≡-Reasoning; _≡_; cong; cong₂; refl)
 
 import CalfMonad.CostMonad as CalfMonad
 import CalfMonad.Monad     as CalfMonad
 open import CalfMonad.CostMonoid
 
 open ≡-Reasoning
+
+tabulate⁺-cong : ∀ {a A p P n f Pf Pf′} → (∀ i → Pf i ≡ Pf′ i) → tabulate⁺ {a} {A} {p} {P} {n} {f} Pf ≡ tabulate⁺ {a} {A} {p} {P} {n} {f} Pf′
+tabulate⁺-cong {n = zero} eq = refl
+tabulate⁺-cong {n = suc n} eq = cong₂ _∷_ (eq zero) (tabulate⁺-cong λ i → eq (suc i))
 
 Prod : ∀ {n a} (As : Fin n → Set a) → Set a
 Prod {zero} As = ⊤
@@ -38,6 +44,22 @@ module Prod where
   zipWith : ∀ {n a As b Bs c Cs} → (∀ {i} → As i → Bs i → Cs i) → Prod {n} {a} As → Prod {n} {b} Bs → Prod {n} {c} Cs
   zipWith {zero} f _ _ = _
   zipWith {suc n} f (x , xs) (y , ys) = f x y , zipWith f xs ys
+
+  tabulate-cong : ∀ {n a As xs xs′} → (∀ i → xs i ≡ xs′ i) → tabulate {n} {a} {As} xs ≡ tabulate {n} {a} {As} xs′
+  tabulate-cong {zero} eq = refl
+  tabulate-cong {suc n} eq = cong₂ _,_ (eq zero) (tabulate-cong λ i → eq (suc i))
+
+  lookup-tabulate : ∀ {n a As} xs i → lookup (tabulate {n} {a} {As} xs) i ≡ xs i
+  lookup-tabulate xs zero = refl
+  lookup-tabulate xs (suc i) = lookup-tabulate _ i
+
+  tabulate-lookup : ∀ {n a As} xs → tabulate (lookup {n} {a} {As} xs) ≡ xs
+  tabulate-lookup {zero} _ = refl
+  tabulate-lookup {suc n} (x , xs) = cong (x ,_) (tabulate-lookup xs)
+
+  map-tabulate : ∀ {n a As b Bs} (f : ∀ {i} → As i → Bs i) xs → map {n} {a} {As} {b} {Bs} f (tabulate xs) ≡ tabulate λ i → f (xs i)
+  map-tabulate {zero} f xs = refl
+  map-tabulate {suc n} f xs = cong (_ ,_) (map-tabulate _ _)
 
 module Monad {ℓ ℓ′ M} (monad : CalfMonad.Monad {ℓ} {ℓ′} M) where
   open CalfMonad.Monad monad
@@ -77,7 +99,7 @@ module CostMonad {ℓ ℓ′ ℓ″ M ℂ monad costMonoid} (costMonad : CalfMon
     step p >> (step (Prod.foldr _⊕_ 𝟘 ps) >> (pure as >>= λ as → pure (a , as)))                                ≡⟨ cong (λ e → _ >> (_ >> e)) (pure->>= as _) ⟩
     step p >> (step (Prod.foldr _⊕_ 𝟘 ps) >> pure (a , as))                                                     ≡˘⟨ >>=->>= _ _ _ ⟩
     (step p >> step (Prod.foldr _⊕_ 𝟘 ps)) >> pure (a , as)                                                     ≡˘⟨ cong (_>> _) (step-⊕ p _) ⟩
-    step (p ⊕ Prod.foldr _⊕_ 𝟘 ps) >>= (λ _ → pure (a , as))                                                    ∎
+    step (p ⊕ Prod.foldr _⊕_ 𝟘 ps) >> pure (a , as)                                                             ∎
 
 module ParCostMonad {ℓ ℓ′ ℓ″ M ℂ monad costMonoid costMonad parCostMonoid} (parCostMonad : CalfMonad.ParCostMonad {ℓ} {ℓ′} {ℓ″} {M} {ℂ} {monad} {costMonoid} costMonad parCostMonoid) where
   open CalfMonad.Monad monad
