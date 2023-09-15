@@ -22,6 +22,7 @@ open import Calf.Types.Bounded costMonoid
 open import Data.String using (String)
 open import Data.Nat as Nat using (_+_; _*_; _<_; _>_; _≤ᵇ_; _<ᵇ_; ⌊_/2⌋; _≡ᵇ_; _≥_; _∸_)
 open import Data.Bool as Bool using (not; _∧_)
+open import Data.Nat.Logarithm
 import Data.Nat.Properties as Nat
 import Data.List.Properties as List
 
@@ -423,6 +424,230 @@ RedBlackMSequence =
         (bound/bind/const (1 + (2 * (RBT.n t₁ Nat.⊔ RBT.n t₂ ∸ RBT.n t₁ Nat.⊓ RBT.n t₂))) 0
           (i-join/is-bounded _ _ _ (RBT.t t₁) a _ _ _ (RBT.t t₂))
           (λ { (_ , _ , _ , _ , _) → bound/ret }))
+
+    i-nodes : {y : val color} {n : val nat} {l : val (list A)} → IRBT A y n l → val nat
+    i-nodes leaf = 0
+    i-nodes (red t₁ _ t₂) = 1 + (i-nodes t₁) + (i-nodes t₂)
+    i-nodes (black t₁ _ t₂) = 1 + (i-nodes t₁) + (i-nodes t₂)
+
+    i-nodes≡lengthl : ∀ {y} {n} {l} → (t : IRBT A y n l) → i-nodes t ≡ length l
+    i-nodes≡lengthl leaf = refl
+    i-nodes≡lengthl (red {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
+      begin
+        1 + (i-nodes t₁) + (i-nodes t₂)
+      ≡⟨ Eq.cong₂ _+_ (Eq.cong₂ _+_ refl (i-nodes≡lengthl t₁)) (i-nodes≡lengthl t₂) ⟩
+        1 + length l₁ + length l₂
+      ≡⟨ Eq.cong₂ _+_ (Nat.+-comm 1 (length l₁)) refl ⟩
+        (length l₁ + 1) + length l₂
+      ≡⟨ Nat.+-assoc (length l₁) 1 (length l₂) ⟩
+        length l₁ + (1 + length l₂)
+      ≡⟨⟩
+        length l₁ + length ([ a ] ++ l₂)
+      ≡˘⟨ List.length-++ l₁ ⟩
+        length (l₁ ++ [ a ] ++ l₂)
+      ∎
+        where open ≡-Reasoning
+    i-nodes≡lengthl (black {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
+      begin
+        1 + (i-nodes t₁) + (i-nodes t₂)
+      ≡⟨ Eq.cong₂ _+_ (Eq.cong₂ _+_ refl (i-nodes≡lengthl t₁)) (i-nodes≡lengthl t₂) ⟩
+        1 + length l₁ + length l₂
+      ≡⟨ Eq.cong₂ _+_ (Nat.+-comm 1 (length l₁)) refl ⟩
+        (length l₁ + 1) + length l₂
+      ≡⟨ Nat.+-assoc (length l₁) 1 (length l₂) ⟩
+        length l₁ + (1 + length l₂)
+      ≡⟨⟩
+        length l₁ + length ([ a ] ++ l₂)
+      ≡˘⟨ List.length-++ l₁ ⟩
+        length (l₁ ++ [ a ] ++ l₂)
+      ∎
+        where open ≡-Reasoning
+
+    i-total-height : {y : val color} {n : val nat} {l : val (list A)} → IRBT A y n l → val nat
+    i-total-height leaf = 0
+    i-total-height (red t₁ _ t₂) = 1 + (i-total-height t₁ Nat.⊔ i-total-height t₂)
+    i-total-height (black t₁ _ t₂) = 1 + (i-total-height t₁ Nat.⊔ i-total-height t₂)
+
+    i-nodes/bound/node-black-height : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → 1 + (i-nodes t) ≥ (2 Nat.^ n)
+    i-nodes/bound/node-black-height leaf = Nat.s≤s Nat.z≤n
+    i-nodes/bound/node-black-height (red {n} t₁ _ t₂) =
+      let open ≤-Reasoning in
+        begin
+          2 Nat.^ n
+        ≤⟨ i-nodes/bound/node-black-height t₁ ⟩
+          suc (i-nodes t₁)
+        ≤⟨ Nat.m≤m+n (suc (i-nodes t₁)) (suc (i-nodes t₂)) ⟩
+          (suc (i-nodes t₁)) + (suc (i-nodes t₂))
+        ≡⟨ Eq.cong suc (Nat.+-suc (i-nodes t₁) (i-nodes t₂)) ⟩
+          suc (suc (i-nodes t₁ + i-nodes t₂))
+        ∎
+    i-nodes/bound/node-black-height (black {n} t₁ _ t₂) =
+      let open ≤-Reasoning in
+        begin
+          (2 Nat.^ n) + ((2 Nat.^ n) + zero)
+        ≡⟨ Eq.sym (Eq.trans (Eq.sym (Nat.+-identityʳ ((2 Nat.^ n) + (2 Nat.^ n)))) (Nat.+-assoc ((2 Nat.^ n)) ((2 Nat.^ n)) 0)) ⟩
+          (2 Nat.^ n) + (2 Nat.^ n)
+        ≤⟨ Nat.+-monoʳ-≤ (2 Nat.^ n) (i-nodes/bound/node-black-height t₂) ⟩
+          (2 Nat.^ n) + (suc (i-nodes t₂))
+        ≤⟨ Nat.+-monoˡ-≤ ((suc (i-nodes t₂))) (i-nodes/bound/node-black-height t₁) ⟩
+          (suc (i-nodes t₁)) + (suc (i-nodes t₂))
+        ≡⟨ Eq.cong suc (Nat.+-suc (i-nodes t₁) (i-nodes t₂)) ⟩
+          suc (suc (i-nodes t₁ + i-nodes t₂))
+        ∎
+
+    i-nodes/bound/log-node-black-height : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → n ≤ ⌈log₂ (1 + (i-nodes t)) ⌉
+    i-nodes/bound/log-node-black-height {A} {y} {n} t =
+      let open ≤-Reasoning in
+        begin
+          n
+        ≡⟨ Eq.sym (⌈log₂2^n⌉≡n n) ⟩
+          ⌈log₂ (2 Nat.^ n) ⌉
+        ≤⟨ ⌈log₂⌉-mono-≤ (i-nodes/bound/node-black-height t) ⟩
+          ⌈log₂ (1 + (i-nodes t)) ⌉
+        ∎
+
+    total-height/black-height : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → (i-total-height t) ≤ (2 * n + 1)
+    total-height/black-height leaf = Nat.z≤n
+    total-height/black-height (red leaf _ leaf) = Nat.s≤s Nat.z≤n
+    total-height/black-height (red (black {n} t₁₁ _ t₁₂) _ (black t₂₁ _ t₂₂)) =
+      let open ≤-Reasoning in
+        begin
+          suc (suc ((i-total-height t₁₁ Nat.⊔ i-total-height t₁₂) Nat.⊔ (i-total-height t₂₁ Nat.⊔ i-total-height t₂₂)))
+        ≤⟨ Nat.s≤s (Nat.s≤s (Nat.⊔-mono-≤ (Nat.⊔-mono-≤ (total-height/black-height t₁₁) (total-height/black-height t₁₂)) (Nat.⊔-mono-≤ (total-height/black-height t₂₁) (total-height/black-height t₂₂)))) ⟩
+          suc (suc (((2 * n + 1) Nat.⊔ (2 * n + 1)) Nat.⊔ ((2 * n + 1) Nat.⊔ (2 * n + 1))))
+        ≡⟨ Eq.cong suc (Eq.cong suc (Nat.m≤n⇒m⊔n≡n Nat.≤-refl)) ⟩
+          suc (suc ((2 * n + 1) Nat.⊔ (2 * n + 1)))
+        ≡⟨ Eq.cong suc (Eq.cong suc (Nat.m≤n⇒m⊔n≡n Nat.≤-refl)) ⟩
+          suc (suc (2 * n + 1))
+        ≡⟨ Eq.cong suc (Eq.trans (Eq.cong suc (Nat.+-assoc n (n + zero) 1)) (Eq.sym (Nat.+-suc n ((n + zero) + 1)))) ⟩
+          suc (n + suc ((n + zero) + 1))
+        ≡⟨ Eq.cong suc (Eq.sym (Nat.+-assoc n (suc (n + zero)) 1)) ⟩
+          2 * (suc n) + 1
+        ∎
+    total-height/black-height (black {n} t₁ _ t₂) =
+      let open ≤-Reasoning in
+        begin
+          suc (i-total-height t₁ Nat.⊔ i-total-height t₂)
+        ≤⟨ Nat.s≤s (Nat.⊔-mono-≤ (total-height/black-height t₁) (total-height/black-height t₂)) ⟩
+          suc ((2 * n + 1) Nat.⊔ (2 * n + 1))
+        ≡⟨ Eq.cong suc (Nat.m≤n⇒m⊔n≡n Nat.≤-refl) ⟩
+          suc (2 * n + 1)
+        ≤⟨ Nat.s≤s (Nat.+-monoˡ-≤ 1 (Nat.+-monoʳ-≤ n (Nat.n≤1+n (n + zero)))) ⟩
+          2 * (suc n) + 1
+        ∎
+
+    i-nodes/bound/total-height : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → (1 + (i-nodes t)) ≤ (2 Nat.^ (i-total-height t))
+    i-nodes/bound/total-height leaf = Nat.s≤s Nat.z≤n
+    i-nodes/bound/total-height (red t₁ _ t₂) =
+      let open ≤-Reasoning in
+        begin
+          suc (suc (i-nodes t₁ + i-nodes t₂))
+        ≡⟨ Eq.cong suc (Eq.sym (Nat.+-suc (i-nodes t₁) (i-nodes t₂))) ⟩
+          (suc (i-nodes t₁) + (suc (i-nodes t₂)))
+        ≤⟨ Nat.+-monoˡ-≤ (suc (i-nodes t₂)) (i-nodes/bound/total-height t₁) ⟩
+          (2 Nat.^ (i-total-height t₁)) + (suc (i-nodes t₂))
+        ≤⟨ Nat.+-monoʳ-≤ (2 Nat.^ (i-total-height t₁)) (i-nodes/bound/total-height t₂) ⟩
+          (2 Nat.^ (i-total-height t₁)) + (2 Nat.^ (i-total-height t₂))
+        ≤⟨ Nat.+-monoˡ-≤ ((2 Nat.^ (i-total-height t₂))) (Nat.^-monoʳ-≤ 2 {x = i-total-height t₁} (Nat.m≤n⇒m≤n⊔o (i-total-height t₂) (Nat.≤-refl))) ⟩
+          (2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂)) + (2 Nat.^ (i-total-height t₂))
+        ≤⟨ Nat.+-monoʳ-≤ ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂))) ((Nat.^-monoʳ-≤ 2 {x = i-total-height t₂} (Nat.m≤n⇒m≤o⊔n (i-total-height t₁) (Nat.≤-refl)))) ⟩
+          (2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂)) + (2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂))
+        ≡⟨ Eq.trans (Eq.sym (Nat.+-identityʳ ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂)) + (2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂))))) (Nat.+-assoc ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂))) ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂))) 0) ⟩
+          ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂)) + ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂)) + zero))
+        ∎
+    i-nodes/bound/total-height (black t₁ _ t₂) =
+      let open ≤-Reasoning in
+        begin
+          suc (suc (i-nodes t₁ + i-nodes t₂))
+        ≡⟨ Eq.cong suc (Eq.sym (Nat.+-suc (i-nodes t₁) (i-nodes t₂))) ⟩
+          (suc (i-nodes t₁) + (suc (i-nodes t₂)))
+        ≤⟨ Nat.+-monoˡ-≤ (suc (i-nodes t₂)) (i-nodes/bound/total-height t₁) ⟩
+          (2 Nat.^ (i-total-height t₁)) + (suc (i-nodes t₂))
+        ≤⟨ Nat.+-monoʳ-≤ (2 Nat.^ (i-total-height t₁)) (i-nodes/bound/total-height t₂) ⟩
+          (2 Nat.^ (i-total-height t₁)) + (2 Nat.^ (i-total-height t₂))
+        ≤⟨ Nat.+-monoˡ-≤ ((2 Nat.^ (i-total-height t₂))) (Nat.^-monoʳ-≤ 2 {x = i-total-height t₁} (Nat.m≤n⇒m≤n⊔o (i-total-height t₂) (Nat.≤-refl))) ⟩
+          (2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂)) + (2 Nat.^ (i-total-height t₂))
+        ≤⟨ Nat.+-monoʳ-≤ ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂))) ((Nat.^-monoʳ-≤ 2 {x = i-total-height t₂} (Nat.m≤n⇒m≤o⊔n (i-total-height t₁) (Nat.≤-refl)))) ⟩
+          (2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂)) + (2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂))
+        ≡⟨ Eq.trans (Eq.sym (Nat.+-identityʳ ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂)) + (2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂))))) (Nat.+-assoc ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂))) ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂))) 0) ⟩
+          ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂)) + ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂)) + zero))
+        ∎
+
+    i-nodes/lower-bound/node-black-height : {y : val color} {n : val nat} {l : val (list A)}  → (t : IRBT A y n l) → (1 + (i-nodes t)) ≤ (2 Nat.^ (2 * n + 1))
+    i-nodes/lower-bound/node-black-height {A} {y} {n} t =
+      let open ≤-Reasoning in
+        begin
+          1 + (i-nodes t)
+        ≤⟨ i-nodes/bound/total-height t ⟩
+          2 Nat.^ (i-total-height t)
+        ≤⟨ Nat.^-monoʳ-≤ 2 (total-height/black-height t) ⟩
+          2 Nat.^ (2 * n + 1)
+        ∎
+
+    i-nodes/lower-bound/log-node-black-height : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → n ≥ ⌊ (⌈log₂ (1 + (i-nodes t)) ⌉ ∸ 1) /2⌋
+    i-nodes/lower-bound/log-node-black-height {A} {y} {n} t =
+      let open ≤-Reasoning in
+        begin
+          ⌊ (⌈log₂ (1 + (i-nodes t)) ⌉ ∸ 1) /2⌋
+        ≤⟨ Nat.⌊n/2⌋-mono (h t) ⟩
+          ⌊ (2 * n) /2⌋
+        ≡⟨ Eq.sym (Eq.trans (Nat.n≡⌊n+n/2⌋ n) (Eq.cong ⌊_/2⌋ (Eq.cong₂ _+_ refl (Eq.sym (Nat.+-identityʳ n))))) ⟩
+          n
+        ∎
+        where
+          m≤o+n⇒m∸n≤o : (m n o : val nat) → (m ≤ (o + n)) → ((m ∸ n) ≤ o)
+          m≤o+n⇒m∸n≤o m n o m≤o+n =
+            let open ≤-Reasoning in
+              begin
+                m ∸ n
+              ≤⟨ Nat.∸-monoˡ-≤ n m≤o+n ⟩
+                (o + n) ∸ n
+              ≡⟨ Nat.m+n∸n≡m o n ⟩
+                o
+              ∎
+
+          h : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → (⌈log₂ (1 + (i-nodes t)) ⌉ ∸ 1) ≤ (2 * n)
+          h {y} {n} t = m≤o+n⇒m∸n≤o ⌈log₂ (1 + (i-nodes t)) ⌉ 1 (2 * n) (
+            let open ≤-Reasoning in
+              begin
+                ⌈log₂ (1 + (i-nodes t)) ⌉
+              ≤⟨ ⌈log₂⌉-mono-≤ (i-nodes/lower-bound/node-black-height t) ⟩
+                ⌈log₂ (2 Nat.^ (2 * n + 1)) ⌉
+              ≡⟨ ⌈log₂2^n⌉≡n (2 * n + 1) ⟩
+                2 * n + 1
+              ∎)
+
+    nodes : RBT A → val nat
+    nodes ⟪ t ⟫ = i-nodes t
+
+    nodes/bound/log-node-black-height : (t : RBT A) → RBT.n t ≤ ⌈log₂ (1 + (nodes t)) ⌉
+    nodes/bound/log-node-black-height ⟪ t ⟫ = i-nodes/bound/log-node-black-height t
+
+    nodes/lower-bound/log-node-black-height : (t : RBT A) → RBT.n t ≥ ⌊ (⌈log₂ (1 + (nodes t)) ⌉ ∸ 1) /2⌋
+    nodes/lower-bound/log-node-black-height ⟪ t ⟫ = i-nodes/lower-bound/log-node-black-height t 
+
+    join/cost : ∀ {A} (t₁ : RBT A) (t₂ : RBT A) → ℂ
+    join/cost {A} t₁ t₂ =
+      let max = ⌈log₂ (1 + (nodes t₁)) ⌉ Nat.⊔ ⌈log₂ (1 + (nodes t₂)) ⌉ in
+      let min = ⌊ (⌈log₂ (1 + (nodes t₁)) ⌉ ∸ 1) /2⌋ Nat.⊓ ⌊ (⌈log₂ (1 + (nodes t₂)) ⌉ ∸ 1) /2⌋ in
+        1 + 2 * (max ∸ min)
+
+    join/is-bounded/nodes : ∀ {A} t₁ a t₂ → IsBounded (rbt A) (join t₁ a t₂) (join/cost t₁ t₂)
+    join/is-bounded/nodes {A} t₁ a t₂ =
+      bound/relax
+        (λ u →
+          let open ≤-Reasoning in
+            begin
+              1 + 2 * (RBT.n t₁ Nat.⊔ RBT.n t₂ ∸ RBT.n t₁ Nat.⊓ RBT.n t₂)
+            ≤⟨ Nat.+-monoʳ-≤ 1 (Nat.*-monoʳ-≤ 2 (Nat.∸-monoˡ-≤ (RBT.n t₁ Nat.⊓ RBT.n t₂) (Nat.⊔-mono-≤ (nodes/bound/log-node-black-height t₁) (nodes/bound/log-node-black-height t₂)))) ⟩
+              1 + 2 * (⌈log₂ (1 + (nodes t₁)) ⌉ Nat.⊔ ⌈log₂ (1 + (nodes t₂)) ⌉ ∸ RBT.n t₁ Nat.⊓ RBT.n t₂)
+            ≤⟨ Nat.+-monoʳ-≤ 1 (Nat.*-monoʳ-≤ 2 (Nat.∸-monoʳ-≤ (⌈log₂ (1 + (nodes t₁)) ⌉ Nat.⊔ ⌈log₂ (1 + (nodes t₂)) ⌉) (Nat.⊓-mono-≤ (nodes/lower-bound/log-node-black-height t₁) (nodes/lower-bound/log-node-black-height t₂)))) ⟩
+              1 + 2 * (⌈log₂ (1 + (nodes t₁)) ⌉ Nat.⊔ ⌈log₂ (1 + (nodes t₂)) ⌉ ∸ ⌊ (⌈log₂ (1 + (nodes t₁)) ⌉ ∸ 1) /2⌋ Nat.⊓ ⌊ (⌈log₂ (1 + (nodes t₂)) ⌉ ∸ 1) /2⌋)
+            ≡⟨⟩
+              join/cost t₁ t₂
+            ∎
+        )
+        (join/is-bounded t₁ a t₂)
 
     i-rec : {A : tp pos} {X : tp neg} →
       cmp
