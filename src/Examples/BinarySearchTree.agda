@@ -25,7 +25,7 @@ open import Data.Bool as Bool using (not; _∧_)
 import Data.Nat.Properties as Nat
 import Data.List.Properties as List
 
-open import Function as F using (_$_)
+open import Function using (_$_; case_of_)
 
 open import Relation.Nullary
 open import Relation.Nullary.Negation using (contradiction)
@@ -115,7 +115,6 @@ RedBlackMSequence =
     rbt : (A : tp pos) → tp pos
     rbt A = U (meta (RBT A))
 
-
     data AlmostLeftRBT (A : tp pos) : (right-color : val color) → val nat → val (list A) → Set where
       violation :
         {n : val nat} {l₁ l₂ : val (list A)}
@@ -127,93 +126,90 @@ RedBlackMSequence =
     alrbt : (A : tp pos) → val color → val nat → val (list A) → tp pos
     alrbt A y n l = U (meta (AlmostLeftRBT A y n l))
 
-    case-alrbt : {X : ∀ {y} {n} {l} → AlmostLeftRBT A y n l → tp neg} →
-        (∀ {n : val nat} {l₁ l₂ : val (list A)} → (t₁ : IRBT A red n l₁) → (a : val A) → (t₂ : IRBT A black n l₂) → cmp (X (violation t₁ a t₂)))
-      → (∀ {right-color : val color} {n : val nat} {y : val color} {l : val (list A)} → (t : IRBT A y n l) → cmp (X (valid t)))
-      → ∀ {y} {n} {l} (t : AlmostLeftRBT A y n l) → cmp (X t)
-    case-alrbt f₁ f₂ (violation x a x₁) = f₁ x a x₁
-    case-alrbt f₁ f₂ (valid {right-color} {n} {y} {l} x) = f₂ {right-color} {n} {y} {l} x
-
     joinLeft :
       cmp
         ( Π color λ y₁ → Π nat λ n₁ → Π (list A) λ l₁ → Π (irbt A y₁ n₁ l₁) λ _ →
           Π A λ a →
           Π color λ y₂ → Π nat λ n₂ → Π (list A) λ l₂ → Π (irbt A y₂ n₂ l₂) λ _ →
           Π (U (meta (n₁ < n₂))) λ _ →
-          F (alrbt A y₂ n₂ (l₁ ++ [ a ] ++ l₂))
+          F (Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (alrbt A y₂ n₂ l))
         )
     joinLeft {A} y₁ n₁ l₁ t₁ a .red n₂ l₂ (red {l₁ = l₂₁} {l₂ = l₂₂} t₂₁ a₁ t₂₂) n₁<n₂ =
-      step (F (alrbt A red n₂ (l₁ ++ [ a ] ++ (l₂₁ ++ [ a₁ ] ++ l₂₂)))) 1 $
-      bind (F (alrbt A red n₂ (l₁ ++ [ a ] ++ (l₂₁ ++ [ a₁ ] ++ l₂₂)))) (joinLeft _ _ _ t₁ a _ _ _ t₂₁ n₁<n₂)
-        λ { (valid {y = red} t') → ret (
-            Eq.subst
-              (λ l → AlmostLeftRBT A red n₂ l)
-              (List.++-assoc l₁ (a ∷ l₂₁) (a₁ ∷ l₂₂))
-              (violation t' a₁ t₂₂))
-          ; (valid {y = black} t') → ret (
-            Eq.subst
-              (λ l → AlmostLeftRBT A red n₂ l)
-              (List.++-assoc l₁ (a ∷ l₂₁) (a₁ ∷ l₂₂))
-              (valid (red t' a₁ t₂₂)))
+      step (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ l₁ ++ a ∷ l₂₁ ++ a₁ ∷ l₂₂))) (alrbt A red n₂ l)))) 1 $
+      bind (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ l₁ ++ a ∷ l₂₁ ++ a₁ ∷ l₂₂))) (alrbt A red n₂ l))))
+        (joinLeft _ _ _ t₁ a _ _ _ t₂₁ n₁<n₂)
+        λ { (l , l≡l₂₁++a₁∷l₂₂ , valid {y = red} t') →
+              ret (((l₁ ++ [ a ] ++ l₂₁) ++ [ a₁ ] ++ l₂₂) ,
+                (List.++-assoc l₁ (a ∷ l₂₁) (a₁ ∷ l₂₂) ,
+                (Eq.subst (λ l' → AlmostLeftRBT A red n₂ l') (Eq.cong₂ _++_ l≡l₂₁++a₁∷l₂₂ refl) (violation t' a₁ t₂₂))))
+          ; (l , l≡l₂₁++a₁∷l₂₂ , valid {y = black} t') →
+              ret (((l₁ ++ [ a ] ++ l₂₁) ++ [ a₁ ] ++ l₂₂) ,
+                (List.++-assoc l₁ (a ∷ l₂₁) (a₁ ∷ l₂₂) ,
+                Eq.subst (λ l' → AlmostLeftRBT A red n₂ l') (Eq.cong₂ _++_ l≡l₂₁++a₁∷l₂₂ refl) (valid (red t' a₁ t₂₂))))
           }
     joinLeft {A} y₁ n₁ l₁ t₁ a .black (suc n₂) l₂ (black {l₁ = l₂₁} {l₂ = l₂₂} t₂₁ a₁ t₂₂) n₁<n₂ with n₁ Nat.≟ n₂
     joinLeft {A} red n₁ l₁ (red {l₁ = l₁₁} {l₂ = l₁₂} t₁₁ a₁ t₁₂) a .black (suc n₁) l₂ (black {l₁ = l₂₁} {l₂ = l₂₂} t₂₁ a₂ t₂₂) n₁<n₂ | yes refl =
-      ret (valid (red (black t₁₁ a₁ t₁₂) a (black t₂₁ a₂ t₂₂)))
+      ret (((l₁₁ ++ [ a₁ ] ++ l₁₂) ++ [ a ] ++ (l₂₁ ++ [ a₂ ] ++ l₂₂)) ,
+        (refl ,
+        valid (red (black t₁₁ a₁ t₁₂) a (black t₂₁ a₂ t₂₂))))
     joinLeft {A} black n₁ l₁ t₁ a .black (suc n₂) l₂ (black {y₁ = red} {l₂ = l₂₂} (red {l₁ = l₂₁₁} {l₂ = l₂₁₂} t₂₁₁ a₁₁ t₂₁₂) a₁ t₂₂) n₁<n₂ | yes refl =
-      ret (
-        Eq.subst
-          (λ l → AlmostLeftRBT A black (suc n₁) l)
-          (begin
-            (l₁ ++ [ a ] ++ l₂₁₁) ++ [ a₁₁ ] ++ l₂₁₂ ++ [ a₁ ] ++ l₂₂
-          ≡⟨ List.++-assoc l₁ (a ∷ l₂₁₁) (a₁₁ ∷ l₂₁₂ ++ a₁ ∷ l₂₂) ⟩
-            l₁ ++ a ∷ l₂₁₁ ++ a₁₁ ∷ l₂₁₂ ++ a₁ ∷ l₂₂
-          ≡⟨ Eq.cong₂ _++_ refl (Eq.sym (List.++-assoc (a ∷ l₂₁₁) (a₁₁ ∷ l₂₁₂) (a₁ ∷ l₂₂))) ⟩
-            l₁ ++ a ∷ (l₂₁₁ ++ [ a₁₁ ] ++ l₂₁₂) ++ a₁ ∷ l₂₂
-          ∎)
-          (valid (red (black t₁ a t₂₁₁) a₁₁ (black t₂₁₂ a₁ t₂₂))))
-        where open ≡-Reasoning
+      ret (((l₁ ++ [ a ] ++ l₂₁₁) ++ [ a₁₁ ] ++ (l₂₁₂ ++ [ a₁ ] ++ l₂₂)) ,
+        ((begin
+             (l₁ ++ [ a ] ++ l₂₁₁) ++ [ a₁₁ ] ++ l₂₁₂ ++ [ a₁ ] ++ l₂₂
+           ≡⟨ List.++-assoc l₁ (a ∷ l₂₁₁) (a₁₁ ∷ l₂₁₂ ++ a₁ ∷ l₂₂) ⟩
+             l₁ ++ a ∷ l₂₁₁ ++ a₁₁ ∷ l₂₁₂ ++ a₁ ∷ l₂₂
+           ≡⟨ Eq.cong₂ _++_ refl (Eq.sym (List.++-assoc (a ∷ l₂₁₁) (a₁₁ ∷ l₂₁₂) (a₁ ∷ l₂₂))) ⟩
+             l₁ ++ a ∷ (l₂₁₁ ++ [ a₁₁ ] ++ l₂₁₂) ++ a₁ ∷ l₂₂
+           ∎) ,
+        (valid (red (black t₁ a t₂₁₁) a₁₁ (black t₂₁₂ a₁ t₂₂)))))
+          where open ≡-Reasoning
     joinLeft {A} black n₁ l₁ t₁ a .black (suc n₂) l₂ (black {y₁ = black} {l₁ = l₂₁} {l₂ = l₂₂} t₂₁ a₁ t₂₂) n₁<n₂ | yes refl =
-      ret (
-        Eq.subst
-          (λ l → AlmostLeftRBT A black (suc n₁) l)
-          (List.++-assoc l₁ (a ∷ l₂₁) (a₁ ∷ l₂₂))
-          (valid (black (red t₁ a t₂₁) a₁ t₂₂)))
+      ret (((l₁ ++ [ a ] ++ l₂₁) ++ [ a₁ ] ++ l₂₂) ,
+        ((List.++-assoc l₁ (a ∷ l₂₁) (a₁ ∷ l₂₂)) ,
+        (valid (black (red t₁ a t₂₁) a₁ t₂₂))))
     ... | no n₁≢n₂ =
-      bind (F (alrbt A black (suc n₂) (l₁ ++ a ∷ l₂₁ ++ a₁ ∷ l₂₂)))
+      step (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ l₁ ++ a ∷ l₂₁ ++ a₁ ∷ l₂₂))) (alrbt A black (suc n₂) l)))) 1 $
+      bind (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ l₁ ++ a ∷ l₂₁ ++ a₁ ∷ l₂₂))) (alrbt A black (suc n₂) l))))
         (joinLeft _ _ _ t₁ a _ _ _ t₂₁ (Nat.≤∧≢⇒< (Nat.≤-pred n₁<n₂) n₁≢n₂))
-        helper
-      where
-        helper : AlmostLeftRBT A _ n₂ (l₁ ++ a ∷ l₂₁) → cmp (F (alrbt A black (suc n₂) (l₁ ++ a ∷ l₂₁ ++ a₁ ∷ l₂₂)))
-        helper x with l₁ ++ [ a ] ++ l₂₁
-        helper (violation (red t'₁₁ a'₁ t'₁₂) a' t'₂) | .(_ ++ [ a' ] ++ _) = ret (Eq.subst (λ l → AlmostLeftRBT A black (suc n₂) l) {!   !} (valid (red (black t'₁₁ a'₁ t'₁₂) a' (black t'₂ a₁ t₂₂))))
-        helper (valid t') | foo = {! ret (Eq.subst (λ l → AlmostLeftRBT A black (suc n₂) l) (List.++-assoc l₁ (a ∷ l₂₁) (a₁ ∷ l₂₂)) (valid (black t' a₁ t₂₂))) !}
-        -- ret (Eq.subst (λ l → AlmostLeftRBT A black (suc n₂) l) (List.++-assoc l₁ (a ∷ l₂₁) (a₁ ∷ l₂₂)) (valid (black t' a₁ t₂₂)))
-    -- ... | no n₁≢n₂ =
-    --   step (F (alrbt A black (suc n₂))) 1 $
-    --   bind (F (alrbt A black (suc n₂))) (joinLeft _ _ t₁ a _ _ t₂₁ (Nat.≤∧≢⇒< (Nat.≤-pred n₁<n₂) n₁≢n₂)) λ
-    --     { (violation (red t'₁₁ a'₁ t'₁₂) a' t'₂) → ret (valid (red (black t'₁₁ a'₁ t'₁₂) a' (black t'₂ a₁ t₂₂)))
-    --     ; (valid t') → ret (valid (black t' a₁ t₂₂)) }
+        λ { (l , l≡l₁++a∷l₂₁ , violation {l₂ = l'₂} (red {l₁ = l'₁₁} {l₂ = l'₁₂} t'₁₁ a'₁ t'₁₂) a' t'₂) →
+              ret ((l'₁₁ ++ [ a'₁ ] ++ l'₁₂) ++ [ a' ] ++ (l'₂ ++ [ a₁ ] ++ l₂₂) ,
+                ((begin
+                    (l'₁₁ ++ a'₁ ∷ l'₁₂) ++ a' ∷ l'₂ ++ a₁ ∷ l₂₂
+                  ≡˘⟨ List.++-assoc (l'₁₁ ++ a'₁ ∷ l'₁₂) (a' ∷ l'₂) (a₁ ∷ l₂₂) ⟩
+                    ((l'₁₁ ++ a'₁ ∷ l'₁₂) ++ a' ∷ l'₂) ++ a₁ ∷ l₂₂
+                  ≡⟨ Eq.cong₂ _++_ l≡l₁++a∷l₂₁ refl ⟩
+                    (l₁ ++ a ∷ l₂₁) ++ a₁ ∷ l₂₂
+                  ≡⟨ List.++-assoc l₁ (a ∷ l₂₁) (a₁ ∷ l₂₂) ⟩
+                    l₁ ++ a ∷ l₂₁ ++ a₁ ∷ l₂₂
+                  ∎) ,
+                (valid (red (black t'₁₁ a'₁ t'₁₂) a' (black t'₂ a₁ t₂₂)))))
+          ; (l , l≡l₁++a∷l₂₁ , valid t') →
+              ret (((l₁ ++ [ a ] ++ l₂₁) ++ [ a₁ ] ++ l₂₂) ,
+                (List.++-assoc l₁ (a ∷ l₂₁) (a₁ ∷ l₂₂) ,
+                Eq.subst (λ l' → AlmostLeftRBT A black (suc n₂) l') (Eq.cong₂ _++_ l≡l₁++a∷l₂₁ refl) (valid (black t' a₁ t₂₂))))
+          }
+            where open ≡-Reasoning
 
     joinLeft/cost : (y : val color) (n₁ n₂ : val nat) → ℂ
     joinLeft/cost red n₁ n₂ = 1 + (2 * (n₂ ∸ n₁))
     joinLeft/cost black n₁ n₂ = (2 * (n₂ ∸ n₁))
 
     joinLeft/is-bounded' : ∀ y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁<n₂
-        → IsBounded (alrbt A y₂ n₂ (l₁ ++ [ a ] ++ l₂)) (joinLeft y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁<n₂) (joinLeft/cost y₂ n₁ n₂)
+        → IsBounded (Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (alrbt A y₂ n₂ l)) (joinLeft y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁<n₂) (joinLeft/cost y₂ n₁ n₂)
 
     joinLeft/is-bounded : ∀ {A} y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁<n₂
-        → IsBounded (alrbt A y₂ n₂ (l₁ ++ [ a ] ++ l₂)) (joinLeft y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁<n₂) (1 + (2 * (n₂ ∸ n₁)))
+        → IsBounded (Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (alrbt A y₂ n₂ l)) (joinLeft y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁<n₂) (1 + (2 * (n₂ ∸ n₁)))
 
-    joinLeft/is-bounded' {A} y₁ n₁ l₁ t₁ a .red n₂ l₂ (red t₂₁ a₁ t₂₂) n₁<n₂ =
+    joinLeft/is-bounded' {A} y₁ n₁ l₁ t₁ a .red n₂ l₂ (red {l₁ = l₂₁} {l₂ = l₂₂} t₂₁ a₁ t₂₂) n₁<n₂ =
       bound/step 1 (2 * (n₂ ∸ n₁))
       (Eq.subst
         (IsBounded _ _)
         (Nat.+-identityʳ (2 * (n₂ ∸ n₁)))
         (bound/bind/const (2 * (n₂ ∸ n₁)) 0
           (joinLeft/is-bounded' _ _ _ t₁ a _ _ _ t₂₁ n₁<n₂)
-          λ { (valid x) → {!  !}}))
-          -- λ { (valid (red _ _ _)) → bound/ret
-          --   ; (valid (black _ _ _)) → bound/ret }))
+          λ {(_ , _ , valid (red _ _ _)) → bound/ret
+           ; (_ , _ , valid (black _ _ _)) → bound/ret}
+          ))
     joinLeft/is-bounded' y₁ n₁ l₁ t₁ a .black (suc n₂) l₂ (black t₂₁ a₁ t₂₂) n₁<n₂ with n₁ Nat.≟ n₂
     joinLeft/is-bounded' red _ _ (red _ _ _) _ .black _ _ (black _ _ _) _ | yes refl =
       bound/relax (λ u → Nat.z≤n) bound/ret
@@ -221,18 +217,18 @@ RedBlackMSequence =
       bound/relax (λ u → Nat.z≤n) bound/ret
     joinLeft/is-bounded' black _ _ _ _ .black _ _ (black {y₁ = black} _ _ _) _ | yes refl =
       bound/relax (λ u → Nat.z≤n) bound/ret
-    ...| no n₁≢n₂ = {!   !}
-    --   Eq.subst
-    --     (IsBounded _ _) {x = 2 + 2 * (n₂ ∸ n₁)}
-    --     (Eq.trans (Eq.sym (Nat.*-suc 2 (n₂ ∸ n₁))) (Eq.cong (2 *_) (Eq.sym (Nat.+-∸-assoc 1 (Nat.≤-pred n₁<n₂)))))
-    --     (bound/step 1 (1 + 2 * (n₂ ∸ n₁))
-    --       (Eq.subst
-    --         (IsBounded _ _) {x = 1 + (2 * (n₂ ∸ n₁)) + 0}
-    --         (Nat.+-identityʳ (1 + 2 * (n₂ ∸ n₁)))
-    --         (bound/bind/const (1 + (2 * (n₂ ∸ n₁))) 0
-    --           (joinLeft/is-bounded _ _ t₁ a _ _ t₂₁ _)
-    --           λ { (violation (red _ _ _) _ _) → bound/ret
-    --             ; (valid _) → bound/ret })))
+    ...| no n₁≢n₂ =
+      Eq.subst
+        (IsBounded _ _) {x = 2 + 2 * (n₂ ∸ n₁)}
+        (Eq.trans (Eq.sym (Nat.*-suc 2 (n₂ ∸ n₁))) (Eq.cong (2 *_) (Eq.sym (Nat.+-∸-assoc 1 (Nat.≤-pred n₁<n₂)))))
+        (bound/step 1 (1 + 2 * (n₂ ∸ n₁))
+          (Eq.subst
+            (IsBounded _ _) {x = 1 + (2 * (n₂ ∸ n₁)) + 0}
+            (Nat.+-identityʳ (1 + 2 * (n₂ ∸ n₁)))
+            (bound/bind/const (1 + (2 * (n₂ ∸ n₁))) 0
+              (joinLeft/is-bounded _ _ _ t₁ a _ _ _ t₂₁ _)
+              λ { (_ , _ , (violation (red _ _ _) _ _)) → bound/ret
+                ; (_ , _ , (valid _)) → bound/ret })))
 
     joinLeft/is-bounded y₁ n₁ l₁ t₁ a red n₂ l₂ t₂ n₁<n₂ =
       joinLeft/is-bounded' y₁ n₁ l₁ t₁ a red n₂ l₂ t₂ n₁<n₂
@@ -256,63 +252,75 @@ RedBlackMSequence =
           Π A λ a →
           Π color λ y₂ → Π nat λ n₂ → Π (list A) λ l₂ → Π (irbt A y₂ n₂ l₂) λ _ →
           Π (U (meta (n₁ > n₂))) λ _ →
-          F (arrbt A y₁ n₁ (l₁ ++ [ a ] ++ l₂))
+          F (Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (arrbt A y₁ n₁ l))
         )
     joinRight {A} .red n₁ l₁ (red {l₁ = l₁₁} {l₂ = l₁₂} t₁₁ a₁ t₁₂) a y₂ n₂ l₂ t₂ n₁>n₂ =
-      step (F (arrbt A red n₁ ((l₁₁ ++ [ a₁ ] ++ l₁₂) ++ [ a ] ++ l₂))) 1 $
-      bind (F (arrbt A red n₁ ((l₁₁ ++ [ a₁ ] ++ l₁₂) ++ [ a ] ++ l₂))) (joinRight _ _ _ t₁₂ a _ _ _ t₂ n₁>n₂)
-        λ { (valid {y = red} t') → ret (
-            Eq.subst
-              (λ l → AlmostRightRBT A red n₁ l)
-              (Eq.sym (List.++-assoc l₁₁ (a₁ ∷ l₁₂) (a ∷ l₂)))
-              (violation t₁₁ a₁ t'))
-          ; (valid {y = black} t') → ret (
-            Eq.subst
-              (λ l → AlmostRightRBT A red n₁ l)
-              (Eq.sym (List.++-assoc l₁₁ (a₁ ∷ l₁₂) (a ∷ l₂)))
-              (valid (red t₁₁ a₁ t')))
-          }
+      step (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ (l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂))) (arrbt A red n₁ l)))) 1 $
+      bind (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ (l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂))) (arrbt A red n₁ l))))
+        (joinRight _ _ _ t₁₂ a _ _ _ t₂ n₁>n₂)
+        (λ { (l , l≡l₁₂++a₁∷l₂ , valid {y = red} t') →
+              ret (l₁₁ ++ [ a₁ ] ++ (l₁₂ ++ [ a ] ++ l₂) ,
+                Eq.sym (List.++-assoc l₁₁ (a₁ ∷ l₁₂) (a ∷ l₂)) ,
+                Eq.subst (λ l' → AlmostRightRBT A red n₁ l') (Eq.cong₂ _++_ refl (Eq.cong₂ _∷_ refl l≡l₁₂++a₁∷l₂)) (violation t₁₁ a₁ t'))
+          ; (l , l≡l₁₂++a₁∷l₂ , valid {y = black} t') →
+              ret (l₁₁ ++ [ a₁ ] ++ (l₁₂ ++ [ a ] ++ l₂) ,
+                Eq.sym (List.++-assoc l₁₁ (a₁ ∷ l₁₂) (a ∷ l₂)) ,
+                Eq.subst (λ l' → AlmostRightRBT A red n₁ l') (Eq.cong₂ _++_ refl (Eq.cong₂ _∷_ refl l≡l₁₂++a₁∷l₂)) (valid (red t₁₁ a₁ t')))
+          })
     joinRight {A} .black (suc n₁) l₁ (black {l₁ = l₁₁} {l₂ = l₁₂} t₁₁ a₁ t₁₂) a y₂ n₂ l₂ t₂ n₁>n₂ with n₁ Nat.≟ n₂
     joinRight {A} .black (suc n₁) l₁ (black {l₁ = l₁₁} {l₂ = l₁₂} t₁₁ a₁ t₁₂) a red n₁ l₂ (red {l₁ = l₂₁} {l₂ = l₂₂} t₂₁ a₂ t₂₂) n₁>n₂ | yes refl =
-      ret (valid (red (black t₁₁ a₁ t₁₂) a (black t₂₁ a₂ t₂₂)))
+      ret ((l₁₁ ++ [ a₁ ] ++ l₁₂) ++ [ a ] ++ (l₂₁ ++ [ a₂ ] ++ l₂₂) ,
+        refl ,
+        valid (red (black t₁₁ a₁ t₁₂) a (black t₂₁ a₂ t₂₂)))
     joinRight {A} .black (suc n₁) l₁ (black {y₂ = red} {l₁ = l₁₁} t₁₁ a₁ (red {l₁ = l₁₂₁} {l₂ = l₁₂₂} t₁₂₁ a₁₂ t₁₂₂)) a black n₁ l₂ t₂ n₁>n₂ | yes refl =
-      ret (
-        Eq.subst
-          (λ l → AlmostRightRBT A black (suc n₁) l)
-          (begin
-            (l₁₁ ++ a₁ ∷ l₁₂₁) ++ a₁₂ ∷ l₁₂₂ ++ a ∷ l₂
-          ≡⟨ List.++-assoc l₁₁ (a₁ ∷ l₁₂₁) (a₁₂ ∷ l₁₂₂ ++ a ∷ l₂) ⟩
-            l₁₁ ++ a₁ ∷ l₁₂₁ ++ a₁₂ ∷ l₁₂₂ ++ a ∷ l₂
-          ≡⟨ Eq.cong₂ _++_ refl (Eq.sym (List.++-assoc (a₁ ∷ l₁₂₁) (a₁₂ ∷ l₁₂₂) (a ∷ l₂))) ⟩
-            l₁₁ ++ (a₁ ∷ l₁₂₁ ++ a₁₂ ∷ l₁₂₂) ++ a ∷ l₂
-          ≡˘⟨ List.++-assoc l₁₁ (a₁ ∷ l₁₂₁ ++ a₁₂ ∷ l₁₂₂) (a ∷ l₂) ⟩
-            (l₁₁ ++ a₁ ∷ l₁₂₁ ++ a₁₂ ∷ l₁₂₂) ++ a ∷ l₂
-          ∎)
-          (valid (red (black t₁₁ a₁ t₁₂₁) a₁₂ (black t₁₂₂ a t₂))))
-        where open ≡-Reasoning
+      ret ((l₁₁ ++ [ a₁ ] ++ l₁₂₁) ++ [ a₁₂ ] ++ (l₁₂₂ ++ [ a ] ++ l₂) ,
+        (begin
+          (l₁₁ ++ a₁ ∷ l₁₂₁) ++ a₁₂ ∷ l₁₂₂ ++ a ∷ l₂
+        ≡⟨ List.++-assoc l₁₁ (a₁ ∷ l₁₂₁) (a₁₂ ∷ l₁₂₂ ++ a ∷ l₂) ⟩
+          l₁₁ ++ a₁ ∷ l₁₂₁ ++ a₁₂ ∷ l₁₂₂ ++ a ∷ l₂
+        ≡⟨ Eq.cong₂ _++_ refl (Eq.sym (List.++-assoc (a₁ ∷ l₁₂₁) (a₁₂ ∷ l₁₂₂) (a ∷ l₂))) ⟩
+          l₁₁ ++ (a₁ ∷ l₁₂₁ ++ a₁₂ ∷ l₁₂₂) ++ a ∷ l₂
+        ≡˘⟨ List.++-assoc l₁₁ (a₁ ∷ l₁₂₁ ++ a₁₂ ∷ l₁₂₂) (a ∷ l₂) ⟩
+          (l₁₁ ++ a₁ ∷ l₁₂₁ ++ a₁₂ ∷ l₁₂₂) ++ a ∷ l₂
+        ∎) ,
+        valid (red (black t₁₁ a₁ t₁₂₁) a₁₂ (black t₁₂₂ a t₂)))
+          where open ≡-Reasoning
     joinRight {A} .black (suc n₁) l₁ (black {y₂ = black} {l₁ = l₁₁} {l₂ = l₁₂} t₁₁ a₁ t₁₂) a black n₁ l₂ t₂ n₁>n₂ | yes refl =
-      ret (
-        Eq.subst
-          (λ l → AlmostRightRBT A black (suc n₁) l)
-          (Eq.sym (List.++-assoc l₁₁ (a₁ ∷ l₁₂) (a ∷ l₂)))
-          (valid (black t₁₁ a₁ (red t₁₂ a t₂))))
+      ret (l₁₁ ++ [ a₁ ] ++ (l₁₂ ++ [ a ] ++ l₂) ,
+        Eq.sym (List.++-assoc l₁₁ (a₁ ∷ l₁₂) (a ∷ l₂)) ,
+        valid (black t₁₁ a₁ (red t₁₂ a t₂)))
     ... | no n₁≢n₂ =
-      bind (F (arrbt A black (suc n₁) ((l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂))) (joinRight _ _ _ t₁₂ a _ _ _ t₂ (Nat.≤∧≢⇒< (Nat.≤-pred n₁>n₂) (≢-sym n₁≢n₂)))
-      {!   !}
-    --   step (F (arrbt A black (suc n₁))) 1 $
-    --   bind (F (arrbt A black (suc n₁))) (joinRight _ _ t₁₂ a _ _ t₂ (Nat.≤∧≢⇒< (Nat.≤-pred n₁>n₂) (≢-sym n₁≢n₂))) λ
-    --     { (violation t'₁ a' (red t'₂₁ a'₂ t'₂₂)) → ret (valid (red (black t₁₁ a₁ t'₁) a' (black t'₂₁ a'₂ t'₂₂)))
-    --     ; (valid t') → ret (valid (black t₁₁ a₁ t'))  }
+      step (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ (l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂))) (arrbt A black (suc n₁) l)))) 1 $
+      bind (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ (l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂))) (arrbt A black (suc n₁) l))))
+        (joinRight _ _ _ t₁₂ a _ _ _ t₂ (Nat.≤∧≢⇒< (Nat.≤-pred n₁>n₂) (≢-sym n₁≢n₂)))
+        λ { (l , l≡l₁₂++a∷l₂ , violation {l₁ = l'₁} t'₁ a' (red {l₁ = l'₂₁} {l₂ = l'₂₂} t'₂₁ a'₂ t'₂₂)) →
+              ret ((l₁₁ ++ [ a₁ ] ++ l'₁) ++ [ a' ] ++ (l'₂₁ ++ [ a'₂ ] ++ l'₂₂) ,
+                (begin
+                  (l₁₁ ++ a₁ ∷ l'₁) ++ a' ∷ l'₂₁ ++ a'₂ ∷ l'₂₂
+                ≡⟨ List.++-assoc l₁₁ (a₁ ∷ l'₁) (a' ∷ l'₂₁ ++ a'₂ ∷ l'₂₂) ⟩
+                  l₁₁ ++ a₁ ∷ l'₁ ++ a' ∷ l'₂₁ ++ a'₂ ∷ l'₂₂
+                ≡⟨ Eq.cong₂ _++_ refl (Eq.cong₂ _∷_ refl l≡l₁₂++a∷l₂) ⟩
+                  l₁₁ ++ a₁ ∷ l₁₂ ++ a ∷ l₂
+                ≡˘⟨ List.++-assoc l₁₁ (a₁ ∷ l₁₂) (a ∷ l₂) ⟩
+                  (l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂
+                ∎) ,
+                (valid (red (black t₁₁ a₁ t'₁) a' (black t'₂₁ a'₂ t'₂₂))))
+          ; (l , l≡l₁₂++a∷l₂ , valid t') →
+              ret (l₁₁ ++ [ a₁ ] ++ (l₁₂ ++ [ a ] ++ l₂) ,
+                Eq.sym (List.++-assoc l₁₁ (a₁ ∷ l₁₂) (a ∷ l₂)) ,
+                Eq.subst (λ l' → AlmostRightRBT A black (suc n₁) l') (Eq.cong₂ _++_ refl (Eq.cong₂ _∷_ refl l≡l₁₂++a∷l₂)) (valid (black t₁₁ a₁ t')))
+          }
+          where open ≡-Reasoning
 
     joinRight/cost : (y : val color) (n₁ n₂ : val nat) → ℂ
     joinRight/cost red n₁ n₂ = 1 + (2 * (n₁ ∸ n₂))
     joinRight/cost black n₁ n₂ = (2 * (n₁ ∸ n₂))
 
     joinRight/is-bounded' : ∀ y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂
-        → IsBounded (arrbt A y₁ n₁ (l₁ ++ [ a ] ++ l₂)) (joinRight y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂) (joinRight/cost y₁ n₁ n₂)
+        → IsBounded (Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (arrbt A y₁ n₁ l)) (joinRight y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂) (joinRight/cost y₁ n₁ n₂)
 
     joinRight/is-bounded : ∀ {A} y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂
-        → IsBounded (arrbt A y₁ n₁ (l₁ ++ [ a ] ++ l₂)) (joinRight y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂) (1 + (2 * (n₁ ∸ n₂)))
+        → IsBounded (Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (arrbt A y₁ n₁ l)) (joinRight y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂) (1 + (2 * (n₁ ∸ n₂)))
 
     joinRight/is-bounded' red n₁ l₁ (red t₁₁ a₁ t₁₂) a y₂ n₂ l₂ t₂ n₁>n₂ =
       bound/step 1 (2 * (n₁ ∸ n₂))
@@ -321,9 +329,9 @@ RedBlackMSequence =
         (Nat.+-identityʳ (2 * (n₁ ∸ n₂)))
         (bound/bind/const (2 * (n₁ ∸ n₂)) 0
           (joinRight/is-bounded' _ _ _ t₁₂ a _ _ _ t₂ n₁>n₂)
-          {!   !}))
-    --       (λ {(valid (red _ _ _)) → bound/ret
-    --         ; (valid (black _ _ _)) → bound/ret })))
+          λ {(_ , _ , valid (red _ _ _)) → bound/ret
+           ; (_ , _ , valid (black _ _ _)) → bound/ret}
+          ))
     joinRight/is-bounded' black (suc n₁) l₁ (black t₁₁ a₁ t₁₂) a y₂ n₂ l₂ t₂ n₁>n₂ with n₁ Nat.≟ n₂
     joinRight/is-bounded' black _ _ (black _ _ _) _ red _ _ (red _ _ _) _ | yes refl =
       bound/relax (λ u → Nat.z≤n) bound/ret
@@ -331,18 +339,18 @@ RedBlackMSequence =
       bound/relax (λ u → Nat.z≤n) bound/ret
     joinRight/is-bounded' black _ _ (black {y₂ = black} _ _ _) _ black _ _ _ _ | yes refl =
       bound/relax (λ u → Nat.z≤n) bound/ret
-    ... | no n₁≢n₂ = {!   !}
-    --   Eq.subst
-    --     (IsBounded _ _) {x = 2 + 2 * (n₁ ∸ n₂)}
-    --     (Eq.trans (Eq.sym (Nat.*-suc 2 (n₁ ∸ n₂))) (Eq.cong (2 *_) (Eq.sym (Nat.+-∸-assoc 1 n₁>n₂))))
-    --     (bound/step 1 (1 + 2 * (n₁ ∸ n₂))
-    --       (Eq.subst
-    --         (IsBounded _ _) {x = 1 + 2 * (n₁ ∸ n₂) + 0}
-    --         (Nat.+-identityʳ (1 + 2 * (n₁ ∸ n₂)))
-    --         (bound/bind/const (1 + 2 * (n₁ ∸ n₂)) 0
-    --           (joinRight/is-bounded _ _ t₁₂ a _ _ t₂ _)
-    --           λ { (violation _ _ (red _ _ _)) → bound/ret
-    --             ; (valid _) → bound/ret })))
+    ... | no n₁≢n₂ =
+      Eq.subst
+        (IsBounded _ _) {x = 2 + 2 * (n₁ ∸ n₂)}
+        (Eq.trans (Eq.sym (Nat.*-suc 2 (n₁ ∸ n₂))) (Eq.cong (2 *_) (Eq.sym (Nat.+-∸-assoc 1 n₁>n₂))))
+        (bound/step 1 (1 + 2 * (n₁ ∸ n₂))
+          (Eq.subst
+            (IsBounded _ _) {x = 1 + 2 * (n₁ ∸ n₂) + 0}
+            (Nat.+-identityʳ (1 + 2 * (n₁ ∸ n₂)))
+            (bound/bind/const (1 + 2 * (n₁ ∸ n₂)) 0
+              (joinRight/is-bounded _ _ _ t₁₂ a _ _ _ t₂ _)
+              (λ { (_ , _ , (violation _ _ (red _ _ _))) → bound/ret
+                ; (_ , _ , (valid _)) → bound/ret }))))
 
     joinRight/is-bounded red n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂ =
       joinRight/is-bounded' red n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂
@@ -354,27 +362,32 @@ RedBlackMSequence =
         ( Π color λ y₁ → Π nat λ n₁ → Π (list A) λ l₁ → Π (irbt A y₁ n₁ l₁) λ _ →
           Π A λ a →
           Π color λ y₂ → Π nat λ n₂ → Π (list A) λ l₂ → Π (irbt A y₂ n₂ l₂) λ _ →
-          F (rbt A)
+          F (Σ++ color λ y → Σ++ nat λ n → Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (irbt A y n l))
         )
     i-join {A} y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ with Nat.<-cmp n₁ n₂
-    i-join red n₁ l₁ t₁ a y₂ n₂ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ a t₂) ⟫
-    i-join black n₁ l₁ t₁ a red n₂ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (black t₁ a t₂) ⟫
-    i-join black n₁ l₁ t₁ a black n₂ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ = ret ⟪ (red t₁ a t₂) ⟫
+    i-join red n₁ l₁ t₁ a y₂ n₂ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
+      ret (black , suc n₁ , l₁ ++ [ a ] ++ l₂ , refl , black t₁ a t₂)
+    i-join black n₁ l₁ t₁ a red n₂ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
+      ret (black , suc n₁ , l₁ ++ [ a ] ++ l₂ , refl , black t₁ a t₂)
+    i-join black n₁ l₁ t₁ a black n₂ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
+      ret (red , n₁ , l₁ ++ [ a ] ++ l₂ , refl , red t₁ a t₂)
     ... | tri< n₁<n₂ n₁≢n₂ ¬n₁>n₂ =
-      bind (F (rbt A)) (joinLeft _ _ _ t₁ a _ _ _ t₂ n₁<n₂)
-      {!   !}
-      -- λ
-      --   { (violation t'₁ a' t'₂) → ret ⟪ (black t'₁ a' t'₂) ⟫
-      --   ; (valid t') → ret ⟪ t' ⟫}
+      bind (F (Σ++ color λ y → Σ++ nat λ n → Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (irbt A y n l)))
+        (joinLeft _ _ _ t₁ a _ _ _ t₂ n₁<n₂)
+        (λ { (l , l≡l₁++a∷l₂ , violation {l₁ = l'₁} {l₂ = l'₂} t'₁ a' t'₂) →
+              ret (black , suc n₂ , l'₁ ++ [ a' ] ++ l'₂ , l≡l₁++a∷l₂ , black t'₁ a' t'₂)
+           ; (l , l≡l₁++a∷l₂ , valid {n = n} {y = y} {l = l} t') →
+              ret (y , n , l , l≡l₁++a∷l₂ , t')})
     ... | tri> ¬n₁<n₂ n₁≢n₂ n₁>n₂ =
-      bind (F (rbt A)) (joinRight _ _ _ t₁ a _ _ _ t₂ n₁>n₂)
-      {!   !}
-      -- λ
-      --   { (violation t'₁ a' t'₂) → ret ⟪ black t'₁ a' t'₂ ⟫
-      --   ; (valid t') → ret ⟪ t' ⟫ }
+      bind (F (Σ++ color λ y → Σ++ nat λ n → Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (irbt A y n l)))
+        (joinRight _ _ _ t₁ a _ _ _ t₂ n₁>n₂)
+        (λ { (l , l≡l₁++a∷l₂ , violation {l₁ = l'₁} {l₂ = l'₂} t'₁ a' t'₂) →
+              ret (black , suc n₁ , l'₁ ++ [ a' ] ++ l'₂ , l≡l₁++a∷l₂ , black t'₁ a' t'₂)
+           ; (l , l≡l₁++a∷l₂ , valid {n = n} {y = y} {l = l} t') →
+              ret (y , n , l , l≡l₁++a∷l₂ , t')})
 
     i-join/is-bounded : ∀ {A} y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂
-        → IsBounded (rbt A) (i-join y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂) (1 + (2 * (n₁ Nat.⊔ n₂ ∸ n₁ Nat.⊓ n₂)))
+        → IsBounded (Σ++ color λ y → Σ++ nat λ n → Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (irbt A y n l)) (i-join y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂) (1 + (2 * (n₁ Nat.⊔ n₂ ∸ n₁ Nat.⊓ n₂)))
     i-join/is-bounded {A} y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ with Nat.<-cmp n₁ n₂
     i-join/is-bounded {A} red n₁ l₁ t₁ a y₂ .n₁ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
       bound/relax (λ u → Nat.z≤n) bound/ret
@@ -385,27 +398,31 @@ RedBlackMSequence =
     ... | tri< n₁<n₂ n₁≢n₂ ¬n₁>n₂ =
       Eq.subst
         (IsBounded _ _) {x = 1 + 2 * (n₂ ∸ n₁) + 0}
-        (Eq.cong suc (Eq.trans (Nat.+-identityʳ (2 * (n₂ ∸ n₁))) (Eq.cong (2 *_) (Eq.cong₂ (λ x y → x ∸ y) (Eq.sym (Nat.m≤n⇒m⊔n≡n (Nat.<⇒≤ n₁<n₂))) (Eq.sym (Nat.m≤n⇒m⊓n≡m (Nat.<⇒≤ n₁<n₂)))))))
+        (Eq.cong suc (Eq.trans (Nat.+-identityʳ (2 * (n₂ ∸ n₁))) (Eq.cong (2 *_) (Eq.cong₂ _∸_ (Eq.sym (Nat.m≤n⇒m⊔n≡n (Nat.<⇒≤ n₁<n₂))) (Eq.sym (Nat.m≤n⇒m⊓n≡m (Nat.<⇒≤ n₁<n₂)))))))
         (bound/bind/const (1 + 2 * (n₂ ∸ n₁)) 0
           (joinLeft/is-bounded _ _ _ t₁ a _ _ _ t₂ n₁<n₂)
-          {!   !})
-          -- λ { (violation _ _ _) → bound/ret
-            -- ; (valid _) → bound/ret })
+          λ { (_ , _ , violation _ _ _) → bound/ret
+            ; (_ , _ , valid _) → bound/ret})
     ... | tri> ¬n₁<n₂ n₁≢n₂ n₁>n₂ =
       Eq.subst
         (IsBounded _ _) {x = 1 + 2 * (n₁ ∸ n₂) + 0}
-        (Eq.cong suc (Eq.trans (Nat.+-identityʳ (2 * (n₁ ∸ n₂))) (Eq.cong (2 *_) (Eq.cong₂ (λ x y → x ∸ y) (Eq.sym (Nat.m≥n⇒m⊔n≡m (Nat.<⇒≤ n₁>n₂))) (Eq.sym (Nat.m≥n⇒m⊓n≡n (Nat.<⇒≤ n₁>n₂)))))))
+        (Eq.cong suc (Eq.trans (Nat.+-identityʳ (2 * (n₁ ∸ n₂))) (Eq.cong (2 *_) (Eq.cong₂ _∸_ (Eq.sym (Nat.m≥n⇒m⊔n≡m (Nat.<⇒≤ n₁>n₂))) (Eq.sym (Nat.m≥n⇒m⊓n≡n (Nat.<⇒≤ n₁>n₂)))))))
         (bound/bind/const (1 + 2 * (n₁ ∸ n₂)) 0
           (joinRight/is-bounded _ _ _ t₁ a _ _ _ t₂ n₁>n₂)
-          {!   !})
-    --       λ { (violation _ _ _) → bound/ret
-    --         ; (valid _) → bound/ret })
+          λ { (_ , _ , violation _ _ _) → bound/ret
+            ; (_ , _ , valid _) → bound/ret})
 
     join : cmp (Π (rbt A) λ _ → Π A λ _ → Π (rbt A) λ _ → F (rbt A))
-    join ⟪ t₁ ⟫ a ⟪ t₂ ⟫ = i-join _ _ _ t₁ a _ _ _ t₂
+    join {A} t₁ a t₂ = bind (F (rbt A)) (i-join _ _ _ (RBT.t t₁) a _ _ _ (RBT.t t₂)) λ { (_ , _ , _ , _ , t) → ret ⟪ t ⟫ }
 
     join/is-bounded : ∀ {A} t₁ a t₂ → IsBounded (rbt A) (join t₁ a t₂) (1 + (2 * (RBT.n t₁ Nat.⊔ RBT.n t₂ ∸ RBT.n t₁ Nat.⊓ RBT.n t₂)))
-    join/is-bounded {A} ⟪ t₁ ⟫ a ⟪ t₂ ⟫ = {! i-join/is-bounded _ _ _ t₁ a _ _ _ t₂ !}
+    join/is-bounded {A} t₁ a t₂ =
+      Eq.subst
+        (IsBounded _ _) {x = 1 + (2 * (RBT.n t₁ Nat.⊔ RBT.n t₂ ∸ RBT.n t₁ Nat.⊓ RBT.n t₂)) + 0}
+        (Eq.cong suc (Nat.+-identityʳ (2 * (RBT.n t₁ Nat.⊔ RBT.n t₂ ∸ RBT.n t₁ Nat.⊓ RBT.n t₂))))
+        (bound/bind/const (1 + (2 * (RBT.n t₁ Nat.⊔ RBT.n t₂ ∸ RBT.n t₁ Nat.⊓ RBT.n t₂))) 0
+          (i-join/is-bounded _ _ _ (RBT.t t₁) a _ _ _ (RBT.t t₂))
+          (λ { (_ , _ , _ , _ , _) → bound/ret }))
 
     i-rec : {A : tp pos} {X : tp neg} →
       cmp
@@ -421,18 +438,17 @@ RedBlackMSequence =
           Π color λ y → Π nat λ n → Π (list A) λ l → Π (irbt A y n l) λ _ →
           X
         )
-    i-rec = {!   !}
-    -- i-rec {A} {X} z f .black .zero    [] leaf            = z
-    -- i-rec {A} {X} z f .red   n        l  (red   t₁ a t₂) =
-    --   f
-    --     _ _ _ t₁ (i-rec {A} {X} z f _ _ _ t₁)
-    --     a
-    --     _ _ _ t₂ (i-rec {A} {X} z f _ _ _ t₂)
-    -- i-rec {A} {X} z f .black .(suc _) l  (black t₁ a t₂) =
-    --   f
-    --     _ _ _ t₁ (i-rec {A} {X} z f _ _ _ t₁)
-    --     a
-    --     _ _ _ t₂ (i-rec {A} {X} z f _ _ _ t₂)
+    i-rec {A} {X} z f .black .zero .[] leaf = z
+    i-rec {A} {X} z f .red n .(_ ++ [ a ] ++ _) (red t₁ a t₂) =
+      f
+        _ _ _ t₁ (i-rec {A} {X} z f _ _ _ t₁)
+        a
+        _ _ _ t₂ (i-rec {A} {X} z f _ _ _ t₂)
+    i-rec {A} {X} z f .black .(suc _) .(_ ++ [ a ] ++ _) (black t₁ a t₂) =
+      f
+        _ _ _ t₁ (i-rec {A} {X} z f _ _ _ t₁)
+        a
+        _ _ _ t₂ (i-rec {A} {X} z f _ _ _ t₂)
 
     rec : {A : tp pos} {X : tp neg} →
       cmp
@@ -488,7 +504,7 @@ module BinarySearchTree
       (bind Split empty λ t →
         ret (t , nothing , t))
       (λ t₁ ih₁ a' t₂ ih₂ →
-        F.case compare a a' of λ
+        case compare a a' of λ
           { (tri< a<a' ¬a≡a' ¬a>a') →
               bind Split ih₁ λ ( t₁₁ , a? , t₁₂ ) →
               bind Split (join t₁₂ a' t₂) λ t →
