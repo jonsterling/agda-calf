@@ -29,6 +29,11 @@ postulate
 cmp : tp neg → □
 cmp X = val (U X)
 
+variable
+  A B C : tp pos
+  X Y Z : tp neg
+  P Q : val A → tp neg
+
 postulate
   ret : ∀ {A} → val A → cmp (F A)
   tbind : ∀ {A} → cmp (F A) → (val A → tp neg) → tp neg
