@@ -2,7 +2,16 @@
 
 module Examples.Sequence where
 
-open import Calf
+
+open import Calf.CostMonoid
+open import Calf.CostMonoids using (ℕ²-ParCostMonoid)
+
+parCostMonoid = ℕ²-ParCostMonoid
+open ParCostMonoid parCostMonoid
+
+open import Calf costMonoid
+open import Calf.ParMetalanguage parCostMonoid
+
 open import Calf.Types.Unit
 open import Calf.Types.Product
 open import Calf.Types.Sum
@@ -19,7 +28,6 @@ open import Data.String using (String)
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_)
 
 open import Function using (case_of_)
-
 
 open import Examples.Sequence.MSequence
 open import Examples.Sequence.ListMSequence
@@ -85,6 +93,79 @@ module BinarySearchTree
 
   insert : cmp (Π (seq 𝕂) λ _ → Π 𝕂 λ _ → F (seq 𝕂))
   insert t a = bind (F (seq 𝕂)) (split t a) λ { (t₁ , _ , t₂) → join t₁ a t₂ }
+
+  append : cmp (Π (seq 𝕂) λ _ → Π (seq 𝕂) λ _ → F (seq 𝕂))
+  append t₁ t₂ =
+    rec
+      {X = F (seq 𝕂)}
+      (ret t₂)
+      (λ t'₁ ih₁ a' t'₂ ih₂ →
+        bind (F (seq 𝕂)) ih₂ λ t' →
+        bind (F (seq 𝕂)) (join t'₁ a' t') ret)
+    t₁
+
+  delete : cmp (Π (seq 𝕂) λ _ → Π 𝕂 λ _ → F (seq 𝕂))
+  delete t a = bind (F (seq 𝕂)) (split t a) λ { (t₁ , _ , t₂) → append t₁ t₂ }
+
+  union : cmp (Π (seq 𝕂) λ _ → Π (seq 𝕂) λ _ → F (seq 𝕂))
+  union =
+    rec
+      {X = Π (seq 𝕂) λ _ → F (seq 𝕂)}
+      ret
+      λ t'₁ ih₁ a' t'₂ ih₂ t₂ →
+        bind (F (seq 𝕂)) (split t₂ a') λ { (t₂₁ , a? , t₂₂) →
+        bind (F (seq 𝕂)) ((ih₁ t₂₁) & (ih₂ t₂₂)) λ (s₁ , s₂) →
+        join s₁ a' s₂ }
+
+  intersection : cmp (Π (seq 𝕂) λ _ → Π (seq 𝕂) λ _ → F (seq 𝕂))
+  intersection =
+    rec
+      {X = Π (seq 𝕂) λ _ → F (seq 𝕂)}
+      (λ t₂ → bind (F (seq 𝕂)) empty ret)
+      λ t'₁ ih₁ a' t'₂ ih₂ t₂ →
+        bind (F (seq 𝕂)) (split t₂ a') λ { (t₂₁ , a? , t₂₂) →
+        bind (F (seq 𝕂)) ((ih₁ t₂₁) & (ih₂ t₂₂)) λ (s₁ , s₂) →
+          case a? of
+            λ { (just a) → join s₁ a s₂
+              ; nothing → append s₁ s₂ }
+        }
+
+  difference : cmp (Π (seq 𝕂) λ _ → Π (seq 𝕂) λ _ → F (seq 𝕂))
+  difference t₁ t₂ = helper t₁
+    where
+      helper : cmp (Π (seq 𝕂) λ _ → F (seq 𝕂))
+      helper =
+        rec
+          {X = Π (seq 𝕂) λ _ → F (seq 𝕂)}
+          ret
+          (λ t'₁ ih₁ a' t'₂ ih₂ t₁ →
+            bind (F (seq 𝕂)) (split t₁ a') λ { (t₁₁ , a? , t₁₂) →
+            bind (F (seq 𝕂)) ((ih₁ t₁₁) & (ih₂ t₁₂)) λ (s₁ , s₂) →
+            append s₁ s₂
+            })
+        t₂
+
+  filter : cmp (Π (seq 𝕂) λ _ → Π (U (Π 𝕂 λ _ → F bool)) λ _ → F (seq 𝕂))
+  filter t f =
+    rec
+      {X = F (seq 𝕂)}
+      (bind (F (seq 𝕂)) empty ret)
+      (λ t'₁ ih₁ a' t'₂ ih₂ →
+        bind (F (seq 𝕂)) (ih₁ & ih₂) (λ (s₁ , s₂) →
+        bind (F (seq 𝕂)) (f a') λ b →
+          if b then (join s₁ a' s₂) else (append s₁ s₂)))
+    t
+
+  mapreduce : {X : tp neg} →
+    cmp (
+      Π (seq 𝕂) λ _ →
+      Π (U (Π 𝕂 λ _ → X)) λ _ →
+      Π (U (Π (U X) λ _ → Π (U X) λ _ → X)) λ _ →
+      Π (U X) λ _ →
+      X
+    )
+  mapreduce {X} t g f l =
+    rec {X = X} l (λ t'₁ ih₁ a' t'₂ ih₂ → f ih₁ (f (g a') ih₂)) t
 
 
 module Ex/NatSet where
