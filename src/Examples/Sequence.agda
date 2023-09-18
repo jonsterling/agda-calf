@@ -101,7 +101,7 @@ module BinarySearchTree
       (ret t₂)
       (λ t'₁ ih₁ a' t'₂ ih₂ →
         bind (F (seq 𝕂)) ih₂ λ t' →
-        bind (F (seq 𝕂)) (join t'₁ a' t') ret)
+        join t'₁ a' t')
     t₁
 
   delete : cmp (Π (seq 𝕂) λ _ → Π 𝕂 λ _ → F (seq 𝕂))
@@ -121,7 +121,7 @@ module BinarySearchTree
   intersection =
     rec
       {X = Π (seq 𝕂) λ _ → F (seq 𝕂)}
-      (λ t₂ → bind (F (seq 𝕂)) empty ret)
+      (λ t₂ → empty)
       λ t'₁ ih₁ a' t'₂ ih₂ t₂ →
         bind (F (seq 𝕂)) (split t₂ a') λ { (t₂₁ , a? , t₂₂) →
         bind (F (seq 𝕂)) ((ih₁ t₂₁) & (ih₂ t₂₂)) λ (s₁ , s₂) →

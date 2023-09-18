@@ -12,7 +12,9 @@ open import Data.Product
 import Data.Nat.Properties as Nat
 import Data.List.Properties as List
 
+open import Level using (0ℓ)
 open import Function using (_$_)
+open import Relation.Binary
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning; ≢-sym)
 
 variable
@@ -49,3 +51,10 @@ append {A} {l₁ = l₁} {l₂} (black t₁₁ a t₁₂) t₂ =
 
 append/is-bounded : {!   !}
 append/is-bounded = {!   !}
+
+
+module _ (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) where
+  open StrictTotalOrder Key
+
+  𝕂 : tp pos
+  𝕂 = U (meta (StrictTotalOrder.Carrier Key))
