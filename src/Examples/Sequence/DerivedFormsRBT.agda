@@ -15,13 +15,12 @@ open import Calf.ParMetalanguage parCostMonoid
 open import Calf.Types.Nat
 open import Calf.Types.List
 open import Calf.Types.Product
-open import Calf.Types.Sum
 open import Calf.Types.Bounded costMonoid
 open import Data.Product
 import Data.Nat.Properties as Nat
 import Data.List.Properties as List
 open import Data.Nat as Nat using (_+_; _*_; _<_; _>_; _≤ᵇ_; _<ᵇ_; ⌊_/2⌋; _≡ᵇ_; _≥_; _∸_)
-open import Data.List as List
+open import Data.List as List hiding (sum)
 
 open import Level using (0ℓ)
 open import Function using (_$_)
@@ -48,18 +47,18 @@ bound : val color → val nat → val nat → val nat
 bound red n₁ n₂ = 2 + (n₁ Nat.⊔ n₂)
 bound black n₁ n₂ = 1 + (n₁ Nat.⊔ n₂)
 
-summ :
+sum :
   cmp (
     Π color λ y₁ → Π nat λ n₁ → Π (list nat) λ l₁ → Π (irbt nat y₁ n₁ l₁) λ _ → F nat
   )
-summ .black .zero .[] leaf = ret 0
-summ .red n .(_ ++ [ a ] ++ _) (red t₁ a t₂) =
+sum .black .zero .[] leaf = ret 0
+sum .red n .(_ ++ [ a ] ++ _) (red t₁ a t₂) =
   step (F nat) (1 , 1) $
-    bind (F (nat)) ((summ _ _ _ t₁) & (summ _ _ _ t₂))
+    bind (F (nat)) ((sum _ _ _ t₁) & (sum _ _ _ t₂))
     (λ (s₁ , s₂) → ret (s₁ + a + s₂))
-summ .black .(suc _) .(_ ++ [ a ] ++ _) (black t₁ a t₂) =
+sum .black .(suc _) .(_ ++ [ a ] ++ _) (black t₁ a t₂) =
   step (F nat) (1 , 1) $
-    bind (F (nat)) ((summ _ _ _ t₁) & (summ _ _ _ t₂))
+    bind (F (nat)) ((sum _ _ _ t₁) & (sum _ _ _ t₂))
     (λ (s₁ , s₂) → ret (s₁ + a + s₂))
 
 span/sum : val color → val nat → val nat
@@ -70,9 +69,9 @@ span/bounded : ∀ y n → (span/sum y n) Nat.≤ (1 + 2 * n)
 span/bounded red n = Nat.≤-refl
 span/bounded black n = Nat.n≤1+n (2 * n)
 
-summ/bounded : ∀ y n l t → IsBounded nat (summ y n l t) (List.length l , span/sum y n)
-summ/bounded .black .zero .[] leaf = bound/relax (λ x → Nat.z≤n , Nat.z≤n) bound/ret
-summ/bounded .red n l (red {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
+sum/bounded : ∀ y n l t → IsBounded nat (sum y n l t) (List.length l , span/sum y n)
+sum/bounded .black .zero .[] leaf = bound/relax (λ x → Nat.z≤n , Nat.z≤n) bound/ret
+sum/bounded .red n l (red {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
   Eq.subst
     (IsBounded _ _) {y = List.length l , 1 + 2 * n}
       (begin
@@ -100,11 +99,11 @@ summ/bounded .red n l (red {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
           (Eq.subst
             (IsBounded _ _)
             (Eq.cong₂ _,_ refl (Nat.⊔-idem (2 * n)))
-            (bound/par (summ/bounded _ _ _ t₁) (summ/bounded _ _ _ t₂)))
+            (bound/par (sum/bounded _ _ _ t₁) (sum/bounded _ _ _ t₂)))
           (λ _ → bound/ret)))
     )
       where open ≡-Reasoning
-summ/bounded .black n@(suc n') l (black {y₁ = y₁} {y₂ = y₂} {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
+sum/bounded .black n@(suc n') l (black {y₁ = y₁} {y₂ = y₂} {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
   Eq.subst
     (IsBounded _ _) {y = List.length l , 2 * (suc n') }
       (begin
@@ -131,8 +130,8 @@ summ/bounded .black n@(suc n') l (black {y₁ = y₁} {y₂ = y₂} {l₁ = l₁
             (IsBounded _ _)
             (Eq.cong₂ _,_ refl (Nat.⊔-idem (1 + 2 * n')))
             (bound/par
-              (bound/relax (λ u → Nat.≤-refl , (span/bounded y₁ n')) (summ/bounded _ _ _ t₁))
-              (bound/relax (λ u → Nat.≤-refl , (span/bounded y₂ n')) (summ/bounded _ _ _ t₂))))
+              (bound/relax (λ u → Nat.≤-refl , (span/bounded y₁ n')) (sum/bounded _ _ _ t₁))
+              (bound/relax (λ u → Nat.≤-refl , (span/bounded y₂ n')) (sum/bounded _ _ _ t₂))))
           (λ a₁ → bound/ret))))
       where open ≡-Reasoning
 
