@@ -298,32 +298,47 @@ i-join :
     ( Π color λ y₁ → Π nat λ n₁ → Π (list A) λ l₁ → Π (irbt A y₁ n₁ l₁) λ _ →
       Π A λ a →
       Π color λ y₂ → Π nat λ n₂ → Π (list A) λ l₂ → Π (irbt A y₂ n₂ l₂) λ _ →
-      F (Σ++ color λ y → Σ++ nat λ n → Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (irbt A y n l))
+      F (Σ++ color λ y → Σ++ (list A) λ l →
+        prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (sum (irbt A y (1 + (n₁ Nat.⊔ n₂)) l) (irbt A y (n₁ Nat.⊔ n₂) l)))
     )
 i-join {A} y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ with Nat.<-cmp n₁ n₂
-i-join red n₁ l₁ t₁ a y₂ n₂ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
-  ret (black , suc n₁ , l₁ ++ [ a ] ++ l₂ , refl , black t₁ a t₂)
-i-join black n₁ l₁ t₁ a red n₂ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
-  ret (black , suc n₁ , l₁ ++ [ a ] ++ l₂ , refl , black t₁ a t₂)
-i-join black n₁ l₁ t₁ a black n₂ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
-  ret (red , n₁ , l₁ ++ [ a ] ++ l₂ , refl , red t₁ a t₂)
+i-join {A} red n₁ l₁ t₁ a y₂ n₂ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
+  ret (black , l₁ ++ [ a ] ++ l₂ , refl ,
+    inj₁ (Eq.subst (λ n → IRBT A black (suc n) (l₁ ++ a ∷ l₂)) (Eq.sym (Nat.⊔-idem n₁)) (black t₁ a t₂)))
+i-join {A} black n₁ l₁ t₁ a red n₂ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
+  ret (black , l₁ ++ [ a ] ++ l₂ , refl ,
+    inj₁ (Eq.subst (λ n → IRBT A black (suc n) (l₁ ++ a ∷ l₂)) (Eq.sym (Nat.⊔-idem n₁)) (black t₁ a t₂)))
+i-join {A} black n₁ l₁ t₁ a black n₂ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
+  ret (red , l₁ ++ [ a ] ++ l₂ , refl ,
+    inj₂ (Eq.subst (λ n → IRBT A red n (l₁ ++ a ∷ l₂)) (Eq.sym (Nat.⊔-idem n₁)) (red t₁ a t₂)))
 ... | tri< n₁<n₂ n₁≢n₂ ¬n₁>n₂ =
-  bind (F (Σ++ color λ y → Σ++ nat λ n → Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (irbt A y n l)))
+  bind (F (Σ++ color λ y → Σ++ (list A) λ l →
+        prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (sum (irbt A y (1 + (n₁ Nat.⊔ n₂)) l) (irbt A y (n₁ Nat.⊔ n₂) l))))
     (joinLeft _ _ _ t₁ a _ _ _ t₂ n₁<n₂)
     (λ { (l , l≡l₁++a∷l₂ , violation {l₁ = l'₁} {l₂ = l'₂} t'₁ a' t'₂) →
-          ret (black , suc n₂ , l'₁ ++ [ a' ] ++ l'₂ , l≡l₁++a∷l₂ , black t'₁ a' t'₂)
-        ; (l , l≡l₁++a∷l₂ , valid {n = n} {y = y} {l = l} t') →
-          ret (y , n , l , l≡l₁++a∷l₂ , t')})
+          ret (black , l'₁ ++ [ a' ] ++ l'₂ , l≡l₁++a∷l₂ ,
+            inj₁ (Eq.subst (λ n → IRBT A black (suc n) (l'₁ ++ a' ∷ l'₂)) (Eq.sym (Nat.m≤n⇒m⊔n≡n (Nat.<⇒≤ n₁<n₂)))
+            (black t'₁ a' t'₂)))
+         ; (l , l≡l₁++a∷l₂ , valid {n = n} {y = y} {l = l} t') →
+          ret (y , l , l≡l₁++a∷l₂ , inj₂ (Eq.subst (λ n → IRBT A y n l) (Eq.sym (Nat.m≤n⇒m⊔n≡n (Nat.<⇒≤ n₁<n₂))) t'))
+          }
+    )
 ... | tri> ¬n₁<n₂ n₁≢n₂ n₁>n₂ =
-  bind (F (Σ++ color λ y → Σ++ nat λ n → Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (irbt A y n l)))
+  bind (F (Σ++ color λ y → Σ++ (list A) λ l →
+        prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (sum (irbt A y (1 + (n₁ Nat.⊔ n₂)) l) (irbt A y (n₁ Nat.⊔ n₂) l))))
     (joinRight _ _ _ t₁ a _ _ _ t₂ n₁>n₂)
     (λ { (l , l≡l₁++a∷l₂ , violation {l₁ = l'₁} {l₂ = l'₂} t'₁ a' t'₂) →
-          ret (black , suc n₁ , l'₁ ++ [ a' ] ++ l'₂ , l≡l₁++a∷l₂ , black t'₁ a' t'₂)
-        ; (l , l≡l₁++a∷l₂ , valid {n = n} {y = y} {l = l} t') →
-          ret (y , n , l , l≡l₁++a∷l₂ , t')})
+          ret (black , l'₁ ++ [ a' ] ++ l'₂ , l≡l₁++a∷l₂ ,
+            inj₁ (Eq.subst (λ n → IRBT A black (suc n) (l'₁ ++ a' ∷ l'₂)) (Eq.sym (Nat.m≥n⇒m⊔n≡m (Nat.<⇒≤ n₁>n₂)))
+            (black t'₁ a' t'₂)))
+         ; (l , l≡l₁++a∷l₂ , valid {n = n} {y = y} {l = l} t') →
+          ret (y , l , l≡l₁++a∷l₂ , inj₂ (Eq.subst (λ n → IRBT A y n l) (Eq.sym (Nat.m≥n⇒m⊔n≡m (Nat.<⇒≤ n₁>n₂))) t'))
+          }
+    )
 
 i-join/is-bounded : ∀ {A} y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂
-    → IsBounded (Σ++ color λ y → Σ++ nat λ n → Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (irbt A y n l)) (i-join y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂) (1 + (2 * (n₁ Nat.⊔ n₂ ∸ n₁ Nat.⊓ n₂)))
+    → IsBounded (Σ++ color λ y → Σ++ (list A) λ l →
+        prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (sum (irbt A y (1 + (n₁ Nat.⊔ n₂)) l) (irbt A y (n₁ Nat.⊔ n₂) l))) (i-join y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂) (1 + (2 * (n₁ Nat.⊔ n₂ ∸ n₁ Nat.⊓ n₂)))
 i-join/is-bounded {A} y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ with Nat.<-cmp n₁ n₂
 i-join/is-bounded {A} red n₁ l₁ t₁ a y₂ .n₁ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
   bound/relax (λ u → Nat.z≤n) bound/ret

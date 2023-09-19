@@ -12,6 +12,7 @@ open import Calf costMonoid
 open import Calf.Types.Nat
 open import Calf.Types.List
 open import Calf.Types.Product
+open import Calf.Types.Sum
 open import Calf.Types.Bounded costMonoid
 
 open import Data.Nat as Nat using (_+_; _*_; _<_; _>_; _≤ᵇ_; _<ᵇ_; ⌊_/2⌋; _≡ᵇ_; _≥_; _∸_)
@@ -45,7 +46,8 @@ RedBlackMSequence =
     rbt A = U (meta (RBT A))
 
     join : cmp (Π (rbt A) λ _ → Π A λ _ → Π (rbt A) λ _ → F (rbt A))
-    join {A} t₁ a t₂ = bind (F (rbt A)) (i-join _ _ _ (RBT.t t₁) a _ _ _ (RBT.t t₂)) λ { (_ , _ , _ , _ , t) → ret ⟪ t ⟫ }
+    join {A} t₁ a t₂ = bind (F (rbt A)) (i-join _ _ _ (RBT.t t₁) a _ _ _ (RBT.t t₂)) λ { (_ , _ , _ , inj₁ t) → ret ⟪ t ⟫
+                                                                                       ; (_ , _ , _ , inj₂ t) → ret ⟪ t ⟫ }
 
     join/is-bounded : ∀ {A} t₁ a t₂ → IsBounded (rbt A) (join t₁ a t₂) (1 + (2 * (RBT.n t₁ Nat.⊔ RBT.n t₂ ∸ RBT.n t₁ Nat.⊓ RBT.n t₂)))
     join/is-bounded {A} t₁ a t₂ =
@@ -54,7 +56,8 @@ RedBlackMSequence =
         (Eq.cong suc (Nat.+-identityʳ (2 * (RBT.n t₁ Nat.⊔ RBT.n t₂ ∸ RBT.n t₁ Nat.⊓ RBT.n t₂))))
         (bound/bind/const (1 + (2 * (RBT.n t₁ Nat.⊔ RBT.n t₂ ∸ RBT.n t₁ Nat.⊓ RBT.n t₂))) 0
           (i-join/is-bounded _ _ _ (RBT.t t₁) a _ _ _ (RBT.t t₂))
-          (λ { (_ , _ , _ , _ , _) → bound/ret }))
+          (λ { (_ , _ , _ , inj₁ t) → bound/ret
+             ; (_ , _ , _ , inj₂ t) → bound/ret}))
 
     nodes : RBT A → val nat
     nodes ⟪ t ⟫ = i-nodes t
