@@ -85,17 +85,17 @@ RedBlackMSequence =
           (let open Nat.≤-Reasoning in
             begin
               1 + 2 * (RBT.n t₁ Nat.⊔ RBT.n t₂ ∸ RBT.n t₁ Nat.⊓ RBT.n t₂)
-            ≤⟨ Nat.+-monoʳ-≤ 1 (Nat.*-monoʳ-≤ 2 (Nat.∸-monoˡ-≤ (RBT.n t₁ Nat.⊓ RBT.n t₂) (Nat.⊔-mono-≤ (nodes/bound/log-node-black-height t₁) (nodes/bound/log-node-black-height t₂)))) ⟩
+            ≤⟨ Nat.+-monoʳ-≤ 1 (Nat.*-monoʳ-≤ 2 (Nat.∸-monoˡ-≤ (RBT.n t₁ Nat.⊓ RBT.n t₂) (Nat.⊔-mono-≤ (nodes/upper-bound t₁) (nodes/upper-bound t₂)))) ⟩
               1 + 2 * (⌈log₂ (1 + (nodes t₁)) ⌉ Nat.⊔ ⌈log₂ (1 + (nodes t₂)) ⌉ ∸ RBT.n t₁ Nat.⊓ RBT.n t₂)
-            ≤⟨ Nat.+-monoʳ-≤ 1 (Nat.*-monoʳ-≤ 2 (Nat.∸-monoʳ-≤ (⌈log₂ (1 + (nodes t₁)) ⌉ Nat.⊔ ⌈log₂ (1 + (nodes t₂)) ⌉) (Nat.⊓-mono-≤ (nodes/lower-bound/log-node-black-height t₁) (nodes/lower-bound/log-node-black-height t₂)))) ⟩
+            ≤⟨ Nat.+-monoʳ-≤ 1 (Nat.*-monoʳ-≤ 2 (Nat.∸-monoʳ-≤ (⌈log₂ (1 + (nodes t₁)) ⌉ Nat.⊔ ⌈log₂ (1 + (nodes t₂)) ⌉) (Nat.⊓-mono-≤ (nodes/lower-bound t₁) (nodes/lower-bound t₂)))) ⟩
               1 + 2 * (⌈log₂ (1 + (nodes t₁)) ⌉ Nat.⊔ ⌈log₂ (1 + (nodes t₂)) ⌉ ∸ ⌊ (⌈log₂ (1 + (nodes t₁)) ⌉ ∸ 1) /2⌋ Nat.⊓ ⌊ (⌈log₂ (1 + (nodes t₂)) ⌉ ∸ 1) /2⌋)
             ∎) ,
           (let open Nat.≤-Reasoning in
             begin
               1 + 2 * (RBT.n t₁ Nat.⊔ RBT.n t₂ ∸ RBT.n t₁ Nat.⊓ RBT.n t₂)
-            ≤⟨ Nat.+-monoʳ-≤ 1 (Nat.*-monoʳ-≤ 2 (Nat.∸-monoˡ-≤ (RBT.n t₁ Nat.⊓ RBT.n t₂) (Nat.⊔-mono-≤ (nodes/bound/log-node-black-height t₁) (nodes/bound/log-node-black-height t₂)))) ⟩
+            ≤⟨ Nat.+-monoʳ-≤ 1 (Nat.*-monoʳ-≤ 2 (Nat.∸-monoˡ-≤ (RBT.n t₁ Nat.⊓ RBT.n t₂) (Nat.⊔-mono-≤ (nodes/upper-bound t₁) (nodes/upper-bound t₂)))) ⟩
               1 + 2 * (⌈log₂ (1 + (nodes t₁)) ⌉ Nat.⊔ ⌈log₂ (1 + (nodes t₂)) ⌉ ∸ RBT.n t₁ Nat.⊓ RBT.n t₂)
-            ≤⟨ Nat.+-monoʳ-≤ 1 (Nat.*-monoʳ-≤ 2 (Nat.∸-monoʳ-≤ (⌈log₂ (1 + (nodes t₁)) ⌉ Nat.⊔ ⌈log₂ (1 + (nodes t₂)) ⌉) (Nat.⊓-mono-≤ (nodes/lower-bound/log-node-black-height t₁) (nodes/lower-bound/log-node-black-height t₂)))) ⟩
+            ≤⟨ Nat.+-monoʳ-≤ 1 (Nat.*-monoʳ-≤ 2 (Nat.∸-monoʳ-≤ (⌈log₂ (1 + (nodes t₁)) ⌉ Nat.⊔ ⌈log₂ (1 + (nodes t₂)) ⌉) (Nat.⊓-mono-≤ (nodes/lower-bound t₁) (nodes/lower-bound t₂)))) ⟩
               1 + 2 * (⌈log₂ (1 + (nodes t₁)) ⌉ Nat.⊔ ⌈log₂ (1 + (nodes t₂)) ⌉ ∸ ⌊ (⌈log₂ (1 + (nodes t₁)) ⌉ ∸ 1) /2⌋ Nat.⊓ ⌊ (⌈log₂ (1 + (nodes t₂)) ⌉ ∸ 1) /2⌋)
             ∎)
         )
