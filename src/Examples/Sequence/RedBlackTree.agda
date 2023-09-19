@@ -3,12 +3,14 @@
 module Examples.Sequence.RedBlackTree where
 
 open import Calf.CostMonoid
-open import Calf.CostMonoids using (ℕ-CostMonoid)
+open import Calf.CostMonoids using (ℕ²-ParCostMonoid)
 
-costMonoid = ℕ-CostMonoid
-open CostMonoid costMonoid renaming (zero to 𝟘; _+_ to _⊕_)
+parCostMonoid = ℕ²-ParCostMonoid
+open ParCostMonoid parCostMonoid public
 
 open import Calf costMonoid
+open import Calf.ParMetalanguage parCostMonoid
+
 open import Calf.Types.Unit
 open import Calf.Types.Product
 open import Calf.Types.Sum
@@ -71,7 +73,7 @@ joinLeft :
       F (Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (alrbt A y₂ n₂ l))
     )
 joinLeft {A} y₁ n₁ l₁ t₁ a .red n₂ l₂ (red {l₁ = l₂₁} {l₂ = l₂₂} t₂₁ a₁ t₂₂) n₁<n₂ =
-  step (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ l₁ ++ a ∷ l₂₁ ++ a₁ ∷ l₂₂))) (alrbt A red n₂ l)))) 1 $
+  step (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ l₁ ++ a ∷ l₂₁ ++ a₁ ∷ l₂₂))) (alrbt A red n₂ l)))) (1 , 1) $
   bind (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ l₁ ++ a ∷ l₂₁ ++ a₁ ∷ l₂₂))) (alrbt A red n₂ l))))
     (joinLeft _ _ _ t₁ a _ _ _ t₂₁ n₁<n₂)
     λ { (l , l≡l₂₁++a₁∷l₂₂ , valid {y = red} t') →
@@ -104,7 +106,7 @@ joinLeft {A} black n₁ l₁ t₁ a .black (suc n₂) l₂ (black {y₁ = black}
     ((List.++-assoc l₁ (a ∷ l₂₁) (a₁ ∷ l₂₂)) ,
     (valid (black (red t₁ a t₂₁) a₁ t₂₂))))
 ... | no n₁≢n₂ =
-  step (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ l₁ ++ a ∷ l₂₁ ++ a₁ ∷ l₂₂))) (alrbt A black (suc n₂) l)))) 1 $
+  step (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ l₁ ++ a ∷ l₂₁ ++ a₁ ∷ l₂₂))) (alrbt A black (suc n₂) l)))) (1 , 1) $
   bind (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ l₁ ++ a ∷ l₂₁ ++ a₁ ∷ l₂₂))) (alrbt A black (suc n₂) l))))
     (joinLeft _ _ _ t₁ a _ _ _ t₂₁ (Nat.≤∧≢⇒< (Nat.≤-pred n₁<n₂) n₁≢n₂))
     λ { (l , l≡l₁++a∷l₂₁ , violation {l₂ = l'₂} (red {l₁ = l'₁₁} {l₂ = l'₁₂} t'₁₁ a'₁ t'₁₂) a' t'₂) →
@@ -127,41 +129,42 @@ joinLeft {A} black n₁ l₁ t₁ a .black (suc n₂) l₂ (black {y₁ = black}
         where open ≡-Reasoning
 
 joinLeft/cost : (y : val color) (n₁ n₂ : val nat) → ℂ
-joinLeft/cost red n₁ n₂ = 1 + (2 * (n₂ ∸ n₁))
-joinLeft/cost black n₁ n₂ = (2 * (n₂ ∸ n₁))
+joinLeft/cost red n₁ n₂ = (1 + (2 * (n₂ ∸ n₁)) , 1 + (2 * (n₂ ∸ n₁)))
+joinLeft/cost black n₁ n₂ = ((2 * (n₂ ∸ n₁)) , (2 * (n₂ ∸ n₁)))
 
 joinLeft/is-bounded' : ∀ y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁<n₂
     → IsBounded (Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (alrbt A y₂ n₂ l)) (joinLeft y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁<n₂) (joinLeft/cost y₂ n₁ n₂)
 
 joinLeft/is-bounded : ∀ {A} y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁<n₂
-    → IsBounded (Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (alrbt A y₂ n₂ l)) (joinLeft y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁<n₂) (1 + (2 * (n₂ ∸ n₁)))
+    → IsBounded (Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (alrbt A y₂ n₂ l)) (joinLeft y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁<n₂) (1 + (2 * (n₂ ∸ n₁)) , 1 + (2 * (n₂ ∸ n₁)))
 
 joinLeft/is-bounded' {A} y₁ n₁ l₁ t₁ a .red n₂ l₂ (red {l₁ = l₂₁} {l₂ = l₂₂} t₂₁ a₁ t₂₂) n₁<n₂ =
-  bound/step 1 (2 * (n₂ ∸ n₁))
+  bound/step (1 , 1) (2 * (n₂ ∸ n₁) , 2 * (n₂ ∸ n₁))
   (Eq.subst
     (IsBounded _ _)
-    (Nat.+-identityʳ (2 * (n₂ ∸ n₁)))
-    (bound/bind/const (2 * (n₂ ∸ n₁)) 0
+    (Eq.cong₂ _,_ (Nat.+-identityʳ (2 * (n₂ ∸ n₁))) (Nat.+-identityʳ (2 * (n₂ ∸ n₁))))
+    (bound/bind/const (2 * (n₂ ∸ n₁) , 2 * (n₂ ∸ n₁)) (0 , 0)
       (joinLeft/is-bounded' _ _ _ t₁ a _ _ _ t₂₁ n₁<n₂)
       λ {(_ , _ , valid (red _ _ _)) → bound/ret
         ; (_ , _ , valid (black _ _ _)) → bound/ret}
       ))
 joinLeft/is-bounded' y₁ n₁ l₁ t₁ a .black (suc n₂) l₂ (black t₂₁ a₁ t₂₂) n₁<n₂ with n₁ Nat.≟ n₂
 joinLeft/is-bounded' red _ _ (red _ _ _) _ .black _ _ (black _ _ _) _ | yes refl =
-  bound/relax (λ u → Nat.z≤n) bound/ret
+  bound/relax (λ u → Nat.z≤n , Nat.z≤n) bound/ret
 joinLeft/is-bounded' black _ _ _ _ .black _ _ (black {y₁ = red} (red _ _ _) _ _) _ | yes refl =
-  bound/relax (λ u → Nat.z≤n) bound/ret
+  bound/relax (λ u → Nat.z≤n , Nat.z≤n) bound/ret
 joinLeft/is-bounded' black _ _ _ _ .black _ _ (black {y₁ = black} _ _ _) _ | yes refl =
-  bound/relax (λ u → Nat.z≤n) bound/ret
+  bound/relax (λ u → Nat.z≤n , Nat.z≤n) bound/ret
 ...| no n₁≢n₂ =
   Eq.subst
-    (IsBounded _ _) {x = 2 + 2 * (n₂ ∸ n₁)}
-    (Eq.trans (Eq.sym (Nat.*-suc 2 (n₂ ∸ n₁))) (Eq.cong (2 *_) (Eq.sym (Nat.+-∸-assoc 1 (Nat.≤-pred n₁<n₂)))))
-    (bound/step 1 (1 + 2 * (n₂ ∸ n₁))
+    (IsBounded _ _) {x = 2 + 2 * (n₂ ∸ n₁) , 2 + 2 * (n₂ ∸ n₁)}
+    (Eq.cong₂ _,_ (Eq.trans (Eq.sym (Nat.*-suc 2 (n₂ ∸ n₁))) (Eq.cong (2 *_) (Eq.sym (Nat.+-∸-assoc 1 (Nat.≤-pred n₁<n₂)))))
+      (Eq.trans (Eq.sym (Nat.*-suc 2 (n₂ ∸ n₁))) (Eq.cong (2 *_) (Eq.sym (Nat.+-∸-assoc 1 (Nat.≤-pred n₁<n₂))))))
+    (bound/step (1 , 1) (1 + 2 * (n₂ ∸ n₁) , 1 + 2 * (n₂ ∸ n₁))
       (Eq.subst
-        (IsBounded _ _) {x = 1 + (2 * (n₂ ∸ n₁)) + 0}
-        (Nat.+-identityʳ (1 + 2 * (n₂ ∸ n₁)))
-        (bound/bind/const (1 + (2 * (n₂ ∸ n₁))) 0
+        (IsBounded _ _) {x = 1 + (2 * (n₂ ∸ n₁)) + 0 , 1 + (2 * (n₂ ∸ n₁)) + 0}
+        (Eq.cong₂ _,_ (Nat.+-identityʳ (1 + 2 * (n₂ ∸ n₁))) (Nat.+-identityʳ (1 + 2 * (n₂ ∸ n₁))))
+        (bound/bind/const (1 + (2 * (n₂ ∸ n₁)) , 1 + (2 * (n₂ ∸ n₁))) (0 , 0)
           (joinLeft/is-bounded _ _ _ t₁ a _ _ _ t₂₁ _)
           λ { (_ , _ , (violation (red _ _ _) _ _)) → bound/ret
             ; (_ , _ , (valid _)) → bound/ret })))
@@ -169,7 +172,7 @@ joinLeft/is-bounded' black _ _ _ _ .black _ _ (black {y₁ = black} _ _ _) _ | y
 joinLeft/is-bounded y₁ n₁ l₁ t₁ a red n₂ l₂ t₂ n₁<n₂ =
   joinLeft/is-bounded' y₁ n₁ l₁ t₁ a red n₂ l₂ t₂ n₁<n₂
 joinLeft/is-bounded y₁ n₁ l₁ t₁ a black n₂ l₂ t₂ n₁<n₂ =
-  bound/relax (λ u → Nat.n≤1+n _) (joinLeft/is-bounded' y₁ n₁ l₁ t₁ a black n₂ l₂ t₂ n₁<n₂)
+  bound/relax (λ u → Nat.n≤1+n _ , Nat.n≤1+n _) (joinLeft/is-bounded' y₁ n₁ l₁ t₁ a black n₂ l₂ t₂ n₁<n₂)
 
 data AlmostRightRBT (A : tp pos) : (left-color : val color) → val nat → val (list A) → Set where
   violation :
@@ -191,7 +194,7 @@ joinRight :
       F (Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (arrbt A y₁ n₁ l))
     )
 joinRight {A} .red n₁ l₁ (red {l₁ = l₁₁} {l₂ = l₁₂} t₁₁ a₁ t₁₂) a y₂ n₂ l₂ t₂ n₁>n₂ =
-  step (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ (l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂))) (arrbt A red n₁ l)))) 1 $
+  step (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ (l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂))) (arrbt A red n₁ l)))) (1 , 1) $
   bind (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ (l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂))) (arrbt A red n₁ l))))
     (joinRight _ _ _ t₁₂ a _ _ _ t₂ n₁>n₂)
     (λ { (l , l≡l₁₂++a₁∷l₂ , valid {y = red} t') →
@@ -226,7 +229,7 @@ joinRight {A} .black (suc n₁) l₁ (black {y₂ = black} {l₁ = l₁₁} {l�
     Eq.sym (List.++-assoc l₁₁ (a₁ ∷ l₁₂) (a ∷ l₂)) ,
     valid (black t₁₁ a₁ (red t₁₂ a t₂)))
 ... | no n₁≢n₂ =
-  step (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ (l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂))) (arrbt A black (suc n₁) l)))) 1 $
+  step (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ (l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂))) (arrbt A black (suc n₁) l)))) (1 , 1) $
   bind (F (Σ++ (list A) (λ l → prod⁺ (U (meta (l ≡ (l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂))) (arrbt A black (suc n₁) l))))
     (joinRight _ _ _ t₁₂ a _ _ _ t₂ (Nat.≤∧≢⇒< (Nat.≤-pred n₁>n₂) (≢-sym n₁≢n₂)))
     λ { (l , l≡l₁₂++a∷l₂ , violation {l₁ = l'₁} t'₁ a' (red {l₁ = l'₂₁} {l₂ = l'₂₂} t'₂₁ a'₂ t'₂₂)) →
@@ -249,41 +252,42 @@ joinRight {A} .black (suc n₁) l₁ (black {y₂ = black} {l₁ = l₁₁} {l�
       where open ≡-Reasoning
 
 joinRight/cost : (y : val color) (n₁ n₂ : val nat) → ℂ
-joinRight/cost red n₁ n₂ = 1 + (2 * (n₁ ∸ n₂))
-joinRight/cost black n₁ n₂ = (2 * (n₁ ∸ n₂))
+joinRight/cost red n₁ n₂ = 1 + (2 * (n₁ ∸ n₂)) , 1 + (2 * (n₁ ∸ n₂))
+joinRight/cost black n₁ n₂ = (2 * (n₁ ∸ n₂)) , (2 * (n₁ ∸ n₂))
 
 joinRight/is-bounded' : ∀ y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂
     → IsBounded (Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (arrbt A y₁ n₁ l)) (joinRight y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂) (joinRight/cost y₁ n₁ n₂)
 
 joinRight/is-bounded : ∀ {A} y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂
-    → IsBounded (Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (arrbt A y₁ n₁ l)) (joinRight y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂) (1 + (2 * (n₁ ∸ n₂)))
+    → IsBounded (Σ++ (list A) λ l → prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (arrbt A y₁ n₁ l)) (joinRight y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂) (1 + (2 * (n₁ ∸ n₂)) , 1 + (2 * (n₁ ∸ n₂)))
 
 joinRight/is-bounded' red n₁ l₁ (red t₁₁ a₁ t₁₂) a y₂ n₂ l₂ t₂ n₁>n₂ =
-  bound/step 1 (2 * (n₁ ∸ n₂))
+  bound/step (1 , 1) (2 * (n₁ ∸ n₂) , 2 * (n₁ ∸ n₂))
   (Eq.subst
     (IsBounded _ _)
-    (Nat.+-identityʳ (2 * (n₁ ∸ n₂)))
-    (bound/bind/const (2 * (n₁ ∸ n₂)) 0
+    (Eq.cong₂ _,_ (Nat.+-identityʳ (2 * (n₁ ∸ n₂))) (Nat.+-identityʳ (2 * (n₁ ∸ n₂))))
+    (bound/bind/const (2 * (n₁ ∸ n₂) , 2 * (n₁ ∸ n₂)) (0 , 0)
       (joinRight/is-bounded' _ _ _ t₁₂ a _ _ _ t₂ n₁>n₂)
       λ {(_ , _ , valid (red _ _ _)) → bound/ret
         ; (_ , _ , valid (black _ _ _)) → bound/ret}
       ))
 joinRight/is-bounded' black (suc n₁) l₁ (black t₁₁ a₁ t₁₂) a y₂ n₂ l₂ t₂ n₁>n₂ with n₁ Nat.≟ n₂
 joinRight/is-bounded' black _ _ (black _ _ _) _ red _ _ (red _ _ _) _ | yes refl =
-  bound/relax (λ u → Nat.z≤n) bound/ret
+  bound/relax (λ u → Nat.z≤n , Nat.z≤n) bound/ret
 joinRight/is-bounded' black _ _ (black {y₂ = red} _ _ (red _ _ _)) _ black _ _ _ _ | yes refl =
-  bound/relax (λ u → Nat.z≤n) bound/ret
+  bound/relax (λ u → Nat.z≤n , Nat.z≤n) bound/ret
 joinRight/is-bounded' black _ _ (black {y₂ = black} _ _ _) _ black _ _ _ _ | yes refl =
-  bound/relax (λ u → Nat.z≤n) bound/ret
+  bound/relax (λ u → Nat.z≤n , Nat.z≤n) bound/ret
 ... | no n₁≢n₂ =
   Eq.subst
-    (IsBounded _ _) {x = 2 + 2 * (n₁ ∸ n₂)}
-    (Eq.trans (Eq.sym (Nat.*-suc 2 (n₁ ∸ n₂))) (Eq.cong (2 *_) (Eq.sym (Nat.+-∸-assoc 1 n₁>n₂))))
-    (bound/step 1 (1 + 2 * (n₁ ∸ n₂))
+    (IsBounded _ _) {x = 2 + 2 * (n₁ ∸ n₂) , 2 + 2 * (n₁ ∸ n₂)}
+    (Eq.cong₂ _,_ (Eq.trans (Eq.sym (Nat.*-suc 2 (n₁ ∸ n₂))) (Eq.cong (2 *_) (Eq.sym (Nat.+-∸-assoc 1 n₁>n₂))))
+      (Eq.trans (Eq.sym (Nat.*-suc 2 (n₁ ∸ n₂))) (Eq.cong (2 *_) (Eq.sym (Nat.+-∸-assoc 1 n₁>n₂)))))
+    (bound/step (1 , 1) (1 + 2 * (n₁ ∸ n₂) , 1 + 2 * (n₁ ∸ n₂))
       (Eq.subst
-        (IsBounded _ _) {x = 1 + 2 * (n₁ ∸ n₂) + 0}
-        (Nat.+-identityʳ (1 + 2 * (n₁ ∸ n₂)))
-        (bound/bind/const (1 + 2 * (n₁ ∸ n₂)) 0
+        (IsBounded _ _) {x = 1 + 2 * (n₁ ∸ n₂) + 0 , 1 + 2 * (n₁ ∸ n₂) + 0}
+        (Eq.cong₂ _,_ (Nat.+-identityʳ (1 + 2 * (n₁ ∸ n₂))) (Nat.+-identityʳ (1 + 2 * (n₁ ∸ n₂))))
+        (bound/bind/const (1 + 2 * (n₁ ∸ n₂) , 1 + 2 * (n₁ ∸ n₂)) (0 , 0)
           (joinRight/is-bounded _ _ _ t₁₂ a _ _ _ t₂ _)
           (λ { (_ , _ , (violation _ _ (red _ _ _))) → bound/ret
             ; (_ , _ , (valid _)) → bound/ret }))))
@@ -291,7 +295,7 @@ joinRight/is-bounded' black _ _ (black {y₂ = black} _ _ _) _ black _ _ _ _ | y
 joinRight/is-bounded red n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂ =
   joinRight/is-bounded' red n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂
 joinRight/is-bounded black n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂ =
-  bound/relax (λ u → Nat.n≤1+n _) (joinRight/is-bounded' black n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂)
+  bound/relax (λ u → Nat.n≤1+n _ , Nat.n≤1+n _) (joinRight/is-bounded' black n₁ l₁ t₁ a y₂ n₂ l₂ t₂ n₁>n₂)
 
 i-join :
   cmp
@@ -338,27 +342,30 @@ i-join {A} black n₁ l₁ t₁ a black n₂ l₂ t₂ | tri≈ ¬n₁<n₂ refl
 
 i-join/is-bounded : ∀ {A} y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂
     → IsBounded (Σ++ color λ y → Σ++ (list A) λ l →
-        prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (sum (irbt A y (1 + (n₁ Nat.⊔ n₂)) l) (irbt A y (n₁ Nat.⊔ n₂) l))) (i-join y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂) (1 + (2 * (n₁ Nat.⊔ n₂ ∸ n₁ Nat.⊓ n₂)))
+        prod⁺ (U (meta (l ≡ l₁ ++ [ a ] ++ l₂))) (sum (irbt A y (1 + (n₁ Nat.⊔ n₂)) l) (irbt A y (n₁ Nat.⊔ n₂) l))) (i-join y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂)
+          (1 + (2 * (n₁ Nat.⊔ n₂ ∸ n₁ Nat.⊓ n₂)) , 1 + (2 * (n₁ Nat.⊔ n₂ ∸ n₁ Nat.⊓ n₂)))
 i-join/is-bounded {A} y₁ n₁ l₁ t₁ a y₂ n₂ l₂ t₂ with Nat.<-cmp n₁ n₂
 i-join/is-bounded {A} red n₁ l₁ t₁ a y₂ .n₁ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
-  bound/relax (λ u → Nat.z≤n) bound/ret
+  bound/relax (λ u → Nat.z≤n , Nat.z≤n) bound/ret
 i-join/is-bounded {A} black n₁ l₁ t₁ a red n₁ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
-  bound/relax (λ u → Nat.z≤n) bound/ret
+  bound/relax (λ u → Nat.z≤n , Nat.z≤n) bound/ret
 i-join/is-bounded {A} black n₁ l₁ t₁ a black n₁ l₂ t₂ | tri≈ ¬n₁<n₂ refl ¬n₁>n₂ =
-  bound/relax (λ u → Nat.z≤n) bound/ret
+  bound/relax (λ u → Nat.z≤n , Nat.z≤n) bound/ret
 ... | tri< n₁<n₂ n₁≢n₂ ¬n₁>n₂ =
   Eq.subst
-    (IsBounded _ _) {x = 1 + 2 * (n₂ ∸ n₁) + 0}
-    (Eq.cong suc (Eq.trans (Nat.+-identityʳ (2 * (n₂ ∸ n₁))) (Eq.cong (2 *_) (Eq.cong₂ _∸_ (Eq.sym (Nat.m≤n⇒m⊔n≡n (Nat.<⇒≤ n₁<n₂))) (Eq.sym (Nat.m≤n⇒m⊓n≡m (Nat.<⇒≤ n₁<n₂)))))))
-    (bound/bind/const (1 + 2 * (n₂ ∸ n₁)) 0
+    (IsBounded _ _) {x = 1 + 2 * (n₂ ∸ n₁) + 0 , 1 + 2 * (n₂ ∸ n₁) + 0}
+    (Eq.cong₂ _,_ (Eq.cong suc (Eq.trans (Nat.+-identityʳ (2 * (n₂ ∸ n₁))) (Eq.cong (2 *_) (Eq.cong₂ _∸_ (Eq.sym (Nat.m≤n⇒m⊔n≡n (Nat.<⇒≤ n₁<n₂))) (Eq.sym (Nat.m≤n⇒m⊓n≡m (Nat.<⇒≤ n₁<n₂)))))))
+      ((Eq.cong suc (Eq.trans (Nat.+-identityʳ (2 * (n₂ ∸ n₁))) (Eq.cong (2 *_) (Eq.cong₂ _∸_ (Eq.sym (Nat.m≤n⇒m⊔n≡n (Nat.<⇒≤ n₁<n₂))) (Eq.sym (Nat.m≤n⇒m⊓n≡m (Nat.<⇒≤ n₁<n₂)))))))))
+    (bound/bind/const (1 + 2 * (n₂ ∸ n₁) , 1 + 2 * (n₂ ∸ n₁)) (0 , 0)
       (joinLeft/is-bounded _ _ _ t₁ a _ _ _ t₂ n₁<n₂)
       λ { (_ , _ , violation _ _ _) → bound/ret
         ; (_ , _ , valid _) → bound/ret})
 ... | tri> ¬n₁<n₂ n₁≢n₂ n₁>n₂ =
   Eq.subst
-    (IsBounded _ _) {x = 1 + 2 * (n₁ ∸ n₂) + 0}
-    (Eq.cong suc (Eq.trans (Nat.+-identityʳ (2 * (n₁ ∸ n₂))) (Eq.cong (2 *_) (Eq.cong₂ _∸_ (Eq.sym (Nat.m≥n⇒m⊔n≡m (Nat.<⇒≤ n₁>n₂))) (Eq.sym (Nat.m≥n⇒m⊓n≡n (Nat.<⇒≤ n₁>n₂)))))))
-    (bound/bind/const (1 + 2 * (n₁ ∸ n₂)) 0
+    (IsBounded _ _) {x = 1 + 2 * (n₁ ∸ n₂) + 0 , 1 + 2 * (n₁ ∸ n₂) + 0}
+    (Eq.cong₂ _,_ (Eq.cong suc (Eq.trans (Nat.+-identityʳ (2 * (n₁ ∸ n₂))) (Eq.cong (2 *_) (Eq.cong₂ _∸_ (Eq.sym (Nat.m≥n⇒m⊔n≡m (Nat.<⇒≤ n₁>n₂))) (Eq.sym (Nat.m≥n⇒m⊓n≡n (Nat.<⇒≤ n₁>n₂)))))))
+      ((Eq.cong suc (Eq.trans (Nat.+-identityʳ (2 * (n₁ ∸ n₂))) (Eq.cong (2 *_) (Eq.cong₂ _∸_ (Eq.sym (Nat.m≥n⇒m⊔n≡m (Nat.<⇒≤ n₁>n₂))) (Eq.sym (Nat.m≥n⇒m⊓n≡n (Nat.<⇒≤ n₁>n₂)))))))))
+    (bound/bind/const (1 + 2 * (n₁ ∸ n₂) , 1 + 2 * (n₁ ∸ n₂)) (0 , 0)
       (joinRight/is-bounded _ _ _ t₁ a _ _ _ t₂ n₁>n₂)
       λ { (_ , _ , violation _ _ _) → bound/ret
         ; (_ , _ , valid _) → bound/ret})
@@ -406,10 +413,10 @@ i-total-height leaf = 0
 i-total-height (red t₁ _ t₂) = 1 + (i-total-height t₁ Nat.⊔ i-total-height t₂)
 i-total-height (black t₁ _ t₂) = 1 + (i-total-height t₁ Nat.⊔ i-total-height t₂)
 
-i-nodes/bound/node-black-height : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → 1 + (i-nodes t) ≥ (2 Nat.^ n)
+i-nodes/bound/node-black-height : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → 1 + (i-nodes t) Nat.≥ (2 Nat.^ n)
 i-nodes/bound/node-black-height leaf = Nat.s≤s Nat.z≤n
 i-nodes/bound/node-black-height (red {n} t₁ _ t₂) =
-  let open ≤-Reasoning in
+  let open Nat.≤-Reasoning in
     begin
       2 Nat.^ n
     ≤⟨ i-nodes/bound/node-black-height t₁ ⟩
@@ -420,7 +427,7 @@ i-nodes/bound/node-black-height (red {n} t₁ _ t₂) =
       suc (suc (i-nodes t₁ + i-nodes t₂))
     ∎
 i-nodes/bound/node-black-height (black {n} t₁ _ t₂) =
-  let open ≤-Reasoning in
+  let open Nat.≤-Reasoning in
     begin
       (2 Nat.^ n) + ((2 Nat.^ n) + zero)
     ≡⟨ Eq.sym (Eq.trans (Eq.sym (Nat.+-identityʳ ((2 Nat.^ n) + (2 Nat.^ n)))) (Nat.+-assoc ((2 Nat.^ n)) ((2 Nat.^ n)) 0)) ⟩
@@ -433,9 +440,9 @@ i-nodes/bound/node-black-height (black {n} t₁ _ t₂) =
       suc (suc (i-nodes t₁ + i-nodes t₂))
     ∎
 
-i-nodes/bound/log-node-black-height : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → n ≤ ⌈log₂ (1 + (i-nodes t)) ⌉
+i-nodes/bound/log-node-black-height : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → n Nat.≤ ⌈log₂ (1 + (i-nodes t)) ⌉
 i-nodes/bound/log-node-black-height {A} {y} {n} t =
-  let open ≤-Reasoning in
+  let open Nat.≤-Reasoning in
     begin
       n
     ≡⟨ Eq.sym (⌈log₂2^n⌉≡n n) ⟩
@@ -444,11 +451,11 @@ i-nodes/bound/log-node-black-height {A} {y} {n} t =
       ⌈log₂ (1 + (i-nodes t)) ⌉
     ∎
 
-total-height/black-height : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → (i-total-height t) ≤ (2 * n + 1)
+total-height/black-height : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → (i-total-height t) Nat.≤ (2 * n + 1)
 total-height/black-height leaf = Nat.z≤n
 total-height/black-height (red leaf _ leaf) = Nat.s≤s Nat.z≤n
 total-height/black-height (red (black {n} t₁₁ _ t₁₂) _ (black t₂₁ _ t₂₂)) =
-  let open ≤-Reasoning in
+  let open Nat.≤-Reasoning in
     begin
       suc (suc ((i-total-height t₁₁ Nat.⊔ i-total-height t₁₂) Nat.⊔ (i-total-height t₂₁ Nat.⊔ i-total-height t₂₂)))
     ≤⟨ Nat.s≤s (Nat.s≤s (Nat.⊔-mono-≤ (Nat.⊔-mono-≤ (total-height/black-height t₁₁) (total-height/black-height t₁₂)) (Nat.⊔-mono-≤ (total-height/black-height t₂₁) (total-height/black-height t₂₂)))) ⟩
@@ -463,7 +470,7 @@ total-height/black-height (red (black {n} t₁₁ _ t₁₂) _ (black t₂₁ _ 
       2 * (suc n) + 1
     ∎
 total-height/black-height (black {n} t₁ _ t₂) =
-  let open ≤-Reasoning in
+  let open Nat.≤-Reasoning in
     begin
       suc (i-total-height t₁ Nat.⊔ i-total-height t₂)
     ≤⟨ Nat.s≤s (Nat.⊔-mono-≤ (total-height/black-height t₁) (total-height/black-height t₂)) ⟩
@@ -474,10 +481,10 @@ total-height/black-height (black {n} t₁ _ t₂) =
       2 * (suc n) + 1
     ∎
 
-i-nodes/bound/total-height : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → (1 + (i-nodes t)) ≤ (2 Nat.^ (i-total-height t))
+i-nodes/bound/total-height : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → (1 + (i-nodes t)) Nat.≤ (2 Nat.^ (i-total-height t))
 i-nodes/bound/total-height leaf = Nat.s≤s Nat.z≤n
 i-nodes/bound/total-height (red t₁ _ t₂) =
-  let open ≤-Reasoning in
+  let open Nat.≤-Reasoning in
     begin
       suc (suc (i-nodes t₁ + i-nodes t₂))
     ≡⟨ Eq.cong suc (Eq.sym (Nat.+-suc (i-nodes t₁) (i-nodes t₂))) ⟩
@@ -494,7 +501,7 @@ i-nodes/bound/total-height (red t₁ _ t₂) =
       ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂)) + ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂)) + zero))
     ∎
 i-nodes/bound/total-height (black t₁ _ t₂) =
-  let open ≤-Reasoning in
+  let open Nat.≤-Reasoning in
     begin
       suc (suc (i-nodes t₁ + i-nodes t₂))
     ≡⟨ Eq.cong suc (Eq.sym (Nat.+-suc (i-nodes t₁) (i-nodes t₂))) ⟩
@@ -511,9 +518,9 @@ i-nodes/bound/total-height (black t₁ _ t₂) =
       ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂)) + ((2 Nat.^ (i-total-height t₁ Nat.⊔ i-total-height t₂)) + zero))
     ∎
 
-i-nodes/lower-bound/node-black-height : {y : val color} {n : val nat} {l : val (list A)}  → (t : IRBT A y n l) → (1 + (i-nodes t)) ≤ (2 Nat.^ (2 * n + 1))
+i-nodes/lower-bound/node-black-height : {y : val color} {n : val nat} {l : val (list A)}  → (t : IRBT A y n l) → (1 + (i-nodes t)) Nat.≤ (2 Nat.^ (2 * n + 1))
 i-nodes/lower-bound/node-black-height {A} {y} {n} t =
-  let open ≤-Reasoning in
+  let open Nat.≤-Reasoning in
     begin
       1 + (i-nodes t)
     ≤⟨ i-nodes/bound/total-height t ⟩
@@ -522,9 +529,9 @@ i-nodes/lower-bound/node-black-height {A} {y} {n} t =
       2 Nat.^ (2 * n + 1)
     ∎
 
-i-nodes/lower-bound/log-node-black-height : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → n ≥ ⌊ (⌈log₂ (1 + (i-nodes t)) ⌉ ∸ 1) /2⌋
+i-nodes/lower-bound/log-node-black-height : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → n Nat.≥ ⌊ (⌈log₂ (1 + (i-nodes t)) ⌉ ∸ 1) /2⌋
 i-nodes/lower-bound/log-node-black-height {A} {y} {n} t =
-  let open ≤-Reasoning in
+  let open Nat.≤-Reasoning in
     begin
       ⌊ (⌈log₂ (1 + (i-nodes t)) ⌉ ∸ 1) /2⌋
     ≤⟨ Nat.⌊n/2⌋-mono (h t) ⟩
@@ -533,9 +540,9 @@ i-nodes/lower-bound/log-node-black-height {A} {y} {n} t =
       n
     ∎
     where
-      m≤o+n⇒m∸n≤o : (m n o : val nat) → (m ≤ (o + n)) → ((m ∸ n) ≤ o)
+      m≤o+n⇒m∸n≤o : (m n o : val nat) → (m Nat.≤ (o + n)) → ((m ∸ n) Nat.≤ o)
       m≤o+n⇒m∸n≤o m n o m≤o+n =
-        let open ≤-Reasoning in
+        let open Nat.≤-Reasoning in
           begin
             m ∸ n
           ≤⟨ Nat.∸-monoˡ-≤ n m≤o+n ⟩
@@ -544,9 +551,9 @@ i-nodes/lower-bound/log-node-black-height {A} {y} {n} t =
             o
           ∎
 
-      h : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → (⌈log₂ (1 + (i-nodes t)) ⌉ ∸ 1) ≤ (2 * n)
+      h : {y : val color} {n : val nat} {l : val (list A)} → (t : IRBT A y n l) → (⌈log₂ (1 + (i-nodes t)) ⌉ ∸ 1) Nat.≤ (2 * n)
       h {y} {n} t = m≤o+n⇒m∸n≤o ⌈log₂ (1 + (i-nodes t)) ⌉ 1 (2 * n) (
-        let open ≤-Reasoning in
+        let open Nat.≤-Reasoning in
           begin
             ⌈log₂ (1 + (i-nodes t)) ⌉
           ≤⟨ ⌈log₂⌉-mono-≤ (i-nodes/lower-bound/node-black-height t) ⟩

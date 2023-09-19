@@ -22,12 +22,12 @@ open import Calf.Types.List
 
 open import Level using (0ℓ)
 open import Relation.Binary
-open import Data.Nat as Nat using (_<_)
+open import Data.Nat as Nat using (_<_; _+_)
 import Data.Nat.Properties as Nat
 open import Data.String using (String)
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_)
 
-open import Function using (case_of_)
+open import Function using (case_of_; _$_)
 
 open import Examples.Sequence.MSequence
 open import Examples.Sequence.ListMSequence
@@ -178,6 +178,17 @@ module Ex/NatSet where
     bind Split (singleton 4) λ t₂ →
     bind Split (join t₁ 3 t₂) λ t →
     split t 2
+
+  sum/seq : cmp (Π (seq nat) λ _ → F (nat))
+  sum/seq =
+    rec
+      {X = F (nat)}
+      (ret 0)
+      λ t'₁ ih₁ a' t'₂ ih₂ →
+        step (F nat) (1 , 1) $
+        bind (F (nat)) (ih₁ & ih₂)
+        (λ (s₁ , s₂) → ret (s₁ + a' + s₂))
+
 
 
 module Ex/NatStringDict where
