@@ -70,117 +70,66 @@ summ/bounded .black .zero .[] leaf = bound/relax (λ x → Nat.z≤n , Nat.z≤n
 summ/bounded .red n l (red {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
   Eq.subst
     (IsBounded _ _) {y = List.length l , 1 + 2 * n}
-    {!   !}
+      (begin
+        (1 , 1) ⊕ (length l₁ + length l₂ , n + (n + zero))
+       ≡⟨⟩
+        (1 + (length l₁ + length l₂) , 1 + (n + (n + zero)))
+       ≡˘⟨ Eq.cong₂ _,_ (Nat.+-assoc 1 (length l₁) (length l₂)) refl ⟩
+         (1 + length l₁ + length l₂ , suc (n + (n + zero)))
+       ≡⟨ Eq.cong₂ _,_ (Eq.cong₂ _+_ (Nat.+-comm 1 (length l₁)) refl) refl ⟩
+         (length l₁ + 1 + length l₂ , suc (n + (n + zero)))
+       ≡⟨ Eq.cong₂ _,_ (Nat.+-assoc (length l₁) 1 (length l₂)) refl ⟩
+         (length l₁ + (1 + length l₂) , suc (n + (n + zero)))
+       ≡⟨⟩
+         (length l₁ + length (a ∷ l₂) , suc (n + (n + zero)))
+       ≡˘⟨ Eq.cong₂ _,_ (List.length-++ l₁) refl ⟩
+         (length (l₁ ++ a ∷ l₂) , suc (n + (n + zero)))
+       ∎)
     (bound/step (1 , 1) (List.length l₁ + List.length l₂  , 2 * n)
       (Eq.subst
         (IsBounded _ _) {x = List.length l₁ + List.length l₂ + 0 , 2 * n + 0}
-        {!   !}
+        (Eq.cong₂ _,_ (Nat.+-identityʳ (List.length l₁ + List.length l₂)) (Nat.+-identityʳ (2 * n)))
         (bound/bind/const
           (List.length l₁ + List.length l₂  , 2 * n)
           𝟘
           (Eq.subst
             (IsBounded _ _)
-            {!   !}
+            (Eq.cong₂ _,_ refl (Nat.⊔-idem (2 * n)))
             (bound/par (summ/bounded _ _ _ t₁) (summ/bounded _ _ _ t₂)))
           (λ _ → bound/ret)))
     )
+      where open ≡-Reasoning
 summ/bounded .black n@(suc n') l (black {y₁ = y₁} {y₂ = y₂} {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
   Eq.subst
     (IsBounded _ _) {y = List.length l , 2 * (suc n') }
-    {!   !}
+      (begin
+        (1 , 1) ⊕ (length l₁ + length l₂ , suc (n' + (n' + zero)))
+       ≡⟨⟩
+        (1 + (length l₁ + length l₂) , suc (suc (n' + (n' + zero))))
+       ≡˘⟨ Eq.cong₂ _,_ (Nat.+-assoc 1 (length l₁) (length l₂)) (Eq.cong suc (Eq.cong₂ _+_ (Nat.+-comm n' 1) refl)) ⟩
+         (1 + length l₁ + length l₂ , suc (n' + 1 + (n' + zero)))
+       ≡⟨ Eq.cong₂ _,_ (Eq.cong₂ _+_ (Nat.+-comm 1 (length l₁)) refl) (Eq.cong suc (Nat.+-assoc n' 1 (n' + zero))) ⟩
+         (length l₁ + 1 + length l₂ , suc (n' + (1 + (n' + zero))))
+       ≡⟨ Eq.cong₂ _,_ (Nat.+-assoc (length l₁) 1 (length l₂)) refl ⟩
+         (length l₁ + (1 + length l₂) , suc (n' + (1 + (n' + zero))))
+       ≡⟨⟩
+         (length l₁ + length (a ∷ l₂) , suc (n' + (1 + (n' + 0))))
+       ≡˘⟨ Eq.cong₂ _,_ (List.length-++ l₁) refl ⟩
+        (length (l₁ ++ a ∷ l₂) , suc (n' + suc (n' + zero)))
+       ∎)
     (bound/step (1 , 1) (List.length l₁ + List.length l₂ ,  1 + 2 * n')
       (Eq.subst
         (IsBounded _ _)  {x = List.length l₁ + List.length l₂ + 0 , 1 + 2 * n' + 0}
-        {!   !}
+        (Eq.cong₂ _,_ (Nat.+-identityʳ (List.length l₁ + List.length l₂)) (Nat.+-identityʳ (1 + 2 * n')))
         (bound/bind/const (List.length l₁ + List.length l₂ , 1 + 2 * n') 𝟘
           (Eq.subst
             (IsBounded _ _)
-            {!   !}
+            (Eq.cong₂ _,_ refl (Nat.⊔-idem (1 + 2 * n')))
             (bound/par
               (bound/relax (λ u → Nat.≤-refl , (span/bounded y₁ n')) (summ/bounded _ _ _ t₁))
               (bound/relax (λ u → Nat.≤-refl , (span/bounded y₂ n')) (summ/bounded _ _ _ t₂))))
           (λ a₁ → bound/ret))))
-
--- summ : cmp (Π (seq nat) λ _ → F (nat))
---   summ =
---     rec
---       {X = F (nat)}
---       (ret 0)
---       λ t'₁ ih₁ a' t'₂ ih₂ →
---         step (F nat) (1 , 1) $
---         bind (F (nat)) (ih₁ & ih₂)
---         (λ (s₁ , s₂) → ret (s₁ + a' + s₂))
-
--- i-rec {A} {X} z f .black .zero .[] leaf = z
--- i-rec {A} {X} z f .red n .(_ ++ [ a ] ++ _) (red t₁ a t₂) =
---   f
---     _ _ _ t₁ (i-rec {A} {X} z f _ _ _ t₁)
---     a
---     _ _ _ t₂ (i-rec {A} {X} z f _ _ _ t₂)
--- i-rec {A} {X} z f .black .(suc _) .(_ ++ [ a ] ++ _) (black t₁ a t₂) =
---   f
---     _ _ _ t₁ (i-rec {A} {X} z f _ _ _ t₁)
---     a
---     _ _ _ t₂ (i-rec {A} {X} z f _ _ _ t₂)
-
-
--- append :
---   cmp (
---     Π color λ y₁ → Π nat λ n₁ → Π (list A) λ l₁ → Π (irbt A y₁ n₁ l₁) λ _ →
---     Π color λ y₂ → Π nat λ n₂ → Π (list A) λ l₂ → Π (irbt A y₂ n₂ l₂) λ _ →
---     F (Σ++ color λ y → Σ++ nat λ n → prod⁺ (U (meta (n ≤ (bound y₁ n₁ n₂)))) (irbt A y n (l₁ ++ l₂)))
---   )
--- append {A} y₁ n₁ .[] leaf y₂ n₂ l₂             t₂ =
---   ret (y₂ , n₂ , Nat.n≤1+n n₂ , t₂)
--- append {A} y₁ n₁ l₁ (red   t₁₁ a t₁₂) y₂ n₂ l₂ t₂ =
---   bind (F (Σ++ color λ y → Σ++ nat λ n → prod⁺ (U (meta (n ≤ (bound y₁ n₁ n₂)))) (irbt A y n (l₁ ++ l₂))))
---     (append _ _ _ t₁₂ _ _ _ t₂)
---     λ { (y , n , p , t₂') →
---       bind (F (Σ++ color λ y → Σ++ nat λ n → prod⁺ (U (meta (n ≤ (bound y₁ n₁ n₂)))) (irbt A y n (l₁ ++ l₂))))
---       (i-join _ _ _ t₁₁ a _ _ _ t₂')
---       (λ { (y₂' , l , l≡l₁₁++a++l₂' , inj₁ t₂) → ret (y₂' , 1 + (n₁ Nat.⊔ n) , {!   !} , {! t₂  !})
---          ; (y₂' , l , l≡l₁₁++a++l₂' , inj₂ t₂) → ret (y₂' , n₁ Nat.⊔ n , {!   !} , {!   !})
---       })
---     }
---   -- step (F (rbt A (l₁ ++ l₂))) 1 $
---   -- bind (F (rbt A (l₁ ++ l₂))) (append _ _ _ t₁₂ _ _ _ t₂) λ { ⟪ t₂' ⟫ →
---   -- bind (F (rbt A (l₁ ++ l₂)))  (i-join _ _ _ t₁₁ a _ _ _ t₂')
---   --   λ { (_ , l , l≡l₁₁++a++l₂' , inj₁ t₂) →
---   --       ret (mk ⟪ t₂ ⟫ (Eq.trans l≡l₁₁++a++l₂' (Eq.sym (List.++-assoc _ ([ a ] ++ _) l₂))))
---   --     ; (_ , l , l≡l₁₁++a++l₂' , inj₂ t₂) →
---   --       ret (mk ⟪ t₂ ⟫ (Eq.trans l≡l₁₁++a++l₂' (Eq.sym (List.++-assoc _ ([ a ] ++ _) l₂)))) }
---   -- }
--- append {A} y₁ n₁@(suc n₁') l₁ (black t₁₁ a t₁₂) y₂ n₂ l₂ t₂ =
---   bind (F (Σ++ color λ y → Σ++ nat λ n → prod⁺ (U (meta (n ≤ (bound y₁ n₁ n₂)))) (irbt A y n (l₁ ++ l₂))))
---     (append _ _ _ t₁₂ _ _ _ t₂)
---     λ { (y , n , p , t₂') →
---       bind (F (Σ++ color λ y → Σ++ nat λ n → prod⁺ (U (meta (n ≤ (bound y₁ n₁ n₂)))) (irbt A y n (l₁ ++ l₂))))
---         (i-join _ _ _ t₁₁ a _ _ _ t₂')
---         (λ { (y₂' , l , l≡l₁₁++a++l₂' , inj₁ t₂) → ret (y₂' , 1 + (n₁' Nat.⊔ n) , {!   !} , {!   !})
---            ; (y₂' , l , l≡l₁₁++a++l₂' , inj₂ t₂) → ret (y₂' , n₁' Nat.⊔ n , {!   !} , {!   !})
---           })
---     }
---   -- step (F (rbt A (l₁ ++ l₂))) 1 $
---   -- bind (F (rbt A (l₁ ++ l₂))) (append _ _ _ t₁₂ _ _ _ t₂) λ { ⟪ t₂' ⟫ →
---   -- bind (F (rbt A (l₁ ++ l₂)))  (i-join _ _ _ t₁₁ a _ _ _ t₂')
---   --   λ { (_ , l , l≡l₁₁++a++l₂' , inj₁ t₂) →
---   --       ret (mk ⟪ t₂ ⟫ (Eq.trans l≡l₁₁++a++l₂' (Eq.sym (List.++-assoc _ ([ a ] ++ _) l₂))))
---   --     ; (_ , l , l≡l₁₁++a++l₂' , inj₂ t₂) →
---   --       ret (mk ⟪ t₂ ⟫ (Eq.trans l≡l₁₁++a++l₂' (Eq.sym (List.++-assoc _ ([ a ] ++ _) l₂)))) }
---   -- }
-
--- -- append/is-bounded : ∀ {A} y₁ n₁ l₁ t₁ y₂ n₂ l₂ t₂ → IsBounded (rbt A (l₁ ++ l₂)) (append y₁ n₁ l₁ t₁ y₂ n₂ l₂ t₂) (1 + (4 * (n₁ Nat.⊔ n₂ ∸ n₁ Nat.⊓ n₂)))
--- -- append/is-bounded {A} .black .zero .[] leaf y₂ n₂ l₂ t₂ = bound/relax (λ u → Nat.z≤n) bound/ret
--- -- append/is-bounded {A} .red n₁ l₁ (red {l₁ = l₁₁} {l₂ = l₁₂} t₁₁ a t₁₂) y₂ n₂ l₂ t₂ = {!   !}
--- --   -- Eq.subst
--- --     -- (IsBounded _ _) {x = 1 + {!   !}}
--- --     -- {!   !}
--- --     -- (bound/step 1 {!   !}
--- --       -- (Eq.subst
--- --         -- (IsBounded _ _)
--- --         -- {!   !}
--- --         -- (bound/bind/const {!   !} {!   !} {!   !} {!   !})))
--- -- append/is-bounded {A} .black .(suc _) .(_ ++ [ a ] ++ _) (black t₁ a t₃) y₂ n₂ l₂ t₂ = {!   !}
+      where open ≡-Reasoning
 
 
 module _ (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) where
