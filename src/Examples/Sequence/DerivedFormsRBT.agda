@@ -17,10 +17,11 @@ open import Calf.Types.List
 open import Calf.Types.Product
 open import Calf.Types.Bounded costMonoid
 open import Data.Product
-import Data.Nat.Properties as Nat
+open import Data.List as List hiding (sum)
 import Data.List.Properties as List
 open import Data.Nat as Nat using (_+_; _*_; _<_; _>_; _≤ᵇ_; _<ᵇ_; ⌊_/2⌋; _≡ᵇ_; _≥_; _∸_)
-open import Data.List as List hiding (sum)
+import Data.Nat.Properties as Nat
+open import Data.Nat.Logarithm
 
 open import Level using (0ℓ)
 open import Function using (_$_)
@@ -47,10 +48,8 @@ bound : val color → val nat → val nat → val nat
 bound red n₁ n₂ = 2 + (n₁ Nat.⊔ n₂)
 bound black n₁ n₂ = 1 + (n₁ Nat.⊔ n₂)
 
-sum :
-  cmp (
-    Π color λ y₁ → Π nat λ n₁ → Π (list nat) λ l₁ → Π (irbt nat y₁ n₁ l₁) λ _ → F nat
-  )
+sum : cmp $
+  Π color λ y → Π nat λ n → Π (list nat) λ l → Π (irbt nat y n l) λ _ → F nat
 sum .black .zero .[] leaf = ret 0
 sum .red n .(_ ++ [ a ] ++ _) (red t₁ a t₂) =
   step (F nat) (1 , 1) $
@@ -69,9 +68,9 @@ span/bounded : ∀ y n → (span/sum y n) Nat.≤ (1 + 2 * n)
 span/bounded red n = Nat.≤-refl
 span/bounded black n = Nat.n≤1+n (2 * n)
 
-sum/bounded : ∀ y n l t → IsBounded nat (sum y n l t) (List.length l , span/sum y n)
-sum/bounded .black .zero .[] leaf = bound/relax (λ x → Nat.z≤n , Nat.z≤n) bound/ret
-sum/bounded .red n l (red {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
+sum/bounded' : ∀ y n l t → IsBounded nat (sum y n l t) (List.length l , span/sum y n)
+sum/bounded' .black .zero .[] leaf = bound/relax (λ x → Nat.z≤n , Nat.z≤n) bound/ret
+sum/bounded' .red n l (red {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
   Eq.subst
     (IsBounded _ _) {y = List.length l , 1 + 2 * n}
       (begin
@@ -99,11 +98,11 @@ sum/bounded .red n l (red {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
           (Eq.subst
             (IsBounded _ _)
             (Eq.cong₂ _,_ refl (Nat.⊔-idem (2 * n)))
-            (bound/par (sum/bounded _ _ _ t₁) (sum/bounded _ _ _ t₂)))
+            (bound/par (sum/bounded' _ _ _ t₁) (sum/bounded' _ _ _ t₂)))
           (λ _ → bound/ret)))
     )
       where open ≡-Reasoning
-sum/bounded .black n@(suc n') l (black {y₁ = y₁} {y₂ = y₂} {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
+sum/bounded' .black n@(suc n') l (black {y₁ = y₁} {y₂ = y₂} {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
   Eq.subst
     (IsBounded _ _) {y = List.length l , 2 * (suc n') }
       (begin
@@ -130,10 +129,27 @@ sum/bounded .black n@(suc n') l (black {y₁ = y₁} {y₂ = y₂} {l₁ = l₁}
             (IsBounded _ _)
             (Eq.cong₂ _,_ refl (Nat.⊔-idem (1 + 2 * n')))
             (bound/par
-              (bound/relax (λ u → Nat.≤-refl , (span/bounded y₁ n')) (sum/bounded _ _ _ t₁))
-              (bound/relax (λ u → Nat.≤-refl , (span/bounded y₂ n')) (sum/bounded _ _ _ t₂))))
+              (bound/relax (λ u → Nat.≤-refl , (span/bounded y₁ n')) (sum/bounded' _ _ _ t₁))
+              (bound/relax (λ u → Nat.≤-refl , (span/bounded y₂ n')) (sum/bounded' _ _ _ t₂))))
           (λ a₁ → bound/ret))))
       where open ≡-Reasoning
+
+sum/bounded : ∀ y n l t → IsBounded nat (sum y n l t) (length l , 1 + 2 * ⌈log₂ (1 + length l) ⌉)
+sum/bounded y n l t = bound/relax (λ u → Nat.≤-refl , lemma) (sum/bounded' y n l t)
+  where
+    open Nat.≤-Reasoning
+
+    lemma : span/sum y n Nat.≤ suc (2 * ⌈log₂ (1 + length l) ⌉)
+    lemma =
+      begin
+        span/sum y n
+      ≤⟨ span/bounded y n ⟩
+        suc (2 * n)
+      ≤⟨ Nat.s≤s (Nat.*-monoʳ-≤ 2 (i-nodes/bound/log-node-black-height t)) ⟩
+        suc (2 * ⌈log₂ (1 + i-nodes t) ⌉)
+      ≡⟨ Eq.cong (λ x → suc (2 * ⌈log₂ (1 + x) ⌉)) (i-nodes≡lengthl t) ⟩
+        suc (2 * ⌈log₂ (1 + length l) ⌉)
+      ∎
 
 
 module _ (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) where
