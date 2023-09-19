@@ -66,11 +66,11 @@ RedBlackMSequence =
     nodes : RBT A → val nat
     nodes ⟪ t ⟫ = i-nodes t
 
-    nodes/bound/log-node-black-height : (t : RBT A) → RBT.n t Nat.≤ ⌈log₂ (1 + (nodes t)) ⌉
-    nodes/bound/log-node-black-height ⟪ t ⟫ = i-nodes/bound/log-node-black-height t
+    nodes/upper-bound : (t : RBT A) → RBT.n t Nat.≤ ⌈log₂ (1 + (nodes t)) ⌉
+    nodes/upper-bound ⟪ t ⟫ = i-nodes/bound/log-node-black-height t
 
-    nodes/lower-bound/log-node-black-height : (t : RBT A) → RBT.n t Nat.≥ ⌊ (⌈log₂ (1 + (nodes t)) ⌉ ∸ 1) /2⌋
-    nodes/lower-bound/log-node-black-height ⟪ t ⟫ = i-nodes/lower-bound/log-node-black-height t 
+    nodes/lower-bound : (t : RBT A) → RBT.n t Nat.≥ ⌊ (⌈log₂ (1 + (nodes t)) ⌉ ∸ 1) /2⌋
+    nodes/lower-bound ⟪ t ⟫ = i-nodes/lower-bound/log-node-black-height t 
 
     join/cost : ∀ {A} (t₁ : RBT A) (t₂ : RBT A) → ℂ
     join/cost {A} t₁ t₂ =
