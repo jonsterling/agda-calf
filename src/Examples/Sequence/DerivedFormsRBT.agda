@@ -15,6 +15,7 @@ open import Calf.ParMetalanguage parCostMonoid
 open import Calf.Types.Nat
 open import Calf.Types.List
 open import Calf.Types.Product
+open import Calf.Types.Sum
 open import Calf.Types.Bounded costMonoid
 open import Data.Product
 open import Data.List as List hiding (sum)
@@ -25,6 +26,7 @@ open import Data.Nat.Logarithm
 
 open import Level using (0ℓ)
 open import Function using (_$_)
+open import Relation.Nullary
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning; ≢-sym)
 
@@ -48,16 +50,16 @@ bound : val color → val nat → val nat → val nat
 bound red n₁ n₂ = 2 + (n₁ Nat.⊔ n₂)
 bound black n₁ n₂ = 1 + (n₁ Nat.⊔ n₂)
 
-sum : cmp $
+sum/seq : cmp $
   Π color λ y → Π nat λ n → Π (list nat) λ l → Π (irbt nat y n l) λ _ → F nat
-sum .black .zero .[] leaf = ret 0
-sum .red n .(_ ++ [ a ] ++ _) (red t₁ a t₂) =
+sum/seq .black .zero .[] leaf = ret 0
+sum/seq .red n .(_ ++ [ a ] ++ _) (red t₁ a t₂) =
   step (F nat) (1 , 1) $
-    bind (F (nat)) ((sum _ _ _ t₁) & (sum _ _ _ t₂))
+    bind (F (nat)) ((sum/seq _ _ _ t₁) & (sum/seq _ _ _ t₂))
     (λ (s₁ , s₂) → ret (s₁ + a + s₂))
-sum .black .(suc _) .(_ ++ [ a ] ++ _) (black t₁ a t₂) =
+sum/seq .black .(suc _) .(_ ++ [ a ] ++ _) (black t₁ a t₂) =
   step (F nat) (1 , 1) $
-    bind (F (nat)) ((sum _ _ _ t₁) & (sum _ _ _ t₂))
+    bind (F (nat)) ((sum/seq _ _ _ t₁) & (sum/seq _ _ _ t₂))
     (λ (s₁ , s₂) → ret (s₁ + a + s₂))
 
 span/sum : val color → val nat → val nat
@@ -68,7 +70,7 @@ span/bounded : ∀ y n → (span/sum y n) Nat.≤ (1 + 2 * n)
 span/bounded red n = Nat.≤-refl
 span/bounded black n = Nat.n≤1+n (2 * n)
 
-sum/bounded' : ∀ y n l t → IsBounded nat (sum y n l t) (List.length l , span/sum y n)
+sum/bounded' : ∀ y n l t → IsBounded nat (sum/seq y n l t) (List.length l , span/sum y n)
 sum/bounded' .black .zero .[] leaf = bound/relax (λ x → Nat.z≤n , Nat.z≤n) bound/ret
 sum/bounded' .red n l (red {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
   Eq.subst
@@ -134,7 +136,7 @@ sum/bounded' .black n@(suc n') l (black {y₁ = y₁} {y₂ = y₂} {l₁ = l₁
           (λ a₁ → bound/ret))))
       where open ≡-Reasoning
 
-sum/bounded : ∀ y n l t → IsBounded nat (sum y n l t) (length l , 1 + 2 * ⌈log₂ (1 + length l) ⌉)
+sum/bounded : ∀ y n l t → IsBounded nat (sum/seq y n l t) (length l , 1 + 2 * ⌈log₂ (1 + length l) ⌉)
 sum/bounded y n l t = bound/relax (λ u → Nat.≤-refl , lemma) (sum/bounded' y n l t)
   where
     open Nat.≤-Reasoning
@@ -150,6 +152,74 @@ sum/bounded y n l t = bound/relax (λ u → Nat.≤-refl , lemma) (sum/bounded' 
       ≡⟨ Eq.cong (λ x → suc (2 * ⌈log₂ (1 + x) ⌉)) (i-nodes≡lengthl t) ⟩
         suc (2 * ⌈log₂ (1 + length l) ⌉)
       ∎
+
+
+nat/map/f : val nat → val nat
+nat/map/f = {!   !}
+
+nat/map :
+  cmp (
+    Π color λ y₁ → Π nat λ n₁ → Π (list nat) λ l₁ → Π (irbt nat y₁ n₁ l₁) λ _ →
+    F (Σ++ color λ y → Σ++ nat λ n → Σ++ (list nat) λ l → prod⁺ (prod⁺ (prod⁺ (U (meta (n Nat.≥ n₁))) (U (meta (n Nat.≤ (1 + n₁))))) (U (meta (List.length l ≡ List.length l₁)))) (irbt nat y n l))
+  )
+nat/map .black .zero .[] leaf =
+  ret (black , (0 , ([] , (((Nat.z≤n , Nat.z≤n) , refl) , leaf))))
+nat/map .red n'₁ l (red {n = n} {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
+  bind
+    (F (Σ++ color λ y → Σ++ nat λ n → Σ++ (list nat) λ l → prod⁺ (prod⁺ (prod⁺ (U (meta (n Nat.≥ n'₁))) (U (meta (n Nat.≤ (1 + n'₁))))) (U (meta (List.length l ≡ List.length (l₁ ++ a ∷ l₂))))) (irbt nat y n l)))
+    (nat/map black n l₁ t₁ & nat/map black n l₂ t₂)
+    λ ((y₁ , n₁ , l'₁ , ((p₁ , q₁) , t₁) , s₁) , (y₂ , n₂ , l'₂ , ((p₂ , q₂) , t₂) , s₂)) →
+      bind
+        ((F (Σ++ color λ y → Σ++ nat λ n → Σ++ (list nat) λ l → prod⁺ (prod⁺ (prod⁺ (U (meta (n Nat.≥ n'₁))) (U (meta (n Nat.≤ (1 + n'₁))))) (U (meta (List.length l ≡ List.length (l₁ ++ a ∷ l₂))))) (irbt nat y n l))))
+        (i-join _ _ _ s₁ (nat/map/f a) _ _ _ s₂)
+        λ { (y , l , p , inj₁ t') →  {!   !}
+        -- ret (y , 1 + (n₁ Nat.⊔ n₂) , l , (({!   !} , {!   !}) , {!   !}) , t')
+           ; (y , l , p , inj₂ t') → {!   !}
+           -- ret (y , n₁ Nat.⊔ n₂ , l , (({!   !} , {!   !}) , {!   !}) , t')
+           }
+nat/map .black n'₁@(suc n) l (black {y₁ = y₁} {y₂ = y₂} {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
+  bind
+    (F (Σ++ color λ y → Σ++ nat λ n → Σ++ (list nat) λ l → prod⁺ (prod⁺ (prod⁺ (U (meta (n Nat.≥ n'₁))) (U (meta (n Nat.≤ (1 + n'₁))))) (U (meta (List.length l ≡ List.length (l₁ ++ a ∷ l₂))))) (irbt nat y n l)))
+    (nat/map y₁ n l₁ t₁ & nat/map y₂ n l₂ t₂)
+    λ ((y₁ , n₁ , l'₁ , ((p₁ , q₁) , t₁) , s₁) , (y₂ , n₂ , l'₂ , ((p₂ , q₂) , t₂) , s₂)) →
+      bind
+        ((F (Σ++ color λ y → Σ++ nat λ n → Σ++ (list nat) λ l → prod⁺ (prod⁺ (prod⁺ (U (meta (n Nat.≥ n'₁))) (U (meta (n Nat.≤ (1 + n'₁))))) (U (meta (List.length l ≡ List.length (l₁ ++ a ∷ l₂))))) (irbt nat y n l))))
+        (i-join _ _ _ s₁ (nat/map/f a) _ _ _ s₂)
+        λ { (y , l , p , inj₁ t') → ret (y , 1 + (n₁ Nat.⊔ n₂) , l , {!   !} , t')
+           ; (y , l , p , inj₂ t') → ret (y , n₁ Nat.⊔ n₂ , l , {!   !} , t')
+           }
+
+lemma : (n : val nat) → (n₁ : val nat) → (n₂ : val nat) → n₁ Nat.≥ n → n₁ Nat.≤ (1 + n) → n₂ Nat.≥ n → n₂ Nat.≤ (1 + n) → (n₁ Nat.⊔ n₂ ∸ n₁ Nat.⊓ n₂) Nat.≤ 1
+lemma n n₁ n₂ p₁ p₂ p₃ p₄ with n₁ Nat.≟ n | n₂ Nat.≟ n
+... | yes refl | yes refl =
+  Nat.≤-trans (Nat.≤-reflexive (Eq.subst (λ t → t ∸ n Nat.⊓ n ≡ 0) (Eq.sym (Nat.⊔-idem n)) (Eq.subst (λ t → n ∸ t ≡ 0) (Eq.sym (Nat.⊓-idem n)) (Nat.n∸n≡0 n)))) Nat.z≤n
+... | yes refl | no p = {!   !}
+... | no p | yes refl = {!   !}
+... | no p₁ | no p₂ =
+  Eq.subst (λ 1+n → 1+n ∸ n₁ Nat.⊓ n₂ Nat.≤ 1) {!   !} (Eq.subst (λ 1+n → (1 + n) ∸ 1+n Nat.≤ 1) {!   !} (Nat.≤-trans (Nat.≤-reflexive (Nat.n∸n≡0 (1 + n))) Nat.z≤n))
+
+
+span/map : val color → val nat → val nat
+span/map red n = 4 + 8 * n
+span/map black n = 8 * n
+
+nat/map/is-bounded : ∀ y₁ n₁ l₁ t →
+  IsBounded
+    ((Σ++ color λ y → Σ++ nat λ n → Σ++ (list nat) λ l → prod⁺ (prod⁺ (prod⁺ (U (meta (n Nat.≥ n₁))) (U (meta (n Nat.≤ (1 + n₁))))) (U (meta (List.length l ≡ List.length l₁)))) (irbt nat y n l)))
+    (nat/map y₁ n₁ l₁ t) ((4 * List.length l₁) , span/map y₁ n₁)
+nat/map/is-bounded .black .zero .[] leaf =
+  bound/relax (λ u → Nat.z≤n , Nat.z≤n) bound/ret
+nat/map/is-bounded .red n l (red {l₁ = l₁} {l₂ = l₂} t₁ a t₂) =
+  Eq.subst
+    (IsBounded _ _) {x = 1 + (4 * List.length l₁ + 4 * List.length l₂ + 3) , {!   !} }
+    {!   !}
+    (bound/step (1 , 1) (4 * List.length l₁ + 4 * List.length l₂ + 3 , 3 + 8 * n)
+      (Eq.subst
+        (IsBounded _ _) {y = 4 * List.length l₁ + 4 * List.length l₂ + 3 , {!  2 + 8 * n !}}
+        {!   !}
+        (bound/bind/const (4 * List.length l₁ + 4 * List.length l₂ , {!   !}) (3 , 3) (bound/par {!   !} {!   !}) {!   !})))
+nat/map/is-bounded .black .(suc _) .(_ ++ [ a ] ++ _) (black t₁ a t₂) = {!   !}
+
 
 
 module _ (Key : StrictTotalOrder 0ℓ 0ℓ 0ℓ) where
