@@ -4,6 +4,11 @@ module Examples.Sequence.DerivedFormsRBT where
 
 open import Examples.Sequence.RedBlackTree
 
+open import Calf.CostMonoid
+open import Calf.CostMonoids using (ℕ²-ParCostMonoid)
+
+open ParCostMonoid parCostMonoid
+
 open import Calf costMonoid
 open import Calf.ParMetalanguage parCostMonoid
 

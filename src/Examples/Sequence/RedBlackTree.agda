@@ -6,7 +6,7 @@ open import Calf.CostMonoid
 open import Calf.CostMonoids using (ℕ²-ParCostMonoid)
 
 parCostMonoid = ℕ²-ParCostMonoid
-open ParCostMonoid parCostMonoid public
+open ParCostMonoid parCostMonoid
 
 open import Calf costMonoid
 open import Calf.ParMetalanguage parCostMonoid
