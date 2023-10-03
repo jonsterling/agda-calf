@@ -1,18 +1,20 @@
-{-# OPTIONS --without-K #-}
+{-# OPTIONS --rewriting #-}
 
 -- Step effect.
 
-open import Calf.CostMonoid
+open import Algebra.Cost
 
 module Calf.Step (costMonoid : CostMonoid) where
 
 open CostMonoid costMonoid
 
 open import Calf.Prelude
-open import Calf.Metalanguage
-open import Calf.PhaseDistinction
+open import Calf.CBPV
+open import Calf.Directed
+open import Calf.Phase.Core
+open import Calf.Phase.Open
 open import Relation.Binary.PropositionalEquality
-open import Calf.Types.Product
+open import Calf.Types.Product-
 
 postulate
   step : (X : tp neg) → ℂ → cmp X → cmp X
@@ -26,16 +28,16 @@ postulate
   Π/step : ∀ {A} {X : val A → tp neg} {f : cmp (Π A X)} {n} → step (Π A X) n f ≡ λ x → step (X x) n (f x)
   {-# REWRITE Π/step #-}
 
-  Σ+-/step : ∀ {A P c e} → step (Σ+- A P) c e ≡ (proj₁ e , step (P (proj₁ e)) c (proj₂ e))
-  {-# REWRITE Σ+-/step #-}
+  Σ⁻/step : ∀ {A P c e} → step (Σ⁻ A P) c e ≡ (proj₁ e , step (P (proj₁ e)) c (proj₂ e))
+  {-# REWRITE Σ⁻/step #-}
 
   prod⁻/step : {X Y : tp neg} {c : ℂ} {e : cmp (prod⁻ X Y)} →
     step (prod⁻ X Y) c e ≡ (step X c (proj₁ e) , step Y c (proj₂ e))
   {-# REWRITE prod⁻/step  #-}
 
-  ext/cmp/step : {X : ext → tp neg} {c : ℂ} {e : cmp (ext/cmp X)} →
-    step (ext/cmp X) c e ≡ λ u → step (X u) c (e u)
-  {-# REWRITE ext/cmp/step #-}
+  open⁻/step : {X : ext → tp neg} {c : ℂ} {e : cmp (open⁻ X)} →
+    step (open⁻ X) c e ≡ λ u → step (X u) c (e u)
+  {-# REWRITE open⁻/step #-}
 
   bind/step : ∀ {A} {X} {e f n} → bind {A} X (step (F A) n e) f ≡ step X n (bind {A} X e f)
   {-# REWRITE bind/step #-}

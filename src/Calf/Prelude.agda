@@ -1,4 +1,4 @@
-{-# OPTIONS --without-K #-}
+{-# OPTIONS --rewriting #-}
 
 module Calf.Prelude where
 
