@@ -19,17 +19,6 @@ open import Data.Product
 add : cmp (Π nat λ _ → Π nat λ _ → F nat)
 add m n = step (F nat) (1 , 1) (ret (m + n))
 
-add/cost : cmp (Π nat λ _ → Π nat λ _ → meta ℂ)
-add/cost m n = (1 , 1)
-
-add/is-bounded : ∀ m n → IsBounded nat (add m n) (add/cost m n)
-add/is-bounded m n =
-  bound/step
-    {nat}
-    (1 , 1)
-    (ret (m + n))
-    (bound/ret {nat} (m + n))
-
 
 data Tree : Set where
   leaf : val nat → Tree
@@ -44,25 +33,9 @@ sum (node t₁ t₂) =
   bind (F nat) (sum t₁ & sum t₂) λ (n₁ , n₂) →
     add n₁ n₂
 
-sum/total : ∀ t → ◯ (∃ λ n → sum t ≡ ret n)
-sum/total (leaf x)     u = x , refl
-sum/total (node t₁ t₂) u =
-  let (n₁ , ≡₁) = sum/total t₁ u
-      (n₂ , ≡₂) = sum/total t₂ u
-  in
-  n₁ + n₂ , (
-    let open ≡-Reasoning in
-    begin
-      (bind (F nat) (sum t₁ & sum t₂) λ (n₁ , n₂) →
-        add n₁ n₂)
-    ≡⟨ Eq.cong₂ (λ e₁ e₂ → bind (F nat) (e₁ & e₂) _) ≡₁ ≡₂ ⟩
-      add n₁ n₂
-    ≡⟨⟩
-      step (F nat) (1 , 1) (ret (n₁ + n₂))
-    ≡⟨ step/ext (F nat) _ (1 , 1) u ⟩
-      ret (n₁ + n₂)
-    ∎
-  )
+sum/spec : val tree → val nat
+sum/spec (leaf x)     = x
+sum/spec (node t₁ t₂) = sum/spec t₁ + sum/spec t₂
 
 size : val tree → val nat
 size (leaf x)     = 0
@@ -72,27 +45,33 @@ depth : val tree → val nat
 depth (leaf x)     = 0
 depth (node t₁ t₂) = suc (depth t₁ ⊔ depth t₂)
 
-sum/cost : cmp (Π tree λ _ → meta ℂ)
-sum/cost t = size t , depth t
+sum/bound : cmp (Π tree λ _ → F nat)
+sum/bound t = step (F nat) (size t , depth t) (ret (sum/spec t))
 
-sum/is-bounded : ∀ t → IsBounded nat (sum t) (sum/cost t)
-sum/is-bounded (leaf x)     = bound/ret {nat} x
-sum/is-bounded (node t₁ t₂) =
-  Eq.subst
-    (IsBounded nat (sum (node t₁ t₂)))
-    (Eq.cong₂ _,_ (N.+-comm _ 1) (N.+-comm _ 1))
-    ( bound/bind/const
-        {e = sum t₁ & sum t₂}
-        {f = λ (n₁ , n₂) → add n₁ n₂}
-        (sum/cost t₁ ⊗ sum/cost t₂)
-        (1 , 1)
-        ( bound/par
-            {e₁ = sum t₁}
-            {e₂ = sum t₂}
-            {c₁ = sum/cost t₁}
-            {c₂ = sum/cost t₂}
-            (sum/is-bounded t₁)
-            (sum/is-bounded t₂)
-        )
-        (λ (n₁ , n₂) → add/is-bounded n₁ n₂)
-    )
+module _ where
+  open import Algebra.Definitions (_≡_ {A = ℂ})
+
+  ⊕-comm : Commutative _⊕_
+  ⊕-comm (x₁ , x₂) (y₁ , y₂) = Eq.cong₂ _,_ (N.+-comm x₁ y₁) (N.+-comm x₂ y₂)
+
+sum/has-cost : sum ≡ sum/bound
+sum/has-cost = funext aux
+  where
+    aux : (t : val tree) → sum t ≡ sum/bound t
+    aux (leaf x)     = refl
+    aux (node t₁ t₂) =
+      let open ≡-Reasoning in
+      begin
+        bind (F nat) (sum t₁ & sum t₂) (λ (n₁ , n₂) → add n₁ n₂)
+      ≡⟨ Eq.cong₂ (λ e₁ e₂ → bind (F nat) (e₁ & e₂) (λ (n₁ , n₂) → add n₁ n₂)) (aux t₁) (aux t₂) ⟩
+        bind (F nat) (sum/bound t₁ & sum/bound t₂) (λ (n₁ , n₂) → add n₁ n₂)
+      ≡⟨⟩
+        step (F nat)
+          (((size t₁ , depth t₁) ⊗ (size t₂ , depth t₂)) ⊕ (1 , 1))
+          (ret (sum/spec t₁ + sum/spec t₂))
+      ≡⟨ Eq.cong (λ c → step (F nat) c (ret (sum/spec t₁ + sum/spec t₂))) (⊕-comm _ (1 , 1)) ⟩
+        sum/bound (node t₁ t₂)
+      ∎
+
+sum/is-bounded : sum ≲[ (Π tree λ _ → F nat) ] sum/bound
+sum/is-bounded = ≲-reflexive sum/has-cost
