@@ -3,7 +3,7 @@
 module CalfMonad.Monads where
 
 open import Data.List.Base                             using (List; [_]; concat; map)
-open import Data.List.Properties                       using (++-identityʳ; concat-[-]; concat-concat; concat-map; map-compose; map-cong)
+open import Data.List.Properties                       using (++-identityʳ; concat-[-]; concat-concat; concat-map; map-compose)
 open import Function.Base                              using (_∘_)
 open import Relation.Binary.PropositionalEquality.Core using (module ≡-Reasoning; cong; refl)
 
@@ -20,7 +20,6 @@ module IdentityMonad ℓ where
   monad : Monad M
   monad .pure a = a
   monad ._>>=_ a f = f a
-  monad .>>=-cong a eq = eq a
   monad .pure->>= a f = refl
   monad .>>=-pure a = refl
   monad .>>=->>= a f g = refl
@@ -35,7 +34,6 @@ module ListMonad ℓ where
   monad : Monad M
   monad .pure = [_]
   monad ._>>=_ l f = concat (map f l)
-  monad .>>=-cong l eq = cong concat (map-cong eq l)
   monad .pure->>= a f = ++-identityʳ (f a)
   monad .>>=-pure = concat-[-]
   monad .>>=->>= l f g = begin
