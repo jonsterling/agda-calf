@@ -67,6 +67,10 @@ module Simple where
     field
       quit : Simple.quit s₁ ≡ Simple.quit s₂
       next : Simple.next s₁ ≈ Simple.next s₂
+  postulate
+    _≈⁻_ : (s₁ s₂ : cmp simple) → tp neg
+    ≈⁻/decode : {s₁ s₂ : cmp simple} → val (U (s₁ ≈⁻ s₂)) ≡ s₁ ≈ s₂
+    {-# REWRITE ≈⁻/decode #-}
 
   ≈-cong : (c : ℂ) {x y : Simple} → x ≈ y → step simple c x ≈ step simple c y
   _≈_.quit (≈-cong c h) = Eq.cong (step (F unit) c) (_≈_.quit h)
@@ -86,18 +90,18 @@ module Simple where
   ψ zero    s = Simple.quit s
   ψ (suc n) s = ψ n (Simple.next s)
 
-  _≈'_ : (q₁ q₂ : cmp simple) → Set
-  s₁ ≈' s₂ = (p : val simple-program) → ψ p s₁ ≡ ψ p s₂
+  _≈'_ : (q₁ q₂ : cmp simple) → tp neg
+  s₁ ≈' s₂ = Π simple-program λ p → ψ p s₁ ≡⁻[ F unit ] ψ p s₂
 
   {-# TERMINATING #-}
-  classic-amortization : {s₁ s₂ : cmp simple} → val (meta⁺ (s₁ ≈ s₂) ⇔ meta⁺ (s₁ ≈' s₂))
+  classic-amortization : {s₁ s₂ : cmp simple} → val (U (s₁ ≈⁻ s₂) ⇔ U (s₁ ≈' s₂))
   classic-amortization = forward , backward
     where
-      forward : {s₁ s₂ : cmp simple} → s₁ ≈ s₂ → s₁ ≈' s₂
+      forward : {s₁ s₂ : cmp simple} → s₁ ≈ s₂ → cmp (s₁ ≈' s₂)
       forward h zero    = _≈_.quit h
       forward h (suc n) = forward (_≈_.next h) n
 
-      backward : {s₁ s₂ : cmp simple} → s₁ ≈' s₂ → s₁ ≈ s₂
+      backward : {s₁ s₂ : cmp simple} → cmp (s₁ ≈' s₂) → s₁ ≈ s₂
       _≈_.quit (backward classic) = classic zero
       _≈_.next (backward classic) = backward (λ n → classic (suc n))
 
@@ -292,14 +296,17 @@ module Queue where
     bind (A ⋉ X) (k (proj₁ (Queue.dequeue q))) λ p →
     ψ p (proj₂ (Queue.dequeue q))
 
-  _≈'_ : (q₁ q₂ : cmp (queue X)) → Set
-  _≈'_ {X} q₁ q₂ = (A : tp pos) → cmp (Π (queue-program A) λ p → ψ p q₁ ≡⁻[ A ⋉ X ] ψ p q₂)
+  postulate
+    _≈'_ : (q₁ q₂ : cmp (queue X)) → tp neg
+    ≈'/decode : ∀ {q₁ q₂ : cmp (queue X)} →
+      val (U (q₁ ≈' q₂)) ≡ ((A : tp pos) → cmp (Π (queue-program A) λ p → ψ p q₁ ≡⁻[ A ⋉ X ] ψ p q₂))
+    {-# REWRITE ≈'/decode #-}
 
   {-# TERMINATING #-}
-  classic-amortization : {q₁ q₂ : cmp (queue X)} → val (meta⁺ (q₁ ≈ q₂) ⇔ meta⁺ (q₁ ≈' q₂))
+  classic-amortization : {q₁ q₂ : cmp (queue X)} → val (U (q₁ ≈⁻ q₂) ⇔ U (q₁ ≈' q₂))
   classic-amortization {X} = forward , backward
     where
-      forward : {q₁ q₂ : cmp (queue X)} → q₁ ≈ q₂ → q₁ ≈' q₂
+      forward : {q₁ q₂ : cmp (queue X)} → q₁ ≈ q₂ → cmp (q₁ ≈' q₂)
       forward h A (return a   ) = Eq.cong (a ,_) (_≈_.quit h)
       forward h A (enqueue e p) = forward (_≈_.enqueue h e) A p
       forward h A (dequeue k  ) =
@@ -308,7 +315,7 @@ module Queue where
           (proj₁ (_≈_.dequeue h))
           (funext (forward (proj₂ (_≈_.dequeue h)) A))
 
-      backward : {q₁ q₂ : cmp (queue X)} → q₁ ≈' q₂ → q₁ ≈ q₂
+      backward : {q₁ q₂ : cmp (queue X)} → cmp (q₁ ≈' q₂) → q₁ ≈ q₂
       _≈_.quit (backward classic) = Eq.cong proj₂ (classic unit (return triv))
       _≈_.enqueue (backward classic) e = backward λ A p → classic A (enqueue e p)
       _≈_.dequeue (backward classic) =
