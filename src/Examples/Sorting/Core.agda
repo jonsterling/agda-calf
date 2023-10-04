@@ -1,4 +1,6 @@
-open import Calf.CostMonoid
+{-# OPTIONS --rewriting #-}
+
+open import Algebra.Cost
 open import Data.Nat using (ℕ)
 open import Examples.Sorting.Comparable
 
@@ -9,9 +11,9 @@ module Examples.Sorting.Core
 
 open Comparable M
 
-open import Calf costMonoid
-open import Calf.Types.Product
-open import Calf.Types.List
+open import Calf costMonoid hiding (A)
+open import Calf.Data.Product using (_×⁺_; _,_; proj₁; proj₂)
+open import Calf.Data.List using (list; []; _∷_; _∷ʳ_; [_]; length; _++_; reverse)
 
 open import Relation.Nullary
 open import Relation.Nullary.Negation
@@ -86,10 +88,10 @@ uncons₂ : ∀ {x xs} → Sorted (x ∷ xs) → Sorted xs
 uncons₂ (h ∷ sorted) = sorted
 
 sorted-of : val (list A) → val (list A) → tp pos
-sorted-of l l' = prod⁺ (meta⁺ (l ↭ l')) (sorted l')
+sorted-of l l' = meta⁺ (l ↭ l') ×⁺ (sorted l')
 
 sort-result : val (list A) → tp pos
-sort-result l = Σ++ (list A) (sorted-of l)
+sort-result l = Σ⁺ (list A) (sorted-of l)
 
 sorting : tp neg
 sorting = Π (list A) λ l → F (sort-result l)

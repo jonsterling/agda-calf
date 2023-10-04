@@ -1,10 +1,12 @@
+{-# OPTIONS --rewriting #-}
+
 module Examples.Sorting.Sequential where
 
 open import Examples.Sorting.Sequential.Comparable
 
 open import Calf costMonoid
-open import Calf.Types.Nat
-open import Calf.Types.List
+open import Calf.Data.Nat
+open import Calf.Data.List
 
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_)
 open import Data.Product using (_,_)

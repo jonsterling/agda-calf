@@ -1,3 +1,5 @@
+{-# OPTIONS --rewriting #-}
+
 open import Examples.Sorting.Sequential.Comparable
 
 module Examples.Sorting.Sequential.MergeSort.Merge (M : Comparable) where
@@ -5,15 +7,14 @@ module Examples.Sorting.Sequential.MergeSort.Merge (M : Comparable) where
 open Comparable M
 open import Examples.Sorting.Sequential.Core M
 
-open import Calf costMonoid
-open import Calf.Types.Unit
-open import Calf.Types.Product
-open import Calf.Types.Bool
-open import Calf.Types.Nat
-open import Calf.Types.List
-open import Calf.Types.Eq
-open import Calf.Types.BoundedG costMonoid
-open import Calf.Types.Bounded costMonoid
+open import Calf costMonoid hiding (A)
+open import Calf.Data.Product
+open import Calf.Data.Bool using (bool)
+open import Calf.Data.Nat using (nat)
+open import Calf.Data.List using (list; []; _∷_; _∷ʳ_; [_]; length; _++_; reverse)
+open import Calf.Data.Equality
+open import Calf.Data.IsBoundedG costMonoid
+open import Calf.Data.IsBounded costMonoid
 
 open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
@@ -42,11 +43,11 @@ prep' {x} {xs} y {ys} {l} h =
   ∎
 
 merge/type : val pair → tp pos
-merge/type (l₁ , l₂) = Σ++ (list A) λ l → sorted-of (l₁ ++ l₂) l
+merge/type (l₁ , l₂) = Σ⁺ (list A) λ l → sorted-of (l₁ ++ l₂) l
 
 merge/clocked : cmp $
   Π nat λ k → Π pair λ (l₁ , l₂) →
-  Π (prod⁺ (sorted l₁) (sorted l₂)) λ _ →
+  Π (sorted l₁ ×⁺ sorted l₂) λ _ →
   Π (meta⁺ (length l₁ + length l₂ ≡ k)) λ _ →
   F (merge/type (l₁ , l₂))
 merge/clocked zero    ([]     , []    ) (sorted₁      , sorted₂     ) h = ret ([] , refl , [])
@@ -84,15 +85,15 @@ merge/clocked/total (suc k) (x ∷ xs , y ∷ ys) (h₁ ∷ sorted₁ , h₂ ∷
 
 merge/clocked/cost : cmp $
   Π nat λ k → Π pair λ (l₁ , l₂) →
-  Π (prod⁺ (sorted l₁) (sorted l₂)) λ _ →
+  Π (sorted l₁ ×⁺ sorted l₂) λ _ →
   Π (meta⁺ (length l₁ + length l₂ ≡ k)) λ _ →
   F unit
 merge/clocked/cost k _ _ _ = step⋆ k
 
 merge/clocked/is-bounded : ∀ k p s h → IsBoundedG (merge/type p) (merge/clocked k p s h) (merge/clocked/cost k p s h)
-merge/clocked/is-bounded zero    ([]     , []    ) (sorted₁      , sorted₂     ) h = ≲-refl
-merge/clocked/is-bounded (suc k) ([]     , l₂    ) ([]           , sorted₂     ) h = step⋆-mono-≲ (z≤n {suc k})
-merge/clocked/is-bounded (suc k) (x ∷ xs , []    ) (sorted₁      , []          ) h = step⋆-mono-≲ (z≤n {suc k})
+merge/clocked/is-bounded zero    ([]     , []    ) (sorted₁      , sorted₂     ) h = ≤⁻-refl
+merge/clocked/is-bounded (suc k) ([]     , l₂    ) ([]           , sorted₂     ) h = step⋆-mono-≤⁻ (z≤n {suc k})
+merge/clocked/is-bounded (suc k) (x ∷ xs , []    ) (sorted₁      , []          ) h = step⋆-mono-≤⁻ (z≤n {suc k})
 merge/clocked/is-bounded (suc k) (x ∷ xs , y ∷ ys) (h₁ ∷ sorted₁ , h₂ ∷ sorted₂) h =
   bound/bind/const
     {e = x ≤? y}
@@ -100,14 +101,14 @@ merge/clocked/is-bounded (suc k) (x ∷ xs , y ∷ ys) (h₁ ∷ sorted₁ , h�
     1
     k
     (h-cost x y)
-    λ { (yes p) → bind-mono-≲ (merge/clocked/is-bounded k (xs , y ∷ ys) _ _) (λ _ → ≲-refl)
-      ; (no ¬p) → bind-mono-≲ (merge/clocked/is-bounded k (x ∷ xs , ys) _ _) (λ _ → ≲-refl)
+    λ { (yes p) → bind-monoˡ-≤⁻ (λ _ → step⋆ zero) (merge/clocked/is-bounded k (xs , y ∷ ys) _ _)
+      ; (no ¬p) → bind-monoˡ-≤⁻ (λ _ → step⋆ zero) (merge/clocked/is-bounded k (x ∷ xs , ys) _ _)
       }
 
 
 merge : cmp $
   Π pair λ (l₁ , l₂) →
-  Π (prod⁺ (sorted l₁) (sorted l₂)) λ _ →
+  Π (sorted l₁ ×⁺ sorted l₂) λ _ →
   F (merge/type (l₁ , l₂))
 merge (l₁ , l₂) s = merge/clocked (length l₁ + length l₂) (l₁ , l₂) s refl
 
@@ -116,7 +117,7 @@ merge/total (l₁ , l₂) s = merge/clocked/total (length l₁ + length l₂) (l
 
 merge/cost : cmp $
   Π pair λ (l₁ , l₂) →
-  Π (prod⁺ (sorted l₁) (sorted l₂)) λ _ →
+  Π (sorted l₁ ×⁺ sorted l₂) λ _ →
   cost
 merge/cost (l₁ , l₂) s = merge/clocked/cost (length l₁ + length l₂) (l₁ , l₂) s refl
 
