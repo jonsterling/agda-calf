@@ -29,6 +29,13 @@ postulate
 ≤⁺-trans : Transitive (_≤⁺_ {A})
 ≤⁺-trans = IsPreorder.trans ≤⁺-isPreorder
 
+≤⁺-mono₂ : (f : val A → val B → val C) →
+  f Preserves₂ (_≤⁺_ {A}) ⟶ (_≤⁺_ {B}) ⟶ (_≤⁺_ {C})
+≤⁺-mono₂ f a≤a' b≤b' =
+  ≤⁺-trans
+  (≤⁺-mono (f _) b≤b')
+  (≤⁺-mono (λ a → f a _) a≤a')
+
 ≤⁺-syntax : val A → val A → □
 ≤⁺-syntax {A} = _≤⁺_ {A}
 
@@ -53,6 +60,10 @@ _≤⁻_ {X} e e' = e ≤⁺[ U X ] e'
 ≤⁻-mono : (f : cmp X → cmp Y) →
   f Preserves (_≤⁻_ {X}) ⟶ (_≤⁻_ {Y})
 ≤⁻-mono = ≤⁺-mono
+
+≤⁻-mono₂ : (f : cmp X → cmp Y → cmp Z) →
+  f Preserves₂ (_≤⁻_ {X}) ⟶ (_≤⁻_ {Y}) ⟶ (_≤⁻_ {Z})
+≤⁻-mono₂ = ≤⁺-mono₂
 
 postulate
   λ-mono-≤⁻ : {X : val A → tp neg} {f f' : (a : val A) → cmp (X a)}
