@@ -1,3 +1,5 @@
+{-# OPTIONS --rewriting #-}
+
 module Examples where
 
 -- Sequential
