@@ -25,8 +25,8 @@ IsBoundedG A e b = (bind cost e λ _ → ret triv) ≤⁻[ cost ] b
 step⋆ : cmp (Π ℂ⁺ λ _ → cost)
 step⋆ c = step cost c (ret triv)
 
-step⋆-mono-≲ : {c c' : ℂ} → c ≤ c' → step⋆ c ≤⁻[ cost ] step⋆ c'
-step⋆-mono-≲ = step-monoˡ-≤⁻ (ret triv)
+step⋆-mono-≤⁻ : {c c' : ℂ} → c ≤ c' → step⋆ c ≤⁻[ cost ] step⋆ c'
+step⋆-mono-≤⁻ = step-monoˡ-≤⁻ (ret triv)
 
 
 boundg/relax : {b b' : cmp cost}

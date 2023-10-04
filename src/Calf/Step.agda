@@ -47,15 +47,15 @@ postulate
   {-# REWRITE Π/step #-}
 
   prod⁻/step : {e : cmp (prod⁻ X Y)} →
-    step (prod⁻ X Y) c e ≡ (step X c (proj₁ e) , step Y c (proj₂ e))
+    step (prod⁻ X Y) c e ≡ ⟨ step X c (proj₁ e) , step Y c (proj₂ e) ⟩
   {-# REWRITE prod⁻/step  #-}
 
   unit⁻/step : {e : cmp unit⁻} →
-    step unit⁻ c e ≡ triv
+    step unit⁻ c e ≡ ⟨⟩
   {-# REWRITE unit⁻/step  #-}
 
   Σ⁻/step : {X : val A → tp neg} {e : cmp (Σ⁻ A X)} →
-    step (Σ⁻ A X) c e ≡ (proj₁ e , step (X (proj₁ e)) c (proj₂ e))
+    step (Σ⁻ A X) c e ≡ ⟨ proj₁ e , step (X (proj₁ e)) c (proj₂ e) ⟩
   {-# REWRITE Σ⁻/step #-}
 
   open⁻/step : {X : ext → tp neg} {e : cmp (open⁻ X)} →

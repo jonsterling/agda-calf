@@ -6,9 +6,10 @@ module Calf.CBPV where
 
 open import Calf.Prelude
 open import Relation.Binary.PropositionalEquality
-open import Data.Unit public renaming (⊤ to Unit; tt to triv)
-open import Data.Product using (_×_; _,_; proj₁; proj₂) public
-open import Data.Product using (Σ)
+open import Data.Unit renaming (tt to ⟨⟩) public
+open import Data.Unit renaming (⊤ to Unit)
+open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩) public
+open import Data.Product using (Σ; _×_)
 
 postulate
   mode : □
@@ -40,6 +41,7 @@ postulate
   meta⁺ : Set → tp pos
   meta⁺/decode : {𝕊 : Set} → val (meta⁺ 𝕊) ≡ 𝕊
   {-# REWRITE meta⁺/decode #-}
+{-# POLARITY meta⁺ ++ #-}
 
 Σ⁺ : (A : tp pos) (B : val A → tp pos) → tp pos
 Σ⁺ A B = meta⁺ (Σ (val A) λ a → val (B a))

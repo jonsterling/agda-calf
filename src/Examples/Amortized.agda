@@ -1,7 +1,8 @@
+{-# OPTIONS --rewriting #-}
+
 module Examples.Amortized where
 
-open import Calf.CostMonoid
-open import Calf.CostMonoids using (ℕ-CostMonoid)
+open import Algebra.Cost
 
 costMonoid = ℕ-CostMonoid
 open CostMonoid costMonoid using (ℂ)
@@ -9,34 +10,25 @@ open CostMonoid costMonoid using (ℂ)
 open import Level using (0ℓ)
 
 open import Calf costMonoid
-open import Calf.Types.Unit
-open import Calf.Types.Product
-open import Calf.Types.Bool
-open import Calf.Types.Maybe
-open import Calf.Types.Nat
-open import Calf.Types.List
-open import Data.Nat as Nat using (_+_; _∸_; pred; _*_; _^_; _>_)
-open import Data.Product
+open import Calf.Data.Product
+open import Calf.Data.Bool
+open import Calf.Data.Maybe
+open import Calf.Data.Nat as Nat using (ℕ; zero; suc; nat; _+_; _∸_; pred; _*_; _^_; _>_)
 import Data.Nat.Properties as Nat
+open import Calf.Data.List
 open import Data.Nat.PredExp2
 import Data.List.Properties as List
+open import Calf.Data.Equality as Eq using (_≡_; refl; _≡⁺_; ≡⁺-syntax; _≡⁻_; ≡⁻-syntax; module ≡-Reasoning)
 
 open import Function hiding (_⇔_)
 
 open import Relation.Nullary
-open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
 
-variable
-  A B C : tp pos
-  X Y Z : tp neg
-
-_⋉_ : tp pos → tp neg → tp neg
-A ⋉ X = Σ+- A (const X)
 
 infix 3 _⇒_ _⇔_
-_⇒_ _⇔_ : tp neg → tp neg → tp neg
-X ⇒ Y = Π (U X) λ _ → Y
-X ⇔ Y = prod⁻ (X ⇒ Y) (Y ⇒ X)
+_⇒_ _⇔_ : tp pos → tp pos → tp pos
+A ⇒ B = meta⁺ (val A → val B)
+A ⇔ B = (A ⇒ B) ×⁺ (B ⇒ A)
 
 
 module Simple where
@@ -95,10 +87,10 @@ module Simple where
   ψ (suc n) s = ψ n (Simple.next s)
 
   _≈'_ : (q₁ q₂ : cmp simple) → Set
-  s₁ ≈' s₂ = cmp (Π simple-program λ p → meta (ψ p s₁ ≡ ψ p s₂))
+  s₁ ≈' s₂ = (p : val simple-program) → ψ p s₁ ≡ ψ p s₂
 
   {-# TERMINATING #-}
-  classic-amortization : {s₁ s₂ : cmp simple} → cmp (meta (s₁ ≈ s₂) ⇔ meta (s₁ ≈' s₂))
+  classic-amortization : {s₁ s₂ : cmp simple} → val (meta⁺ (s₁ ≈ s₂) ⇔ meta⁺ (s₁ ≈' s₂))
   classic-amortization = forward , backward
     where
       forward : {s₁ s₂ : cmp simple} → s₁ ≈ s₂ → s₁ ≈' s₂
@@ -167,17 +159,24 @@ module Queue where
   ... | e ∷ fl = just e , SPEC/batched-queue [] fl
   Queue.dequeue (SPEC/batched-queue bl (e ∷ fl)) = just e , SPEC/batched-queue bl fl
 
+  postulate
+    _≈⁻_ : (q₁ q₂ : cmp (queue X)) → tp neg
   record _≈_ (q₁ q₂ : cmp (queue X)) : Set where
     coinductive
     field
       quit    : cmp $
-        meta (Queue.quit q₁ ≡ Queue.quit q₂)
+        Queue.quit q₁ ≡⁻[ X ] Queue.quit q₂
       enqueue : cmp $
-        Π E λ e → meta (Queue.enqueue q₁ e ≈ Queue.enqueue q₂ e)
+        Π E λ e → Queue.enqueue q₁ e ≈⁻ Queue.enqueue q₂ e
       dequeue : cmp $
-        (U (meta (proj₁ (Queue.dequeue q₁) ≡ proj₁ (Queue.dequeue q₂)))) ⋉
-        (meta (proj₂ (Queue.dequeue q₁) ≈ proj₂ (Queue.dequeue q₂)))
+        (proj₁ (Queue.dequeue q₁) ≡⁺[ maybe E ] proj₁ (Queue.dequeue q₂)) ⋉
+        (proj₂ (Queue.dequeue q₁) ≈⁻ proj₂ (Queue.dequeue q₂))
+  postulate
+    ≈⁻/decode : {q₁ q₂ : cmp (queue X)} → val (U (q₁ ≈⁻ q₂)) ≡ q₁ ≈ q₂
+    {-# REWRITE ≈⁻/decode #-}
 
+
+  {-# TERMINATING #-}
   ≈-cong : (c : ℂ) {x y : Queue X} → x ≈ y → step (queue X) c x ≈ step (queue X) c y
   _≈_.quit (≈-cong {X = X} c h) = Eq.cong (step X c) (_≈_.quit h)
   _≈_.enqueue (≈-cong c h) e = ≈-cong c (_≈_.enqueue h e)
@@ -277,15 +276,13 @@ module Queue where
     refl , ◯[list-queue≈batched-queue] bl fl u
 
 
-  postulate
-    queue-program : tp pos → tp pos
-  data QueueProgram (A : tp pos) : Set where
+  data QueueProgram (A : tp pos) : Set
+  queue-program : tp pos → tp pos
+  queue-program A = meta⁺ (QueueProgram A)
+  data QueueProgram A where
     return  : val A → QueueProgram A
     enqueue : val E → val (queue-program A) → QueueProgram A
     dequeue : val (U (Π (maybe E) λ _ → F (queue-program A))) → QueueProgram A
-  postulate
-    queue-program/decode : val (queue-program A) ≡ QueueProgram A
-    {-# REWRITE queue-program/decode #-}
 
   {-# TERMINATING #-}
   ψ : cmp (Π (queue-program A) λ _ → Π (U (queue X)) λ _ → A ⋉ X)
@@ -296,10 +293,10 @@ module Queue where
     ψ p (proj₂ (Queue.dequeue q))
 
   _≈'_ : (q₁ q₂ : cmp (queue X)) → Set
-  q₁ ≈' q₂ = (A : tp pos) → cmp (Π (queue-program A) λ p → meta (ψ p q₁ ≡ ψ p q₂))
+  _≈'_ {X} q₁ q₂ = (A : tp pos) → cmp (Π (queue-program A) λ p → ψ p q₁ ≡⁻[ A ⋉ X ] ψ p q₂)
 
   {-# TERMINATING #-}
-  classic-amortization : {q₁ q₂ : cmp (queue X)} → cmp (meta (q₁ ≈ q₂) ⇔ meta (q₁ ≈' q₂))
+  classic-amortization : {q₁ q₂ : cmp (queue X)} → val (meta⁺ (q₁ ≈ q₂) ⇔ meta⁺ (q₁ ≈' q₂))
   classic-amortization {X} = forward , backward
     where
       forward : {q₁ q₂ : cmp (queue X)} → q₁ ≈ q₂ → q₁ ≈' q₂
@@ -360,18 +357,24 @@ module DynamicArray where
   ... | no ¬p = nothing , SPEC/array n
   ... | yes p = just triv , SPEC/array n
 
+  postulate
+    _≈⁻_ : (d₁ d₂ : cmp (dynamic-array A)) → tp neg
   record _≈_ {A : tp pos} (d₁ d₂ : cmp (dynamic-array A)) : Set where
     coinductive
     field
       quit   : cmp $
-        meta (DynamicArray.quit d₁ ≡ DynamicArray.quit d₂)
+        DynamicArray.quit d₁ ≡⁻[ F unit ] DynamicArray.quit d₂
       append : cmp $
-        Π A λ a → meta (DynamicArray.append d₁ a ≈ DynamicArray.append d₂ a)
+        Π A λ a → DynamicArray.append d₁ a ≈⁻ DynamicArray.append d₂ a
       get    : cmp $
         Π nat λ i →
-          (U (meta (proj₁ (DynamicArray.get d₁ i) ≡ proj₁ (DynamicArray.get d₂ i)))) ⋉
-          (meta (proj₂ (DynamicArray.get d₁ i) ≈ proj₂ (DynamicArray.get d₂ i)))
+          (proj₁ (DynamicArray.get d₁ i) ≡⁺[ maybe A ] proj₁ (DynamicArray.get d₂ i)) ⋉
+          (proj₂ (DynamicArray.get d₁ i) ≈⁻ proj₂ (DynamicArray.get d₂ i))
+  postulate
+    ≈⁻/decode : {d₁ d₂ : cmp (dynamic-array A)} → val (U (d₁ ≈⁻ d₂)) ≡ d₁ ≈ d₂
+    {-# REWRITE ≈⁻/decode #-}
 
+  {-# TERMINATING #-}
   ≈-cong : (c : ℂ) {x y : DynamicArray A} → x ≈ y → step (dynamic-array A) c x ≈ step (dynamic-array A) c y
   _≈_.quit (≈-cong c h) = Eq.cong (step (F unit) c) (_≈_.quit h)
   _≈_.append (≈-cong c h) a = ≈-cong c (_≈_.append h a)
