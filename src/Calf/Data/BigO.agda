@@ -1,21 +1,20 @@
-{-# OPTIONS --without-K #-}
+{-# OPTIONS --rewriting #-}
 
 -- Big-O bound on the cost of a computation.
 
-open import Calf.CostMonoid
+open import Algebra.Cost
 
-module Calf.Types.BigO (costMonoid : CostMonoid) where
+module Calf.Data.BigO (costMonoid : CostMonoid) where
 
 open CostMonoid costMonoid
 
 open import Calf.Prelude
-open import Calf.Metalanguage
+open import Calf.CBPV
 open import Calf.Step costMonoid
 
-open import Calf.Types.Nat using (nat)
-open import Calf.Types.Bounded costMonoid
+open import Calf.Data.Nat as Nat using (nat; ℕ)
+open import Calf.Data.IsBounded costMonoid
 
-open import Data.Nat as Nat using (ℕ)
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_)
 
 [_]*_ : ℕ → ℂ → ℂ
