@@ -6,7 +6,9 @@ module Calf.CBPV where
 
 open import Calf.Prelude
 open import Relation.Binary.PropositionalEquality
-open import Data.Product
+open import Data.Unit public renaming (⊤ to Unit; tt to triv)
+open import Data.Product using (_×_; _,_; proj₁; proj₂) public
+open import Data.Product using (Σ)
 
 postulate
   mode : □
@@ -23,7 +25,7 @@ postulate
 {-# POLARITY F ++ #-}
 {-# POLARITY U ++ #-}
 
--- This is equivalent to adding "thunk / force" operations. But less bureaucratic.
+-- This is equivalent to adding "thunk / force" operations but less bureaucratic.
 cmp : tp neg → □
 cmp X = val (U X)
 
@@ -55,13 +57,21 @@ postulate
     bind X (bind (F B) e f) g ≡ bind X e (λ a → bind X (f a) g)
   {-# REWRITE bind/β bind/η bind/assoc #-}
 
-  Π : (A : tp pos) (P : val A → tp neg) → tp neg
+  Π : (A : tp pos) (X : val A → tp neg) → tp neg
   Π/decode : {X : val A → tp neg} → val (U (Π A X)) ≡ ((a : val A) → cmp (X a))
   {-# REWRITE Π/decode #-}
+
+  prod⁻ : tp neg → tp neg → tp neg
+  prod⁻/decode : val (U (prod⁻ X Y)) ≡ (cmp X × cmp Y)
+  {-# REWRITE prod⁻/decode #-}
+
+  unit⁻ : tp neg
+  unit⁻/decode : val (U unit⁻) ≡ Unit
+  {-# REWRITE unit⁻/decode #-}
 
   Σ⁻ : (A : tp pos) (X : val A → tp neg) → tp neg
   Σ⁻/decode : {X : val A → tp neg} → val (U (Σ⁻ A X)) ≡ Σ (val A) λ a → cmp (X a)
   {-# REWRITE Σ⁻/decode #-}
 
 _⋉_ : tp pos → tp neg → tp neg
-A ⋉ X = Σ⁻ A (λ _ → X)
+A ⋉ X = Σ⁻ A λ _ → X
