@@ -13,6 +13,7 @@ open import Calf.CBPV
 open import Calf.Directed
 open import Calf.Step costMonoid
 
+open import Calf.Data.Product using (triv)
 open import Calf.Data.IsBoundedG costMonoid
 
 
