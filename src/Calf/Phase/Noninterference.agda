@@ -11,7 +11,7 @@ open import Calf.CBPV
 open import Calf.Phase.Core
 open import Calf.Phase.Open
 open import Calf.Phase.Closed
-open import Calf.Types.Eq
+open import Calf.Data.Equality
 
 open import Data.Product
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; subst; cong; module ≡-Reasoning)
@@ -20,7 +20,7 @@ open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; subs
 unique : ∀ {A} → (a : val (● A)) → (u : ext) → a ≡ ∗ u
 unique {A} a u =
   ●/ind⁺ a
-    (λ a → eq (● A) a (∗ u))
+    (λ a → a ≡⁺[ ● A ] ∗ u)
     (λ a → η≡∗ a u)
     (λ u → refl)
     (λ a u → η≡∗/uni (subst (λ a₂ → a₂ ≡ ∗ u) (η≡∗ a u) (η≡∗ a u)) refl)
