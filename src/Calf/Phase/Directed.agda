@@ -12,4 +12,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Calf.Phase.Core
 
 postulate
-  ≲-ext-≡ : {X : tp neg} {e₁ e₂ : cmp X} → ext → e₁ ≲[ X ] e₂ → e₁ ≡ e₂
+  ≤⁺-ext-≡ : {a a' : val A} → ext → a ≤⁺[ A ] a' → a ≡ a'
+
+≤⁻-ext-≡ : {e e' : cmp X} → ext → e ≤⁻[ X ] e' → e ≡ e'
+≤⁻-ext-≡ = ≤⁺-ext-≡
