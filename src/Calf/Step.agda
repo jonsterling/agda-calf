@@ -13,48 +13,75 @@ open import Calf.CBPV
 open import Calf.Directed
 open import Calf.Phase.Core
 open import Calf.Phase.Open
+open import Relation.Binary.Core using (_⇒_)
 open import Relation.Binary.PropositionalEquality
-open import Calf.Types.Product-
+
+
+variable
+  c c' c₁ c₂ : ℂ
+
+ℂ⁺ : tp pos
+ℂ⁺ = meta⁺ ℂ
+
 
 postulate
   step : (X : tp neg) → ℂ → cmp X → cmp X
-  step/id : ∀ {X : tp neg} {e : cmp X} →
+
+  step/0 : {e : cmp X} →
     step X zero e ≡ e
-  {-# REWRITE step/id #-}
-  step/concat : ∀ {X e p q} →
-    step X p (step X q e) ≡ step X (p + q) e
-  {-# REWRITE step/concat #-}
+  step/+ : {e : cmp X} →
+    step X c₁ (step X c₂ e) ≡ step X (c₁ + c₂) e
+  {-# REWRITE step/0 step/+ #-}
 
-  Π/step : ∀ {A} {X : val A → tp neg} {f : cmp (Π A X)} {n} → step (Π A X) n f ≡ λ x → step (X x) n (f x)
-  {-# REWRITE Π/step #-}
-
-  Σ⁻/step : ∀ {A P c e} → step (Σ⁻ A P) c e ≡ (proj₁ e , step (P (proj₁ e)) c (proj₂ e))
-  {-# REWRITE Σ⁻/step #-}
-
-  prod⁻/step : {X Y : tp neg} {c : ℂ} {e : cmp (prod⁻ X Y)} →
-    step (prod⁻ X Y) c e ≡ (step X c (proj₁ e) , step Y c (proj₂ e))
-  {-# REWRITE prod⁻/step  #-}
-
-  open⁻/step : {X : ext → tp neg} {c : ℂ} {e : cmp (open⁻ X)} →
-    step (open⁻ X) c e ≡ λ u → step (X u) c (e u)
-  {-# REWRITE open⁻/step #-}
-
-  bind/step : ∀ {A} {X} {e f n} → bind {A} X (step (F A) n e) f ≡ step X n (bind {A} X e f)
-  {-# REWRITE bind/step #-}
-
-  step/ext : ∀ X → (e : cmp X) → (c : ℂ) → ◯ (step X c e ≡ e)
+  step/ext : (X : tp neg) (e : cmp X) (c : ℂ) (u : ext) → step X c e ≡ e
   -- sadly the above cannot be made an Agda rewrite rule
 
 
 postulate
-  step-monoˡ-≲ : {X : tp neg} {c₁ c₂ : ℂ} (e : cmp X) →
-    c₁ ≤ c₂ → _≲_ {X} (step X c₁ e) (step X c₂ e)
+  bind/step : {e : cmp (F A)} {f : val A → cmp X} →
+    bind X (step (F A) c e) f ≡ step X c (bind X e f)
+  {-# REWRITE bind/step #-}
 
-step-mono-≲ : {X : tp neg} {c₁ c₂ : ℂ} {e₁ e₂ : cmp X} →
-  c₁ ≤ c₂ → _≲_ {X} e₁ e₂ → _≲_ {X} (step X c₁ e₁) (step X c₂ e₂)
-step-mono-≲ {X} {c₂ = c₂} {e₁ = e₁} c₁≤c₂ e₁≲e₂ =
-  ≲-trans (step-monoˡ-≲ e₁ c₁≤c₂) (≲-mono (step X c₂) e₁≲e₂)
+  Π/step : {X : val A → tp neg} {f : cmp (Π A X)} →
+    step (Π A X) c f ≡ λ a → step (X a) c (f a)
+  {-# REWRITE Π/step #-}
 
-step-monoʳ-≲ : {X : tp neg} (c : ℂ) {e₁ e₂ : cmp X} →
-  _≲_ {X} e₁ e₂ → _≲_ {X} (step X c e₁) (step X c e₂)
-step-monoʳ-≲ c e₁≲e₂ = step-mono-≲ (≤-refl {x = c}) e₁≲e₂
+  prod⁻/step : {e : cmp (prod⁻ X Y)} →
+    step (prod⁻ X Y) c e ≡ (step X c (proj₁ e) , step Y c (proj₂ e))
+  {-# REWRITE prod⁻/step  #-}
+
+  unit⁻/step : {e : cmp unit⁻} →
+    step unit⁻ c e ≡ triv
+  {-# REWRITE unit⁻/step  #-}
+
+  Σ⁻/step : {X : val A → tp neg} {e : cmp (Σ⁻ A X)} →
+    step (Σ⁻ A X) c e ≡ (proj₁ e , step (X (proj₁ e)) c (proj₂ e))
+  {-# REWRITE Σ⁻/step #-}
+
+  open⁻/step : {X : ext → tp neg} {e : cmp (open⁻ X)} →
+    step (open⁻ X) c e ≡ λ u → step (X u) c (e u)
+  {-# REWRITE open⁻/step #-}
+
+
+postulate
+  ≤⇒≤⁺ : _≤_ ⇒ _≤⁺_ {ℂ⁺}
+
+step-monoˡ-≤⁻ : (e : cmp X) →
+  c ≤ c' → step X c e ≤⁻[ X ] step X c' e
+step-monoˡ-≤⁻ {X} e c≤c' = ≤⁺-mono (λ c → step X c e) (≤⇒≤⁺ c≤c')
+
+step-monoʳ-≤⁻ : (c : ℂ) {e e' : cmp X} →
+  _≤⁻_ {X} e e' → _≤⁻_ {X} (step X c e) (step X c e')
+step-monoʳ-≤⁻ {X} c = ≤⁻-mono (step X c)
+
+step-mono-≤⁻ : {e e' : cmp X} →
+  c ≤ c' → e ≤⁻[ X ] e' → step X c e ≤⁻[ X ] step X c' e'
+step-mono-≤⁻ {X} {c} {c'} {e} {e'} c≤c' e≤e' =
+  let open ≤⁻-Reasoning X in
+  begin
+    step X c e
+  ≤⟨ step-monoˡ-≤⁻ e c≤c' ⟩
+    step X c' e
+  ≤⟨ step-monoʳ-≤⁻ c' e≤e' ⟩
+    step X c' e'
+  ∎
