@@ -19,8 +19,8 @@ open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; subs
 
 unique : ∀ {A} → (a : val (● A)) → (u : ext) → a ≡ ∗ u
 unique {A} a u =
-  ●/ind⁺ a
-    (λ a → a ≡⁺[ ● A ] ∗ u)
+  ●/ind a
+    (λ a → val (a ≡⁺[ ● A ] ∗ u))
     (λ a → η≡∗ a u)
     (λ u → refl)
     (λ a u → η≡∗/uni (subst (λ a₂ → a₂ ≡ ∗ u) (η≡∗ a u) (η≡∗ a u)) refl)
@@ -51,11 +51,10 @@ module _ (costMonoid : CostMonoid) where
 
   oblivious : ∀ {A B} (f : cmp (F A) → val (◯⁺ B)) →
         ∀ c e → f (step (F A) c e) ≡ f e
-  oblivious {A} {B} f c e = funext/Ω (λ u →
+  oblivious {A} {B} f c e = funext/Ω λ u →
     begin
       f (step (F A) c e) u
     ≡⟨ cong (λ e → f e u) (step/ext (F A) e c u) ⟩
       f e u
     ∎
-    )
     where open ≡-Reasoning
