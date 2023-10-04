@@ -6,8 +6,9 @@ open import Calf.Prelude
 open import Calf.CBPV
 open import Relation.Binary.PropositionalEquality using (_≡_)
 
-open import Data.Unit public renaming (⊤ to Unit; tt to triv)
-open import Data.Product public
+-- definitions exported by CBPV.agda are hidden
+open import Data.Unit public renaming (⊤ to Unit) hiding (tt)
+open import Data.Product hiding (_,_; proj₁; proj₂) public
 
 unit : tp pos
 unit = meta⁺ Unit

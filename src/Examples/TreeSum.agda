@@ -15,7 +15,6 @@ open import Calf.Data.IsBounded costMonoid
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning)
 open import Data.Nat as Nat using (_+_; _⊔_)
 open import Data.Nat.Properties as N using ()
-open import Data.Product
 
 add : cmp (Π nat λ _ → Π nat λ _ → F nat)
 add m n = step (F nat) (1 , 1) (ret (m + n))

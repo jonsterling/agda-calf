@@ -12,7 +12,7 @@ open import Calf.Prelude
 open import Calf.CBPV
 open import Calf.Directed
 open import Calf.Step costMonoid
-open import Calf.Data.Product using (unit; triv)
+open import Calf.Data.Product using (unit)
 
 
 cost : tp neg

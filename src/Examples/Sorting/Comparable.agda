@@ -11,13 +11,13 @@ open CostMonoid costMonoid using (ℂ)
 open import Calf costMonoid hiding (A)
 open import Calf.Data.Bool using (bool)
 open import Calf.Data.IsBounded costMonoid
+open import Calf.Data.Product using (∃)
 
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 open import Relation.Nullary.Reflects
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
-open import Data.Product using (_×_; _,_; proj₁; proj₂; ∃)
 open import Data.Sum
 open import Function
 

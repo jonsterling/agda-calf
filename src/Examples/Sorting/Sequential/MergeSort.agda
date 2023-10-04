@@ -20,7 +20,6 @@ open import Calf.Data.BigO costMonoid
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
-open import Data.Product using (_×_; _,_; ∃)
 open import Data.Sum using (inj₁; inj₂)
 open import Function
 open import Data.Nat as Nat using (ℕ; zero; suc; z≤n; s≤s; _+_; _*_; ⌊_/2⌋; ⌈_/2⌉)

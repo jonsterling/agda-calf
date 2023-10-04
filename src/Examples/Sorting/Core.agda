@@ -12,7 +12,7 @@ module Examples.Sorting.Core
 open Comparable M
 
 open import Calf costMonoid hiding (A)
-open import Calf.Data.Product using (_×⁺_; _,_; proj₁; proj₂)
+open import Calf.Data.Product using (_×⁺_)
 open import Calf.Data.List using (list; []; _∷_; _∷ʳ_; [_]; length; _++_; reverse)
 
 open import Relation.Nullary

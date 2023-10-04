@@ -14,7 +14,6 @@ open import Calf.Data.List
 open import Calf.Data.IsBoundedG costMonoid
 
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
-open import Data.Product using (_×_; _,_; ∃; proj₁; proj₂)
 open import Data.Nat as Nat using (ℕ; zero; suc; _+_; _*_; ⌊_/2⌋; ⌈_/2⌉)
 open import Data.Nat.Properties as N using (module ≤-Reasoning)
 

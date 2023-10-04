@@ -6,9 +6,9 @@ module Calf.CBPV where
 
 open import Calf.Prelude
 open import Relation.Binary.PropositionalEquality
-open import Data.Unit renaming (tt to ⟨⟩) public
+open import Data.Unit using () renaming (tt to triv) public
 open import Data.Unit renaming (⊤ to Unit)
-open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩) public
+open import Data.Product using (_,_; proj₁; proj₂) public
 open import Data.Product using (Σ; _×_)
 
 postulate

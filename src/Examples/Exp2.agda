@@ -11,7 +11,6 @@ open import Calf costMonoid
 open import Calf.Parallel parCostMonoid
 open import Calf.Data.Bool
 open import Calf.Data.Nat
-open import Calf.Data.Product using (triv; _,_)
 open import Calf.Data.IsBounded costMonoid
 open import Calf.Data.BigO costMonoid
 
