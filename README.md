@@ -31,10 +31,10 @@ Installation instructions may be found in [`INSTALL.md`](./INSTALL.md).
 ### Cost Monoid Parameterization
 
 **calf** is parameterized by a *cost monoid* `(ℂ, +, zero, ≤)`.
-The formal definition, `CostMonoid`, is given in [`Calf.CostMonoid`](./src/Calf/CostMonoid.agda).
+The formal definition, `CostMonoid`, is given in [`Algebra.Cost`](./src/Algebra/Cost.agda).
 The definition of a *parallel cost monoid* `(ℂ, ⊕, 𝟘, ⊗, 𝟙, ≤)` is given, as well, as `ParCostMonoid`.
 
-Some common cost monoids and parallel cost monoids are given in [`Calf.CostMonoids`](./src/Calf/CostMonoids.agda); for example, `ℕ-CostMonoid` simply tracks sequential cost.
+Some common cost monoids and parallel cost monoids are given in [`Algebra.Cost.Instances`](./src/Algebra/Cost/Instances.agda); for example, `ℕ-CostMonoid` simply tracks sequential cost.
 Note that every `ParCostMonoid` induces a `CostMonoid` via the additive substructure `(ℂ, ⊕, 𝟘, ≤)`.
 
 ### Core Language
@@ -43,52 +43,65 @@ The language itself is implemented via the following files, which are given in a
 
 The following modules are not parameterized:
 - [`Calf.Prelude`](./src/Calf/Prelude.agda) contains commonly-used definitions.
-- [`Calf.Metalanguage`](./src/Calf/Metalanguage.agda) defines the basic dependent Call-By-Push-Value (CBPV) language, using Agda `postulate`s and rewrite rules.
-- [`Calf.PhaseDistinction`](./src/Calf/PhaseDistinction.agda) defines the phase distinction of extension and intension, including the extensional phase `ext`, the open/extensional modality `◯`, and the closed/intensional modality `●`.
-- [`Calf.Noninterference`](./src/Calf/Noninterference.agda) contains theorems related to the phase distinction/noninterference.
+- [`Calf.CBPV`](./src/Calf/CBPV.agda) defines the basic dependent Call-By-Push-Value (CBPV) language, using Agda `postulate`s and rewrite rules.
+- [`Calf.Directed`](./src/Calf/Directed.agda) defines a preorder on each type, per the developments in [**decalf**](https://arxiv.org/abs/2307.05938).
+- [`Calf.Phase`](./src/Calf/Phase.agda) defines the phase distinction of extension and intension:
+  - [`Calf.Phase.Core`](./src/Calf/Phase/Core.agda) postulates a proposition, `ext`, for the extensional phase.
+  - [`Calf.Phase.Open`](./src/Calf/Phase/Open.agda) defines the open/extensional modality `◯` for `ext`.
+  - [`Calf.Phase.Closed`](./src/Calf/Phase/Closed.agda) defines the closed/intensional modality `●` for `ext`.
+  - [`Calf.Phase.Directed`](./src/Calf/Phase/Directed.agda) postulates the **decalf** law that under `ext`, inequality coincides with equality.
+  - [`Calf.Phase.Noninterference`](./src/Calf/Phase/Noninterference.agda) contains theorems related to the phase distinction/noninterference.
 
 The following modules are parameterized by a `CostMonoid`:
 - [`Calf.Step`](./src/Calf/Step.agda) defines the computational effect `step` and the associated coherence laws via rewrite rules.
 
 The following modules are parameterized by a `ParCostMonoid`:
-- [`Calf.ParMetalanguage`](./src/Calf/ParMetalanguage.agda) defines the parallel pairing operation `_&_` whose cost structure is given by the product operation of a `ParCostMonoid` (i.e., `_⊗_`).
+- [`Calf.Parallel`](./src/Calf/Parallel.agda) defines the parallel execution operation `_∥_` whose cost structure is given by the product operation of a `ParCostMonoid` (i.e., `_⊗_`).
 
 ### Types
 
-In [`src/Calf/Types`](./src/Calf/Types), we provide commonly-used types.
+In [`src/Calf/Data`](./src/Calf/Data), we provide commonly-used data types.
 
-The following modules are not parameterized:
-- [`Calf.Types.Nat`](./src/Calf/Types/Nat.agda), [`Calf.Types.Unit`](./src/Calf/Types/Unit.agda), [`Calf.Types.Bool`](./src/Calf/Types/Bool.agda), [`Calf.Types.Sum`](./src/Calf/Types/Sum.agda), and [`Calf.Types.List`](./src/Calf/Types/List.agda) internalize the associated Agda types via `meta`.
-  Notably, this means that their use does *not* incur cost.
-- [`Calf.Types.Eq`](./src/Calf/Types/Eq.agda) defines the equality type.
+The following modules are not parameterized and simply internalize the associated Agda types via the `meta⁺` primitive:
+- [`Calf.Data.Bool`](./src/Calf/Data/Bool.agda)
+- [`Calf.Data.Equality`](./src/Calf/Data/Equality.agda)
+- [`Calf.Data.List`](./src/Calf/Data/List.agda)
+- [`Calf.Data.Maybe`](./src/Calf/Data/Maybe.agda)
+- [`Calf.Data.Nat`](./src/Calf/Data/Nat.agda)
+- [`Calf.Data.Product`](./src/Calf/Data/Product.agda)
+- [`Calf.Data.Sum`](./src/Calf/Data/Sum.agda)
 
-The following modules are parameterized by a `CostMonoid`:
-- [`Calf.Types.Bounded`](./src/Calf/Types/Bounded.agda) defines a record `IsBounded A e c` that contains a proof that the cost of `e` (of type `A`) is bounded by `c : ℂ`.
+The following modules define custom, **calf**-specific data types for cost analysis and are parameterized by a `CostMonoid`:
+- [`Calf.Data.IsBoundedG`](./src/Calf/Data/IsBoundedG.agda) defines a generalized notion of cost bound, `IsBoundedG`, where a bound is a program of type `F unit`.
   Additionally, it provides lemmas for proving the boundedness of common forms of computations.
-- [`Calf.Types.BoundedFunction`](./src/Calf/Types/BoundedFunction.agda) defines cost-bounded functions using `IsBounded`.
-- [`Calf.Types.BigO`](./src/Calf/Types/BigO.agda) gives a definition of "big-O" asymptotic bounds as a relaxation of `IsBounded`.
+- [`Calf.Data.IsBounded`](./src/Calf/Data/IsBounded.agda) instantiates `IsBoundedG` for cost bounds of the form `step (F unit) c (ret triv)`.
+- [`Calf.Data.BoundedFunction`](./src/Calf/Data/BoundedFunction.agda) defines cost-bounded functions using `IsBounded`.
+- [`Calf.Data.BigO`](./src/Calf/Types/BigO.agda) gives a definition of "big-O" asymptotic bounds via `IsBounded`.
   In particular, an element of the type `given A measured-via size , f ∈𝓞(g)` (i.e., "given an input of type `A` and a size measure `size` on `A`, `f` is in `𝓞(g)`) is a lower bound on input sizes `n'` and a constant multiplier `k` along with a proof `h` that for all inputs `x` with `n' ≤ size x`, `f x` is bounded by `k` multiples of `g (size x)`, denoted `n' ≤n⇒f[n]≤ k g[n]via h`.
 
 ## Examples
 
 We provide a variety of case studies in [`src/Examples`](./src/Examples).
 
-## Sequential
+### Sequential Algorithms
 
-### [`Examples.Id`](./src/Examples/Id.agda)
+#### [`Examples.Id`](./src/Examples/Id.agda)
 - `module Easy`
-  - Definition of the program `id` which trivially returns its input.
-  - Theorem `id/correct` stating the (trivially true) correctness of `id`.
-  - Theorem `id≤id/cost` stating that the cost of `id n` is bounded by `id/cost n = 0`.
+  - Definition of the program `id` that trivially returns its input.
+  - Definition of the cost bound program `id/bound`, which here is the same as `id`.
+  - Theorem `id/is-bounded` showing that `id` is bounded by `id/bound`.
+  - Theorem `id/correct` stating the extensional correctness of `id` as a corollary of `id/is-bounded`.
   - Theorem `id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → 0)` stating that `id` is in `𝓞(0)`.
 - `module Hard`
-  - Definition of the program `id` which reconstructs its input via induction.
-  - Theorem `id/correct` stating the correctness of `id`.
-  - Theorem `id≤id/cost/closed` stating that the cost of `id n` is bounded by `n`.
+  - Definition of the program `id` that reconstructs its input via induction.
+  - Definition of the cost bound program `id/bound`, which incurs `n` cost before returning `n`.
+  - Theorem `id/is-bounded` showing that `id` is bounded by `id/bound`.
+  - Theorem `id/correct` stating the extensional correctness of `id` as a corollary of `id/is-bounded`.
   - Theorem `id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → n)` stating that `id` is in `𝓞(n)`, where `n` is the input number.
-- A proof that `Easy.id` and `Hard.id` are extensionally equivalent, `easy≡hard : ◯ (Easy.id ≡ Hard.id)`.
+- A proof that `Easy.id` and `Hard.id` are extensionally equivalent, `easy≡hard : ◯ (Easy.id ≡ Hard.id)`, as a corollary of the `id/correct` proofs.
 
-### [`Examples.Gcd`](./src/Examples/Gcd.agda)
+<!--
+#### [`Examples.Gcd`](./src/Examples/Gcd.agda)
 - A **calf** implementation of Euclid's algorithm for gcd.
 - [`Examples.Gcd.Euclid`](./src/Examples/Gcd/Euclid.agda)
   - Specification of the cost model via the instrumented operation `mod`.
@@ -102,38 +115,36 @@ We provide a variety of case studies in [`src/Examples`](./src/Examples).
   - Theorems `gcd≡spec/zero` and `gcd≡spec/suc` stating the behavioral correctness of `gcd` in terms of the defining equations of Euclid's algorithm.
 - [`Examples.Gcd.Refine`](./src/Examples/Gcd/Refine.agda)
   - Refinement of the bound `gcd/depth` -- the theorem `gcd/depth≤gcd/depth/closed` states that the cost of `gcd` is bounded by `suc ∘ fib⁻¹`.
+-->
 
-### [`Examples.Queue`](./src/Examples/Queue.agda)
-- A **calf** implementation of [Batched queues](https://en.wikipedia.org/wiki/Queue_(abstract_data_type)#Amortized_queue).
-- Specification of the cost model as the number of list iterations via the axiom `list/ind/cons`.
-- Upper bounds on the cost of individual enqueue and dequeue operations:
-  - The theorem `enq≤enq/cost` stating that enqueue has zero cost.
-  - The theorem `deq≤deq/cost` stating that dequeue has linear cost.
-- Amortized analysis of sequences of enqueue and dequeue operations:
-  - The theorem `acost≤2*|l|` stating that the amortized cost of a sequence of queue operations is at most twice the length of the sequence.
+### Parallel Algorithms
 
-## Parallel
-
-### [`Examples.TreeSum`](./src/Examples/TreeSum.agda)
-- Definition of the program `sum` which sums the elements of a tree, incurring unit cost when performing each addition operation.
+#### [`Examples.TreeSum`](./src/Examples/TreeSum.agda)
+- Definition of the program `sum` that sums the elements of a tree, incurring unit cost when performing each addition operation.
   At each node, the recursive calls are computed in parallel.
-- Theorem `sum≤sum/cost/closed` stating that the cost of `sum t` is bounded by `sum/cost/closed t = size t , depth t`.
+- Definition of the cost bound program `sum/bound`, which incurs `size t , depth t` cost before returning the sum of the tree via a value-level function.
+- Theorem `sum/has-cost` stating that `sum` and `sum/bound` are equivalent.
+- Theorem `sum/is-bounded` stating that the cost of `sum t` is bounded by `sum/bound`, as a corollary of `sum/has-cost`.
 
-### [`Examples.Exp2`](./src/Examples/Exp2.agda)
+#### [`Examples.Exp2`](./src/Examples/Exp2.agda)
 - `module Slow`
-  - Definition of the program `exp₂` which computes the exponentation of two by its input by performing two identical recursive calls.
-  - Theorem `exp₂/correct` stating the correctness of `exp₂`.
-  - Theorem `exp₂≤exp₂/cost/closed` stating that the cost of `exp₂ n` is bounded by `exp₂/cost/closed n = (pred[2^ n ] , n)`, where `pred[2^ n ] = (2 ^ n) - 1`.
-    Since two identical recursive calls are made, the work is exponential, but the span is still linear.
+  - Definition of the program `exp₂` that computes the exponentation of two by its input by performing two identical recursive calls.
+    Since two identical recursive calls are made in parallel, the work is exponential, but the span is still linear.
+  - Definition of the cost bound program `exp₂/bound`, incurring `2 ^ n - 1 , n` cost before returning result `2 ^ n`.
+  - Theorem `exp₂/is-bounded` showing that `exp₂` is bounded by `exp₂/bound`.
+  - Theorem `exp₂/correct` stating the extensional correctness of `exp₂` as a corollary of `exp₂/is-bounded`.
+  - Theorem `exp₂/asymptotic : given nat measured-via (λ n → n) , exp₂ ∈𝓞(λ n → 2 ^ n , n)` stating that `exp₂` is in `𝓞(2 ^ n , n)`.
 - `module Fast`
   - Definition of the program `exp₂` which computes the exponentation of two by its input via a standard recursive algorithm.
-  - Theorem `exp₂/correct` stating the correctness of `exp₂`.
-  - Theorem `exp₂≤exp₂/cost/closed` stating that the cost of `exp₂ n` is bounded by `exp₂/cost/closed n = (n , n)`.
+  - Definition of the cost bound program `exp₂/bound`, incurring `n , n` cost before returning result `2 ^ n`.
+  - Theorem `exp₂/is-bounded` showing that `exp₂` is bounded by `exp₂/bound`.
+  - Theorem `exp₂/correct` stating the extensional correctness of `exp₂` as a corollary of `exp₂/is-bounded`.
+  - Theorem `exp₂/asymptotic : given nat measured-via (λ n → n) , exp₂ ∈𝓞(λ n → n , n)` stating that `exp₂` is in `𝓞(n , n)`.
 - A proof that `Slow.exp₂` and `Fast.exp₂` are extensionally equivalent, `slow≡fast : ◯ (Slow.exp₂ ≡ Fast.exp₂)`.
 
-## Hybrid
+### Hybrid Algorithms
 
-### [`Examples.Sorting`](./src/Examples/Sorting.agda)
+#### [`Examples.Sorting`](./src/Examples/Sorting.agda)
 First, we develop a common collection of definitions and theorems used in both sequential and parallel sorting.
 - [`Examples.Sorting.Comparable`](./src/Examples/Sorting/Comparable.agda)
   - Record `Comparable` describing the requirements for a type to be comparable, including `h-cost`, a hypothesis that each comparison is bounded by unit cost.
@@ -143,7 +154,7 @@ First, we develop a common collection of definitions and theorems used in both s
     The predicate `IsSort sort` states that `sort` is a correct sorting algorithm.
   - Theorem `IsSort⇒≡`, which states that any two correct sorting algorithms are extensionally equivalent.
 
-#### [`Examples.Sorting.Sequential`](./src/Examples/Sorting/Sequential.agda)
+##### [`Examples.Sorting.Sequential`](./src/Examples/Sorting/Sequential.agda)
 Here, we use cost monoid `ℕ-CostMonoid`, tracking the total number of sequential steps incurred.
 
 - [`Examples.Sorting.Sequential.InsertionSort`](./src/Examples/Sorting/Sequential/InsertionSort.agda)
@@ -167,7 +178,8 @@ Here, we use cost monoid `ℕ-CostMonoid`, tracking the total number of sequenti
 
 Theorem `isort≡msort : ◯ (ISort.sort ≡ MSort.sort)` states that `InsertionSort.sort` and `MergeSort.sort` are extensionally equivalent.
 
-#### [`Examples.Sorting.Parallel`](./src/Examples/Sorting/Parallel.agda)
+<!--
+##### [`Examples.Sorting.Parallel`](./src/Examples/Sorting/Parallel.agda)
 Here, we use *parallel* cost monoid `ℕ²-ParCostMonoid`, tracking a pair of natural numbers corresponding to the work (sequential cost) and span (idealized parallel cost), respectively.
 
 - [`Examples.Sorting.Parallel.InsertionSort`](./src/Examples/Sorting/Parallel/InsertionSort.agda)
@@ -184,7 +196,7 @@ Here, we use *parallel* cost monoid `ℕ²-ParCostMonoid`, tracking a pair of na
       - Definition of the program `merge`, which *sequentially* merges a pair of sorted lists.
       - Theorem `merge/correct` verifying correctness properties of `merge`.
       - Theorem `merge≤merge/cost/closed` stating that the cost of `merge (l₁ , l₂)` is bounded by `(length l₁ + length l₂ , length l₁ + length l₂)`, since this implementation of `merge` is sequential.
-  - Definition of the program `sort` implementing merge sort, where both recursive calls to `sort` are performed in parallel (via the parallel pairing operation `_&_`).
+  - Definition of the program `sort` implementing merge sort, where both recursive calls to `sort` are performed in parallel (via the parallel pairing operation `_∥_`).
   - Theorem `sort/correct : IsSort sort` verifying the correctness of `sort`.
   - Theorem `sort≤sort/cost/closed` stating that the cost of `sort l` is bounded by `sort/cost/closed l = (⌈log₂ length l ⌉ * length l , 2 * length l + ⌈log₂ length l ⌉)`.
   - Theorem `sort/asymptotic : given (list A) measured-via length , sort ∈𝓞(λ n → n * ⌈log₂ n ⌉ , n)` stating that `sort` is in `𝓞(n * ⌈log₂ n ⌉)` work and `𝓞(n)` span, where `n` is the length of the input list.
@@ -201,3 +213,19 @@ Here, we use *parallel* cost monoid `ℕ²-ParCostMonoid`, tracking a pair of na
 
 Theorem `isort≡msort : ◯ (ISort.sort ≡ MSort.sort)` states that `InsertionSort.sort` and `MergeSort.sort` are extensionally equivalent.
 Similarly, `msort≡psort : ◯ (MSort.sort ≡ PSort.sort)` states that `MergeSort.sort` and `MergeSortPar.sort` are extensionally equivalent.
+-->
+
+### Data Structures
+
+#### Amortized
+
+<!--
+##### [`Examples.Queue`](./src/Examples/Queue.agda)
+- A **calf** implementation of [Batched queues](https://en.wikipedia.org/wiki/Queue_(abstract_data_type)#Amortized_queue).
+- Specification of the cost model as the number of list iterations via the axiom `list/ind/cons`.
+- Upper bounds on the cost of individual enqueue and dequeue operations:
+  - The theorem `enq≤enq/cost` stating that enqueue has zero cost.
+  - The theorem `deq≤deq/cost` stating that dequeue has linear cost.
+- Amortized analysis of sequences of enqueue and dequeue operations:
+  - The theorem `acost≤2*|l|` stating that the amortized cost of a sequence of queue operations is at most twice the length of the sequence.
+-->
