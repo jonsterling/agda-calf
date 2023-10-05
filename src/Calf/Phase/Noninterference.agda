@@ -31,7 +31,7 @@ constant f =
   (λ u → f (∗ u) u) , funext (λ a → funext/Ω (λ u →
     cong (λ a → f a u) (unique a u)))
 
-optimization : ∀ {C B : tp pos} {A : val C → tp pos}
+optimization : ∀ {C B : tp⁺} {A : val C → tp⁺}
   (f : val (Σ⁺ C λ c → ● (A c)) → val (◯⁺ B)) →
   Σ (val C → val (◯⁺ B)) λ f' → ∀ c a → f (c , a) ≡ f' c
 optimization {C} {B} {A} f =

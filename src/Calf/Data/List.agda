@@ -7,5 +7,5 @@ open import Calf.CBPV
 
 open import Data.List public
 
-list : tp pos → tp pos
+list : tp⁺ → tp⁺
 list A = meta⁺ (List (val A))

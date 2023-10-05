@@ -10,9 +10,9 @@ open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Data.Unit public renaming (⊤ to Unit) hiding (tt)
 open import Data.Product hiding (_,_; proj₁; proj₂) public
 
-unit : tp pos
+unit : tp⁺
 unit = meta⁺ Unit
 
 infixr 2 _×⁺_
-_×⁺_ : tp pos → tp pos → tp pos
+_×⁺_ : tp⁺ → tp⁺ → tp⁺
 A ×⁺ B = meta⁺ (val A × val B)

@@ -15,18 +15,18 @@ open import Calf.Phase.Core
 ◯ 𝕁 = (u : ext) → 𝕁
 
 postulate
-  open⁺ : (ext → tp pos) → tp pos
+  open⁺ : (ext → tp⁺) → tp⁺
   open⁺/decode : ∀ {A} → val (open⁺ A) ≡ ((u : ext) → val (A u))
   {-# REWRITE open⁺/decode #-}
 
-  open⁻ : (ext → tp neg) → tp neg
+  open⁻ : (ext → tp⁻) → tp⁻
   open⁻/decode : ∀ {A} → val (U (open⁻ A)) ≡ ((u : ext) → cmp (A u))
   {-# REWRITE open⁻/decode #-}
 
 infix 10 ◯⁺_ ◯⁻_
-◯⁺_ : tp pos → tp pos
+◯⁺_ : tp⁺ → tp⁺
 ◯⁺ A = open⁺ λ _ → A
-◯⁻_ : tp neg → tp neg
+◯⁻_ : tp⁻ → tp⁻
 ◯⁻ A = open⁻ λ _ → A
 
 

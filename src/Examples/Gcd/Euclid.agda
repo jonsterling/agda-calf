@@ -20,7 +20,7 @@ open import Agda.Builtin.Nat using (div-helper; mod-helper)
 open import Relation.Binary using (Rel)
 open import Relation.Unary using (Pred; _⊆′_)
 
-mod-tp : (x y : val nat) → False (y ≟ 0) → tp pos
+mod-tp : (x y : val nat) → False (y ≟ 0) → tp⁺
 mod-tp x y h = Σ⁺ nat λ z → meta⁺ (z ≡ _%_ x y {{≢-nonZero (toWitnessFalse h)}})
 
 mod : cmp (

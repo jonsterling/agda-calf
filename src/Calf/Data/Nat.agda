@@ -7,5 +7,5 @@ open import Calf.CBPV
 
 open import Data.Nat public
 
-nat : tp pos
+nat : tp⁺
 nat = meta⁺ ℕ

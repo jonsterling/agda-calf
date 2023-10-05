@@ -22,8 +22,8 @@ open import Relation.Nullary
 
 
 postulate
-  dynamic-array : tp pos → tp neg
-record DynamicArray (A : tp pos) : Set where
+  dynamic-array : tp⁺ → tp⁻
+record DynamicArray (A : tp⁺) : Set where
   coinductive
   field
     quit   : cmp (F unit)
@@ -62,8 +62,8 @@ DynamicArray.get (SPEC/array n) i with i Nat.<? n
 ... | yes p = just triv , SPEC/array n
 
 postulate
-  _≈⁻_ : (d₁ d₂ : cmp (dynamic-array A)) → tp neg
-record _≈_ {A : tp pos} (d₁ d₂ : cmp (dynamic-array A)) : Set where
+  _≈⁻_ : (d₁ d₂ : cmp (dynamic-array A)) → tp⁻
+record _≈_ {A : tp⁺} (d₁ d₂ : cmp (dynamic-array A)) : Set where
   coinductive
   field
     quit   : cmp $

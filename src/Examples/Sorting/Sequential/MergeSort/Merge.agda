@@ -41,7 +41,7 @@ prep' {x} {xs} y {ys} {l} h =
     y ∷ l
   ∎
 
-merge/type : val pair → tp pos
+merge/type : val pair → tp⁺
 merge/type (l₁ , l₂) = Σ⁺ (list A) λ l → sorted-of (l₁ ++ l₂) l
 
 merge/clocked : cmp $

@@ -15,11 +15,11 @@ open import Calf.Step costMonoid
 open import Calf.Data.Product using (unit)
 
 
-cost : tp neg
+cost : tp⁻
 cost = F unit
 
 -- (e ; ret triv) ≤⁻ b
-IsBoundedG : (A : tp pos) → cmp (F A) → cmp cost → Set
+IsBoundedG : (A : tp⁺) → cmp (F A) → cmp cost → Set
 IsBoundedG A e b = (bind cost e λ _ → ret triv) ≤⁻[ cost ] b
 
 step⋆ : cmp (Π ℂ⁺ λ _ → cost)

@@ -15,7 +15,7 @@ open import Level using (_⊔_)
 open import Relation.Binary
 
 
-Ψ : (A : tp pos) → (B : val A → tp pos) → (val A → ℂ) → tp pos
+Ψ : (A : tp⁺) → (B : val A → tp⁺) → (val A → ℂ) → tp⁺
 Ψ A B p =
   Σ⁺ (U (Π A (λ a → F (B a)))) λ f →
   meta⁺ ((a : val A) → IsBounded (B a) (f a) (p a))

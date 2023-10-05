@@ -11,13 +11,13 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst
 open import Calf.Phase.Core
 
 
--- data ● (A : tp pos) : tp pos where
+-- data ● (A : tp⁺) : tp⁺ where
 --   η : A → ● A
 --   ∗ : ext → ● A
 --   η≡∗ : (a : A) (u : ext) → η a ≡ ∗ u
 
 postulate
-  ● : tp pos → tp pos
+  ● : tp⁺ → tp⁺
 
   η : val A → val (● A)
   ∗ : ext → val (● A)

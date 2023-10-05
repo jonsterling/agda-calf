@@ -21,24 +21,24 @@ open import Data.List renaming (sum to lsum)
 open import Data.Product
 open import Relation.Binary.PropositionalEquality as P
 
-record Queue (A : tp pos) : Set where
+record Queue (A : tp⁺) : Set where
   field
-    Q : tp pos
+    Q : tp⁺
     emp : val Q
     enq : cmp (Π Q λ _ → Π A λ _ → F Q)
     deq : cmp (Π Q λ _ → F (sum unit (Σ⁺ Q λ _ → A)))
 
-module CostList (A : tp pos) (n : ℕ) where
+module CostList (A : tp⁺) (n : ℕ) where
   -- Suppose we want to implement the Queue signature above using lists.
   -- One cost model is to count the number of times a cons node is inspected.
   -- This is implemented by the following annotated list type:
   -- destructing a cons node of type list n A consumes n steps.
   postulate
-    list : tp pos
+    list : tp⁺
     nil : val list
     cons : val A → val list → val list
 
-    list/ind : (l : val list) → (X : val list → tp neg) → cmp (X nil) →
+    list/ind : (l : val list) → (X : val list → tp⁻) → cmp (X nil) →
       ((a : val A) → (l : val list) → (r : val (U (X l))) →
         cmp (X (cons a l))) →
       cmp (X l)
@@ -53,12 +53,12 @@ module CostList (A : tp pos) (n : ℕ) where
       list/ind (cons a l) X e0 e1 ≡ step (X (cons a l)) n (e1 a l (list/ind l X e0 e1))
     {-# REWRITE list/ind/cons #-}
 
-  list/match : (l : val list) → (X : val list → tp neg) → cmp (X nil) →
+  list/match : (l : val list) → (X : val list → tp⁻) → cmp (X nil) →
     ((a : val A) → (l : val list) → cmp (X (cons a l))) →
     cmp (X l)
   list/match l X e0 e1 = list/ind l X e0 (λ a l _ → e1 a l)
 
-  bound/list/match : ∀ (l : val list) (X : val list → tp pos)
+  bound/list/match : ∀ (l : val list) (X : val list → tp⁺)
     {e0 : val (U (F (X nil)))} {e1 : (a : val A) → (l : val list) → val (U (F (X (cons a l))))}
     {p0 : val (U cost)} {p1 : (a : val A) → (l : val list) → val (U cost)} →
     IsBounded (X nil) e0 p0 →
@@ -78,7 +78,7 @@ module Ex/CostList where
   ex : val list
   ex = cons 0 (cons 1 nil)
 
-module Rev (A : tp pos) where
+module Rev (A : tp⁺) where
   open CostList A 1
 
   revAppend : cmp (Π list λ _ → Π list λ _ → F list)
@@ -151,12 +151,12 @@ module Rev (A : tp pos) where
 
 
 -- Implement Queue with a pair of lists; (f , b) represents the queue f :: rev b.
-module FrontBack (A : tp pos) where
+module FrontBack (A : tp⁺) where
   -- For simplicity, we charge 1 step for each cons node destruction.
   open CostList A 1
   open Rev A
 
-  Q : tp pos
+  Q : tp⁺
   Q = Σ⁺ list λ _ → list
 
   emp : val Q

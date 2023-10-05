@@ -7,5 +7,5 @@ open import Calf.CBPV
 
 open import Data.Bool public
 
-bool : tp pos
+bool : tp⁺
 bool = meta⁺ Bool

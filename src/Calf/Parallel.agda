@@ -21,7 +21,7 @@ open import Data.Product
 open import Relation.Binary.PropositionalEquality
 
 postulate
-  _∥_ : {A₁ A₂ : tp pos} → cmp (F A₁) → cmp (F A₂) → cmp (F (A₁ ×⁺ A₂))
+  _∥_ : {A₁ A₂ : tp⁺} → cmp (F A₁) → cmp (F A₂) → cmp (F (A₁ ×⁺ A₂))
 
   ∥/join : ∀ {A₁ A₂} {v₁ v₂ c₁ c₂} →
     step (F A₁) c₁ (ret v₁) ∥ step (F A₂) c₂ (ret v₂) ≡ step (F (A₁ ×⁺ A₂)) (c₁ ⊗ c₂) (ret (v₁ , v₂))
@@ -43,14 +43,14 @@ postulate
   ∎
 {-# REWRITE ∥/join ∥/join/𝟘 #-}
 
-∥-mono-≤⁻ : {A₁ A₂ : tp pos} {e₁ e₁' : cmp (F A₁)} {e₂ e₂' : cmp (F A₂)}
+∥-mono-≤⁻ : {A₁ A₂ : tp⁺} {e₁ e₁' : cmp (F A₁)} {e₂ e₂' : cmp (F A₂)}
   → e₁ ≤⁻[ F A₁ ] e₁'
   → e₂ ≤⁻[ F A₂ ] e₂'
   → (e₁ ∥ e₂) ≤⁻[ F (A₁ ×⁺ A₂) ] (e₁' ∥ e₂')
 ∥-mono-≤⁻ {A₁} {A₂} {e₁} {e₁'} {e₂} {e₂'} e₁≤e₁' e₂≤e₂' =
   ≤⁻-mono₂ _∥_ e₁≤e₁' e₂≤e₂'
 
-boundg/par : {A₁ A₂ : tp pos} {e₁ : cmp (F A₁)} {e₂ : cmp (F A₂)} {b₁ b₂ : cmp cost} →
+boundg/par : {A₁ A₂ : tp⁺} {e₁ : cmp (F A₁)} {e₂ : cmp (F A₂)} {b₁ b₂ : cmp cost} →
   IsBoundedG A₁ e₁ b₁ →
   IsBoundedG A₂ e₂ b₂ →
   IsBoundedG (Σ⁺ A₁ λ _ → A₂) (e₁ ∥ e₂) (bind cost (b₁ ∥ b₂) λ _ → ret triv)
@@ -66,7 +66,7 @@ boundg/par {A₁} {A₂} {e₁} {e₂} {b₁} {b₂} ib₁ ib₂ =
     bind cost (b₁ ∥ b₂) (λ _ → ret triv)
   ∎
 
-bound/par : {A₁ A₂ : tp pos} {e₁ : cmp (F A₁)} {e₂ : cmp (F A₂)} {c₁ c₂ : ℂ} →
+bound/par : {A₁ A₂ : tp⁺} {e₁ : cmp (F A₁)} {e₂ : cmp (F A₂)} {c₁ c₂ : ℂ} →
   IsBounded A₁ e₁ c₁ →
   IsBounded A₂ e₂ c₂ →
   IsBounded (Σ⁺ A₁ λ _ → A₂) (e₁ ∥ e₂) (c₁ ⊗ c₂)
