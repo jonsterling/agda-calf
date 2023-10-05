@@ -1,18 +1,20 @@
+{-# OPTIONS --rewriting #-}
+
 module Examples.Gcd.Clocked where
 
-open import Calf.CostMonoid
-import Calf.CostMonoids as CM
+open import Algebra.Cost
 
-open import Calf CM.ℕ-CostMonoid
-open import Calf.Types.Nat
+costMonoid = ℕ-CostMonoid
+
+open import Calf costMonoid
+open import Calf.Data.Nat
 open import Data.Nat using (_≤_; z≤n)
-open import Calf.Types.Unit
-open import Calf.Types.Bounded CM.ℕ-CostMonoid
-open import Calf.Types.BoundedFunction CM.ℕ-CostMonoid
+open import Calf.Data.Product using (unit)
+open import Calf.Data.IsBounded costMonoid
+open import Calf.Data.BoundedFunction costMonoid
 
 open import Data.Nat.DivMod
 open import Relation.Binary.PropositionalEquality as P
-open import Data.Product
 
 open import Examples.Gcd.Euclid
 

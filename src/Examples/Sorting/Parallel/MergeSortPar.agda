@@ -6,11 +6,11 @@ open Comparable M
 open import Examples.Sorting.Parallel.Core M
 
 open import Calf costMonoid
-open import Calf.ParMetalanguage parCostMonoid
-open import Calf.Types.Nat
-open import Calf.Types.List
-open import Calf.Types.Bounded costMonoid
-open import Calf.Types.BigO costMonoid
+open import Calf.Parallel parCostMonoid
+open import Calf.Data.Nat
+open import Calf.Data.List
+open import Calf.Data.IsBounded costMonoid
+open import Calf.Data.BigO costMonoid
 
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
 open import Data.Product using (_×_; _,_; ∃; proj₁; proj₂)
@@ -28,7 +28,7 @@ sort/clocked : cmp (Π nat λ _ → Π (list A) λ _ → F (list A))
 sort/clocked zero    l = ret l
 sort/clocked (suc k) l =
   bind (F (list A)) (split l) λ (l₁ , l₂) →
-    bind (F (list A)) (sort/clocked k l₁ & sort/clocked k l₂) merge
+    bind (F (list A)) (sort/clocked k l₁ ∥ sort/clocked k l₂) merge
 
 sort/clocked/correct : ∀ k l → ⌈log₂ length l ⌉ Nat.≤ k → SortResult (sort/clocked k) l
 sort/clocked/correct zero    l h u = l , refl , refl , short-sorted (⌈log₂n⌉≡0⇒n≤1 (N.n≤0⇒n≡0 h))
@@ -65,10 +65,10 @@ sort/clocked/correct (suc k) l h u =
       sort/clocked (suc k) l
     ≡⟨⟩
       (bind (F (list A)) (split l) λ (l₁ , l₂) →
-        bind (F (list A)) (sort/clocked k l₁ & sort/clocked k l₂) merge)
+        bind (F (list A)) (sort/clocked k l₁ ∥ sort/clocked k l₂) merge)
     ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) ≡ ⟩
-      bind (F (list A)) (sort/clocked k l₁ & sort/clocked k l₂) merge
-    ≡⟨ Eq.cong (λ e → bind (F (list A)) e merge) (Eq.cong₂ _&_ ≡₁ ≡₂) ⟩
+      bind (F (list A)) (sort/clocked k l₁ ∥ sort/clocked k l₂) merge
+    ≡⟨ Eq.cong (λ e → bind (F (list A)) e merge) (Eq.cong₂ _∥_ ≡₁ ≡₂) ⟩
       merge (l₁' , l₂')
     ≡⟨ ≡' ⟩
       ret l'
@@ -90,7 +90,7 @@ sort/clocked/cost : cmp (Π nat λ _ → Π (list A) λ _ → cost)
 sort/clocked/cost zero    l = 𝟘
 sort/clocked/cost (suc k) l =
   bind cost (split l) λ (l₁ , l₂) → split/cost l ⊕
-    bind cost (sort/clocked k l₁ & sort/clocked k l₂) λ (l₁' , l₂') → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
+    bind cost (sort/clocked k l₁ ∥ sort/clocked k l₂) λ (l₁' , l₂') → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
       merge/cost/closed (l₁' , l₂')
 
 sort/clocked/cost/closed : cmp (Π nat λ _ → Π (list A) λ _ → cost)
@@ -131,22 +131,22 @@ sort/clocked/cost≤sort/clocked/cost/closed (suc k) l h u =
     sort/clocked/cost (suc k) l
   ≡⟨⟩
     (bind cost (split l) λ (l₁ , l₂) → split/cost l ⊕
-      bind cost (sort/clocked k l₁ & sort/clocked k l₂) λ (l₁' , l₂') → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
+      bind cost (sort/clocked k l₁ ∥ sort/clocked k l₂) λ (l₁' , l₂') → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
         merge/cost/closed (l₁' , l₂'))
   ≡⟨ Eq.cong (λ e → bind cost e _) (≡) ⟩
     (split/cost l ⊕
-      bind cost (sort/clocked k l₁ & sort/clocked k l₂) λ (l₁' , l₂') → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
+      bind cost (sort/clocked k l₁ ∥ sort/clocked k l₂) λ (l₁' , l₂') → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
         merge/cost/closed (l₁' , l₂'))
   ≡⟨⟩
     (𝟘 ⊕
-      bind cost (sort/clocked k l₁ & sort/clocked k l₂) λ (l₁' , l₂') → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
+      bind cost (sort/clocked k l₁ ∥ sort/clocked k l₂) λ (l₁' , l₂') → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
         merge/cost/closed (l₁' , l₂'))
   ≡⟨ ⊕-identityˡ _ ⟩
-    (bind cost (sort/clocked k l₁ & sort/clocked k l₂) λ (l₁' , l₂') → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
+    (bind cost (sort/clocked k l₁ ∥ sort/clocked k l₂) λ (l₁' , l₂') → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕
       merge/cost/closed (l₁' , l₂'))
   ≡⟨
     Eq.cong (λ e → bind cost e λ (l₁' , l₂') → (sort/clocked/cost k l₁ ⊗ sort/clocked/cost k l₂) ⊕ merge/cost/closed (l₁' , l₂')) (
-      Eq.cong₂ _&_
+      Eq.cong₂ _∥_
         ≡₁
         ≡₂
     )

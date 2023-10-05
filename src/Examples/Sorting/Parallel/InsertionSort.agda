@@ -6,11 +6,11 @@ open Comparable M
 open import Examples.Sorting.Parallel.Core M
 
 open import Calf costMonoid
-open import Calf.Types.Bool
-open import Calf.Types.List
-open import Calf.Types.Eq
-open import Calf.Types.Bounded costMonoid
-open import Calf.Types.BigO costMonoid
+open import Calf.Data.Bool
+open import Calf.Data.List
+open import Calf.Data.Equality
+open import Calf.Data.IsBounded costMonoid
+open import Calf.Data.BigO costMonoid
 
 open import Relation.Nullary
 open import Relation.Nullary.Negation
