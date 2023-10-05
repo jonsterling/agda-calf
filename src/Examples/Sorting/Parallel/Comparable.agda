@@ -1,7 +1,7 @@
 module Examples.Sorting.Parallel.Comparable where
 
-open import Calf.CostMonoid
-open import Calf.CostMonoids
+open import Algebra.Cost
+
 
 parCostMonoid = ℕ²-ParCostMonoid
 costMonoid = ParCostMonoid.costMonoid parCostMonoid

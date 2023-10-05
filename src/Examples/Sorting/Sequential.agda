@@ -1,13 +1,14 @@
+{-# OPTIONS --rewriting #-}
+
 module Examples.Sorting.Sequential where
 
 open import Examples.Sorting.Sequential.Comparable
 
 open import Calf costMonoid
-open import Calf.Types.Nat
-open import Calf.Types.List
+open import Calf.Data.Nat
+open import Calf.Data.List
 
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_)
-open import Data.Product using (_,_)
 
 test/forward  = 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ 6 ∷ 7 ∷ 8 ∷ 9 ∷ 10 ∷ 11 ∷ 12 ∷ 13 ∷ 14 ∷ 15 ∷ 16 ∷ []
 test/backward = 16 ∷ 15 ∷ 14 ∷ 13 ∷ 12 ∷ 11 ∷ 10 ∷ 9 ∷ 8 ∷ 7 ∷ 6 ∷ 5 ∷ 4 ∷ 3 ∷ 2 ∷ 1 ∷ []

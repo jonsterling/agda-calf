@@ -1,16 +1,16 @@
 module Examples.Queue where
 
-open import Calf.CostMonoid
-open import Calf.CostMonoids using (ℕ-CostMonoid)
+open import Algebra.Cost
+
 
 costMonoid = ℕ-CostMonoid
 open CostMonoid costMonoid using (ℂ)
 
 open import Calf costMonoid
-open import Calf.Types.Nat
-open import Calf.Types.Unit
-open import Calf.Types.Sum
-open import Calf.Types.Bounded costMonoid
+open import Calf.Data.Nat
+open import Calf.Data.Unit
+open import Calf.Data.Sum
+open import Calf.Data.IsBounded costMonoid
 
 open import Function
 open import Data.Nat
@@ -21,24 +21,24 @@ open import Data.List renaming (sum to lsum)
 open import Data.Product
 open import Relation.Binary.PropositionalEquality as P
 
-record Queue (A : tp pos) : Set where
+record Queue (A : tp⁺) : Set where
   field
-    Q : tp pos
+    Q : tp⁺
     emp : val Q
     enq : cmp (Π Q λ _ → Π A λ _ → F Q)
-    deq : cmp (Π Q λ _ → F (sum unit (Σ++ Q λ _ → A)))
+    deq : cmp (Π Q λ _ → F (sum unit (Σ⁺ Q λ _ → A)))
 
-module CostList (A : tp pos) (n : ℕ) where
+module CostList (A : tp⁺) (n : ℕ) where
   -- Suppose we want to implement the Queue signature above using lists.
   -- One cost model is to count the number of times a cons node is inspected.
   -- This is implemented by the following annotated list type:
   -- destructing a cons node of type list n A consumes n steps.
   postulate
-    list : tp pos
+    list : tp⁺
     nil : val list
     cons : val A → val list → val list
 
-    list/ind : (l : val list) → (X : val list → tp neg) → cmp (X nil) →
+    list/ind : (l : val list) → (X : val list → tp⁻) → cmp (X nil) →
       ((a : val A) → (l : val list) → (r : val (U (X l))) →
         cmp (X (cons a l))) →
       cmp (X l)
@@ -53,12 +53,12 @@ module CostList (A : tp pos) (n : ℕ) where
       list/ind (cons a l) X e0 e1 ≡ step (X (cons a l)) n (e1 a l (list/ind l X e0 e1))
     {-# REWRITE list/ind/cons #-}
 
-  list/match : (l : val list) → (X : val list → tp neg) → cmp (X nil) →
+  list/match : (l : val list) → (X : val list → tp⁻) → cmp (X nil) →
     ((a : val A) → (l : val list) → cmp (X (cons a l))) →
     cmp (X l)
   list/match l X e0 e1 = list/ind l X e0 (λ a l _ → e1 a l)
 
-  bound/list/match : ∀ (l : val list) (X : val list → tp pos)
+  bound/list/match : ∀ (l : val list) (X : val list → tp⁺)
     {e0 : val (U (F (X nil)))} {e1 : (a : val A) → (l : val list) → val (U (F (X (cons a l))))}
     {p0 : val (U cost)} {p1 : (a : val A) → (l : val list) → val (U cost)} →
     IsBounded (X nil) e0 p0 →
@@ -78,7 +78,7 @@ module Ex/CostList where
   ex : val list
   ex = cons 0 (cons 1 nil)
 
-module Rev (A : tp pos) where
+module Rev (A : tp⁺) where
   open CostList A 1
 
   revAppend : cmp (Π list λ _ → Π list λ _ → F list)
@@ -151,13 +151,13 @@ module Rev (A : tp pos) where
 
 
 -- Implement Queue with a pair of lists; (f , b) represents the queue f :: rev b.
-module FrontBack (A : tp pos) where
+module FrontBack (A : tp⁺) where
   -- For simplicity, we charge 1 step for each cons node destruction.
   open CostList A 1
   open Rev A
 
-  Q : tp pos
-  Q = Σ++ list λ _ → list
+  Q : tp⁺
+  Q = Σ⁺ list λ _ → list
 
   emp : val Q
   emp = (nil , nil)
@@ -171,7 +171,7 @@ module FrontBack (A : tp pos) where
   enq≤enq/cost : ∀ q x → IsBounded Q (enq q x) (enq/cost q x)
   enq≤enq/cost q x = bound/ret
 
-  deq-tp = sum unit (Σ++ Q λ _ → A)
+  deq-tp = sum unit (Σ⁺ Q λ _ → A)
 
   deq/emp : cmp (Π list λ _ → F deq-tp)
   deq/emp l =
@@ -271,7 +271,7 @@ module FrontBack (A : tp pos) where
   _operate_ : op → val Q → cmp (F Q)
   (op/enq x) operate q = enq q x
   op/deq operate q =
-    bind (F Q) (deq q) λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s
+    bind (F Q) (deq q) λ s → (sum/case unit (Σ⁺ Q λ _ → A) (λ _ → F Q) s
     (λ _ → ret (nil , nil))
     (λ (q , x) → ret q))
 
@@ -314,8 +314,8 @@ module FrontBack (A : tp pos) where
           (λ a l → (inj₂ ((l , b) , a)) , (step/ext (F deq-tp) (ret _) 1))
         where open ≡-Reasoning
   ... | inj₁ triv , h = (nil , nil) , λ u →
-    P.cong (λ e → bind (F Q) e λ s → sum/case unit (Σ++ Q (λ _ → A)) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ (q , x) → ret q)) (h u)
-  ... | inj₂ (q , x) , h = q , (λ u → P.cong (λ e → bind (F Q) e λ s → sum/case unit (Σ++ Q (λ _ → A)) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ (q , x) → ret q)) (h u))
+    P.cong (λ e → bind (F Q) e λ s → sum/case unit (Σ⁺ Q (λ _ → A)) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ (q , x) → ret q)) (h u)
+  ... | inj₂ (q , x) , h = q , (λ u → P.cong (λ e → bind (F Q) e λ s → sum/case unit (Σ⁺ Q (λ _ → A)) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ (q , x) → ret q)) (h u))
 
   -- o operateϕ q is morally ϕ (o operate q), which doesn't type-check since o operate q is a computation.
   -- Easier to work with than bind cost (o operate q) ϕ (but they are equivalent, as shown below).
@@ -369,13 +369,13 @@ module FrontBack (A : tp pos) where
           ϕ
       ≡⟨⟩
         bind cost
-          (bind (F Q) (step (F deq-tp) 1 (ret (inj₂ ((l' , nil) , x')))) λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s
+          (bind (F Q) (step (F deq-tp) 1 (ret (inj₂ ((l' , nil) , x')))) λ s → (sum/case unit (Σ⁺ Q λ _ → A) (λ _ → F Q) s
             (λ _ → ret (nil , nil))
             (λ (q , x) → ret q)))
           ϕ
       ≡⟨⟩
         bind cost
-          (bind (F Q) (deq/emp (cons x' l')) λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s
+          (bind (F Q) (deq/emp (cons x' l')) λ s → (sum/case unit (Σ⁺ Q λ _ → A) (λ _ → F Q) s
             (λ _ → ret (nil , nil))
             (λ (q , x) → ret q)))
           ϕ
@@ -384,7 +384,7 @@ module FrontBack (A : tp pos) where
           (λ e →
             bind cost
               (bind (F Q) e λ l' →
-                bind (F Q) (deq/emp l') λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s
+                bind (F Q) (deq/emp l') λ s → (sum/case unit (Σ⁺ Q λ _ → A) (λ _ → F Q) s
                   (λ _ → ret (nil , nil))
                   (λ (q , x) → ret q)))
               ϕ
@@ -393,13 +393,13 @@ module FrontBack (A : tp pos) where
       ⟩
         bind cost
           (bind (F Q) (rev (cons a l)) λ l' →
-            bind (F Q) (deq/emp l') λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s
+            bind (F Q) (deq/emp l') λ s → (sum/case unit (Σ⁺ Q λ _ → A) (λ _ → F Q) s
               (λ _ → ret (nil , nil))
               (λ (q , x) → ret q)))
           ϕ
       ≡⟨⟩
         bind cost
-          (bind (F Q) (deq (nil , cons a l)) λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s
+          (bind (F Q) (deq (nil , cons a l)) λ s → (sum/case unit (Σ⁺ Q λ _ → A) (λ _ → F Q) s
             (λ _ → ret (nil , nil))
             (λ (q , x) → ret q)))
           ϕ
@@ -446,11 +446,11 @@ module FrontBack (A : tp pos) where
   op≤op/cost : ∀ o q → IsBounded Q (o operate q) (op/cost o q)
   op≤op/cost (op/enq x) q = enq≤enq/cost q x
   op≤op/cost op/deq q rewrite P.sym (+-identityʳ (op/cost (op/deq) q)) =
-    bound/bind/const {A = deq-tp} {e = deq q} {f = λ s → (sum/case unit (Σ++ Q λ _ → A) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ (q , x) → ret q))}
+    bound/bind/const {A = deq-tp} {e = deq q} {f = λ s → (sum/case unit (Σ⁺ Q λ _ → A) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ (q , x) → ret q))}
       (op/cost op/deq q) 0
       (bound/relax (λ u → ≤-reflexive (deq/cost≡cost/deq q u)) (deq≤deq/cost/closed q))
       λ a →
-        bound/sum/case/const/const unit ((Σ++ Q λ _ → A)) (λ _ → Q) a ((λ _ → ret (nil , nil))) (λ (q , x) → ret q) 0
+        bound/sum/case/const/const unit ((Σ⁺ Q λ _ → A)) (λ _ → Q) a ((λ _ → ret (nil , nil))) (λ (q , x) → ret q) 0
           (λ _ → bound/ret)
           (λ _ → bound/ret)
 

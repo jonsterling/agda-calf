@@ -1,12 +1,8 @@
 # Installation
 
-Either:
-1. Install Agda v2.6.2 ([instructions](https://agda.readthedocs.io/en/v2.6.2/getting-started/installation.html))
-   and `agda-stdlib` v1.7 ([instructions](https://github.com/agda/agda-stdlib/blob/v1.7/notes/installation-guide.md)).
-   (This method is preferred.)
-2. Install Agda v2.6.1.3 ([instructions](https://agda.readthedocs.io/en/v2.6.1.3/getting-started/installation.html))
-   and `agda-stdlib` v1.6 ([instructions](https://github.com/agda/agda-stdlib/blob/v1.6/notes/installation-guide.md)).
-  Then, replace `standard-library-1.7` with `standard-library-1.6` in [`calf.agda-lib`](./calf.agda-lib).
+1. Install Agda v2.6.3 ([instructions](https://agda.readthedocs.io/en/v2.6.3/getting-started/installation.html)).
+2. Install `agda-stdlib` v2.0 ([instructions](https://github.com/agda/agda-stdlib/blob/fc473ec/notes/installation-guide.md)).
+   We have tested on commit [fc473ec](https://github.com/agda/agda-stdlib/tree/fc473ec905ab1a11a16718a7e8b628f1ab7eb435).
 
 This is all that is required to play with **calf**.
 

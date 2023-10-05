@@ -1,10 +1,10 @@
 module Examples.Gcd.Spec where
 
-open import Calf.CostMonoid
+open import Algebra.Cost
 import Calf.CostMonoids as CM
 
 open import Calf CM.ℕ-CostMonoid
-open import Calf.Types.Nat
+open import Calf.Data.Nat
 
 open import Examples.Gcd.Euclid
 open import Examples.Gcd.Clocked

@@ -1,14 +1,16 @@
-{-# OPTIONS --without-K #-}
+{-# OPTIONS --cubical-compatible --safe #-}
 
 -- Common cost monoids.
 
-module Calf.CostMonoids where
+module Algebra.Cost.Instances where
 
-open import Calf.CostMonoid
+open import Algebra.Cost.Structures
+open import Algebra.Cost.Bundles
 open import Data.Product
 open import Function
 open import Relation.Nullary.Negation
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
+
 
 ℕ-CostMonoid : CostMonoid
 ℕ-CostMonoid = record
@@ -117,7 +119,7 @@ ResourceMonoid = record
     (p , p') ≤ᵣ (q , q') = (p ≤ q) × (q' ≤ p')
 
     +-∸-comm′ : (m : ℕ) {n o : ℕ} → n ≤ o → (m + n) ∸ o ≡ m ∸ (o ∸ n)
-    +-∸-comm′ m {zero}  {o}     z≤n       = Eq.cong (_∸ o) (+-identityʳ m)
+    +-∸-comm′ m {n}     {o}     z≤n       = Eq.cong (_∸ o) (+-identityʳ m)
     +-∸-comm′ m {suc n} {suc o} (s≤s n≤o) = begin-equality
       (m + suc n) ∸ suc o  ≡⟨ Eq.cong (_∸ suc o) (+-suc m n) ⟩
       suc (m + n) ∸ suc o  ≡⟨ +-∸-comm′ m n≤o ⟩
@@ -314,7 +316,7 @@ cm-× cm₁ cm₂ = record
 
 sequentialParCostMonoid :
   (cm : CostMonoid)
-  → IsCommutativeMonoid (CostMonoid._+_ cm) (CostMonoid.zero cm)
+  → IsCommutativeMonoid (CostMonoid.ℂ cm) (CostMonoid._+_ cm) (CostMonoid.zero cm)
   → ParCostMonoid
 sequentialParCostMonoid cm isCommutativeMonoid = record
   { ℂ = ℂ

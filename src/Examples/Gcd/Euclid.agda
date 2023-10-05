@@ -1,12 +1,13 @@
+{-# OPTIONS --rewriting #-}
+
 module Examples.Gcd.Euclid where
 
-open import Calf.CostMonoid
-import Calf.CostMonoids as CM
+open import Algebra.Cost
 
 {- This file defines the parameters of the analysis of Euclid's algorithm for gcd
    and its cost recurrence relation. -}
-open import Calf CM.ℕ-CostMonoid
-open import Calf.Types.Nat
+open import Calf ℕ-CostMonoid
+open import Calf.Data.Nat using (nat)
 open import Data.Nat
 open import Relation.Binary.PropositionalEquality as P
 open import Induction.WellFounded
@@ -15,18 +16,17 @@ open import Data.Nat.Properties
 open import Data.Nat.DivMod
 open import Relation.Nullary.Decidable using (False; toWitnessFalse)
 open import Data.Nat.Induction using (<-wellFounded)
-open import Data.Product
 open import Agda.Builtin.Nat using (div-helper; mod-helper)
 open import Relation.Binary using (Rel)
 open import Relation.Unary using (Pred; _⊆′_)
 
-mod-tp : (x y : val nat) → cmp (meta (False (y ≟ 0))) → tp pos
-mod-tp x y h = Σ++ nat λ z → (U (meta (z ≡ _%_ x y {{≢-nonZero (toWitnessFalse h)}})))
+mod-tp : (x y : val nat) → False (y ≟ 0) → tp⁺
+mod-tp x y h = Σ⁺ nat λ z → meta⁺ (z ≡ _%_ x y {{≢-nonZero (toWitnessFalse h)}})
 
 mod : cmp (
         Π nat λ x →
         Π nat λ y →
-        Π (U (meta (False (y ≟ 0)))) λ h →
+        Π (meta⁺ (False (y ≟ 0))) λ h →
         F (mod-tp x y h))
 mod x y h = step (F (mod-tp x y h)) 1 (ret {mod-tp x y h} (_%_  x y {{≢-nonZero (toWitnessFalse h)}} , refl))
 
@@ -35,7 +35,7 @@ gcd/depth/helper : ∀ n → ((m : ℕ) → m < n → (k : ℕ) → (k > m) → 
 gcd/depth/helper zero h m h' = 0
 gcd/depth/helper n@(suc _) h m h' = suc (h (m % n) (m%n<n m n) n (m%n<n m n))
 
-gcd/i = Σ++ nat λ x → Σ++ nat λ y → U (meta (x > y))
+gcd/i = Σ⁺ nat λ x → Σ⁺ nat λ y → meta⁺ (x > y)
 m>n = val gcd/i
 
 gcd/depth : m>n → ℕ

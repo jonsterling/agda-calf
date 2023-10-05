@@ -1,20 +1,20 @@
+{-# OPTIONS --rewriting #-}
+
 module Examples.TreeSum where
 
-open import Calf.CostMonoid
-open import Calf.CostMonoids using (ℕ²-ParCostMonoid)
+open import Algebra.Cost
 
 parCostMonoid = ℕ²-ParCostMonoid
 open ParCostMonoid parCostMonoid
 
 open import Calf costMonoid
-open import Calf.ParMetalanguage parCostMonoid
-open import Calf.Types.Nat
-open import Calf.Types.Bounded costMonoid
+open import Calf.Parallel parCostMonoid
+open import Calf.Data.Nat
+open import Calf.Data.IsBounded costMonoid
 
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; _≢_; module ≡-Reasoning)
 open import Data.Nat as Nat using (_+_; _⊔_)
 open import Data.Nat.Properties as N using ()
-open import Data.Product
 
 add : cmp (Π nat λ _ → Π nat λ _ → F nat)
 add m n = step (F nat) (1 , 1) (ret (m + n))
@@ -24,13 +24,13 @@ data Tree : Set where
   leaf : val nat → Tree
   node : Tree → Tree → Tree
 
-tree : tp pos
-tree = U (meta Tree)
+tree : tp⁺
+tree = meta⁺ Tree
 
 sum : cmp (Π tree λ _ → F nat)
 sum (leaf x)     = ret x
 sum (node t₁ t₂) =
-  bind (F nat) (sum t₁ & sum t₂) λ (n₁ , n₂) →
+  bind (F nat) (sum t₁ ∥ sum t₂) λ (n₁ , n₂) →
     add n₁ n₂
 
 sum/spec : val tree → val nat
@@ -62,9 +62,9 @@ sum/has-cost = funext aux
     aux (node t₁ t₂) =
       let open ≡-Reasoning in
       begin
-        bind (F nat) (sum t₁ & sum t₂) (λ (n₁ , n₂) → add n₁ n₂)
-      ≡⟨ Eq.cong₂ (λ e₁ e₂ → bind (F nat) (e₁ & e₂) (λ (n₁ , n₂) → add n₁ n₂)) (aux t₁) (aux t₂) ⟩
-        bind (F nat) (sum/bound t₁ & sum/bound t₂) (λ (n₁ , n₂) → add n₁ n₂)
+        bind (F nat) (sum t₁ ∥ sum t₂) (λ (n₁ , n₂) → add n₁ n₂)
+      ≡⟨ Eq.cong₂ (λ e₁ e₂ → bind (F nat) (e₁ ∥ e₂) (λ (n₁ , n₂) → add n₁ n₂)) (aux t₁) (aux t₂) ⟩
+        bind (F nat) (sum/bound t₁ ∥ sum/bound t₂) (λ (n₁ , n₂) → add n₁ n₂)
       ≡⟨⟩
         step (F nat)
           (((size t₁ , depth t₁) ⊗ (size t₂ , depth t₂)) ⊕ (1 , 1))
@@ -73,5 +73,5 @@ sum/has-cost = funext aux
         sum/bound (node t₁ t₂)
       ∎
 
-sum/is-bounded : sum ≲[ (Π tree λ _ → F nat) ] sum/bound
-sum/is-bounded = ≲-reflexive sum/has-cost
+sum/is-bounded : sum ≤⁻[ (Π tree λ _ → F nat) ] sum/bound
+sum/is-bounded = ≤⁻-reflexive sum/has-cost

@@ -1,3 +1,5 @@
+{-# OPTIONS --rewriting #-}
+
 open import Examples.Sorting.Sequential.Comparable
 
 module Examples.Sorting.Sequential.MergeSort (M : Comparable) where
@@ -5,21 +7,19 @@ module Examples.Sorting.Sequential.MergeSort (M : Comparable) where
 open Comparable M
 open import Examples.Sorting.Sequential.Core M
 
-open import Calf costMonoid
-open import Calf.Types.Unit
-open import Calf.Types.Product
-open import Calf.Types.Bool
-open import Calf.Types.Nat
-open import Calf.Types.List
-open import Calf.Types.Eq
-open import Calf.Types.BoundedG costMonoid
-open import Calf.Types.Bounded costMonoid
-open import Calf.Types.BigO costMonoid
+open import Calf costMonoid hiding (A)
+open import Calf.Data.Product
+open import Calf.Data.Bool
+open import Calf.Data.Nat
+open import Calf.Data.List using (list; []; _∷_; _∷ʳ_; [_]; length; _++_; reverse)
+open import Calf.Data.Equality using (_≡_; refl)
+open import Calf.Data.IsBoundedG costMonoid
+open import Calf.Data.IsBounded costMonoid
+open import Calf.Data.BigO costMonoid
 
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
-open import Data.Product using (_×_; _,_; ∃)
 open import Data.Sum using (inj₁; inj₂)
 open import Function
 open import Data.Nat as Nat using (ℕ; zero; suc; z≤n; s≤s; _+_; _*_; ⌊_/2⌋; ⌈_/2⌉)
@@ -134,7 +134,7 @@ sort/clocked/cost : cmp $ Π nat λ k → Π (list A) λ l → Π (meta⁺ (⌈l
 sort/clocked/cost k l _ = step⋆ (k * length l)
 
 sort/clocked/is-bounded : ∀ k l h → IsBoundedG (sort-result l) (sort/clocked k l h) (sort/clocked/cost k l h)
-sort/clocked/is-bounded zero    l h = ≲-refl
+sort/clocked/is-bounded zero    l h = ≤⁻-refl
 sort/clocked/is-bounded (suc k) l h =
   bound/bind/const
     {e = split l}
@@ -211,7 +211,7 @@ sort/clocked/is-bounded (suc k) l h =
     0
     (merge/is-bounded (l₁' , l₂') _)
     λ _ →
-  ≲-refl
+  ≤⁻-refl
 
 
 sort : cmp (Π (list A) λ l → F (sort-result l))
