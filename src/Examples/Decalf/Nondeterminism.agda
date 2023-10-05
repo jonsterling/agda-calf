@@ -16,6 +16,8 @@ import Data.Fin as Fin
 open import Calf.Data.Bool using (bool; false; true; if_then_else_)
 open import Calf.Data.Product
 open import Calf.Data.Equality as Eq using (_≡_; refl; module ≡-Reasoning)
+open import Calf.Data.IsBoundedG costMonoid using (step⋆)
+open import Calf.Data.IsBounded costMonoid
 open import Relation.Nullary
 open import Function
 
@@ -39,6 +41,10 @@ postulate
     step X c (branch X e₀ e₁) ≡ branch X (step X c e₀) (step X c e₁)
   fail/step : (c : ℂ) →
     step X c (fail X) ≡ fail X
+
+  bind/branch : {e₀ e₁ : cmp (F A)} {f : val A → cmp X} →
+    bind X (branch (F A) e₀ e₁) f ≡ branch X (bind X e₀ f) (bind X e₁ f)
+  {-# REWRITE bind/branch #-}
 
 
 module QuickSort where
@@ -108,3 +114,45 @@ module Lookup where
         ≡⟨ fail/step 1 ⟩
           fail (F _)
         ∎
+
+
+module Pervasive where
+  e : cmp $ F bool
+  e =
+    branch (F bool)
+      (step (F bool) 3 (ret true))
+      (step (F bool) 12 (ret false))
+
+  e/is-bounded : e ≤⁻[ F bool ] step (F bool) 12 (branch (F bool) (ret true) (ret false))
+  e/is-bounded =
+    let open ≤⁻-Reasoning (F bool) in
+    begin
+      e
+    ≡⟨⟩
+      branch (F bool)
+        (step (F bool) 3 (ret true))
+        (step (F bool) 12 (ret false))
+    ≤⟨
+      ≤⁻-mono
+        (λ e → branch (F bool) e (step (F bool) 12 (ret false)))
+        (step-monoˡ-≤⁻ {F bool} (ret true) (Nat.s≤s (Nat.s≤s (Nat.s≤s Nat.z≤n))))
+    ⟩
+      branch (F bool)
+        (step (F bool) 12 (ret true))
+        (step (F bool) 12 (ret false))
+    ≡˘⟨ branch/step 12 ⟩
+      step (F bool) 12 (branch (F bool) (ret true) (ret false))
+    ∎
+
+  e/is-bounded' : IsBounded bool e 12
+  e/is-bounded' =
+    let open ≤⁻-Reasoning (F unit) in
+    begin
+      bind (F unit) e (λ _ → ret triv)
+    ≤⟨ ≤⁻-mono (λ e → bind (F _) e (λ _ → ret triv)) e/is-bounded ⟩
+      bind (F unit) (step (F bool) 12 (branch (F bool) (ret true) (ret false))) (λ _ → ret triv)
+    ≡⟨⟩
+      step (F unit) 12 (branch (F unit) (ret triv) (ret triv))
+    ≡⟨ Eq.cong (step (F unit) 12) branch/idem ⟩
+      step⋆ 12
+    ∎
