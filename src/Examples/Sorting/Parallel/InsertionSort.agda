@@ -132,7 +132,7 @@ sort/cost []       = 𝟘
 sort/cost (x ∷ xs) = bind cost (sort xs) (λ xs' → sort/cost xs ⊕ insert/cost/closed x xs')
 
 sort/cost/closed : cmp (Π (list A) λ _ → cost)
-sort/cost/closed l = length l  ² , length l  ²
+sort/cost/closed l = length l ² , length l ²
 
 sort/cost≤sort/cost/closed : ∀ l → ◯ (sort/cost l ≤ₚ sort/cost/closed l)
 sort/cost≤sort/cost/closed []       u = ≤ₚ-refl
