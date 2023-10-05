@@ -229,3 +229,11 @@ Similarly, `msort≡psort : ◯ (MSort.sort ≡ PSort.sort)` states that `MergeS
 - Amortized analysis of sequences of enqueue and dequeue operations:
   - The theorem `acost≤2*|l|` stating that the amortized cost of a sequence of queue operations is at most twice the length of the sequence.
 -->
+
+##### [`Examples.Amortized`](./src/Examples/Amortized.agda)
+
+Amortized data structures, [via coinduction](https://drops.dagstuhl.de/opus/volltexte/2023/18820).
+
+- [`Examples.Amortized.Simple`](./src/Examples/Amortized/Simple.agda) provides an amortized implementation of a simple amortized stream abstract data type.
+- [`Examples.Amortized.Queue`](./src/Examples/Amortized/Queue.agda) provides an implementation of [amortized queues](https://en.wikipedia.org/wiki/Queue_(abstract_data_type)#Amortized_queue).
+- [`Examples.Amortized.DynamicArray`](./src/Examples/Amortized/DynamicArray.agda) provides an implementation of dynamically-growing arrays.
