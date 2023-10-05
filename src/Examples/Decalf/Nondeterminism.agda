@@ -19,8 +19,8 @@ open import Function
 
 
 postulate
-  branch : (X : tp neg) → cmp X → cmp X → cmp X
-  fail : (X : tp neg) → cmp X
+  branch : (X : tp⁻) → cmp X → cmp X → cmp X
+  fail : (X : tp⁻) → cmp X
 
   branch/idˡ : {e : cmp X} →
     branch X (fail X) e ≡ e
