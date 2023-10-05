@@ -15,6 +15,7 @@ open import Calf.Data.List using (list; []; _∷_; [_]; _++_; length)
 open import Calf.Data.Bool using (bool; if_then_else_)
 open import Calf.Data.Product using (unit)
 open import Calf.Data.Equality as Eq using (_≡_; refl; module ≡-Reasoning)
+open import Calf.Data.IsBoundedG costMonoid using (step⋆)
 open import Calf.Data.IsBounded costMonoid
 open import Function
 

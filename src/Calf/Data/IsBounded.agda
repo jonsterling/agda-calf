@@ -13,7 +13,7 @@ open import Calf.CBPV
 open import Calf.Directed
 open import Calf.Step costMonoid
 
-open import Calf.Data.IsBoundedG costMonoid public
+open import Calf.Data.IsBoundedG costMonoid
 
 
 IsBounded : (A : tp⁺) → cmp (F A) → ℂ → Set
