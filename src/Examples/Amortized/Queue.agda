@@ -21,12 +21,12 @@ open import Examples.Amortized.Core
 
 
 -- moving `E` to a parameter on `module Queue` breaks things - Agda bug?
-E : tp pos
+E : tp⁺
 E = nat
 
 postulate
-  queue : tp neg → tp neg
-record Queue (X : tp neg) : Set where
+  queue : tp⁻ → tp⁻
+record Queue (X : tp⁻) : Set where
   coinductive
   field
     quit    : cmp X
@@ -77,7 +77,7 @@ Queue.dequeue (SPEC/batched-queue bl []) with reverse bl
 Queue.dequeue (SPEC/batched-queue bl (e ∷ fl)) = just e , SPEC/batched-queue bl fl
 
 postulate
-  _≈⁻_ : (q₁ q₂ : cmp (queue X)) → tp neg
+  _≈⁻_ : (q₁ q₂ : cmp (queue X)) → tp⁻
 record _≈_ (q₁ q₂ : cmp (queue X)) : Set where
   coinductive
   field
@@ -193,8 +193,8 @@ _≈_.dequeue (◯[list-queue≈batched-queue] bl (e ∷ fl) u) =
   refl , ◯[list-queue≈batched-queue] bl fl u
 
 
-data QueueProgram (A : tp pos) : Set
-queue-program : tp pos → tp pos
+data QueueProgram (A : tp⁺) : Set
+queue-program : tp⁺ → tp⁺
 queue-program A = meta⁺ (QueueProgram A)
 data QueueProgram A where
   return  : val A → QueueProgram A
@@ -210,9 +210,9 @@ data QueueProgram A where
   ψ p (proj₂ (Queue.dequeue q))
 
 postulate
-  _≈'_ : (q₁ q₂ : cmp (queue X)) → tp neg
+  _≈'_ : (q₁ q₂ : cmp (queue X)) → tp⁻
   ≈'/decode : ∀ {q₁ q₂ : cmp (queue X)} →
-    val (U (q₁ ≈' q₂)) ≡ ((A : tp pos) → cmp (Π (queue-program A) λ p → ψ p q₁ ≡⁻[ A ⋉ X ] ψ p q₂))
+    val (U (q₁ ≈' q₂)) ≡ ((A : tp⁺) → cmp (Π (queue-program A) λ p → ψ p q₁ ≡⁻[ A ⋉ X ] ψ p q₂))
   {-# REWRITE ≈'/decode #-}
 
 {-# TERMINATING #-}

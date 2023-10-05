@@ -46,7 +46,7 @@ data Sorted : val (list A) → Set where
   [] : Sorted []
   _∷_ : ∀ {y ys} → y ≤* ys → Sorted ys → Sorted (y ∷ ys)
 
-sorted : val (list A) → tp pos
+sorted : val (list A) → tp⁺
 sorted l = meta⁺ (Sorted l)
 
 short-sorted : {l : val (list A)} → length l Nat.≤ 1 → Sorted l
@@ -87,22 +87,22 @@ uncons₁ (h ∷ sorted) = h
 uncons₂ : ∀ {x xs} → Sorted (x ∷ xs) → Sorted xs
 uncons₂ (h ∷ sorted) = sorted
 
-sorted-of : val (list A) → val (list A) → tp pos
+sorted-of : val (list A) → val (list A) → tp⁺
 sorted-of l l' = meta⁺ (l ↭ l') ×⁺ (sorted l')
 
-sort-result : val (list A) → tp pos
+sort-result : val (list A) → tp⁺
 sort-result l = Σ⁺ (list A) (sorted-of l)
 
-sorting : tp neg
+sorting : tp⁻
 sorting = Π (list A) λ l → F (sort-result l)
 
-record Valuable {A : tp pos} (e : cmp (F A)) : Set where
+record Valuable {A : tp⁺} (e : cmp (F A)) : Set where
   constructor ↓_
   field
     {value} : val A
     proof : e ≡ ret value
 
-IsValuable : {A : tp pos} → cmp (F A) → Set
+IsValuable : {A : tp⁺} → cmp (F A) → Set
 IsValuable e = ◯ (Valuable e)
 
 IsTotal : cmp sorting → Set

@@ -24,7 +24,7 @@ open import Function
 
 record Comparable : Set₁ where
   field
-    A : tp pos
+    A : tp⁺
     _≤_ : val A → val A → Set
     ≤-refl : Reflexive _≤_
     ≤-trans : Transitive _≤_

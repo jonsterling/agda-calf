@@ -66,7 +66,7 @@ _≤⁻_ {X} e e' = e ≤⁺[ U X ] e'
 ≤⁻-mono₂ = ≤⁺-mono₂
 
 postulate
-  λ-mono-≤⁻ : {X : val A → tp neg} {f f' : (a : val A) → cmp (X a)}
+  λ-mono-≤⁻ : {X : val A → tp⁻} {f f' : (a : val A) → cmp (X a)}
     → ((a : val A) → _≤⁻_ {X a} (f a) (f' a))
     → _≤⁻_ {Π A X} f f'
 
@@ -85,7 +85,7 @@ postulate
 syntax ≤⁻-syntax {X} e e' = e ≤⁻[ X ] e'
 
 
-bind-mono-≤⁻ : {A : tp pos} {X : tp neg} {e e' : cmp (F A)} {f f' : val A → cmp X}
+bind-mono-≤⁻ : {A : tp⁺} {X : tp⁻} {e e' : cmp (F A)} {f f' : val A → cmp X}
   → e ≤⁻[ F A ] e'
   → f ≤⁻[ Π A (λ _ → X) ] f'
   → _≤⁻_ {X} (bind {A} X e f) (bind {A} X e' f')
@@ -94,12 +94,12 @@ bind-mono-≤⁻ {A} {X} {e' = e'} {f} {f'} e≤e' f≤f' =
     (≤⁻-mono (λ e → bind {A} X e f) e≤e')
     (≤⁻-mono {Π A (λ _ → X)} {X} (bind {A} X e') {f} {f'} f≤f')
 
-bind-monoˡ-≤⁻ : {A : tp pos} {X : tp neg} {e e' : cmp (F A)} (f : val A → cmp X)
+bind-monoˡ-≤⁻ : {A : tp⁺} {X : tp⁻} {e e' : cmp (F A)} (f : val A → cmp X)
   → _≤⁻_ {F A} e e'
   → _≤⁻_ {X} (bind {A} X e f) (bind {A} X e' f)
 bind-monoˡ-≤⁻ f e≤e' = bind-mono-≤⁻ e≤e' ≤⁻-refl
 
-bind-monoʳ-≤⁻ : {A : tp pos} {X : tp neg} (e : cmp (F A)) {f f' : val A → cmp X}
+bind-monoʳ-≤⁻ : {A : tp⁺} {X : tp⁻} (e : cmp (F A)) {f f' : val A → cmp X}
   → ((a : val A) → _≤⁻_ {X} (f a) (f' a))
   → _≤⁻_ {X} (bind {A} X e f) (bind {A} X e f')
 bind-monoʳ-≤⁻ e f≤f' = bind-mono-≤⁻ (≤⁻-refl {x = e}) (λ-mono-≤⁻ f≤f')
@@ -107,7 +107,7 @@ bind-monoʳ-≤⁻ e f≤f' = bind-mono-≤⁻ (≤⁻-refl {x = e}) (λ-mono-�
 
 open import Relation.Binary.Structures
 
-module ≤⁻-Reasoning (X : tp neg) where
+module ≤⁻-Reasoning (X : tp⁻) where
   open import Relation.Binary.Reasoning.Base.Triple
     (≤⁻-isPreorder {X})
     ≤⁻-trans

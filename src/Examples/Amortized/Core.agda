@@ -12,6 +12,6 @@ open import Calf.Data.Product
 
 
 infix 3 _⇒_ _⇔_
-_⇒_ _⇔_ : tp pos → tp pos → tp pos
+_⇒_ _⇔_ : tp⁺ → tp⁺ → tp⁺
 A ⇒ B = meta⁺ (val A → val B)
 A ⇔ B = (A ⇒ B) ×⁺ (B ⇒ A)

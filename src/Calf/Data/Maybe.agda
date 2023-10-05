@@ -7,5 +7,5 @@ open import Calf.CBPV
 
 open import Data.Maybe public renaming (maybe to maybe-case)
 
-maybe : tp pos → tp pos
+maybe : tp⁺ → tp⁺
 maybe A = meta⁺ (Maybe (val A))

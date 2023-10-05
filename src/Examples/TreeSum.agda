@@ -24,7 +24,7 @@ data Tree : Set where
   leaf : val nat → Tree
   node : Tree → Tree → Tree
 
-tree : tp pos
+tree : tp⁺
 tree = meta⁺ Tree
 
 sum : cmp (Π tree λ _ → F nat)

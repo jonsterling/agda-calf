@@ -20,7 +20,7 @@ open import Data.Nat.Properties as N using (module ≤-Reasoning)
 
 pair = list A ×⁺ list A
 
-split/type : val nat → val nat → val (list A) → tp pos
+split/type : val nat → val nat → val (list A) → tp⁺
 split/type k k' l = Σ⁺ pair λ (l₁ , l₂) → meta⁺ (length l₁ ≡ k × length l₂ ≡ k' × l ↭ (l₁ ++ l₂))
 
 split/clocked : cmp (Π nat λ k → Π nat λ k' → Π (list A) λ l → Π (meta⁺ (k + k' ≡ length l)) λ _ → F (split/type k k' l))

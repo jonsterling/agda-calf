@@ -19,7 +19,7 @@ open import Examples.Amortized.Core
 
 
 postulate
-  simple : tp neg
+  simple : tp⁻
 record Simple : Set where
   coinductive
   field
@@ -54,7 +54,7 @@ record _≈_ (s₁ s₂ : cmp simple) : Set where
     quit : Simple.quit s₁ ≡ Simple.quit s₂
     next : Simple.next s₁ ≈ Simple.next s₂
 postulate
-  _≈⁻_ : (s₁ s₂ : cmp simple) → tp neg
+  _≈⁻_ : (s₁ s₂ : cmp simple) → tp⁻
   ≈⁻/decode : {s₁ s₂ : cmp simple} → val (U (s₁ ≈⁻ s₂)) ≡ s₁ ≈ s₂
   {-# REWRITE ≈⁻/decode #-}
 
@@ -68,7 +68,7 @@ _≈_.quit (every≈alternating _) = refl
 _≈_.next (every≈alternating false) = ≈-cong 2 (every≈alternating true)
 _≈_.next (every≈alternating true ) = every≈alternating false
 
-simple-program : tp pos
+simple-program : tp⁺
 simple-program = nat
 
 {-# TERMINATING #-}
@@ -76,7 +76,7 @@ simple-program = nat
 ψ zero    s = Simple.quit s
 ψ (suc n) s = ψ n (Simple.next s)
 
-_≈'_ : (q₁ q₂ : cmp simple) → tp neg
+_≈'_ : (q₁ q₂ : cmp simple) → tp⁻
 s₁ ≈' s₂ = Π simple-program λ p → ψ p s₁ ≡⁻[ F unit ] ψ p s₂
 
 {-# TERMINATING #-}

@@ -16,22 +16,22 @@ open import Calf.Step costMonoid
 open import Calf.Data.IsBoundedG costMonoid public
 
 
-IsBounded : (A : tp pos) → cmp (F A) → ℂ → Set
+IsBounded : (A : tp⁺) → cmp (F A) → ℂ → Set
 IsBounded A e c = IsBoundedG A e (step⋆ c)
 
 
 bound/relax : {c c' : ℂ} → c ≤ c' → {e : cmp (F A)} → IsBounded A e c → IsBounded A e c'
 bound/relax h {e = e} = boundg/relax (step-monoˡ-≤⁻ (ret triv) h) {e = e}
 
-bound/ret : {A : tp pos} (a : val A) → IsBounded A (ret a) zero
+bound/ret : {A : tp⁺} (a : val A) → IsBounded A (ret a) zero
 bound/ret a = ≤⁻-refl
 
-bound/step : {A : tp pos} (c : ℂ) {c' : ℂ} (e : cmp (F A)) →
+bound/step : {A : tp⁺} (c : ℂ) {c' : ℂ} (e : cmp (F A)) →
   IsBounded A e c' →
   IsBounded A (step (F A) c e) (c + c')
 bound/step c {c'} e h = boundg/step c {b = step⋆ c'} e h
 
-bound/bind/const : ∀ {A B : tp pos} {e : cmp (F A)} {f : val A → cmp (F B)}
+bound/bind/const : ∀ {A B : tp⁺} {e : cmp (F A)} {f : val A → cmp (F B)}
   (c d : ℂ) →
   IsBounded A e c →
   ((a : val A) → IsBounded B (f a) d) →

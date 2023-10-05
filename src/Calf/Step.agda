@@ -20,12 +20,12 @@ open import Relation.Binary.PropositionalEquality
 variable
   c c' c₁ c₂ : ℂ
 
-ℂ⁺ : tp pos
+ℂ⁺ : tp⁺
 ℂ⁺ = meta⁺ ℂ
 
 
 postulate
-  step : (X : tp neg) → ℂ → cmp X → cmp X
+  step : (X : tp⁻) → ℂ → cmp X → cmp X
 
   step/0 : {e : cmp X} →
     step X zero e ≡ e
@@ -33,7 +33,7 @@ postulate
     step X c₁ (step X c₂ e) ≡ step X (c₁ + c₂) e
   {-# REWRITE step/0 step/+ #-}
 
-  step/ext : (X : tp neg) (e : cmp X) (c : ℂ) (u : ext) → step X c e ≡ e
+  step/ext : (X : tp⁻) (e : cmp X) (c : ℂ) (u : ext) → step X c e ≡ e
   -- sadly the above cannot be made an Agda rewrite rule
 
 
@@ -42,7 +42,7 @@ postulate
     bind X (step (F A) c e) f ≡ step X c (bind X e f)
   {-# REWRITE bind/step #-}
 
-  Π/step : {X : val A → tp neg} {f : cmp (Π A X)} →
+  Π/step : {X : val A → tp⁻} {f : cmp (Π A X)} →
     step (Π A X) c f ≡ λ a → step (X a) c (f a)
   {-# REWRITE Π/step #-}
 
@@ -54,11 +54,11 @@ postulate
     step unit⁻ c e ≡ triv
   {-# REWRITE unit⁻/step  #-}
 
-  Σ⁻/step : {X : val A → tp neg} {e : cmp (Σ⁻ A X)} →
+  Σ⁻/step : {X : val A → tp⁻} {e : cmp (Σ⁻ A X)} →
     step (Σ⁻ A X) c e ≡ (proj₁ e , step (X (proj₁ e)) c (proj₂ e))
   {-# REWRITE Σ⁻/step #-}
 
-  open⁻/step : {X : ext → tp neg} {e : cmp (open⁻ X)} →
+  open⁻/step : {X : ext → tp⁻} {e : cmp (open⁻ X)} →
     step (open⁻ X) c e ≡ λ u → step (X u) c (e u)
   {-# REWRITE open⁻/step #-}
 
