@@ -1,0 +1,19 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="utf-8"><title>Examples.Amortized.Core</title><link rel="stylesheet" href="Agda.css"></head><body><pre class="Agda"><a id="1" class="Symbol">{-#</a> <a id="5" class="Keyword">OPTIONS</a> <a id="13" class="Pragma">--rewriting</a> <a id="25" class="Symbol">#-}</a>
+
+<a id="30" class="Keyword">module</a> <a id="37" href="Examples.Amortized.Core.html" class="Module">Examples.Amortized.Core</a> <a id="61" class="Keyword">where</a>
+
+<a id="68" class="Keyword">open</a> <a id="73" class="Keyword">import</a> <a id="80" href="Algebra.Cost.html" class="Module">Algebra.Cost</a>
+
+<a id="costMonoid"></a><a id="94" href="Examples.Amortized.Core.html#94" class="Function">costMonoid</a> <a id="105" class="Symbol">=</a> <a id="107" href="Algebra.Cost.Instances.html#357" class="Function">ℕ-CostMonoid</a>
+<a id="120" class="Keyword">open</a> <a id="125" href="Algebra.Cost.Bundles.html#322" class="Module">CostMonoid</a> <a id="136" href="Examples.Amortized.Core.html#94" class="Function">costMonoid</a> <a id="147" class="Keyword">using</a> <a id="153" class="Symbol">(</a><a id="154" href="Algebra.Cost.Bundles.html#374" class="Field">ℂ</a><a id="155" class="Symbol">)</a>
+
+<a id="158" class="Keyword">open</a> <a id="163" class="Keyword">import</a> <a id="170" href="Calf.html" class="Module">Calf</a> <a id="175" href="Examples.Amortized.Core.html#94" class="Function">costMonoid</a>
+<a id="186" class="Keyword">open</a> <a id="191" class="Keyword">import</a> <a id="198" href="Calf.Data.Product.html" class="Module">Calf.Data.Product</a>
+
+
+<a id="218" class="Keyword">infix</a> <a id="224" class="Number">3</a> <a id="226" href="Examples.Amortized.Core.html#234" class="Function Operator">_⇒_</a> <a id="230" href="Examples.Amortized.Core.html#238" class="Function Operator">_⇔_</a>
+<a id="_⇒_"></a><a id="234" href="Examples.Amortized.Core.html#234" class="Function Operator">_⇒_</a> <a id="_⇔_"></a><a id="238" href="Examples.Amortized.Core.html#238" class="Function Operator">_⇔_</a> <a id="242" class="Symbol">:</a> <a id="244" href="Calf.CBPV.html#376" class="Function">tp⁺</a> <a id="248" class="Symbol">→</a> <a id="250" href="Calf.CBPV.html#376" class="Function">tp⁺</a> <a id="254" class="Symbol">→</a> <a id="256" href="Calf.CBPV.html#376" class="Function">tp⁺</a>
+<a id="260" href="Examples.Amortized.Core.html#260" class="Bound">A</a> <a id="262" href="Examples.Amortized.Core.html#234" class="Function Operator">⇒</a> <a id="264" href="Examples.Amortized.Core.html#264" class="Bound">B</a> <a id="266" class="Symbol">=</a> <a id="268" href="Calf.CBPV.html#695" class="Function">meta⁺</a> <a id="274" class="Symbol">(</a><a id="275" href="Calf.CBPV.html#396" class="Function">val</a> <a id="279" href="Examples.Amortized.Core.html#260" class="Bound">A</a> <a id="281" class="Symbol">→</a> <a id="283" href="Calf.CBPV.html#396" class="Function">val</a> <a id="287" href="Examples.Amortized.Core.html#264" class="Bound">B</a><a id="288" class="Symbol">)</a>
+<a id="290" href="Examples.Amortized.Core.html#290" class="Bound">A</a> <a id="292" href="Examples.Amortized.Core.html#238" class="Function Operator">⇔</a> <a id="294" href="Examples.Amortized.Core.html#294" class="Bound">B</a> <a id="296" class="Symbol">=</a> <a id="298" class="Symbol">(</a><a id="299" href="Examples.Amortized.Core.html#290" class="Bound">A</a> <a id="301" href="Examples.Amortized.Core.html#234" class="Function Operator">⇒</a> <a id="303" href="Examples.Amortized.Core.html#294" class="Bound">B</a><a id="304" class="Symbol">)</a> <a id="306" href="Calf.Data.Product.html#386" class="Function Operator">×⁺</a> <a id="309" class="Symbol">(</a><a id="310" href="Examples.Amortized.Core.html#294" class="Bound">B</a> <a id="312" href="Examples.Amortized.Core.html#234" class="Function Operator">⇒</a> <a id="314" href="Examples.Amortized.Core.html#290" class="Bound">A</a><a id="315" class="Symbol">)</a>
+</pre></body></html>

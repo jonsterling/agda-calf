@@ -1,0 +1,13 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="utf-8"><title>Calf.Data.Maybe</title><link rel="stylesheet" href="Agda.css"></head><body><pre class="Agda"><a id="1" class="Symbol">{-#</a> <a id="5" class="Keyword">OPTIONS</a> <a id="13" class="Pragma">--rewriting</a> <a id="25" class="Symbol">#-}</a>
+
+<a id="30" class="Keyword">module</a> <a id="37" href="Calf.Data.Maybe.html" class="Module">Calf.Data.Maybe</a> <a id="53" class="Keyword">where</a>
+
+<a id="60" class="Keyword">open</a> <a id="65" class="Keyword">import</a> <a id="72" href="Calf.Prelude.html" class="Module">Calf.Prelude</a>
+<a id="85" class="Keyword">open</a> <a id="90" class="Keyword">import</a> <a id="97" href="Calf.CBPV.html" class="Module">Calf.CBPV</a>
+
+<a id="108" class="Keyword">open</a> <a id="113" class="Keyword">import</a> <a id="120" href="Data.Maybe.html" class="Module">Data.Maybe</a> <a id="131" class="Keyword">public</a> <a id="138" class="Keyword">renaming</a> <a id="147" class="Symbol">(</a><a id="148" href="Data.Maybe.Base.html#1386" class="Function">maybe</a> <a id="154" class="Symbol">to</a> <a id="157" class="Function">maybe-case</a><a id="167" class="Symbol">)</a>
+
+<a id="maybe"></a><a id="170" href="Calf.Data.Maybe.html#170" class="Function">maybe</a> <a id="176" class="Symbol">:</a> <a id="178" href="Calf.CBPV.html#376" class="Postulate">tp⁺</a> <a id="182" class="Symbol">→</a> <a id="184" href="Calf.CBPV.html#376" class="Postulate">tp⁺</a>
+<a id="188" href="Calf.Data.Maybe.html#170" class="Function">maybe</a> <a id="194" href="Calf.Data.Maybe.html#194" class="Bound">A</a> <a id="196" class="Symbol">=</a> <a id="198" href="Calf.CBPV.html#695" class="Postulate">meta⁺</a> <a id="204" class="Symbol">(</a><a id="205" href="Agda.Builtin.Maybe.html#118" class="Datatype">Maybe</a> <a id="211" class="Symbol">(</a><a id="212" href="Calf.CBPV.html#396" class="Postulate">val</a> <a id="216" href="Calf.Data.Maybe.html#194" class="Bound">A</a><a id="217" class="Symbol">))</a>
+</pre></body></html>
