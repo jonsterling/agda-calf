@@ -23,7 +23,7 @@ unique {A} a u =
     (λ a → val (a ≡⁺[ ● A ] ∗ u))
     (λ a → η≡∗ a u)
     (λ u → refl)
-    (λ a u → η≡∗/uni (subst (λ a₂ → a₂ ≡ ∗ u) (η≡∗ a u) (η≡∗ a u)) refl)
+    (λ a u → η≡∗/uni (subst (λ a₂ → a₂ ≡ ∗ u) (η≡∗ a u) (η≡∗ a u)) refl u)
 
 constant : ∀ {A B} (f : val (● A) → val (◯⁺ B)) →
   Σ (val (◯⁺ B)) λ b → f ≡ λ _ → b
