@@ -63,7 +63,7 @@ module Map where
     ((x : val nat) → IsBounded nat (f x) c) →
     (l : val (list nat)) →
     IsBounded (list nat) (map f l) (length l * c)
-  map/is-bounded f f-bound []       = ≤⁻-refl
+  map/is-bounded     f f-bound []       = ≤⁻-refl
   map/is-bounded {c} f f-bound (x ∷ xs) =
     let open ≤⁻-Reasoning (F unit) in
     begin
