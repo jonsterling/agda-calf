@@ -1,3 +1,5 @@
+{-# OPTIONS --rewriting #-}
+
 module index where
 
 -- Calf language implementation:

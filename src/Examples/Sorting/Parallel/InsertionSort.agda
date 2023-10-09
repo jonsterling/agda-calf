@@ -6,11 +6,11 @@ open Comparable M
 open import Examples.Sorting.Parallel.Core M
 
 open import Calf costMonoid
-open import Calf.Types.Bool
-open import Calf.Types.List
-open import Calf.Types.Eq
-open import Calf.Types.Bounded costMonoid
-open import Calf.Types.BigO costMonoid
+open import Calf.Data.Bool
+open import Calf.Data.List
+open import Calf.Data.Equality
+open import Calf.Data.IsBounded costMonoid
+open import Calf.Data.BigO costMonoid
 
 open import Relation.Nullary
 open import Relation.Nullary.Negation
@@ -132,7 +132,7 @@ sort/cost []       = 𝟘
 sort/cost (x ∷ xs) = bind cost (sort xs) (λ xs' → sort/cost xs ⊕ insert/cost/closed x xs')
 
 sort/cost/closed : cmp (Π (list A) λ _ → cost)
-sort/cost/closed l = length l  ² , length l  ²
+sort/cost/closed l = length l ² , length l ²
 
 sort/cost≤sort/cost/closed : ∀ l → ◯ (sort/cost l ≤ₚ sort/cost/closed l)
 sort/cost≤sort/cost/closed []       u = ≤ₚ-refl

@@ -6,10 +6,10 @@ open Comparable M
 open import Examples.Sorting.Parallel.Core M
 
 open import Calf costMonoid
-open import Calf.ParMetalanguage parCostMonoid
-open import Calf.Types.Nat
-open import Calf.Types.List
-open import Calf.Types.Bounded costMonoid
+open import Calf.Parallel parCostMonoid
+open import Calf.Data.Nat
+open import Calf.Data.List
+open import Calf.Data.IsBounded costMonoid
 
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl)
 open import Data.Product using (_×_; _,_; ∃; proj₁; proj₂)
@@ -17,7 +17,7 @@ open import Data.Nat as Nat using (ℕ; zero; suc; _+_; _*_; ⌊_/2⌋; ⌈_/2�
 open import Data.Nat.Properties as N using (module ≤-Reasoning)
 
 
-pair = Σ++ (list A) λ _ → (list A)
+pair = Σ⁺ (list A) λ _ → (list A)
 
 split/clocked : cmp (Π nat λ _ → Π (list A) λ _ → F pair)
 split/clocked zero    l        = ret ([] , l)

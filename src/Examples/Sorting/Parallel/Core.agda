@@ -2,7 +2,7 @@ open import Examples.Sorting.Parallel.Comparable
 
 module Examples.Sorting.Parallel.Core (M : Comparable) where
 
-open import Calf.CostMonoid
+open import Algebra.Cost
 open ParCostMonoid parCostMonoid
   hiding (costMonoid)
   renaming (

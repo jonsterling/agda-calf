@@ -1,8 +1,10 @@
+{-# OPTIONS --rewriting #-}
+
 open import Examples.Sorting.Sequential.Comparable
 
 module Examples.Sorting.Sequential.Core (M : Comparable) where
 
-open import Calf.CostMonoid
+open import Algebra.Cost
 open CostMonoid costMonoid
   hiding (zero; _+_; _≤_; ≤-refl; ≤-trans) public
 

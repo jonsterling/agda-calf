@@ -1,11 +1,11 @@
 module Examples.Gcd.Refine where
 
-open import Calf.CostMonoid
+open import Algebra.Cost
 import Calf.CostMonoids as CM
 
 open import Calf CM.ℕ-CostMonoid
-open import Calf.Types.Nat
-open import Calf.Types.Bounded CM.ℕ-CostMonoid
+open import Calf.Data.Nat
+open import Calf.Data.IsBounded CM.ℕ-CostMonoid
 
 open import Examples.Gcd.Euclid
 open import Examples.Gcd.Clocked as Clocked

@@ -77,35 +77,32 @@ pred[2^suc[n]] n =
       open ≡-Reasoning
 
 pred[2^log₂] : (n : ℕ) → pred[2^ ⌈log₂ suc ⌈ n /2⌉ ⌉ ] ≤ n
-pred[2^log₂] n = strong-induction n n ≤-refl
+pred[2^log₂] n = lemma
   where
-    strong-induction : (n m : ℕ) → m ≤ n → pred[2^ ⌈log₂ suc ⌈ m /2⌉ ⌉ ] ≤ m
-    strong-induction n zero    h = z≤n
-    strong-induction n (suc zero) h = s≤s z≤n
-    strong-induction (suc (suc n)) (suc (suc m)) (s≤s (s≤s h)) =
+    open import Data.Nat.Logarithm.Core
+    open import Induction.WellFounded using (Acc; acc)
+
+    lemma : ∀ {n acc} → pred[2^ ⌈log2⌉ (suc ⌈ n /2⌉) acc ] ≤ n
+    lemma {zero} = z≤n
+    lemma {suc zero} {acc _} = s≤s z≤n
+    lemma {suc (suc n)} {acc rs} =
       begin
-        pred[2^ ⌈log₂ suc ⌈ suc (suc m) /2⌉ ⌉ ]
+        pred[2^ ⌈log2⌉ (suc ⌈ suc (suc n) /2⌉) (acc rs) ]
       ≡⟨⟩
-        pred[2^ suc ⌈log₂ ⌈ suc ⌈ suc (suc m) /2⌉ /2⌉ ⌉ ]
-      ≡˘⟨ pred[2^suc[n]] ⌈log₂ ⌈ suc ⌈ suc (suc m) /2⌉ /2⌉ ⌉ ⟩
-        suc (pred[2^ ⌈log₂ ⌈ suc ⌈ suc (suc m) /2⌉ /2⌉ ⌉ ] + pred[2^ ⌈log₂ ⌈ suc ⌈ suc (suc m) /2⌉ /2⌉ ⌉ ])
+        pred[2^ suc (⌈log2⌉ ⌈ suc ⌈ suc (suc n) /2⌉ /2⌉ _) ]
+      ≡˘⟨ pred[2^suc[n]] (⌈log2⌉ ⌈ suc ⌈ suc (suc n) /2⌉ /2⌉ _) ⟩
+        suc (pred[2^ (⌈log2⌉ ⌈ suc ⌈ suc (suc n) /2⌉ /2⌉ _) ] + pred[2^ (⌈log2⌉ ⌈ suc ⌈ suc (suc n) /2⌉ /2⌉ _) ])
       ≡⟨⟩
-        suc (pred[2^ ⌈log₂ ⌈ suc (suc ⌈ m /2⌉) /2⌉ ⌉ ] + pred[2^ ⌈log₂ ⌈ suc (suc ⌈ m /2⌉) /2⌉ ⌉ ])
+        suc (pred[2^ ⌈log2⌉ ⌈ suc (suc ⌈ n /2⌉) /2⌉ _ ] + pred[2^ ⌈log2⌉ ⌈ suc (suc ⌈ n /2⌉) /2⌉ _ ])
       ≡⟨⟩
-        suc (pred[2^ ⌈log₂ suc ⌈ ⌈ m /2⌉ /2⌉ ⌉ ] + pred[2^ ⌈log₂ suc ⌈ ⌈ m /2⌉ /2⌉ ⌉ ])
-      ≤⟨
-        s≤s (
-          +-mono-≤
-            (strong-induction (suc n) ⌈ m /2⌉ (≤-trans (⌊n/2⌋≤n (suc m)) (s≤s h)))
-            (strong-induction (suc n) ⌈ m /2⌉ (≤-trans (⌊n/2⌋≤n (suc m)) (s≤s h)))
-        )
-      ⟩
-        suc (⌈ m /2⌉ + ⌈ m /2⌉)
+        suc (pred[2^ ⌈log2⌉ (suc ⌈ ⌈ n /2⌉ /2⌉) _ ] + pred[2^ ⌈log2⌉ (suc ⌈ ⌈ n /2⌉ /2⌉) _ ])
+      ≤⟨ s≤s (+-mono-≤ (lemma {⌈ n /2⌉}) (lemma {⌈ n /2⌉})) ⟩
+        suc (⌈ n /2⌉ + ⌈ n /2⌉)
       ≡⟨⟩
-        suc (⌊ suc m /2⌋ + ⌈ m /2⌉)
-      ≤⟨ s≤s (+-monoʳ-≤ ⌊ suc m /2⌋ (⌈n/2⌉-mono (n≤1+n m))) ⟩
-        suc (⌊ suc m /2⌋ + ⌈ suc m /2⌉)
-      ≡⟨ Eq.cong suc (⌊n/2⌋+⌈n/2⌉≡n (suc m)) ⟩
-        suc (suc m)
+        suc (⌊ suc n /2⌋ + ⌈ n /2⌉)
+      ≤⟨ s≤s (+-monoʳ-≤ ⌊ suc n /2⌋ (⌈n/2⌉-mono (n≤1+n n))) ⟩
+        suc (⌊ suc n /2⌋ + ⌈ suc n /2⌉)
+      ≡⟨ Eq.cong suc (⌊n/2⌋+⌈n/2⌉≡n (suc n)) ⟩
+        suc (suc n)
       ∎
         where open ≤-Reasoning

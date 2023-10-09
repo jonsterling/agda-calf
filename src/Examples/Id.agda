@@ -1,33 +1,37 @@
+{-# OPTIONS --rewriting #-}
+
 module Examples.Id where
 
-open import Calf.CostMonoid
-open import Calf.CostMonoids using (ℕ-CostMonoid)
+open import Algebra.Cost
 
 costMonoid = ℕ-CostMonoid
 open CostMonoid costMonoid
 
 open import Calf costMonoid
-open import Calf.Types.Nat
-open import Calf.Types.Bounded costMonoid
-open import Calf.Types.BigO costMonoid
+open import Calf.Data.Nat
+open import Calf.Data.IsBounded costMonoid
+open import Calf.Data.BigO costMonoid
 
+open import Function using (_∘_; _$_)
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
+
 
 module Easy where
   id : cmp (Π nat λ _ → F nat)
   id n = ret n
 
+  id/bound : cmp (Π nat λ _ → F nat)
+  id/bound n = ret n
+
+  id/is-bounded : ∀ n → id n ≤⁻[ F nat ] id/bound n
+  id/is-bounded n = ≤⁻-refl
+
   id/correct : ∀ n → ◯ (id n ≡ ret n)
-  id/correct n u = refl
-
-  id/cost : cmp (Π nat λ _ → meta ℂ)
-  id/cost n = 0
-
-  id/is-bounded : ∀ n → IsBounded nat (id n) (id/cost n)
-  id/is-bounded n = bound/ret {nat} n
+  id/correct n u = ≤⁻-ext-≡ u (id/is-bounded n)
 
   id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → 0)
-  id/asymptotic = f[n]≤g[n]via id/is-bounded
+  id/asymptotic = f[n]≤g[n]via (≤⁻-mono (λ e → bind (F _) e (λ _ → ret _)) ∘ id/is-bounded)
+
 
 module Hard where
   id : cmp (Π nat λ _ → F nat)
@@ -38,37 +42,28 @@ module Hard where
         ret (suc n')
     )
 
-  id/correct : ∀ n → ◯ (id n ≡ ret n)
-  id/correct zero    u = refl
-  id/correct (suc n) u =
-    begin
-      id (suc n)
-    ≡⟨⟩
-      step (F nat) 1 (
-        bind (F nat) (id n) λ n' →
-          ret (suc n')
-      )
-    ≡⟨ step/ext (F nat) _ 1 u ⟩
-      (bind (F nat) (id n) λ n' →
-        ret (suc n'))
-    ≡⟨ Eq.cong (λ e → bind (F nat) e λ n' → ret (suc n')) (id/correct n u) ⟩
-      ret (suc n)
-    ∎
-      where open ≡-Reasoning
+  id/bound : cmp (Π nat λ _ → F nat)
+  id/bound n = step (F nat) n (ret n)
 
-  id/cost : cmp (Π nat λ _ → meta ℂ)
-  id/cost n = n
-
-  id/is-bounded : ∀ n → IsBounded nat (id n) (id/cost n)
-  id/is-bounded zero = bound/ret {nat} 0
+  id/is-bounded : ∀ n → id n ≤⁻[ F nat ] id/bound n
+  id/is-bounded zero    = ≤⁻-refl
   id/is-bounded (suc n) =
-    bound/step
-      1
-      (bind (F nat) (id n) λ n' → ret (suc n'))
-      (id/is-bounded n)
+    let open ≤⁻-Reasoning (F nat) in
+    ≤⁻-mono (step (F nat) 1) $
+    begin
+      bind (F nat) (id n) (λ n' → ret (suc n'))
+    ≤⟨ ≤⁻-mono (λ e → bind (F nat) e (ret ∘ suc)) (id/is-bounded n) ⟩
+      bind (F nat) (step (F nat) n (ret n)) (λ n' → ret (suc n'))
+    ≡⟨⟩
+      step (F nat) n (ret (suc n))
+    ∎
+
+  id/correct : ∀ n → ◯ (id n ≡ ret n)
+  id/correct n u = Eq.trans (≤⁻-ext-≡ u (id/is-bounded n)) (step/ext (F nat) (ret n) n u)
 
   id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → n)
-  id/asymptotic = 0 ≤n⇒f[n]≤g[n]via λ n _ → id/is-bounded n
+  id/asymptotic = f[n]≤g[n]via (≤⁻-mono (λ e → bind (F _) e _) ∘ id/is-bounded)
+
 
 easy≡hard : ◯ (Easy.id ≡ Hard.id)
 easy≡hard u =

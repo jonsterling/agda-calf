@@ -6,12 +6,12 @@ open Comparable M
 open import Examples.Sorting.Parallel.Core M
 
 open import Calf costMonoid
-open import Calf.ParMetalanguage parCostMonoid
-open import Calf.Types.Bool
-open import Calf.Types.Nat
-open import Calf.Types.List
-open import Calf.Types.Eq
-open import Calf.Types.Bounded costMonoid
+open import Calf.Parallel parCostMonoid
+open import Calf.Data.Bool
+open import Calf.Data.Nat
+open import Calf.Data.List
+open import Calf.Data.Equality
+open import Calf.Data.IsBounded costMonoid
 
 open import Relation.Nullary
 open import Relation.Nullary.Negation
@@ -27,7 +27,7 @@ open import Data.Nat.PredExp2
 open import Examples.Sorting.Parallel.MergeSort.Split M
 
 
-triple = Σ++ (list A) λ _ → Σ++ A λ _ → (list A)
+triple = Σ⁺ (list A) λ _ → Σ⁺ A λ _ → (list A)
 
 splitMid/clocked : cmp (Π nat λ k → Π (list A) λ l → Π (U (meta (k Nat.< length l))) λ _ → F triple)
 splitMid/clocked zero    (x ∷ xs) (s≤s h) = ret ([] , x , xs)
@@ -337,7 +337,7 @@ merge/clocked (suc k) ([]     , l₂) = ret l₂
 merge/clocked (suc k) (x ∷ l₁ , l₂) =
   bind (F (list A)) (splitMid (x ∷ l₁) (s≤s z≤n)) λ (l₁₁ , pivot , l₁₂) →
     bind (F (list A)) (splitBy l₂ pivot) λ (l₂₁ , l₂₂) →
-      bind (F (list A)) (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') →
+      bind (F (list A)) (merge/clocked k (l₁₁ , l₂₁) ∥ merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') →
         ret (l₁' ++ pivot ∷ l₂')
 
 merge/clocked/correct : ∀ k l₁ l₂ → ⌈log₂ suc (length l₁) ⌉ Nat.≤ k →
@@ -375,16 +375,16 @@ merge/clocked/correct (suc k) (x ∷ l₁) l₂ h-clock u =
     ≡⟨⟩
       (bind (F (list A)) (splitMid (x ∷ l₁) (s≤s z≤n)) λ (l₁₁ , pivot , l₁₂) →
         bind (F (list A)) (splitBy l₂ pivot) λ (l₂₁ , l₂₂) →
-          bind (F (list A)) (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') →
+          bind (F (list A)) (merge/clocked k (l₁₁ , l₂₁) ∥ merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') →
             ret (l₁' ++ pivot ∷ l₂'))
     ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) (≡) ⟩
       (bind (F (list A)) (splitBy l₂ pivot) λ (l₂₁ , l₂₂) →
-        bind (F (list A)) (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') →
+        bind (F (list A)) (merge/clocked k (l₁₁ , l₂₁) ∥ merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') →
           ret (l₁' ++ pivot ∷ l₂'))
     ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) (≡') ⟩
-      (bind (F (list A)) (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') →
+      (bind (F (list A)) (merge/clocked k (l₁₁ , l₂₁) ∥ merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') →
         ret (l₁' ++ pivot ∷ l₂'))
-    ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) (Eq.cong₂ _&_ ≡₁' ≡₂') ⟩
+    ≡⟨ Eq.cong (λ e → bind (F (list A)) e _) (Eq.cong₂ _∥_ ≡₁' ≡₂') ⟩
       ret (l₁' ++ pivot ∷ l₂')
     ∎
   ) ,
@@ -428,7 +428,7 @@ merge/clocked/cost (suc k) ([]     , l₂) = 𝟘
 merge/clocked/cost (suc k) (x ∷ l₁ , l₂) =
   bind cost (splitMid (x ∷ l₁) (s≤s z≤n)) λ (l₁₁ , pivot , l₁₂) → splitMid/cost (x ∷ l₁) (s≤s z≤n) ⊕
     bind cost (splitBy l₂ pivot) λ (l₂₁ , l₂₂) → splitBy/cost/closed l₂ pivot ⊕
-      bind cost (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
+      bind cost (merge/clocked k (l₁₁ , l₂₁) ∥ merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
         𝟘
 
 merge/clocked/cost/closed : cmp (Π nat λ _ → Π pair λ _ → cost)
@@ -469,38 +469,38 @@ merge/clocked/cost≤merge/clocked/cost/closed (suc k) (x ∷ l₁) l₂ h-clock
   begin
     (bind cost (splitMid (x ∷ l₁) (s≤s z≤n)) λ (l₁₁ , pivot , l₁₂) → splitMid/cost (x ∷ l₁) (s≤s z≤n) ⊕
       bind cost (splitBy l₂ pivot) λ (l₂₁ , l₂₂) → splitBy/cost/closed l₂ pivot ⊕
-        bind cost (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
+        bind cost (merge/clocked k (l₁₁ , l₂₁) ∥ merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
           𝟘)
   ≡⟨ Eq.cong (λ e → bind cost e λ (l₁₁ , pivot , l₁₂) → splitMid/cost (x ∷ l₁) (s≤s z≤n) ⊕ _) ≡-splitMid ⟩
     (splitMid/cost (x ∷ l₁) (s≤s z≤n) ⊕
       bind cost (splitBy l₂ pivot) λ (l₂₁ , l₂₂) → splitBy/cost/closed l₂ pivot ⊕
-        bind cost (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
+        bind cost (merge/clocked k (l₁₁ , l₂₁) ∥ merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
           𝟘)
   ≡⟨⟩
     (𝟘 ⊕
       bind cost (splitBy l₂ pivot) λ (l₂₁ , l₂₂) → splitBy/cost/closed l₂ pivot ⊕
-        bind cost (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
+        bind cost (merge/clocked k (l₁₁ , l₂₁) ∥ merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
           𝟘)
   ≡⟨ ⊕-identityˡ _ ⟩
     (bind cost (splitBy l₂ pivot) λ (l₂₁ , l₂₂) → splitBy/cost/closed l₂ pivot ⊕
-      bind cost (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
+      bind cost (merge/clocked k (l₁₁ , l₂₁) ∥ merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
         𝟘)
   ≡⟨
     Eq.cong
       (λ e →
         bind cost e λ (l₂₁ , l₂₂) → splitBy/cost/closed l₂ pivot ⊕
-          bind cost (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
+          bind cost (merge/clocked k (l₁₁ , l₂₁) ∥ merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
             𝟘)
       ≡'
   ⟩
     (splitBy/cost/closed l₂ pivot ⊕
-      bind cost (merge/clocked k (l₁₁ , l₂₁) & merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
+      bind cost (merge/clocked k (l₁₁ , l₂₁) ∥ merge/clocked k (l₁₂ , l₂₂)) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
         𝟘)
   ≡⟨
     Eq.cong₂
       (λ e₁ e₂ →
         splitBy/cost/closed l₂ pivot ⊕
-          bind cost (e₁ & e₂) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
+          bind cost (e₁ ∥ e₂) λ (l₁' , l₂') → (merge/clocked/cost k (l₁₁ , l₂₁) ⊗ merge/clocked/cost k (l₁₂ , l₂₂)) ⊕
             𝟘)
       ≡₁'
       ≡₂' ⟩
