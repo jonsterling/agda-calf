@@ -134,11 +134,11 @@ toℚ (mk𝕀 numerator denominator-1 isCoprime isContained) =
 -- Some constants
 
 instance
-  z≤n : ∀ {n} → zero ℕ.≤ n
-  z≤n = ℕ.z≤n
+  instance-z≤n : ∀ {n} → zero ℕ.≤ n
+  instance-z≤n = ℕ.z≤n
 
-  s≤s : ∀ {m n} → {{m ℕ.≤ n}} → suc m ℕ.≤ suc n
-  s≤s {{h}} = ℕ.s≤s h
+  instance-s≤s : ∀ {m n} → {{m ℕ.≤ n}} → suc m ℕ.≤ suc n
+  instance-s≤s {{h}} = ℕ.s≤s h
 
 0𝕀 : 𝕀
 0𝕀 = 0 / 1
