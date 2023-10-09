@@ -16,7 +16,7 @@ open import Calf.Data.IsBoundedG costMonoid
 open import Calf.Data.IsBounded costMonoid
 open import Function hiding (flip)
 
-open import Data.Interval public
+open import Data.Interval
 
 
 postulate
@@ -75,6 +75,24 @@ module _ where
   binomial (suc n) =
     bind cost bernoulli λ _ →
     binomial n
+
+  binomial/+ : (m n : val nat) →
+    (bind cost (binomial m) λ _ → binomial n) ≡ binomial (m + n)
+  binomial/+ zero    n = refl
+  binomial/+ (suc m) n =
+    let open ≡-Reasoning in
+    begin
+      ( bind cost bernoulli λ _ →
+        bind cost (binomial m) λ _ →
+        binomial n
+      )
+    ≡⟨
+      ( Eq.cong (bind cost bernoulli) $ funext λ _ →
+        binomial/+ m n
+      )
+    ⟩
+      binomial (suc m + n)
+    ∎
 
   binomial/comm : (n : val nat) →
     (bind cost bernoulli λ _ → binomial n) ≡ (bind cost (binomial n) λ _ → bernoulli)
