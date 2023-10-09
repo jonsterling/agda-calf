@@ -29,7 +29,7 @@ open import Data.List.Properties using (++-assoc; length-++) public
 open import Data.List.Relation.Binary.Permutation.Propositional public
 open import Data.List.Relation.Binary.Permutation.Propositional.Properties
   using (↭-length; ¬x∷xs↭[]; All-resp-↭; Any-resp-↭; drop-∷; ++-identityʳ)
-  renaming (++-comm to ++-comm-↭; ++⁺ˡ to ++⁺ˡ-↭; ++⁺ʳ to ++⁺ʳ-↭; ++⁺ to ++⁺-↭) public
+  renaming (++-comm to ++-comm-↭; ++⁺ˡ to ++⁺ˡ-↭; ++⁺ʳ to ++⁺ʳ-↭; ++⁺ to ++⁺-↭; shift to shift-↭) public
 
 open import Data.List.Relation.Unary.All using (All; []; _∷_; map; lookup) public
 open import Data.List.Relation.Unary.All.Properties as AllP using () renaming (++⁺ to ++⁺-All) public

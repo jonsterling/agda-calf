@@ -85,24 +85,37 @@ postulate
 syntax ≤⁻-syntax {X} e e' = e ≤⁻[ X ] e'
 
 
-bind-mono-≤⁻ : {A : tp⁺} {X : tp⁻} {e e' : cmp (F A)} {f f' : val A → cmp X}
+bind-mono-≤⁻ : {e e' : cmp (F A)} {f f' : val A → cmp X}
   → e ≤⁻[ F A ] e'
   → f ≤⁻[ Π A (λ _ → X) ] f'
-  → _≤⁻_ {X} (bind {A} X e f) (bind {A} X e' f')
+  → (bind {A} X e f) ≤⁻[ X ] (bind {A} X e' f')
 bind-mono-≤⁻ {A} {X} {e' = e'} {f} {f'} e≤e' f≤f' =
   ≤⁻-trans
     (≤⁻-mono (λ e → bind {A} X e f) e≤e')
     (≤⁻-mono {Π A (λ _ → X)} {X} (bind {A} X e') {f} {f'} f≤f')
 
-bind-monoˡ-≤⁻ : {A : tp⁺} {X : tp⁻} {e e' : cmp (F A)} (f : val A → cmp X)
-  → _≤⁻_ {F A} e e'
-  → _≤⁻_ {X} (bind {A} X e f) (bind {A} X e' f)
+bind-monoˡ-≤⁻ : {e e' : cmp (F A)} (f : val A → cmp X)
+  → e ≤⁻[ F A ] e'
+  → (bind {A} X e f) ≤⁻[ X ] (bind {A} X e' f)
 bind-monoˡ-≤⁻ f e≤e' = bind-mono-≤⁻ e≤e' ≤⁻-refl
 
-bind-monoʳ-≤⁻ : {A : tp⁺} {X : tp⁻} (e : cmp (F A)) {f f' : val A → cmp X}
-  → ((a : val A) → _≤⁻_ {X} (f a) (f' a))
-  → _≤⁻_ {X} (bind {A} X e f) (bind {A} X e f')
+bind-monoʳ-≤⁻ : (e : cmp (F A)) {f f' : val A → cmp X}
+  → ((a : val A) → (f a) ≤⁻[ X ] (f' a))
+  → (bind {A} X e f) ≤⁻[ X ] (bind {A} X e f')
 bind-monoʳ-≤⁻ e f≤f' = bind-mono-≤⁻ (≤⁻-refl {x = e}) (λ-mono-≤⁻ f≤f')
+
+bind-irr-mono-≤⁻ : {e₁ e₁' : cmp (F A)} {e₂ e₂' : cmp X}
+  → e₁ ≤⁻[ F A ] e₁'
+  → e₂ ≤⁻[ X ] e₂'
+  → (bind {A} X e₁ λ _ → e₂) ≤⁻[ X ] (bind {A} X e₁' λ _ → e₂')
+bind-irr-mono-≤⁻ e₁≤e₁' e₂≤e₂' =
+  bind-mono-≤⁻ e₁≤e₁' (λ-mono-≤⁻ λ a → e₂≤e₂')
+
+bind-irr-monoˡ-≤⁻ : {e₁ e₁' : cmp (F A)} {e₂ : cmp X}
+  → e₁ ≤⁻[ F A ] e₁'
+  → (bind {A} X e₁ λ _ → e₂) ≤⁻[ X ] (bind {A} X e₁' λ _ → e₂)
+bind-irr-monoˡ-≤⁻ e₁≤e₁' =
+  bind-irr-mono-≤⁻ e₁≤e₁' ≤⁻-refl
 
 
 open import Relation.Binary.Structures
