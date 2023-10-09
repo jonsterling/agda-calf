@@ -93,9 +93,6 @@ sorted-of l l' = meta⁺ (l ↭ l') ×⁺ (sorted l')
 sort-result : val (list A) → tp⁺
 sort-result l = Σ⁺ (list A) (sorted-of l)
 
--- lemma : {l : val (list A)} (v : val (sort-result l)) → ret v ≤⁻[ F (sort-result l) ]
--- lemma
-
 sorting : tp⁻
 sorting = Π (list A) λ l → F (sort-result l)
 
