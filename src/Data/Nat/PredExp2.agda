@@ -66,7 +66,7 @@ pred[2^suc[n]] n =
     pred (2 ^ n) + suc (pred (2 ^ n))
   ≡⟨ Eq.cong (pred (2 ^ n) +_) (suc-pred (2 ^ n) {{m^n≢0 2 n}}) ⟩
     pred (2 ^ n) + 2 ^ n
-  ≡˘⟨ +-∸-comm (2 ^ n) (2^n>0 n) ⟩
+  ≡˘⟨ +-∸-comm (2 ^ n) (m^n>0 2 n) ⟩
     pred (2 ^ n + 2 ^ n)
   ≡⟨ Eq.cong pred (lemma/2^suc n) ⟩
     pred (2 ^ suc n)
