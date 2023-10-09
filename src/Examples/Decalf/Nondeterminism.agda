@@ -5,18 +5,18 @@ module Examples.Decalf.Nondeterminism where
 open import Algebra.Cost
 
 costMonoid = ℕ-CostMonoid
-open CostMonoid costMonoid using (ℂ)
+open CostMonoid costMonoid using (ℂ; _+_)
 
-open import Calf costMonoid
-open import Calf.Data.Nat as Nat using (nat; zero; suc)
+open import Calf costMonoid hiding (A)
+open import Calf.Data.Nat as Nat using (nat; zero; suc; _*_)
 import Data.Nat.Properties as Nat
 open import Data.Nat.Square
 open import Calf.Data.List as List using (list; []; _∷_; [_]; _++_; length)
 import Data.Fin as Fin
 open import Calf.Data.Bool using (bool; false; true; if_then_else_)
-open import Calf.Data.Product
+open import Calf.Data.Product using (unit; _×⁺_)
 open import Calf.Data.Equality as Eq using (_≡_; refl; module ≡-Reasoning)
-open import Calf.Data.IsBoundedG costMonoid using (step⋆)
+open import Calf.Data.IsBoundedG costMonoid
 open import Calf.Data.IsBounded costMonoid
 open import Relation.Nullary
 open import Function
@@ -42,48 +42,269 @@ postulate
   fail/step : (c : ℂ) →
     step X c (fail X) ≡ fail X
 
-  bind/branch : {e₀ e₁ : cmp (F A)} {f : val A → cmp X} →
+  bind/fail : {A : tp⁺} {f : val A → cmp X} →
+    bind X (fail (F A)) f ≡ fail X
+  bind/branch : {A : tp⁺} {e₀ e₁ : cmp (F A)} {f : val A → cmp X} →
     bind X (branch (F A) e₀ e₁) f ≡ branch X (bind X e₀ f) (bind X e₁ f)
-  {-# REWRITE bind/branch #-}
+  {-# REWRITE bind/fail bind/branch #-}
 
 
-module QuickSort where
-  _≤?_ : cmp $ Π nat λ _ → Π nat λ _ → F bool
-  x ≤? y = ret (x Nat.≤ᵇ y)
+open import Examples.Sorting.Sequential.Comparable
+module QuickSort (M : Comparable) where
+  open Comparable M
+  open import Examples.Sorting.Sequential.Core M
 
-  choose : cmp $ Π (list nat) λ _ → F (nat ×⁺ list nat)
+  choose : cmp $ Π (list A) λ l → F (Σ⁺ A λ pivot → Σ⁺ (list A) λ l' → meta⁺ (l ↭ pivot ∷ l'))
   choose []       = fail (F _)
   choose (x ∷ xs) =
     branch (F _)
-      (bind (F _) (choose xs) λ (pivot , l) → ret (pivot , x ∷ l))
-      (ret (x , xs))
+      (bind (F _) (choose xs) λ (pivot , l , xs↭pivot∷l) → ret (pivot , x ∷ l , trans (prep x xs↭pivot∷l) (swap x pivot refl)))
+      (ret (x , xs , refl))
 
-  partition : cmp $ Π nat λ _ → Π (list nat) λ _ → F (list nat ×⁺ list nat)
-  partition pivot []       = ret ([] , [])
+  choose/cost : cmp $ Π (list A) λ _ → cost
+  choose/cost l = ret triv
+
+  choose/is-bounded : ∀ x xs → IsBoundedG _ (choose (x ∷ xs)) (choose/cost (x ∷ xs))
+  choose/is-bounded x [] = ≤⁻-reflexive branch/idˡ
+  choose/is-bounded x (x' ∷ xs) =
+    let open ≤⁻-Reasoning cost in
+    begin
+      branch (F unit) (bind (F unit) (choose (x' ∷ xs)) λ _ → ret triv) (ret triv)
+    ≤⟨ ≤⁻-mono (λ e → branch (F unit) (bind (F unit) e λ _ → ret triv) (ret triv)) (choose/is-bounded x' xs) ⟩
+      branch (F unit) (ret triv) (ret triv)
+    ≡⟨ branch/idem ⟩
+      ret triv
+    ∎
+
+  partition : cmp $ Π A λ pivot → Π (list A) λ l → F (Σ⁺ (list A) λ l₁ → Σ⁺ (list A) λ l₂ → meta⁺ (All (_≤ pivot) l₁) ×⁺ meta⁺ (All (pivot ≤_) l₂) ×⁺ meta⁺ (l₁ ++ l₂ ↭ l))
+  partition pivot []       = ret ([] , [] , [] , [] , refl)
   partition pivot (x ∷ xs) =
-    bind (F _) (partition pivot xs) λ (xs₁ , xs₂) →
-    bind (F _) (step (F _) 1 (x ≤? pivot)) λ b →
-    if b then ret (x ∷ xs₁ , xs₂) else ret (xs₁ , x ∷ xs₂)
+    bind (F _) (partition pivot xs) λ (xs₁ , xs₂ , h₁ , h₂ , xs₁++xs₂↭xs) →
+    bind (F _) (x ≤? pivot) $ case-≤
+      (λ x≤pivot → ret (x ∷ xs₁ , xs₂ , x≤pivot ∷ h₁ , h₂ , prep x xs₁++xs₂↭xs))
+      (λ x≰pivot → ret (xs₁ , x ∷ xs₂ , h₁ , ≰⇒≥ x≰pivot ∷ h₂ , trans (shift-↭ x xs₁ xs₂) (prep x xs₁++xs₂↭xs)))
+
+  partition/cost : cmp $ Π A λ a → Π (list A) λ l → cost
+  partition/cost _ l = step⋆ (length l)
+
+  partition/is-bounded : ∀ pivot l → IsBoundedG _ (partition pivot l) (partition/cost pivot l)
+  partition/is-bounded pivot []       = ≤⁻-refl
+  partition/is-bounded pivot (x ∷ xs) =
+    let open ≤⁻-Reasoning cost in
+    begin
+      ( bind (F unit) (partition pivot xs) λ (xs₁ , xs₂ , h₁ , h₂ , xs₁++xs₂↭xs) →
+        bind (F unit) (x ≤? pivot) λ x≤?pivot →
+        bind {Σ⁺ (list A) λ l₁ → Σ⁺ (list A) λ l₂ → meta⁺ (All (_≤ pivot) l₁) ×⁺ meta⁺ (All (pivot ≤_) l₂) ×⁺ meta⁺ (l₁ ++ l₂ ↭ x ∷ xs)} (F unit)
+          ( case-≤
+              (λ x≤pivot → ret (x ∷ xs₁ , xs₂ , x≤pivot ∷ h₁ , h₂ , prep x xs₁++xs₂↭xs))
+              (λ x≰pivot → ret (xs₁ , x ∷ xs₂ , h₁ , ≰⇒≥ x≰pivot ∷ h₂ , trans (shift-↭ x xs₁ xs₂) (prep x xs₁++xs₂↭xs)))
+            x≤?pivot
+          )
+          (λ _ → ret triv)
+      )
+    ≡⟨
+      ( Eq.cong (bind (F unit) (partition pivot xs)) $ funext λ (xs₁ , xs₂ , h₁ , h₂ , xs₁++xs₂↭xs) →
+        Eq.cong (bind (F unit) (x ≤? pivot)) $ funext $
+        bind/case-≤
+          {B = Σ⁺ (list A) λ l₁ → Σ⁺ (list A) λ l₂ → meta⁺ (All (_≤ pivot) l₁) ×⁺ meta⁺ (All (pivot ≤_) l₂) ×⁺ meta⁺ (l₁ ++ l₂ ↭ x ∷ xs)}
+          {X = F unit}
+          {f = λ _ → ret triv}
+          (λ x≤pivot → ret (x ∷ xs₁ , xs₂ , x≤pivot ∷ h₁ , h₂ , prep x xs₁++xs₂↭xs))
+          (λ x≰pivot → ret (xs₁ , x ∷ xs₂ , h₁ , ≰⇒≥ x≰pivot ∷ h₂ , trans (shift-↭ x xs₁ xs₂) (prep x xs₁++xs₂↭xs)))
+      )
+    ⟩
+      ( bind (F unit) (partition pivot xs) λ _ →
+        bind (F unit) (x ≤? pivot) $ case-≤
+          (λ _ → ret triv)
+          (λ _ → ret triv)
+      )
+    ≡⟨
+      ( Eq.cong (bind (F unit) (partition pivot xs)) $ funext λ (xs₁ , xs₂ , h₁ , h₂ , xs₁++xs₂↭xs) →
+        Eq.cong (bind (F unit) (x ≤? pivot)) $ funext $
+        case-≤/idem (ret triv)
+      )
+    ⟩
+      ( bind (F unit) (partition pivot xs) λ _ →
+        bind (F unit) (x ≤? pivot) λ _ →
+        ret triv
+      )
+    ≤⟨
+      ( ≤⁻-mono
+          {Π (Σ⁺ (list A) λ l₁ → Σ⁺ (list A) λ l₂ → meta⁺ (All (_≤ pivot) l₁) ×⁺ meta⁺ (All (pivot ≤_) l₂) ×⁺ meta⁺ (l₁ ++ l₂ ↭ xs)) λ _ → F unit}
+          (bind (F unit) (partition pivot xs)) $
+        λ-mono-≤⁻ λ _ →
+        h-cost x pivot
+      )
+    ⟩
+      ( bind (F unit) (partition pivot xs) λ _ →
+        step⋆ 1
+      )
+    ≡⟨⟩
+      ( bind (F unit) (bind (F unit) (partition pivot xs) λ _ → ret triv) λ _ →
+        step⋆ 1
+      )
+    ≤⟨ ≤⁻-mono (λ e → bind (F unit) (bind (F unit) e λ _ → ret triv) λ _ → step (F unit) 1 (ret triv)) (partition/is-bounded pivot xs) ⟩
+      ( bind (F unit) (step (F unit) (length xs) (ret triv)) λ _ →
+        step⋆ 1
+      )
+    ≡⟨⟩
+      step⋆ (length xs + 1)
+    ≡⟨ Eq.cong step⋆ (Nat.+-comm (length xs) 1) ⟩
+      step⋆ (length (x ∷ xs))
+    ∎
 
   {-# TERMINATING #-}
-  qsort : cmp $ Π (list nat) λ _ → F (list nat)
+  qsort : cmp $ Π (list A) λ _ → F (list A)
   qsort []       = ret []
   qsort (x ∷ xs) =
-    bind (F _) (choose (x ∷ xs)) λ (pivot , l) →
-    bind (F _) (partition pivot l) λ (l₁ , l₂) →
+    bind (F _) (choose (x ∷ xs)) λ (pivot , l , x∷xs↭pivot∷l) →
+    bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
     bind (F _) (qsort l₁) λ l₁' →
     bind (F _) (qsort l₂) λ l₂' →
     ret (l₁' ++ [ x ] ++ l₂')
 
-  -- qsort/bound : cmp $ Π (list nat) λ _ → F (list nat)
-  -- qsort/bound l = step (F (list nat)) (length l ²) (ret {!   !})
+  qsort/cost : cmp $ Π (list A) λ _ → cost
+  qsort/cost l = step⋆ (length l ²)
 
-  -- qsort/is-bounded : (l : val (list nat)) → qsort l ≤⁻[ F (list nat) ] qsort/bound l
-  -- qsort/is-bounded []       = {!   !}
-  -- qsort/is-bounded (x ∷ xs) = {!   !}
+  qsort/arithmetic : (m n : val nat) → m ² + n ² Nat.≤ (m + n) ²
+  qsort/arithmetic m n =
+    let open Nat.≤-Reasoning in
+    begin
+      m ² + n ²
+    ≤⟨ Nat.+-mono-≤ (Nat.m≤m+n (m * m) (n * m)) (Nat.m≤n+m (n * n) (m * n)) ⟩
+      (m * m + n * m) + (m * n + n * n)
+    ≡˘⟨ Eq.cong₂ _+_ (Nat.*-distribʳ-+ m m n) (Nat.*-distribʳ-+ n m n) ⟩
+      (m + n) * m + (m + n) * n
+    ≡˘⟨ Nat.*-distribˡ-+ (m + n) m n ⟩
+      (m + n) * (m + n)
+    ∎
+
+  {-# TERMINATING #-}
+  qsort/is-bounded : ∀ l → IsBoundedG _ (qsort l) (qsort/cost l)
+  qsort/is-bounded []       = ≤⁻-refl
+  qsort/is-bounded (x ∷ xs) =
+    let open ≤⁻-Reasoning cost in
+    begin
+      ( bind (F _) (choose (x ∷ xs)) λ (pivot , l , x∷xs↭pivot∷l) →
+        bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
+        bind (F _) (qsort l₁) λ _ →
+        bind (F _) (qsort l₂) λ _ →
+        ret triv
+      )
+    ≤⟨
+      ( ≤⁻-mono
+          {Π (Σ⁺ A λ pivot → Σ⁺ (list A) λ l' → meta⁺ (x ∷ xs ↭ pivot ∷ l')) λ _ → F unit}
+          {F unit}
+          (bind (F unit) (choose (x ∷ xs)))
+          {λ (pivot , l , x∷xs↭pivot∷l) →
+            bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
+            bind (F _) (qsort l₁) λ _ →
+            bind (F _) (qsort l₂) λ _ →
+            ret triv}
+          {λ (pivot , l , x∷xs↭pivot∷l) →
+            bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
+            bind (F _) (qsort l₁) λ _ →
+            step⋆ (length l₂ ²)} $
+        λ-mono-≤⁻ λ (pivot , l , x∷xs↭pivot∷l) →
+        ≤⁻-mono
+          {Π (Σ⁺ (list A) λ l₁ → Σ⁺ (list A) λ l₂ → meta⁺ (All (_≤ pivot) l₁) ×⁺ meta⁺ (All (pivot ≤_) l₂) ×⁺ meta⁺ (l₁ ++ l₂ ↭ l)) λ _ → F unit}
+          {F unit}
+          (bind (F unit) (partition pivot l)) $
+        λ-mono-≤⁻ λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
+        ≤⁻-mono (λ e → bind (F unit) (qsort l₁) λ _ → e) $
+        qsort/is-bounded l₂
+      )
+    ⟩
+      ( bind (F _) (choose (x ∷ xs)) λ (pivot , l , x∷xs↭pivot∷l) →
+        bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
+        bind (F _) (qsort l₁) λ _ →
+        step⋆ (length l₂ ²)
+      )
+    ≤⟨
+      ( ≤⁻-mono
+          {Π (Σ⁺ A λ pivot → Σ⁺ (list A) λ l' → meta⁺ (x ∷ xs ↭ pivot ∷ l')) λ _ → F unit}
+          {F unit}
+          (bind (F _) (choose (x ∷ xs)))
+          {λ (pivot , l , x∷xs↭pivot∷l) →
+            bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
+            bind (F _) (qsort l₁) λ _ →
+            step⋆ (length l₂ ²)}
+          {λ (pivot , l , x∷xs↭pivot∷l) →
+            bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
+            step⋆ (length l₁ ² + length l₂ ²)} $
+        λ-mono-≤⁻ λ (pivot , l , x∷xs↭pivot∷l) →
+        ≤⁻-mono
+          {Π (Σ⁺ (list A) λ l₁ → Σ⁺ (list A) λ l₂ → meta⁺ (All (_≤ pivot) l₁) ×⁺ meta⁺ (All (pivot ≤_) l₂) ×⁺ meta⁺ (l₁ ++ l₂ ↭ l)) λ _ → F unit}
+          {F unit}
+          (bind (F _) (partition pivot l)) $
+        λ-mono-≤⁻ λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
+        bind-irr-monoˡ-≤⁻ (qsort/is-bounded l₁)
+      )
+    ⟩
+      ( bind (F _) (choose (x ∷ xs)) λ (pivot , l , x∷xs↭pivot∷l) →
+        bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
+        step⋆ (length l₁ ² + length l₂ ²)
+      )
+    ≤⟨
+      ( ≤⁻-mono
+          {Π (Σ⁺ A λ pivot → Σ⁺ (list A) λ l' → meta⁺ (x ∷ xs ↭ pivot ∷ l')) λ _ → F unit}
+          {F unit}
+          (bind (F _) (choose (x ∷ xs)))
+          {λ (pivot , l , x∷xs↭pivot∷l) →
+            bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
+            step⋆ (length l₁ ² + length l₂ ²)}
+          {λ (pivot , l , x∷xs↭pivot∷l) →
+            bind (F _) (partition pivot l) λ _ →
+            step⋆ (length l ²)} $
+        λ-mono-≤⁻ λ (pivot , l , x∷xs↭pivot∷l) →
+        ≤⁻-mono
+          {Π (Σ⁺ (list A) λ l₁ → Σ⁺ (list A) λ l₂ → meta⁺ (All (_≤ pivot) l₁) ×⁺ meta⁺ (All (pivot ≤_) l₂) ×⁺ meta⁺ (l₁ ++ l₂ ↭ l)) λ _ → F unit}
+          {F unit}
+          (bind (F _) (partition pivot l)) $
+        λ-mono-≤⁻ λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
+        ≤⁺-mono step⋆ $
+        ≤⇒≤⁺ (Nat.≤-trans (qsort/arithmetic (length l₁) (length l₂)) (Nat.≤-reflexive (Eq.cong _² (Eq.trans (Eq.sym (length-++ l₁)) (↭-length l₁++l₂↭l)))))
+      )
+    ⟩
+      ( bind (F _) (choose (x ∷ xs)) λ (pivot , l , x∷xs↭pivot∷l) →
+        bind (F _) (partition pivot l) λ _ →
+        step⋆ (length l ²)
+      )
+    ≤⟨
+      ( ≤⁻-mono
+          {Π (Σ⁺ A λ pivot → Σ⁺ (list A) λ l' → meta⁺ (x ∷ xs ↭ pivot ∷ l')) λ _ → F unit}
+          {F unit}
+          (bind (F _) (choose (x ∷ xs)))
+          {λ (pivot , l , x∷xs↭pivot∷l) →
+            bind (F _) (partition pivot l) λ _ →
+            step⋆ (length l ²)}
+          {λ (pivot , l , x∷xs↭pivot∷l) →
+            step⋆ (length l + length l ²)} $
+        λ-mono-≤⁻ λ (pivot , l , x∷xs↭pivot∷l) →
+        bind-irr-monoˡ-≤⁻ (partition/is-bounded pivot l)
+      )
+    ⟩
+      ( bind (F _) (choose (x ∷ xs)) λ (pivot , l , x∷xs↭pivot∷l) →
+        step⋆ (length l + length l ²)
+      )
+    ≡˘⟨
+      ( Eq.cong (bind (F _) (choose (x ∷ xs))) $ funext λ (pivot , l , x∷xs↭pivot∷l) →
+        Eq.cong (λ c → step⋆ (c + c ²)) {length xs} {length l} (Eq.cong Nat.pred (↭-length x∷xs↭pivot∷l))
+      )
+    ⟩
+      ( bind (F _) (choose (x ∷ xs)) λ _ →
+        step⋆ (length xs + length xs ²)
+      )
+    ≤⟨ bind-irr-monoˡ-≤⁻ (choose/is-bounded x xs) ⟩
+      step⋆ (length xs + length xs ²)
+    ≤⟨ step⋆-mono-≤⁻ (Nat.+-mono-≤ (Nat.n≤1+n (length xs)) (Nat.*-monoʳ-≤ (length xs) (Nat.n≤1+n (length xs)))) ⟩
+      step⋆ (length (x ∷ xs) + length xs * length (x ∷ xs))
+    ≡⟨⟩
+      step⋆ (length (x ∷ xs) ²)
+    ∎
 
 
-module Lookup where
+module Lookup {A : tp⁺} where
   lookup : cmp $ Π (list A) λ _ → Π nat λ _ → F A
   lookup []       i       = fail (F _)
   lookup (x ∷ xs) zero    = ret x

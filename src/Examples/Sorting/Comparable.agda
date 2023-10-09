@@ -45,9 +45,19 @@ record Comparable : Set₁ where
   ... | inj₁ x≤y = contradiction x≤y ¬x≤y
   ... | inj₂ y≤x = y≤x
 
-  case-≤ : {X : Set} {x y : val A} → (x ≤ y → X) → (x ≰ y → X) → Dec (x ≤ y) → X
-  case-≤ {X} {x} {y} yes-branch no-branch (yes x≤y) = yes-branch x≤y
-  case-≤ {X} {x} {y} yes-branch no-branch (no ¬x≤y) = no-branch ¬x≤y
+  case-≤ : {S : Set} {x y : val A} → (x ≤ y → S) → (x ≰ y → S) → Dec (x ≤ y) → S
+  case-≤ {S} {x} {y} yes-branch no-branch (yes x≤y) = yes-branch x≤y
+  case-≤ {S} {x} {y} yes-branch no-branch (no ¬x≤y) = no-branch ¬x≤y
+
+  bind/case-≤ : {x y : val A} {f : val B → cmp X} (yes-branch : x ≤ y → cmp (F B)) (no-branch : x ≰ y → cmp (F B)) (d : Dec (x ≤ y)) →
+    bind X (case-≤ yes-branch no-branch d) f ≡ case-≤ (λ h → bind X (yes-branch h) f) (λ h → bind X (no-branch h) f) d
+  bind/case-≤ yes-branch no-branch (yes x≤y) = refl
+  bind/case-≤ yes-branch no-branch (no ¬x≤y) = refl
+
+  case-≤/idem : {S : Set} {x y : val A} (branch : S) (d : Dec (x ≤ y)) →
+    case-≤ {S} {x} {y} (λ _ → branch) (λ _ → branch) d ≡ branch
+  case-≤/idem branch (yes x≤y) = refl
+  case-≤/idem branch (no ¬x≤y) = refl
 
 NatComparable : Comparable
 NatComparable = record

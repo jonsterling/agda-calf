@@ -31,7 +31,7 @@ bound/step : {A : tp⁺} (c : ℂ) {c' : ℂ} (e : cmp (F A)) →
   IsBounded A (step (F A) c e) (c + c')
 bound/step c {c'} e h = boundg/step c {b = step⋆ c'} e h
 
-bound/bind/const : ∀ {A B : tp⁺} {e : cmp (F A)} {f : val A → cmp (F B)}
+bound/bind/const : {e : cmp (F A)} {f : val A → cmp (F B)}
   (c d : ℂ) →
   IsBounded A e c →
   ((a : val A) → IsBounded B (f a) d) →
