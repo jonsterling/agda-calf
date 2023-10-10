@@ -235,3 +235,32 @@ Amortized data structures, [via coinduction](https://drops.dagstuhl.de/opus/voll
 - [`Examples.Amortized.Simple`](./src/Examples/Amortized/Simple.agda) provides an amortized implementation of a simple amortized stream abstract data type.
 - [`Examples.Amortized.Queue`](./src/Examples/Amortized/Queue.agda) provides an implementation of [amortized queues](https://en.wikipedia.org/wiki/Queue_(abstract_data_type)#Amortized_queue).
 - [`Examples.Amortized.DynamicArray`](./src/Examples/Amortized/DynamicArray.agda) provides an implementation of dynamically-growing arrays.
+
+
+### Decalf
+
+The examples introduced in **decalf** are included in [`Examples.Decalf`](./src/Examples/Decalf.agda).
+
+#### [`Examples.Decalf.Basic`](./src/Examples/Decalf/Basic.agda)
+
+We implement and analyze the basic `double` example.
+
+#### [`Examples.Decalf.Nondeterminism`](./src/Examples/Decalf/Nondeterminism.agda)
+
+We introduce the `branch` and `fail` primitives for nondeterminism and give the corresponding examples.
+
+- `module QuickSort` includes the nondeterministic quicksort algorithm using primitives from [`Examples.Sorting.Sequential.Core`](./src/Examples/Sorting/Sequential.agda).
+- `module Lookup` includes the list lookup function that fails on out-of-bounds indices.
+- `module Pervasive` includes a simple example of pervasive (non-benign) nondeterminism.
+
+#### [`Examples.Decalf.ProbabilisticChoice`](./src/Examples/Decalf/ProbabilisticChoice.agda)
+
+We introduce the probabilistic `flip` primitive and give the corresponding example, showing how the cost of `sublist` is bounded by the `binomial` distribution.
+
+#### [`Examples.Decalf.GlobalState`](./src/Examples/Decalf/GlobalState.agda)
+
+We introduce the `get` and `set` primitives for global state and show a simple imperative program whose cost bound involves `get` and `set`.
+
+#### [`Examples.Decalf.HigherOrderFunction`](./src/Examples/Decalf/HigherOrderFunction.agda)
+
+We define the `twice` and `map` higher-order functions and analyze them under assumptions about their input costs.
