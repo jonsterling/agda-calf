@@ -154,20 +154,20 @@ module QuickSort (M : Comparable) where
     ∎
 
   {-# TERMINATING #-}
-  qsort : cmp $ Π (list A) λ _ → F (list A)
-  qsort []       = ret []
-  qsort (x ∷ xs) =
+  sort : cmp $ Π (list A) λ _ → F (list A)
+  sort []       = ret []
+  sort (x ∷ xs) =
     bind (F _) (choose (x ∷ xs)) λ (pivot , l , x∷xs↭pivot∷l) →
     bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
-    bind (F _) (qsort l₁) λ l₁' →
-    bind (F _) (qsort l₂) λ l₂' →
+    bind (F _) (sort l₁) λ l₁' →
+    bind (F _) (sort l₂) λ l₂' →
     ret (l₁' ++ [ x ] ++ l₂')
 
-  qsort/cost : cmp $ Π (list A) λ _ → cost
-  qsort/cost l = step⋆ (length l ²)
+  sort/cost : cmp $ Π (list A) λ _ → cost
+  sort/cost l = step⋆ (length l ²)
 
-  qsort/arithmetic : (m n : val nat) → m ² + n ² Nat.≤ (m + n) ²
-  qsort/arithmetic m n =
+  sort/arithmetic : (m n : val nat) → m ² + n ² Nat.≤ (m + n) ²
+  sort/arithmetic m n =
     let open Nat.≤-Reasoning in
     begin
       m ² + n ²
@@ -180,15 +180,15 @@ module QuickSort (M : Comparable) where
     ∎
 
   {-# TERMINATING #-}
-  qsort/is-bounded : ∀ l → IsBoundedG _ (qsort l) (qsort/cost l)
-  qsort/is-bounded []       = ≤⁻-refl
-  qsort/is-bounded (x ∷ xs) =
+  sort/is-bounded : ∀ l → IsBoundedG _ (sort l) (sort/cost l)
+  sort/is-bounded []       = ≤⁻-refl
+  sort/is-bounded (x ∷ xs) =
     let open ≤⁻-Reasoning cost in
     begin
       ( bind (F _) (choose (x ∷ xs)) λ (pivot , l , x∷xs↭pivot∷l) →
         bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
-        bind (F _) (qsort l₁) λ _ →
-        bind (F _) (qsort l₂) λ _ →
+        bind (F _) (sort l₁) λ _ →
+        bind (F _) (sort l₂) λ _ →
         ret triv
       )
     ≤⟨
@@ -198,12 +198,12 @@ module QuickSort (M : Comparable) where
           (bind (F unit) (choose (x ∷ xs)))
           {λ (pivot , l , x∷xs↭pivot∷l) →
             bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
-            bind (F _) (qsort l₁) λ _ →
-            bind (F _) (qsort l₂) λ _ →
+            bind (F _) (sort l₁) λ _ →
+            bind (F _) (sort l₂) λ _ →
             ret triv}
           {λ (pivot , l , x∷xs↭pivot∷l) →
             bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
-            bind (F _) (qsort l₁) λ _ →
+            bind (F _) (sort l₁) λ _ →
             step⋆ (length l₂ ²)} $
         λ-mono-≤⁻ λ (pivot , l , x∷xs↭pivot∷l) →
         ≤⁻-mono
@@ -211,13 +211,13 @@ module QuickSort (M : Comparable) where
           {F unit}
           (bind (F unit) (partition pivot l)) $
         λ-mono-≤⁻ λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
-        ≤⁻-mono (λ e → bind (F unit) (qsort l₁) λ _ → e) $
-        qsort/is-bounded l₂
+        ≤⁻-mono (λ e → bind (F unit) (sort l₁) λ _ → e) $
+        sort/is-bounded l₂
       )
     ⟩
       ( bind (F _) (choose (x ∷ xs)) λ (pivot , l , x∷xs↭pivot∷l) →
         bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
-        bind (F _) (qsort l₁) λ _ →
+        bind (F _) (sort l₁) λ _ →
         step⋆ (length l₂ ²)
       )
     ≤⟨
@@ -227,7 +227,7 @@ module QuickSort (M : Comparable) where
           (bind (F _) (choose (x ∷ xs)))
           {λ (pivot , l , x∷xs↭pivot∷l) →
             bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
-            bind (F _) (qsort l₁) λ _ →
+            bind (F _) (sort l₁) λ _ →
             step⋆ (length l₂ ²)}
           {λ (pivot , l , x∷xs↭pivot∷l) →
             bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
@@ -238,7 +238,7 @@ module QuickSort (M : Comparable) where
           {F unit}
           (bind (F _) (partition pivot l)) $
         λ-mono-≤⁻ λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
-        bind-irr-monoˡ-≤⁻ (qsort/is-bounded l₁)
+        bind-irr-monoˡ-≤⁻ (sort/is-bounded l₁)
       )
     ⟩
       ( bind (F _) (choose (x ∷ xs)) λ (pivot , l , x∷xs↭pivot∷l) →
@@ -263,7 +263,7 @@ module QuickSort (M : Comparable) where
           (bind (F _) (partition pivot l)) $
         λ-mono-≤⁻ λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
         ≤⁺-mono step⋆ $
-        ≤⇒≤⁺ (Nat.≤-trans (qsort/arithmetic (length l₁) (length l₂)) (Nat.≤-reflexive (Eq.cong _² (Eq.trans (Eq.sym (length-++ l₁)) (↭-length l₁++l₂↭l)))))
+        ≤⇒≤⁺ (Nat.≤-trans (sort/arithmetic (length l₁) (length l₂)) (Nat.≤-reflexive (Eq.cong _² (Eq.trans (Eq.sym (length-++ l₁)) (↭-length l₁++l₂↭l)))))
       )
     ⟩
       ( bind (F _) (choose (x ∷ xs)) λ (pivot , l , x∷xs↭pivot∷l) →
