@@ -14,6 +14,9 @@ open import Calf.Phase.Core
 ◯ : □ → □
 ◯ 𝕁 = (u : ext) → 𝕁
 
+η◯ : {𝕁 : □} → 𝕁 → ◯ 𝕁
+η◯ a u = a
+
 postulate
   open⁺ : (ext → tp⁺) → tp⁺
   open⁺/decode : ∀ {A} → val (open⁺ A) ≡ ((u : ext) → val (A u))
