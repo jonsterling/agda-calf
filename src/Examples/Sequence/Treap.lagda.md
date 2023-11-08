@@ -14,8 +14,9 @@ module Examples.Sequence.Treap where
 
 open import Algebra.Cost
 
-costMonoid = ℕ-CostMonoid
+costMonoid = ℚ-CostMonoid
 open CostMonoid costMonoid
+import Data.Rational as ℚ
 
 open import Calf costMonoid
 
@@ -63,4 +64,43 @@ i-join .[] leaf a l₂ t₂@(node t₂₁ a₂ t₂₂) =
       ret (l' ++ [ a₂ ] ++ _ , Eq.cong (_++ a₂ ∷ _) h' , node t' a₂ t₂₂))
 i-join l₁ (node t₁₁ a₁ t₁₂) a .[] leaf = {!   !}
 i-join l₁ (node t₁₁ a₁ t₁₂) a l₂ (node t₂₁ a₂ t₂₂) = {!   !}
+```
+
+
+# Expected Cost
+
+What happens when we want to analyze expected cost?
+Here's an idea:
+```agda
+postulate
+  expectation : Ω
+
+  law/expectation₁ : (X : tp⁻) (p : 𝕀) (c : ℂ) (e₀ e₁ : cmp X) (v : expectation) →
+    flip X p e₀ (step X c e₁) ≡ step X (toℚ p ℚ.* c) (flip X p e₀ e₁)
+
+law/expectation₀ : (X : tp⁻) (p : 𝕀) (c : ℂ) (e₀ e₁ : cmp X) (v : expectation) →
+  flip X p (step X c e₀) e₁ ≡ step X (toℚ (1- p) ℚ.* c) (flip X p e₀ e₁)
+law/expectation₀ X p c e₀ e₁ v =
+  let open ≡-Reasoning in
+  begin
+    flip X p (step X c e₀) e₁
+  ≡⟨ flip/sym X p (step X c e₀) e₁ ⟩
+    flip X (1- p) e₁ (step X c e₀)
+  ≡⟨ law/expectation₁ X (1- p) c e₁ e₀ v ⟩
+    step X (toℚ (1- p) ℚ.* c) (flip X (1- p) e₁ e₀)
+  ≡˘⟨ Eq.cong (step X (toℚ (1- p) ℚ.* c)) (flip/sym X p e₀ e₁) ⟩
+    step X (toℚ (1- p) ℚ.* c) (flip X p e₀ e₁)
+  ∎
+
+law/expectation : (X : tp⁻) (p : 𝕀) (c₀ c₁ : ℂ) (e₀ e₁ : cmp X) (v : expectation) →
+  flip X p (step X c₀ e₀) (step X c₁ e₁) ≡ step X (toℚ (1- p) ℚ.* c₀ + toℚ p ℚ.* c₁) (flip X p e₀ e₁)
+law/expectation X p c₀ c₁ e₀ e₁ v =
+  let open ≡-Reasoning in
+  begin
+    flip X p (step X c₀ e₀) (step X c₁ e₁)
+  ≡⟨ law/expectation₀ X p c₀ e₀ (step X c₁ e₁) v ⟩
+    step X (toℚ (1- p) ℚ.* c₀) (flip X p e₀ (step X c₁ e₁))
+  ≡⟨ Eq.cong (step X (toℚ (1- p) ℚ.* c₀)) (law/expectation₁ X p c₁ e₀ e₁ v) ⟩
+    step X (toℚ (1- p) ℚ.* c₀ + toℚ p ℚ.* c₁) (flip X p e₀ e₁)
+  ∎
 ```
