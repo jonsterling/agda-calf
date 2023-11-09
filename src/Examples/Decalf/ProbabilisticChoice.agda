@@ -20,8 +20,8 @@ open import Data.Interval
 
 
 postulate
+  -- _, probability to flip heads, tails branch, heads branch
   flip : (X : tp⁻) → 𝕀 → cmp X → cmp X → cmp X
-
   flip/0 : {e₀ e₁ : cmp X} →
     flip X 0𝕀 e₀ e₁ ≡ e₀
   flip/1 : {e₀ e₁ : cmp X} →
