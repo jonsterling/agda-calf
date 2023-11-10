@@ -49,7 +49,7 @@ itreap : (A : tp⁺) → val (list A) → tp⁺
 itreap A l = meta⁺ (ITreap A l)
 ```
 
-Let's implement some stuff:
+Here is the implementation of join:
 ```agda
 ++-singleton : {T : Set} → (x : T) → (l₁ l₂ : List T) → l₁ ++ x ∷ l₂ ≡ l₁ ++ [ x ] ++ l₂
 ++-singleton x [] l₂ = refl
@@ -98,10 +98,14 @@ i-join l₁ t₁@(node {l₁₁} t₁₁  a₁ t₁₂) a .[] leaf =
       ret (_ ++ [ a₁ ] ++ l' , Eq.trans (Eq.cong (λ l'' → l₁₁ ++ (a₁ ∷ l'')) h') (Eq.sym (++-assoc _ (a₁ ∷ _) [ a ])) ,  node t₁₁ a₁ t') )
     ((ret ( l₁ ++ [ a ] , refl , node t₁ a leaf))) 
 i-join l₁ t₁@(node {l₁₁} {l₁₂} t₁₁ a₁ t₁₂) a l₂ t₂@(node {l₂₁} {l₂₂} t₂₁ a₂ t₂₂) = 
-  flip (F _) (1 / suc (length l₁ Nat.+ length l₂)) (ret (l₁ ++ [ a ] ++ l₂ , refl , node t₁ a t₂)) 
+  flip (F _) (1 / suc (length l₁ Nat.+ length l₂)) 
     (flip (F _) (_/_ (length l₁) (length l₁ Nat.+ length l₂) {{ NatBase.>-nonZero (nz-lemma a₁ a₂ l₁₁ l₁₂ l₂₁ l₂₂)}} {{≤-+ _ _}})
+      -- joining into the RHS
       (bind (F _) (i-join _ t₁ a _ t₂₁) λ (l' , h' , t') → ret ( l' ++ (a₂ ∷ l₂₂) , Eq.trans (Eq.cong (λ l' → l' ++ a₂ ∷ l₂₂) h') (i-join-lemma a₁ a a₂ l₁₁ l₁₂ l₂₁ l₂₂) , node t' a₂ t₂₂ ))
+      -- joining into the LHS
       (bind (F _) (i-join _ t₁₂ a _ t₂) λ (l' , h' , t') → ret ( l₁₁ ++ [ a₁ ] ++ l' , Eq.trans (Eq.cong (λ l' → l₁₁ ++ a₁ ∷ l') h') (Eq.sym (++-assoc l₁₁ (a₁ ∷ l₁₂) _))  , node t₁₁ a₁ t' )))
+    -- the added element has the highest priority
+    (ret (l₁ ++ [ a ] ++ l₂ , refl , node t₁ a t₂)) 
 ```
 
 
