@@ -22,11 +22,11 @@ open import Calf costMonoid
 
 open import Data.Interval
 open import Data.List.Properties
+open import Data.Nat.Properties as NatProp
 open import Examples.Decalf.ProbabilisticChoice
 
 open import Calf.Data.Product
-open import Calf.Data.Nat as Nat using (zero; suc) 
-open import Data.Nat.Base as NatBase using (>-nonZero)
+open import Calf.Data.Nat as Nat using (zero; suc; >-nonZero) 
 open import Calf.Data.List
 
 
@@ -75,8 +75,26 @@ i-join-lemma a₁ a a₂ l₁₁ l₁₂ l₂₁ l₂₂ =
 ≤-+ (suc n) m = Nat.s≤s (≤-+ n m)
 
 
-nz-lemma : {T : Set} → (a₁ a₂ : T) → (l₁₁ l₁₂ l₂₁ l₂₂ : List T) → (length (l₁₁ ++ [ a₁ ] ++ l₁₂) Nat.+ length (l₂₁ ++ [ a₂ ] ++ l₂₂)) Nat.> Nat.zero
-nz-lemma a₁ a₂ l₁₁ l₁₂ l₂₁ l₂₂ = {!   !}
+nz-lemma : {T : Set} → (a₁ a₂ : T) → (l₁₁ l₁₂ l₂₁ l₂₂ : List T) → Nat.zero Nat.< (length (l₁₁ ++ [ a₁ ] ++ l₁₂) Nat.+ length (l₂₁ ++ [ a₂ ] ++ l₂₂))
+nz-lemma a₁ a₂ l₁₁ l₁₂ l₂₁ l₂₂ =
+  let open NatProp.≤-Reasoning in
+  begin
+    1
+  ≤⟨ Nat.s≤s Nat.z≤n ⟩
+    length [ a₁ ] 
+  ≤⟨ m≤n+m (length [ a₁ ]) (length l₁₁) ⟩
+    (length l₁₁) Nat.+ (length [ a₁ ])
+  ≡⟨ Eq.sym (length-++ l₁₁) ⟩
+    length (l₁₁ ++ [ a₁ ])
+  ≤⟨ m≤m+n (length (l₁₁ ++ [ a₁ ])) _ ⟩
+    length (l₁₁ ++ [ a₁ ]) Nat.+ (length l₁₂) 
+  ≡⟨ Eq.sym (length-++ (l₁₁ ++ [ a₁ ])) ⟩
+    length ((l₁₁ ++ [ a₁ ]) ++ l₁₂)
+  ≡⟨ Eq.cong length (++-assoc l₁₁ _ _) ⟩
+    length (l₁₁ ++ [ a₁ ] ++ l₁₂)
+  ≤⟨ m≤m+n (length (l₁₁ ++ [ a₁ ] ++ l₁₂)) _ ⟩
+    ((length (l₁₁ ++ [ a₁ ] ++ l₁₂) Nat.+ length (l₂₁ ++ [ a₂ ] ++ l₂₂)))
+  ∎ 
 
 
 i-join :
@@ -99,7 +117,7 @@ i-join l₁ t₁@(node {l₁₁} t₁₁  a₁ t₁₂) a .[] leaf =
     ((ret ( l₁ ++ [ a ] , refl , node t₁ a leaf))) 
 i-join l₁ t₁@(node {l₁₁} {l₁₂} t₁₁ a₁ t₁₂) a l₂ t₂@(node {l₂₁} {l₂₂} t₂₁ a₂ t₂₂) = 
   flip (F _) (1 / suc (length l₁ Nat.+ length l₂)) 
-    (flip (F _) (_/_ (length l₁) (length l₁ Nat.+ length l₂) {{ NatBase.>-nonZero (nz-lemma a₁ a₂ l₁₁ l₁₂ l₂₁ l₂₂)}} {{≤-+ _ _}})
+    (flip (F _) (_/_ (length l₁) (length l₁ Nat.+ length l₂) {{ Nat.>-nonZero (nz-lemma a₁ a₂ l₁₁ l₁₂ l₂₁ l₂₂)}} {{≤-+ _ _}})
       -- joining into the RHS
       (bind (F _) (i-join _ t₁ a _ t₂₁) λ (l' , h' , t') → ret ( l' ++ (a₂ ∷ l₂₂) , Eq.trans (Eq.cong (λ l' → l' ++ a₂ ∷ l₂₂) h') (i-join-lemma a₁ a a₂ l₁₁ l₁₂ l₂₁ l₂₂) , node t' a₂ t₂₂ ))
       -- joining into the LHS
@@ -146,4 +164,4 @@ law/expectation X p c₀ c₁ e₀ e₁ v =
     step X (toℚ (1- p) ℚ.* c₀ + toℚ p ℚ.* c₁) (flip X p e₀ e₁)
   ∎
 ```
-           
+             
