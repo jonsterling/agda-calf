@@ -51,40 +51,21 @@ itreap A l = meta⁺ (ITreap A l)
 
 Here is the implementation of join:
 ```agda
-++-singleton : {T : Set} → (x : T) → (l₁ l₂ : List T) → l₁ ++ x ∷ l₂ ≡ l₁ ++ [ x ] ++ l₂
-++-singleton x [] l₂ = refl
-++-singleton x (x₁ ∷ l₁) l₂ = Eq.cong (λ l → x₁ ∷ l) (++-singleton _ _ _)
-
-i-join-lemma : {T : Set} → (a₁ a a₂ : T) → (l₁₁ l₁₂ l₂₁ l₂₂ : List T) → ((l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂₁) ++ a₂ ∷ l₂₂ ≡ (l₁₁ ++ [ a₁ ] ++ l₁₂) ++ [ a ] ++ l₂₁ ++ [ a₂ ] ++ l₂₂
-i-join-lemma a₁ a a₂ l₁₁ l₁₂ l₂₁ l₂₂ = 
-  let open ≡-Reasoning in
-  begin
-    ((l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂₁) ++ a₂ ∷ l₂₂
-  ≡⟨ Eq.cong ( λ l' →  (l' ++  a ∷ l₂₁) ++ a₂ ∷ l₂₂) (++-singleton a₁ l₁₁ l₁₂) ⟩
-    ((l₁₁ ++ [ a₁ ] ++ l₁₂) ++ a ∷ l₂₁) ++ a₂ ∷ l₂₂ 
-  ≡⟨ Eq.cong (λ l' → l' ++ (a₂ ∷ l₂₂)) (++-singleton a _ l₂₁) ⟩ 
-    ((l₁₁ ++ [ a₁ ] ++ l₁₂) ++ [ a ]  ++ l₂₁) ++ (a₂ ∷ l₂₂ )
-  ≡⟨ ++-singleton _ _ _ ⟩
-    ((l₁₁ ++ [ a₁ ] ++ l₁₂) ++ ([ a ] ++ l₂₁)) ++ ([ a₂ ] ++ l₂₂)
-  ≡⟨ ++-assoc (l₁₁ ++ [ a₁ ] ++ l₁₂)  ([ a ] ++ l₂₁) ([ a₂ ] ++ l₂₂) ⟩ 
-    (l₁₁ ++ [ a₁ ] ++ l₁₂) ++ [ a ] ++ l₂₁ ++ [ a₂ ] ++ l₂₂
-  ∎
-
 
 nz-lemma : {T : Set} → (a₁ a₂ : T) → (l₁₁ l₁₂ l₂₁ l₂₂ : List T) → Nat.zero Nat.< (length (l₁₁ ++ [ a₁ ] ++ l₁₂) Nat.+ length (l₂₁ ++ [ a₂ ] ++ l₂₂))
 nz-lemma a₁ a₂ l₁₁ l₁₂ l₂₁ l₂₂ =
   let open NatProp.≤-Reasoning in
   begin
     1
-  ≤⟨ Nat.s≤s Nat.z≤n ⟩
+  ≡⟨⟩
     length [ a₁ ] 
   ≤⟨ m≤n+m (length [ a₁ ]) (length l₁₁) ⟩
     (length l₁₁) Nat.+ (length [ a₁ ])
-  ≡⟨ Eq.sym (length-++ l₁₁) ⟩
+  ≡˘⟨(length-++ l₁₁) ⟩
     length (l₁₁ ++ [ a₁ ])
   ≤⟨ m≤m+n (length (l₁₁ ++ [ a₁ ])) _ ⟩
     length (l₁₁ ++ [ a₁ ]) Nat.+ (length l₁₂) 
-  ≡⟨ Eq.sym (length-++ (l₁₁ ++ [ a₁ ])) ⟩
+  ≡˘⟨(length-++ (l₁₁ ++ [ a₁ ])) ⟩
     length ((l₁₁ ++ [ a₁ ]) ++ l₁₂)
   ≡⟨ Eq.cong length (++-assoc l₁₁ _ _) ⟩
     length (l₁₁ ++ [ a₁ ] ++ l₁₂)
@@ -114,7 +95,7 @@ i-join l₁ t₁@(node {l₁₁} {l₁₂} t₁₁ a₁ t₁₂) a l₂ t₂@(no
   flip (F _) (1 / suc (length l₁ Nat.+ length l₂)) 
     (flip (F _) (_/_ (length l₁) (length l₁ Nat.+ length l₂) {{ Nat.>-nonZero (nz-lemma a₁ a₂ l₁₁ l₁₂ l₂₁ l₂₂)}} {{m≤m+n _ _}})
       -- joining into the right subtree
-      (bind (F _) (i-join _ t₁ a _ t₂₁) λ (l' , h' , t') → ret ( l' ++ (a₂ ∷ l₂₂) , Eq.trans (Eq.cong (λ l' → l' ++ a₂ ∷ l₂₂) h') (i-join-lemma a₁ a a₂ l₁₁ l₁₂ l₂₁ l₂₂) , node t' a₂ t₂₂ ))
+      (bind (F _) (i-join _ t₁ a _ t₂₁) λ (l' , h' , t') → ret ( l' ++ (a₂ ∷ l₂₂) , Eq.trans (Eq.cong (λ l' → l' ++ a₂ ∷ l₂₂) h') (++-assoc (l₁₁ ++ [ a₁ ] ++ l₁₂)  ([ a ] ++ l₂₁) ([ a₂ ] ++ l₂₂)) , node t' a₂ t₂₂ ))
       -- joining into the left subtree
       (bind (F _) (i-join _ t₁₂ a _ t₂) λ (l' , h' , t') → ret ( l₁₁ ++ (a₁ ∷ l') , Eq.trans (Eq.cong (λ l' → l₁₁ ++ a₁ ∷ l') h') (Eq.sym (++-assoc l₁₁ (a₁ ∷ l₁₂) _))  , node t₁₁ a₁ t' )))
     -- the added element has the highest priority
@@ -159,4 +140,4 @@ law/expectation X p c₀ c₁ e₀ e₁ v =
     step X (toℚ (1- p) ℚ.* c₀ + toℚ p ℚ.* c₁) (flip X p e₀ e₁)
   ∎
 ```
-             
+              
