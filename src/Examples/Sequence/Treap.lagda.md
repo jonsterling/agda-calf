@@ -26,8 +26,8 @@ open import Examples.Decalf.ProbabilisticChoice
 
 open import Calf.Data.Product
 open import Calf.Data.Nat as Nat using (zero; suc) 
+open import Data.Nat.Base as NatBase using (>-nonZero)
 open import Calf.Data.List
-
 
 
 open import Function using (_$_)
@@ -51,12 +51,33 @@ itreap A l = meta⁺ (ITreap A l)
 
 Let's implement some stuff:
 ```agda
-postulate 
-  i-join-lemma : {T : Set} →  (x x₁ : T) → (l₁ l₂ : List T) → (l₁ ++ (x₁ ∷ (l₂ ++ [ x ])) ≡ (l₁ ++ x₁ ∷ l₂) ++ [ x ])
-  -- i-join-lemma x x₁ l₁ l₂ = {!  !}
+++-singleton : {T : Set} → (x : T) → (l₁ l₂ : List T) → l₁ ++ x ∷ l₂ ≡ l₁ ++ [ x ] ++ l₂
+++-singleton x [] l₂ = refl
+++-singleton x (x₁ ∷ l₁) l₂ = Eq.cong (λ l → x₁ ∷ l) (++-singleton _ _ _)
 
-  ≤-+ : (n m : Nat.ℕ) → n Nat.≤ n Nat.+ m
-  -- ≤-+ n m = {!   !}
+i-join-lemma : {T : Set} → (a₁ a a₂ : T) → (l₁₁ l₁₂ l₂₁ l₂₂ : List T) → ((l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂₁) ++ a₂ ∷ l₂₂ ≡ (l₁₁ ++ [ a₁ ] ++ l₁₂) ++ [ a ] ++ l₂₁ ++ [ a₂ ] ++ l₂₂
+i-join-lemma a₁ a a₂ l₁₁ l₁₂ l₂₁ l₂₂ = 
+  let open ≡-Reasoning in
+  begin
+    ((l₁₁ ++ a₁ ∷ l₁₂) ++ a ∷ l₂₁) ++ a₂ ∷ l₂₂
+  ≡⟨ Eq.cong ( λ l' →  (l' ++  a ∷ l₂₁) ++ a₂ ∷ l₂₂) (++-singleton a₁ l₁₁ l₁₂) ⟩
+    ((l₁₁ ++ [ a₁ ] ++ l₁₂) ++ a ∷ l₂₁) ++ a₂ ∷ l₂₂ 
+  ≡⟨ Eq.cong (λ l' → l' ++ (a₂ ∷ l₂₂)) (++-singleton a _ l₂₁) ⟩ 
+    ((l₁₁ ++ [ a₁ ] ++ l₁₂) ++ [ a ]  ++ l₂₁) ++ (a₂ ∷ l₂₂ )
+  ≡⟨ ++-singleton _ _ _ ⟩
+    ((l₁₁ ++ [ a₁ ] ++ l₁₂) ++ ([ a ] ++ l₂₁)) ++ ([ a₂ ] ++ l₂₂)
+  ≡⟨ ++-assoc (l₁₁ ++ [ a₁ ] ++ l₁₂)  ([ a ] ++ l₂₁) ([ a₂ ] ++ l₂₂) ⟩ 
+    (l₁₁ ++ [ a₁ ] ++ l₁₂) ++ [ a ] ++ l₂₁ ++ [ a₂ ] ++ l₂₂
+  ∎
+
+≤-+ : (n m : Nat.ℕ) → n Nat.≤ n Nat.+ m
+≤-+ Nat.zero m = Nat.z≤n
+≤-+ (suc n) m = Nat.s≤s (≤-+ n m)
+
+
+nz-lemma : {T : Set} → (a₁ a₂ : T) → (l₁₁ l₁₂ l₂₁ l₂₂ : List T) → (length (l₁₁ ++ [ a₁ ] ++ l₁₂) Nat.+ length (l₂₁ ++ [ a₂ ] ++ l₂₂)) Nat.> Nat.zero
+nz-lemma a₁ a₂ l₁₁ l₁₂ l₂₁ l₂₂ = {!   !}
+
 
 i-join :
   cmp $
@@ -74,13 +95,13 @@ i-join .[] leaf a l₂ t₂@(node t₂₁ a₂ t₂₂) =
 i-join l₁ t₁@(node {l₁₁} t₁₁  a₁ t₁₂) a .[] leaf = 
   flip (F _) ((1 / suc (length l₁))) 
     (bind (F _) (i-join _ t₁₂ a _ leaf) λ (l' , h' , t') →  
-      ret (_ ++ [ a₁ ] ++ l' , Eq.trans (Eq.cong (λ l'' → l₁₁ ++ (a₁ ∷ l'')) h') (i-join-lemma a a₁ _ _) ,  node t₁₁ a₁ t') )
+      ret (_ ++ [ a₁ ] ++ l' , Eq.trans (Eq.cong (λ l'' → l₁₁ ++ (a₁ ∷ l'')) h') (Eq.sym (++-assoc _ (a₁ ∷ _) [ a ])) ,  node t₁₁ a₁ t') )
     ((ret ( l₁ ++ [ a ] , refl , node t₁ a leaf))) 
 i-join l₁ t₁@(node {l₁₁} {l₁₂} t₁₁ a₁ t₁₂) a l₂ t₂@(node {l₂₁} {l₂₂} t₂₁ a₂ t₂₂) = 
   flip (F _) (1 / suc (length l₁ Nat.+ length l₂)) (ret (l₁ ++ [ a ] ++ l₂ , refl , node t₁ a t₂)) 
-    (flip (F _) (_/_ (length l₁) (length l₁ Nat.+ length l₂) {{{!  !}}} {{≤-+ _ _}})
-      (bind (F _) (i-join _ t₁ a _ t₂₁) λ (l' , h' , t') → ret ( l' ++ (a₂ ∷ l₂₂) , {!   !} , node t' a₂ t₂₂ ))
-      (bind (F _) (i-join _ t₁₂ a _ t₂) λ (l' , h' , t') → ret ( l₁₁ ++ [ a₁ ] ++ l' , {!   !}  , node t₁₁ a₁ t' )))
+    (flip (F _) (_/_ (length l₁) (length l₁ Nat.+ length l₂) {{ NatBase.>-nonZero (nz-lemma a₁ a₂ l₁₁ l₁₂ l₂₁ l₂₂)}} {{≤-+ _ _}})
+      (bind (F _) (i-join _ t₁ a _ t₂₁) λ (l' , h' , t') → ret ( l' ++ (a₂ ∷ l₂₂) , Eq.trans (Eq.cong (λ l' → l' ++ a₂ ∷ l₂₂) h') (i-join-lemma a₁ a a₂ l₁₁ l₁₂ l₂₁ l₂₂) , node t' a₂ t₂₂ ))
+      (bind (F _) (i-join _ t₁₂ a _ t₂) λ (l' , h' , t') → ret ( l₁₁ ++ [ a₁ ] ++ l' , Eq.trans (Eq.cong (λ l' → l₁₁ ++ a₁ ∷ l') h') (Eq.sym (++-assoc l₁₁ (a₁ ∷ l₁₂) _))  , node t₁₁ a₁ t' )))
 ```
 
 
@@ -121,4 +142,4 @@ law/expectation X p c₀ c₁ e₀ e₁ v =
     step X (toℚ (1- p) ℚ.* c₀ + toℚ p ℚ.* c₁) (flip X p e₀ e₁)
   ∎
 ```
-      
+           
