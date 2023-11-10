@@ -70,10 +70,6 @@ i-join-lemma a₁ a a₂ l₁₁ l₁₂ l₂₁ l₂₂ =
     (l₁₁ ++ [ a₁ ] ++ l₁₂) ++ [ a ] ++ l₂₁ ++ [ a₂ ] ++ l₂₂
   ∎
 
-≤-+ : (n m : Nat.ℕ) → n Nat.≤ n Nat.+ m
-≤-+ Nat.zero m = Nat.z≤n
-≤-+ (suc n) m = Nat.s≤s (≤-+ n m)
-
 
 nz-lemma : {T : Set} → (a₁ a₂ : T) → (l₁₁ l₁₂ l₂₁ l₂₂ : List T) → Nat.zero Nat.< (length (l₁₁ ++ [ a₁ ] ++ l₁₂) Nat.+ length (l₂₁ ++ [ a₂ ] ++ l₂₂))
 nz-lemma a₁ a₂ l₁₁ l₁₂ l₂₁ l₂₂ =
@@ -96,7 +92,6 @@ nz-lemma a₁ a₂ l₁₁ l₁₂ l₂₁ l₂₂ =
     ((length (l₁₁ ++ [ a₁ ] ++ l₁₂) Nat.+ length (l₂₁ ++ [ a₂ ] ++ l₂₂)))
   ∎ 
 
-
 i-join :
   cmp $
     Π (list A) λ l₁ → Π (itreap A l₁) λ _ →
@@ -113,17 +108,17 @@ i-join .[] leaf a l₂ t₂@(node t₂₁ a₂ t₂₂) =
 i-join l₁ t₁@(node {l₁₁} t₁₁  a₁ t₁₂) a .[] leaf = 
   flip (F _) ((1 / suc (length l₁))) 
     (bind (F _) (i-join _ t₁₂ a _ leaf) λ (l' , h' , t') →  
-      ret (_ ++ [ a₁ ] ++ l' , Eq.trans (Eq.cong (λ l'' → l₁₁ ++ (a₁ ∷ l'')) h') (Eq.sym (++-assoc _ (a₁ ∷ _) [ a ])) ,  node t₁₁ a₁ t') )
+      ret (_ ++ (a₁ ∷ l') , Eq.trans (Eq.cong (λ l'' → l₁₁ ++ (a₁ ∷ l'')) h') (Eq.sym (++-assoc _ (a₁ ∷ _) [ a ])) ,  node t₁₁ a₁ t') )
     ((ret ( l₁ ++ [ a ] , refl , node t₁ a leaf))) 
 i-join l₁ t₁@(node {l₁₁} {l₁₂} t₁₁ a₁ t₁₂) a l₂ t₂@(node {l₂₁} {l₂₂} t₂₁ a₂ t₂₂) = 
   flip (F _) (1 / suc (length l₁ Nat.+ length l₂)) 
-    (flip (F _) (_/_ (length l₁) (length l₁ Nat.+ length l₂) {{ Nat.>-nonZero (nz-lemma a₁ a₂ l₁₁ l₁₂ l₂₁ l₂₂)}} {{≤-+ _ _}})
-      -- joining into the RHS
+    (flip (F _) (_/_ (length l₁) (length l₁ Nat.+ length l₂) {{ Nat.>-nonZero (nz-lemma a₁ a₂ l₁₁ l₁₂ l₂₁ l₂₂)}} {{m≤m+n _ _}})
+      -- joining into the right subtree
       (bind (F _) (i-join _ t₁ a _ t₂₁) λ (l' , h' , t') → ret ( l' ++ (a₂ ∷ l₂₂) , Eq.trans (Eq.cong (λ l' → l' ++ a₂ ∷ l₂₂) h') (i-join-lemma a₁ a a₂ l₁₁ l₁₂ l₂₁ l₂₂) , node t' a₂ t₂₂ ))
-      -- joining into the LHS
-      (bind (F _) (i-join _ t₁₂ a _ t₂) λ (l' , h' , t') → ret ( l₁₁ ++ [ a₁ ] ++ l' , Eq.trans (Eq.cong (λ l' → l₁₁ ++ a₁ ∷ l') h') (Eq.sym (++-assoc l₁₁ (a₁ ∷ l₁₂) _))  , node t₁₁ a₁ t' )))
+      -- joining into the left subtree
+      (bind (F _) (i-join _ t₁₂ a _ t₂) λ (l' , h' , t') → ret ( l₁₁ ++ (a₁ ∷ l') , Eq.trans (Eq.cong (λ l' → l₁₁ ++ a₁ ∷ l') h') (Eq.sym (++-assoc l₁₁ (a₁ ∷ l₁₂) _))  , node t₁₁ a₁ t' )))
     -- the added element has the highest priority
-    (ret (l₁ ++ [ a ] ++ l₂ , refl , node t₁ a t₂)) 
+    (ret (l₁ ++ (a ∷ l₂) , refl , node t₁ a t₂)) 
 ```
 
 
