@@ -16,5 +16,8 @@ import Examples.Exp2
 -- Amortized Analysis via Coinduction
 import Examples.Amortized
 
+-- Sequence
+import Examples.Sequence
+
 -- Effectful
 import Examples.Decalf
