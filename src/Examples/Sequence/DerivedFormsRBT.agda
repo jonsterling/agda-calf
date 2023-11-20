@@ -101,13 +101,18 @@ module MapReduce {A B : tp⁺} where
                   bind cost (g s₁ s₃) λ _ →
                     ret triv
         )
-      ≤⟨ {! ≤⁻-mono (λ e →
-          bind cost
-            ((mapreduce _ _ _ t₁ f g z) ∥ (mapreduce _ _ _ t₂ f g z)) λ (s₁ , s₂) →
-              bind cost (f a) λ b →
-                bind cost (g b s₂) λ s₃ →
-                  bind cost e λ _ →
-                    ret triv) ?  !} ⟩
+      ≤⟨ (
+        {!   !}
+        -- ≤⁻-mono {Π _ λ _ → cost} {cost} (bind cost (mapreduce _ _ _ t₁ f g z ∥ mapreduce _ _ _ t₂ f g z))
+        --   {λ (s₁ , s₂) →
+        --     bind cost (f a) λ b →
+        --       bind cost (g b s₂) λ s₃ →
+        --        funext
+        --   $ λ-mono-≤⁻ λ (s₁ , s₂) →
+        -- ≤⁻-mono (bind cost (f a)) $ λ-mono-≤⁻ λ b →
+        -- ≤⁻-mono (bind cost (g b s₂)) $ λ-mono-≤⁻ λ s₃ →
+        -- g-bound {s₁} {s₃}
+      ) ⟩
        (
           bind cost
             ((mapreduce _ _ _ t₁ f g z) ∥ (mapreduce _ _ _ t₂ f g z)) λ (s₁ , s₂) →
@@ -197,21 +202,16 @@ module Sum where
         step cost (1 , 1) (
           bind cost ((sum/seq _ _ _ t₁) ∥ (sum/seq _ _ _ t₂))
             (λ _ → ret triv))
-      ≤⟨ {!   !} ⟩
-        step cost (1 , 1) (
-          bind cost (bind cost (sum/seq _ _ _ t₁) (λ _ → ret triv) ∥ bind cost (sum/seq _ _ _ t₂) (λ _ → ret triv))
-            (λ _ → ret triv))
-      ≤⟨ ≤⁻-mono
-          (λ e → step cost (1 , 1) (bind cost e (λ _ → ret triv)))
-          (∥-mono-≤⁻ (sum/bounded' black n l₁ t₁) (sum/bounded' black n l₂ t₂)) ⟩
-        step cost (1 , 1) (
-          bind cost ((step⋆ (length l₁ , span/sum black n)) ∥ (step⋆ (length l₂ , span/sum black n)))
-            (λ _ → ret triv))
-      ≡⟨ Eq.cong (λ e → step cost (1 , 1) e)
-          {x = bind cost
-                ((step⋆ (length l₁ , span/sum black n)) ∥ (step⋆ (length l₂ , span/sum black n)))
-              (λ _ → ret triv)}
-          refl ⟩
+      ≤⟨
+        ≤⁻-mono
+          (step cost (1 , 1))
+          (bound/par
+            {e₁ = sum/seq _ _ _ t₁}
+            {e₂ = sum/seq _ _ _ t₂}
+            {c₁ = (length l₁ , span/sum black n)}
+            (sum/bounded' black n l₁ t₁)
+            (sum/bounded' black n l₂ t₂))
+      ⟩
         step cost (1 , 1) (
           step⋆ ((length l₁ , span/sum black n) ⊗ (length l₂ , span/sum black n)))
       ≡⟨ Eq.cong (λ c → step cost (1 , 1) (step⋆ c)) (Eq.cong₂ _,_ refl (Nat.⊔-idem (span/sum black n))) ⟩
