@@ -28,49 +28,39 @@ open import Examples.Sequence.RedBlackTree
 
 
 module MapReduce {A B : tp⁺} where
-  mapreduce : cmp $
+  mapreduce/seq : cmp $
     Π color λ y → Π nat λ n → Π (list A) λ l → Π (irbt A y n l) λ _ →
     Π (U (Π A λ _ → F B)) λ _ →
     Π (U (Π B λ _ → Π B λ _ → F B)) λ _ →
     Π B λ _ →
     F B
-  mapreduce .black .zero .[] leaf f g z = ret z
-  mapreduce .red n l (red t₁ a t₂) f g z =
+  mapreduce/seq .black .zero .[] leaf f g z = ret z
+  mapreduce/seq .red n l (red t₁ a t₂) f g z =
     bind (F B)
-      ((mapreduce _ _ _ t₁ f g z) ∥ (mapreduce _ _ _ t₂ f g z)) λ s →
+      ((mapreduce/seq _ _ _ t₁ f g z) ∥ (mapreduce/seq _ _ _ t₂ f g z)) λ s →
         bind (F B) (f a) (λ b →
           bind (F B) (g b (proj₂ s)) (λ s₃ →
             bind (F B) (g (proj₁ s) s₃) ret))
-  mapreduce .black n@(suc n') l (black t₁ a t₂) f g z =
+  mapreduce/seq .black n@(suc n') l (black t₁ a t₂) f g z =
     bind (F B)
-      ((mapreduce _ _ _ t₁ f g z) ∥ (mapreduce _ _ _ t₂ f g z)) λ s →
+      ((mapreduce/seq _ _ _ t₁ f g z) ∥ (mapreduce/seq _ _ _ t₂ f g z)) λ s →
         bind (F B) (f a) (λ b →
           bind (F B) (g b (proj₂ s)) (λ s₃ →
             bind (F B) (g (proj₁ s) s₃) ret))
 
-  mapreduce/cost/work : val color → val nat → val nat
-  mapreduce/cost/work red n = 12 * (4 ^ (n ∸ 1)) ∸ 3
-  mapreduce/cost/work black n = 6 * (4 ^ (n ∸ 1)) ∸ 3
+  mapreduce/work : val (list A) → val nat
+  mapreduce/work l = 3 * length l
 
-  mapreduce/cost/work' : val nat → val nat
-  mapreduce/cost/work' n = 12 * (4 ^ (n ∸ 1)) ∸ 3
+  mapreduce/span : val color → val nat → val nat
+  mapreduce/span red n = 6 * n
+  mapreduce/span black n = 6 * n ∸ 3
 
-  mapreduce/cost/work≤mapreduce/cost/work' : (y : val color) → (n : val nat) → mapreduce/cost/work y n Nat.≤ mapreduce/cost/work' n
-  mapreduce/cost/work≤mapreduce/cost/work' red n = Nat.≤-refl
-  mapreduce/cost/work≤mapreduce/cost/work' black n =
-    Nat.∸-monoˡ-≤ {n = 12 * (4 ^ (n ∸ 1))} 3
-      (Nat.*-monoˡ-≤ (4 ^ (n ∸ 1)) {y = 12} (Nat.s≤s (Nat.s≤s (Nat.s≤s (Nat.s≤s (Nat.s≤s (Nat.s≤s Nat.z≤n)))))))
+  mapreduce/span' : val nat → val nat
+  mapreduce/span' n = 6 * n
 
-  mapreduce/cost/span : val color → val nat → val nat
-  mapreduce/cost/span red n = 6 * n
-  mapreduce/cost/span black n = 6 * n ∸ 3
-
-  mapreduce/cost/span' : val nat → val nat
-  mapreduce/cost/span' n = 6 * n
-
-  mapreduce/cost/span≤mapreduce/cost/span' : (y : val color) → (n : val nat) → mapreduce/cost/span y n Nat.≤ mapreduce/cost/span' n
-  mapreduce/cost/span≤mapreduce/cost/span' red n = Nat.≤-refl
-  mapreduce/cost/span≤mapreduce/cost/span' black n = Nat.m∸n≤m (6 * n) 3
+  span/bounded : (y : val color) → (n : val nat) → mapreduce/span y n Nat.≤ mapreduce/span' n
+  span/bounded red n = Nat.≤-refl
+  span/bounded black n = Nat.m∸n≤m (6 * n) 3
 
   mapreduce/is-bounded :
     (f : cmp (Π A λ _ → F B)) →
@@ -79,15 +69,14 @@ module MapReduce {A B : tp⁺} where
     ({x y : val B} → IsBounded B (g x y) (1 , 1)) →
     (z : val B) →
     (y : val color) → (n : val nat) → (l : val (list A)) → (t : val (irbt A y n l)) →
-    IsBounded B (mapreduce y n l t f g z) (mapreduce/cost/work y n , mapreduce/cost/span y n)
-  mapreduce/is-bounded f f-bound g g-bound z .black .zero .[] leaf =
-    step⋆-mono-≤⁻ {c' = 3 , 0} (Nat.z≤n , Nat.z≤n)
+    IsBounded B (mapreduce/seq y n l t f g z) (mapreduce/work l , mapreduce/span y n)
+  mapreduce/is-bounded f f-bound g g-bound z .black .zero .[] leaf = ≤⁻-refl
   mapreduce/is-bounded f f-bound g g-bound z .red n l (red t₁ a t₂) =
     let open ≤⁻-Reasoning cost in
       begin
         bind cost (
           bind (F B)
-            ((mapreduce _ _ _ t₁ f g z) ∥ (mapreduce _ _ _ t₂ f g z)) λ _ →
+            ((mapreduce/seq _ _ _ t₁ f g z) ∥ (mapreduce/seq _ _ _ t₂ f g z)) λ _ →
               bind (F B) (f a) (λ _ →
                 bind (F B) (g _ _) (λ _ →
                   bind (F B) (g _ _) ret)))
@@ -95,7 +84,7 @@ module MapReduce {A B : tp⁺} where
       ≡⟨⟩
         (
           bind cost
-            ((mapreduce _ _ _ t₁ f g z) ∥ (mapreduce _ _ _ t₂ f g z)) λ (s₁ , s₂) →
+            ((mapreduce/seq _ _ _ t₁ f g z) ∥ (mapreduce/seq _ _ _ t₂ f g z)) λ (s₁ , s₂) →
               bind cost (f a) λ b →
                 bind cost (g b s₂) λ s₃ →
                   bind cost (g s₁ s₃) λ _ →
@@ -115,7 +104,7 @@ module MapReduce {A B : tp⁺} where
       ) ⟩
        (
           bind cost
-            ((mapreduce _ _ _ t₁ f g z) ∥ (mapreduce _ _ _ t₂ f g z)) λ (s₁ , s₂) →
+            ((mapreduce/seq _ _ _ t₁ f g z) ∥ (mapreduce/seq _ _ _ t₂ f g z)) λ (s₁ , s₂) →
               bind cost (f a) λ b →
                 bind cost (g b s₂) λ s₃ →
                   step⋆ (1 , 1)
@@ -138,15 +127,15 @@ module MapReduce {A B : tp⁺} where
     ({x y : val B} → IsBounded B (g x y) (1 , 1)) →
     (z : val B) →
     (y : val color) → (n : val nat) → (l : val (list A)) → (t : val (irbt A y n l)) →
-    IsBounded B (mapreduce y n l t f g z) (mapreduce/cost/work' n , mapreduce/cost/span' n)
+    IsBounded B (mapreduce/seq y n l t f g z) (mapreduce/work l , mapreduce/span' n)
   mapreduce/is-bounded' f f-bound g g-bound z y n l t =
     let open ≤⁻-Reasoning cost in
       begin
-        bind cost (mapreduce y n l t f g z) (λ _ → ret triv)
+        bind cost (mapreduce/seq y n l t f g z) (λ _ → ret triv)
       ≤⟨ mapreduce/is-bounded f f-bound g g-bound z y n l t ⟩
-        step⋆ (mapreduce/cost/work y n , mapreduce/cost/span y n)
-      ≤⟨ step⋆-mono-≤⁻ (mapreduce/cost/work≤mapreduce/cost/work' y n , mapreduce/cost/span≤mapreduce/cost/span' y n) ⟩
-        step⋆ (mapreduce/cost/work' n , mapreduce/cost/span' n)
+        step⋆ (mapreduce/work l , mapreduce/span y n)
+      ≤⟨ step⋆-mono-≤⁻ (Nat.≤-refl {mapreduce/work l}, span/bounded y n) ⟩
+        step⋆ (mapreduce/work l , mapreduce/span' n)
       ∎
 
 
@@ -207,7 +196,6 @@ module Sum where
           (step cost (1 , 1))
           (bound/par
             {e₁ = sum/seq _ _ _ t₁}
-            {e₂ = sum/seq _ _ _ t₂}
             {c₁ = (length l₁ , span/sum black n)}
             (sum/bounded' black n l₁ t₁)
             (sum/bounded' black n l₂ t₂))
@@ -234,28 +222,19 @@ module Sum where
         step cost (1 , 1) (
           bind cost ((sum/seq _ _ _ t₁) ∥ (sum/seq _ _ _ t₂))
             (λ _ → ret triv))
-      ≤⟨ {!   !} ⟩
-        step cost (1 , 1) (
-          bind cost (bind cost (sum/seq _ _ _ t₁) (λ _ → ret triv) ∥ bind cost (sum/seq _ _ _ t₂) (λ _ → ret triv))
-            (λ _ → ret triv))
       ≤⟨ ≤⁻-mono
-          (λ e → step cost (1 , 1) (bind cost e (λ _ → ret triv)))
-          (∥-mono-≤⁻  (sum/bounded' y₁ n' l₁ t₁) (sum/bounded' y₂ n' l₂ t₂)) ⟩
+          (step cost (1 , 1))
+          (bound/par
+            {e₁ = sum/seq _ _ _ t₁}
+            {c₁ = (length l₁ , span/sum y₁ n')}
+            (sum/bounded' y₁ n' l₁ t₁)
+            (sum/bounded' y₂ n' l₂ t₂)) ⟩
         step cost (1 , 1) (
-          bind cost ((step⋆ (length l₁ , span/sum y₁ n')) ∥ (step⋆ (length l₂ , span/sum y₂ n')))
-            (λ _ → ret triv))
-      ≤⟨ ≤⁻-mono₂
-          (λ e₁ e₂ → step cost (1 , 1) (bind cost (e₁ ∥ e₂) (λ _ → ret triv)))
-            (step⋆-mono-≤⁻ (Nat.≤-refl {length l₁} , span/bounded y₁ n'))
-            (step⋆-mono-≤⁻ (Nat.≤-refl {length l₂} , span/bounded y₂ n')) ⟩
-        step cost (1 , 1) (
-          bind cost ((step⋆ (length l₁ , 1 + 2 * n')) ∥ (step⋆ (length l₂ , 1 + 2 * n')))
-            (λ _ → ret triv))
-      ≡⟨ Eq.cong (λ e → step cost (1 , 1) e)
-          {x = bind cost
-                ((step⋆ (length l₁ , 1 + 2 * n')) ∥ (step⋆ (length l₂ , 1 + 2 * n')))
-              (λ _ → ret triv)}
-          refl ⟩
+          step⋆ ((length l₁ , span/sum y₁ n') ⊗ (length l₂ , span/sum y₂ n')))
+      ≤⟨ ≤⁻-mono
+          (λ e → step cost (1 , 1) e)
+            (step⋆-mono-≤⁻
+              (Nat.≤-refl , Nat.⊔-mono-≤ (span/bounded y₁ n') (span/bounded y₂ n'))) ⟩
         step cost (1 , 1) (
           step⋆ ((length l₁ , 1 + 2 * n') ⊗ (length l₂ , 1 + 2 * n')))
       ≡⟨ Eq.cong (λ c → step cost (1 , 1) (step⋆ c)) (Eq.cong₂ _,_ refl (Nat.⊔-idem (1 + 2 * n'))) ⟩
