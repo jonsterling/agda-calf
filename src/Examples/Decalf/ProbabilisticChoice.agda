@@ -8,8 +8,9 @@ costMonoid = ℕ-CostMonoid
 open CostMonoid costMonoid using (ℂ)
 
 open import Calf costMonoid
-open import Calf.Data.Nat
-import Data.Nat.Properties as Nat
+open import Calf.Data.Nat 
+import Data.Nat.Properties as Nat 
+import Data.Nat.Base as BNat
 open import Calf.Data.List
 open import Calf.Data.Equality as Eq using (_≡_; refl; module ≡-Reasoning)
 open import Calf.Data.IsBoundedG costMonoid
@@ -54,6 +55,10 @@ postulate
   flip/step : {e₀ e₁ : cmp X} {p : 𝕀} →
     step X c (flip X p e₀ e₁) ≡ flip X p (step X c e₀) (step X c e₁)
 
+
+-- flip/bound : {p : 𝕀} {e : cmp X} {c d : ℂ} →
+--   flip X p (step X c e) (step X d e) ≤⁻ flip X p (step X (c BNat.⊔ d) e)
+-- flip/bound = {!   !}
 
 module _ where
   bernoulli : cmp cost
