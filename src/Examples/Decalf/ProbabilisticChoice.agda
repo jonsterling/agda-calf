@@ -52,7 +52,7 @@ postulate
     bind {A = A} X (flip (F A) p e₀ e₁) f ≡ flip X p (bind X e₀ f) (bind X e₁ f)
   {-# REWRITE bind/flip #-}
 
-  flip/step : {e₀ e₁ : cmp X} {p : 𝕀} →
+  step/flip : {e₀ e₁ : cmp X} {p : 𝕀} →
     step X c (flip X p e₀ e₁) ≡ flip X p (step X c e₀) (step X c e₁)
 
 

@@ -106,28 +106,88 @@ i-join l₁ t₁@(node {l₁₁} {l₁₂} t₁₁ a₁ t₁₂) a l₂ t₂@(no
 i-join/cost : (l₁ l₂ : val (list A)) → (t₁ : val (itreap A l₁)) → (t₂ : val (itreap A l₂)) → ℂ
 i-join/cost l₁ l₂ t₁ t₂ =  (length l₁) Nat.⊔ (length l₂)
 
+max-lemma : (x : Nat.ℕ) → x ≡ x Nat.⊔ 0
+max-lemma 0 = refl
+max-lemma (suc x) = refl
+
+-- bind-lemma : (e : cmp (F A)) → (f : val A → cmp (F A)) → (bind (F unit) (bind (F A) e f) (λ _ → ret triv)) ≡ bind (F unit) e (λ _ → ret triv)
+-- bind-lemma {A} e f = {!   !}
+
 i-join/is-bounded : ∀  l₁ t₁ a l₂ t₂ → 
   IsBounded (Σ⁺ (list A) λ l → (meta⁺ (l ≡ l₁ ++ [ a ] ++ l₂)) ×⁺ (itreap A l)) (i-join l₁ t₁ a l₂ t₂) (i-join/cost l₁ l₂ t₁ t₂)
 i-join/is-bounded .[] leaf a .[]  leaf = step⋆-mono-≤⁻ {0} {0} Nat.z≤n 
-i-join/is-bounded l₁ t₁@(node {l₁₁} {l₁₂} t₁₁ a₁ t₁₂) a l₂@.[] leaf =
+i-join/is-bounded {A} l₁ t₁@(node {l₁₁} {l₁₂} t₁₁ a₁ t₁₂) a l₂@.[] leaf =
     let open ≤⁻-Reasoning cost in
     begin
-      bind cost
-      (i-join l₁ (node t₁₁ a₁ t₁₂) a [] leaf)
-      (λ _ → ret triv)
-    ≡⟨ {!   !} ⟩
-      bind cost
-        (flip (F _) (1 / suc (length l₁))  
-        {!   !} 
-        {!   !}
-        -- ((ret ( l₁ ++ [ a ] , refl , node t₁ a leaf)))
+      flip (F unit) ((1 / suc (length l₁))) (
+        step (F unit) (1) (
+          bind (F unit)
+            (bind (F (Σ⁺ (list A) λ l → (meta⁺ (l ≡ l₁ ++ (a ∷ l₂))) ×⁺ (itreap A l))) (i-join l₁₂ t₁₂ a [] leaf) 
+            λ (l' , h' , t') →  
+              ret (_ ++ (a₁ ∷ l') , Eq.trans (Eq.cong (λ l'' → l₁₁ ++ (a₁ ∷ l'')) h') (Eq.sym (++-assoc _ (a₁ ∷ _) [ a ])) ,  node t₁₁ a₁ t'))
+          (λ _ → ret triv)
         )
-      (λ _ → ret triv)
-    ≤⟨ {!   !} ⟩ 
-      step⋆ (i-join/cost (_ ++ [ a₁ ] ++ _) [] (node t₁₁ a₁ t₁₂) leaf)
+      )
+      (ret triv)
+    ≤⟨ ≤⁻-mono {F unit} (flip (F unit) _ _) (step-monoˡ-≤⁻ (ret triv) (Nat.z≤n {1})) ⟩ 
+      flip (F unit) ((1 / suc (length l₁))) (
+        step (F unit) (1) (
+          bind (F unit)
+            (bind (F (Σ⁺ (list A) λ l → (meta⁺ (l ≡ l₁ ++ (a ∷ l₂))) ×⁺ (itreap A l))) (i-join l₁₂ t₁₂ a [] leaf) 
+            λ (l' , h' , t') →  
+              ret (_ ++ (a₁ ∷ l') , Eq.trans (Eq.cong (λ l'' → l₁₁ ++ (a₁ ∷ l'')) h') (Eq.sym (++-assoc _ (a₁ ∷ _) [ a ])) ,  node t₁₁ a₁ t'))
+          (λ _ → ret triv)
+        )
+      )
+      (step (F unit) 1 (ret triv))
+    ≡˘⟨ step/flip {c = 1} ⟩ 
+      step (F unit) (1) (
+        flip (F unit) (1 / suc (length l₁)) (
+          (bind (F unit)
+            (bind (F (Σ⁺ (list A) λ l → (meta⁺ (l ≡ l₁ ++ (a ∷ l₂))) ×⁺ (itreap A l))) (i-join l₁₂ t₁₂ a [] leaf) 
+              λ (l' , h' , t') →  
+                ret (_ ++ (a₁ ∷ l') , Eq.trans (Eq.cong (λ l'' → l₁₁ ++ (a₁ ∷ l'')) h') (Eq.sym (++-assoc _ (a₁ ∷ _) [ a ])) ,  node t₁₁ a₁ t'))
+            (λ _ → ret triv)
+          )
+        )
+        (ret triv)
+      )
+    ≡⟨ Eq.cong (λ x → step (F unit) (1) (flip (F unit) (1 / suc (length l₁)) x (ret triv))) {!   !} ⟩
+      step (F unit) (1) (
+        flip (F unit) (1 / suc (length l₁)) (
+          (bind (F unit)
+            (i-join l₁₂ t₁₂ a [] leaf) 
+            (λ _ → ret triv)
+          )
+        )
+        (ret triv)
+      )
+    ≤⟨ {!   !} ⟩
+      step (F unit) (1) (
+        flip (F unit) (1 / suc (length l₁)) 
+          (step⋆ (i-join/cost l₁₂ [] t₁₂ leaf))
+          (ret triv)
+        )
+    ≡⟨ Eq.cong (λ x → step (F unit) (1) (flip (F unit) (1 / suc (length l₁)) x (ret triv))) {!  !} ⟩
+      step (F unit) (1) (
+        flip (F unit) (1 / suc (length l₁)) 
+          (step⋆ (length l₁₂))
+          (ret triv)
+      )
+    ≤⟨ ≤⁻-mono {F unit} (λ x → step (F unit) 1 (flip (F unit) (1 / suc (length l₁)) (step⋆ (length l₁₂)) x)) (step-monoˡ-≤⁻ (ret triv) (Nat.z≤n {length l₁₂})) ⟩
+      step (F unit) (1) (
+        flip (F unit) (1 / suc (length l₁)) 
+          (step⋆ (length l₁₂))
+          (step⋆ (length l₁₂))
+      )
+    ≡⟨ Eq.cong (λ x → step (F unit) (1) x) (flip/same _ _) ⟩
+      step⋆ (1 + length l₁₂)
+    ≤⟨ {!   !} ⟩
+      step⋆ (length l₁)
+    ≡⟨ Eq.cong step⋆ {(length l₁)} {((length l₁) Nat.⊔ 0)} (max-lemma _) ⟩
+      step⋆ (i-join/cost (l₁₁ ++ [ a₁ ] ++ l₁₂) [] (node t₁₁ a₁ t₁₂) leaf)
     ∎
-i-join/is-bounded .[]  leaf a .(_ ++ [ a₁ ] ++ _) (node t₂ a₁ t₃) = 
-  let open ≤⁻-Reasoning cost in {!   !}
+i-join/is-bounded .[]  leaf a .(_ ++ [ a₁ ] ++ _) (node t₂ a₁ t₃) = {!   !}
 i-join/is-bounded .(_ ++ [ a₂ ] ++ _)  (node t₁ a₂ t₄) a .(_ ++ [ a₁ ] ++ _) (node t₂ a₁ t₃) = {!   !}
 
 ```
@@ -170,5 +230,5 @@ i-join/is-bounded .(_ ++ [ a₂ ] ++ _)  (node t₁ a₂ t₄) a .(_ ++ [ a₁ ]
 --   ≡⟨ Eq.cong (step X (toℚ (1- p) ℚ.* c₀)) (law/expectation₁ X p c₁ e₀ e₁ v) ⟩
 --     step X (toℚ (1- p) ℚ.* c₀ + toℚ p ℚ.* c₁) (flip X p e₀ e₁)
 --   ∎
--- ```     
-                      
+-- ```      
+                         
