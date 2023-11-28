@@ -152,7 +152,7 @@ i-join/is-bounded {A} l₁ t₁@(node {l₁₁} {l₁₂} t₁₁ a₁ t₁₂) 
         )
         (ret triv)
       )
-    ≡⟨ Eq.cong (λ x → step (F unit) (1) (flip (F unit) (1 / suc (length l₁)) x (ret triv))) {!   !} ⟩
+    ≡⟨ Eq.cong (λ x → step (F unit) (1) (flip (F unit) (1 / suc (length l₁)) x (ret triv))) refl ⟩
       step (F unit) (1) (
         flip (F unit) (1 / suc (length l₁)) (
           (bind (F unit)
@@ -162,13 +162,13 @@ i-join/is-bounded {A} l₁ t₁@(node {l₁₁} {l₁₂} t₁₁ a₁ t₁₂) 
         )
         (ret triv)
       )
-    ≤⟨ {!   !} ⟩
+    ≤⟨ ≤⁻-mono {F unit} (λ x → step (F unit) 1 (flip (F unit) (1 / suc (length (l₁₁ ++ [ a₁ ] ++ l₁₂))) x (ret triv))) (i-join/is-bounded l₁₂ t₁₂ a [] leaf) ⟩
       step (F unit) (1) (
         flip (F unit) (1 / suc (length l₁)) 
           (step⋆ (i-join/cost l₁₂ [] t₁₂ leaf))
           (ret triv)
         )
-    ≡⟨ Eq.cong (λ x → step (F unit) (1) (flip (F unit) (1 / suc (length l₁)) x (ret triv))) {!  !} ⟩
+    ≡⟨ Eq.cong (λ x → step (F unit) (1) (flip (F unit) (1 / suc (length l₁)) x (ret triv))) (Eq.cong step⋆ {(i-join/cost l₁₂ [] t₁₂ leaf)} {(length l₁₂)} (Eq.sym (max-lemma _))) ⟩
       step (F unit) (1) (
         flip (F unit) (1 / suc (length l₁)) 
           (step⋆ (length l₁₂))
@@ -182,8 +182,12 @@ i-join/is-bounded {A} l₁ t₁@(node {l₁₁} {l₁₂} t₁₁ a₁ t₁₂) 
       )
     ≡⟨ Eq.cong (λ x → step (F unit) (1) x) (flip/same _ _) ⟩
       step⋆ (1 + length l₁₂)
-    ≤⟨ {!   !} ⟩
-      step⋆ (length l₁)
+    ≤⟨ step⋆-mono-≤⁻ (m≤n+m (1 + length l₁₂) (length l₁₁)) ⟩
+      step⋆ ((length l₁₁) + (1 + length l₁₂))
+    ≡˘⟨ Eq.cong (λ x → step⋆ ((length l₁₁) + x)) (length-++ [ a₁ ] {l₁₂}) ⟩
+      step⋆ ((length l₁₁) + length([ a₁ ] ++ l₁₂))
+    ≡˘⟨ Eq.cong step⋆ (length-++ l₁₁) ⟩
+      step⋆ (length (l₁₁ ++ [ a₁ ] ++ l₁₂))
     ≡⟨ Eq.cong step⋆ {(length l₁)} {((length l₁) Nat.⊔ 0)} (max-lemma _) ⟩
       step⋆ (i-join/cost (l₁₁ ++ [ a₁ ] ++ l₁₂) [] (node t₁₁ a₁ t₁₂) leaf)
     ∎
