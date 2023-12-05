@@ -9,23 +9,29 @@ open CostMonoid costMonoid
 
 open import Agda.Builtin.Cubical.Sub
 open import Cubical.Core.Everything
+open import Cubical.Foundations.Prelude
+open import Cubical.Foundations.HLevels
+open import Level
 open import Calf
 
 postulate
-  ext : Set
-  ext/unique : (x y : ext) → x ≡ y
+  extProp : hProp 0ℓ
+ext = fst extProp
+ext-isProp = snd extProp
 
 
 data ● (A : Set) : Set where
   η : A → ● A
   ∗ : ext → ● A
   η≡∗ : (a : A) (u : ext) → η a ≡ ∗ u
-  η≡∗/uni : {x x' : ● A} (p p' : x ≡ x') → ext → p ≡ p'
 
 unique : ∀ {A} → (a : ● A) → (u : ext) → a ≡ ∗ u
 unique (η x) u = η≡∗ x u
-unique (∗ x) u = {!   !} -- transp {!   !} i (ext/unique x u)
-unique (η≡∗ a u₁ i) u = {!   !}
+unique (∗ x) u = congS ∗ (snd extProp x u)
+unique (η≡∗ a u i) u' j = η≡∗ a u {! i ∧ j  !}
+
+foo : ∀ {A} → isSet A → isSet (● A)
+foo isSet-A x x' h h' i i' = {!   !}
 
 
 -- open import Calf.Data.Nat
