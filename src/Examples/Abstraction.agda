@@ -11,27 +11,76 @@ open import Agda.Builtin.Cubical.Sub
 open import Cubical.Core.Everything
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.HLevels
+open import Cubical.Foundations.Isomorphism
 open import Level
 open import Calf
+open import Function
 
 postulate
   extProp : hProp 0ℓ
 ext = fst extProp
 ext-isProp = snd extProp
 
+private
+  variable
+    ℓ ℓ' : Level
+    A B C : Type ℓ
 
-data ● (A : Set) : Set where
+◯ : Type ℓ → Type ℓ
+◯ A = (u : ext) → A
+
+data ● (A : Type ℓ) : Type ℓ where
   η : A → ● A
-  ∗ : ext → ● A
+  ∗ : (u : ext) → ● A
   η≡∗ : (a : A) (u : ext) → η a ≡ ∗ u
 
-unique : ∀ {A} → (a : ● A) → (u : ext) → a ≡ ∗ u
-unique (η x) u = η≡∗ x u
-unique (∗ x) u = congS ∗ (snd extProp x u)
-unique (η≡∗ a u i) u' j = η≡∗ a u {! i ∧ j  !}
+unique : (a : ● A) → (u : ext) → a ≡ ∗ u
+unique = {!   !}
+-- unique (η x) u = η≡∗ x u
+-- unique (∗ x) u = congS ∗ (ext-isProp x u)
+-- unique (η≡∗ a u i) u' j = {!   !}
 
-foo : ∀ {A} → isSet A → isSet (● A)
-foo isSet-A x x' h h' i i' = {!   !}
+constant : (f : ● A → ◯ B) → Σ (◯ B) λ b → f ≡ const b
+fst (constant f) u = f (∗ u) u
+snd (constant f) i a u = congS (λ a → f a u) (unique a u) i
+
+
+record Retract {ℓ ℓ'} (A : Type ℓ) (B : Type ℓ') : Type (ℓ-max ℓ ℓ') where
+  no-eta-equality
+  field
+    encode : A → B
+    decode : B → A
+    leftInv : retract encode decode
+
+TypeWithGhost : {V : Type ℓ} {S : Type ℓ'} → Retract V S → Type (ℓ-max ℓ ℓ')
+TypeWithGhost {V = V} {S = S} retr = Σ[ v ∈ ◯ V ] ● (Σ[ s ∈ S ] ((u : ext) → Retract.decode retr s ≡ v u))
+
+record View {ℓ ℓ'} (V : Type ℓ) (S : Type ℓ') : Type (ℓ-max ℓ ℓ') where
+  field
+    encode : V → S
+    decode : S → V
+    leftInv  : retract encode decode
+    rightInv : ext → section encode decode
+
+foo : {V : Type ℓ} {S : Type ℓ'} → (retr : Retract V S) → View V (TypeWithGhost retr)
+View.encode (foo retr) v = (λ _ → v) , η (Retract.encode retr v , λ _ → Retract.leftInv retr v)
+View.decode (foo retr) (◯v , η (s , _)) = Retract.decode retr s
+View.decode (foo retr) (◯v , ∗ u) = ◯v u
+View.decode (foo retr) (◯v , η≡∗ (s , h) u i) = h u i
+View.leftInv (foo retr) = Retract.leftInv retr
+View.rightInv (foo retr) u (◯v , η (s , h)) = {!   !}
+fst (View.rightInv (foo retr) u (◯v , ∗ u') i) = {! congS (λ u → ◯v u)  !}
+snd (View.rightInv (foo retr) u (◯v , ∗ u') i) = {!   !}
+View.rightInv (foo retr) u (◯v , η≡∗ a u' i) = {!   !}
+
+-- viewToIso : ∀ {V S} → ◯ (View V S → Iso V S)
+-- Iso.fun (viewToIso u view) = View.encode view
+-- Iso.inv (viewToIso u view) = View.decode view
+-- Iso.rightInv (viewToIso u view) = View.ext-iso view u
+-- Iso.leftInv (viewToIso u view) = View.retract view
+
+-- foo : ∀ {A} → isType A → isType (● A)
+-- foo isType-A x x' h h' i i' = {!   !}
 
 
 -- open import Calf.Data.Nat
