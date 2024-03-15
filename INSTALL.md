@@ -1,7 +1,7 @@
 # Installation
 
 1. Install Agda v2.6.3 ([instructions](https://agda.readthedocs.io/en/v2.6.3/getting-started/installation.html)).
-2. Install `agda-stdlib` v2.0 ([instructions](https://github.com/agda/agda-stdlib/blob/v2.0/notes/installation-guide.md)).
+2. Install `agda-stdlib` v2.0 ([instructions](https://github.com/agda/agda-stdlib/blob/v2.0/doc/installation-guide.md)).
 
 This is all that is required to play with **calf**.
 
