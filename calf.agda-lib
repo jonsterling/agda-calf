@@ -1,4 +1,4 @@
 name: calf
-depend: standard-library
+depend: standard-library-2.0
 include: src
 flags: --prop --guardedness

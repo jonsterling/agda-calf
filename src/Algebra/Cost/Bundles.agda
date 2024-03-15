@@ -27,7 +27,8 @@ record CostMonoid : Set₁ where
   Preorder._≲_ ≤-preorder = _≤_
   Preorder.isPreorder ≤-preorder = isPreorder
 
-  open import Relation.Binary.Reasoning.Preorder ≤-preorder public
+  module ≤-Reasoning where
+    open import Relation.Binary.Reasoning.Preorder ≤-preorder public
 
 
 record ParCostMonoid : Set₁ where
@@ -63,4 +64,5 @@ record ParCostMonoid : Set₁ where
   Preorder._≲_ ≤-preorder = _≤_
   Preorder.isPreorder ≤-preorder = isPreorder
 
-  open import Relation.Binary.Reasoning.Preorder ≤-preorder public
+  module ≤-Reasoning where
+    open import Relation.Binary.Reasoning.Preorder ≤-preorder public

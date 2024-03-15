@@ -58,11 +58,11 @@ boundg/par {A₁} {A₂} {e₁} {e₂} {b₁} {b₂} ib₁ ib₂ =
   let open ≤⁻-Reasoning cost in
   begin
     bind cost (e₁ ∥ e₂) (λ _ → ret triv)
-  ≤⁻⟨ {!   !} ⟩
+  ≲⟨ {!   !} ⟩
     bind cost ((bind cost e₁ λ _ → ret triv) ∥ (bind cost e₂ λ _ → ret triv)) (λ _ → ret triv)
-  ≤⁻⟨ ≤⁻-mono (λ e → bind cost (e ∥ (bind cost e₂ λ _ → ret triv)) (λ _ → ret triv)) ib₁ ⟩
+  ≲⟨ ≤⁻-mono (λ e → bind cost (e ∥ (bind cost e₂ λ _ → ret triv)) (λ _ → ret triv)) ib₁ ⟩
     bind cost (b₁ ∥ (bind cost e₂ λ _ → ret triv)) (λ _ → ret triv)
-  ≤⁻⟨ ≤⁻-mono (λ e → bind cost (b₁ ∥ e) (λ _ → ret triv)) ib₂ ⟩
+  ≲⟨ ≤⁻-mono (λ e → bind cost (b₁ ∥ e) (λ _ → ret triv)) ib₂ ⟩
     bind cost (b₁ ∥ b₂) (λ _ → ret triv)
   ∎
 

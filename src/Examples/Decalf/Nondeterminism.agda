@@ -70,7 +70,7 @@ module QuickSort (M : Comparable) where
     let open ≤⁻-Reasoning cost in
     begin
       branch (F unit) (bind (F unit) (choose (x' ∷ xs)) λ _ → ret triv) (ret triv)
-    ≤⁻⟨ ≤⁻-mono (λ e → branch (F unit) (bind (F unit) e λ _ → ret triv) (ret triv)) (choose/is-bounded x' xs) ⟩
+    ≲⟨ ≤⁻-mono (λ e → branch (F unit) (bind (F unit) e λ _ → ret triv) (ret triv)) (choose/is-bounded x' xs) ⟩
       branch (F unit) (ret triv) (ret triv)
     ≡⟨ branch/idem ⟩
       ret triv
@@ -128,7 +128,7 @@ module QuickSort (M : Comparable) where
         bind (F unit) (x ≤? pivot) λ _ →
         ret triv
       )
-    ≤⁻⟨
+    ≲⟨
       ( ≤⁻-mono
           {Π (Σ⁺ (list A) λ l₁ → Σ⁺ (list A) λ l₂ → meta⁺ (All (_≤ pivot) l₁) ×⁺ meta⁺ (All (pivot ≤_) l₂) ×⁺ meta⁺ (l₁ ++ l₂ ↭ xs)) λ _ → F unit}
           (bind (F unit) (partition pivot xs)) $
@@ -143,7 +143,7 @@ module QuickSort (M : Comparable) where
       ( bind (F unit) (bind (F unit) (partition pivot xs) λ _ → ret triv) λ _ →
         step⋆ 1
       )
-    ≤⁻⟨ ≤⁻-mono (λ e → bind (F unit) (bind (F unit) e λ _ → ret triv) λ _ → step (F unit) 1 (ret triv)) (partition/is-bounded pivot xs) ⟩
+    ≲⟨ ≤⁻-mono (λ e → bind (F unit) (bind (F unit) e λ _ → ret triv) λ _ → step (F unit) 1 (ret triv)) (partition/is-bounded pivot xs) ⟩
       ( bind (F unit) (step (F unit) (length xs) (ret triv)) λ _ →
         step⋆ 1
       )
@@ -171,7 +171,7 @@ module QuickSort (M : Comparable) where
     let open Nat.≤-Reasoning in
     begin
       m ² + n ²
-    ≤⁻⟨ Nat.+-mono-≤ (Nat.m≤m+n (m * m) (n * m)) (Nat.m≤n+m (n * n) (m * n)) ⟩
+    ≤⟨ Nat.+-mono-≤ (Nat.m≤m+n (m * m) (n * m)) (Nat.m≤n+m (n * n) (m * n)) ⟩
       (m * m + n * m) + (m * n + n * n)
     ≡˘⟨ Eq.cong₂ _+_ (Nat.*-distribʳ-+ m m n) (Nat.*-distribʳ-+ n m n) ⟩
       (m + n) * m + (m + n) * n
@@ -191,7 +191,7 @@ module QuickSort (M : Comparable) where
         bind (F _) (sort l₂) λ _ →
         ret triv
       )
-    ≤⁻⟨
+    ≲⟨
       ( ≤⁻-mono
           {Π (Σ⁺ A λ pivot → Σ⁺ (list A) λ l' → meta⁺ (x ∷ xs ↭ pivot ∷ l')) λ _ → F unit}
           {F unit}
@@ -220,7 +220,7 @@ module QuickSort (M : Comparable) where
         bind (F _) (sort l₁) λ _ →
         step⋆ (length l₂ ²)
       )
-    ≤⁻⟨
+    ≲⟨
       ( ≤⁻-mono
           {Π (Σ⁺ A λ pivot → Σ⁺ (list A) λ l' → meta⁺ (x ∷ xs ↭ pivot ∷ l')) λ _ → F unit}
           {F unit}
@@ -245,7 +245,7 @@ module QuickSort (M : Comparable) where
         bind (F _) (partition pivot l) λ (l₁ , l₂ , h₁ , h₂ , l₁++l₂↭l) →
         step⋆ (length l₁ ² + length l₂ ²)
       )
-    ≤⁻⟨
+    ≲⟨
       ( ≤⁻-mono
           {Π (Σ⁺ A λ pivot → Σ⁺ (list A) λ l' → meta⁺ (x ∷ xs ↭ pivot ∷ l')) λ _ → F unit}
           {F unit}
@@ -270,7 +270,7 @@ module QuickSort (M : Comparable) where
         bind (F _) (partition pivot l) λ _ →
         step⋆ (length l ²)
       )
-    ≤⁻⟨
+    ≲⟨
       ( ≤⁻-mono
           {Π (Σ⁺ A λ pivot → Σ⁺ (list A) λ l' → meta⁺ (x ∷ xs ↭ pivot ∷ l')) λ _ → F unit}
           {F unit}
@@ -295,9 +295,9 @@ module QuickSort (M : Comparable) where
       ( bind (F _) (choose (x ∷ xs)) λ _ →
         step⋆ (length xs + length xs ²)
       )
-    ≤⁻⟨ bind-irr-monoˡ-≤⁻ (choose/is-bounded x xs) ⟩
+    ≲⟨ bind-irr-monoˡ-≤⁻ (choose/is-bounded x xs) ⟩
       step⋆ (length xs + length xs ²)
-    ≤⁻⟨ step⋆-mono-≤⁻ (Nat.+-mono-≤ (Nat.n≤1+n (length xs)) (Nat.*-monoʳ-≤ (length xs) (Nat.n≤1+n (length xs)))) ⟩
+    ≲⟨ step⋆-mono-≤⁻ (Nat.+-mono-≤ (Nat.n≤1+n (length xs)) (Nat.*-monoʳ-≤ (length xs) (Nat.n≤1+n (length xs)))) ⟩
       step⋆ (length (x ∷ xs) + length xs * length (x ∷ xs))
     ≡⟨⟩
       step⋆ (length (x ∷ xs) ²)
@@ -330,7 +330,7 @@ module Lookup {A : tp⁺} where
         let open ≤⁻-Reasoning (F _) in
         begin
           step (F _) 1 (lookup xs i)
-        ≤⁻⟨ ≤⁻-mono (step (F _) 1) (lemma xs i p) ⟩
+        ≲⟨ ≤⁻-mono (step (F _) 1) (lemma xs i p) ⟩
           step (F _) 1 (fail (F _))
         ≡⟨ fail/step 1 ⟩
           fail (F _)
@@ -353,7 +353,7 @@ module Pervasive where
       branch (F bool)
         (step (F bool) 3 (ret true))
         (step (F bool) 12 (ret false))
-    ≤⁻⟨
+    ≲⟨
       ≤⁻-mono
         (λ e → branch (F bool) e (step (F bool) 12 (ret false)))
         (step-monoˡ-≤⁻ {F bool} (ret true) (Nat.s≤s (Nat.s≤s (Nat.s≤s Nat.z≤n))))
@@ -370,7 +370,7 @@ module Pervasive where
     let open ≤⁻-Reasoning (F unit) in
     begin
       bind (F unit) e (λ _ → ret triv)
-    ≤⁻⟨ ≤⁻-mono (λ e → bind (F _) e (λ _ → ret triv)) e/is-bounded ⟩
+    ≲⟨ ≤⁻-mono (λ e → bind (F _) e (λ _ → ret triv)) e/is-bounded ⟩
       bind (F unit) (step (F bool) 12 (branch (F bool) (ret true) (ret false))) (λ _ → ret triv)
     ≡⟨⟩
       step (F unit) 12 (branch (F unit) (ret triv) (ret triv))
