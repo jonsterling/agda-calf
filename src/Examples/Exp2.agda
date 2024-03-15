@@ -43,7 +43,7 @@ module Slow where
     begin
       (bind (F nat) (exp₂ n ∥ exp₂ n) λ (r₁ , r₂) →
         step (F nat) (1 , 1) (ret (r₁ + r₂)))
-    ≤⟨
+    ≤⁻⟨
       ≤⁻-mono₂ (λ e₁ e₂ → bind (F nat) (e₁ ∥ e₂) λ (r₁ , r₂) → step (F nat) (1 , 1) (ret (r₁ + r₂)))
         (exp₂/is-bounded n)
         (exp₂/is-bounded n)
@@ -90,7 +90,7 @@ module Fast where
     begin
       (bind (F nat) (exp₂ n) λ r →
         step (F nat) (1 , 1) (ret (r + r)))
-    ≤⟨ ≤⁻-mono (λ e → bind (F nat) e λ r → step (F nat) (1 , 1) (ret (r + r))) (exp₂/is-bounded n) ⟩
+    ≤⁻⟨ ≤⁻-mono (λ e → bind (F nat) e λ r → step (F nat) (1 , 1) (ret (r + r))) (exp₂/is-bounded n) ⟩
       (bind (F nat) (step (F nat) (n , n) (ret (2 ^ n))) λ r →
         step (F nat) (1 , 1) (ret (r + r)))
     ≡⟨⟩

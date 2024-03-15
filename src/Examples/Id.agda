@@ -52,7 +52,7 @@ module Hard where
     ≤⁻-mono (step (F nat) 1) $
     begin
       bind (F nat) (id n) (λ n' → ret (suc n'))
-    ≤⟨ ≤⁻-mono (λ e → bind (F nat) e (ret ∘ suc)) (id/is-bounded n) ⟩
+    ≤⁻⟨ ≤⁻-mono (λ e → bind (F nat) e (ret ∘ suc)) (id/is-bounded n) ⟩
       bind (F nat) (step (F nat) n (ret n)) (λ n' → ret (suc n'))
     ≡⟨⟩
       step (F nat) n (ret (suc n))
