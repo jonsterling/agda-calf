@@ -40,11 +40,11 @@ bound/bind/const {e = e} {f} c d he hf =
   let open ≤⁻-Reasoning cost in
   begin
     bind cost e (λ v → bind cost (f v) (λ _ → ret triv))
-  ≤⟨ bind-monoʳ-≤⁻ e hf ⟩
+  ≲⟨ bind-monoʳ-≤⁻ e hf ⟩
     bind cost e (λ _ → step⋆ d)
   ≡⟨⟩
     bind cost (bind cost e λ _ → ret triv) (λ _ → step⋆ d)
-  ≤⟨ bind-monoˡ-≤⁻ (λ _ → step⋆ d) he ⟩
+  ≲⟨ bind-monoˡ-≤⁻ (λ _ → step⋆ d) he ⟩
     bind cost (step⋆ c) (λ _ → step⋆ d)
   ≡⟨⟩
     step⋆ (c + d)
@@ -66,6 +66,6 @@ module Legacy where
       bind cost (step (F A) c' (ret a)) (λ _ → ret triv)
     ≡⟨⟩
       step⋆ c'
-    ≤⟨ step-monoˡ-≤⁻ (ret triv) c'≤c ⟩
+    ≲⟨ step-monoˡ-≤⁻ (ret triv) c'≤c ⟩
       step⋆ c
     ∎

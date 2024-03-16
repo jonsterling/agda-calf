@@ -42,7 +42,7 @@ module Twice where
         bind cost e λ _ →
         ret triv
       )
-    ≤⟨ ≤⁻-mono₂ (λ e₁ e₂ → bind (F _) e₁ λ _ → bind (F _) e₂ λ _ → ret triv) e≤step⋆1 e≤step⋆1 ⟩
+    ≲⟨ ≤⁻-mono₂ (λ e₁ e₂ → bind (F _) e₁ λ _ → bind (F _) e₂ λ _ → ret triv) e≤step⋆1 e≤step⋆1 ⟩
       ( bind cost (step⋆ 1) λ _ →
         bind cost (step⋆ 1) λ _ →
         ret triv
@@ -79,7 +79,7 @@ module Map where
         bind cost (map f xs) λ _ →
         ret triv
       )
-    ≤⟨
+    ≲⟨
       ≤⁻-mono₂ (λ e₁ e₂ → bind cost e₁ λ _ → bind cost e₂ λ _ → ret triv)
         (f-bound x)
         (map/is-bounded f f-bound xs)
@@ -114,11 +114,11 @@ module Map where
         bind cost (map f xs) λ _ →
         ret triv
       )
-    ≤⟨ ≤⁻-mono (λ e → bind cost (f x) λ _ → e) (map/is-bounded' f f-bound xs) ⟩
+    ≲⟨ ≤⁻-mono (λ e → bind cost (f x) λ _ → e) (map/is-bounded' f f-bound xs) ⟩
       ( bind cost (f x) λ _ →
         binomial (length xs * n)
       )
-    ≤⟨ ≤⁻-mono (λ e → bind cost e λ _ → binomial (length xs * n)) (f-bound x) ⟩
+    ≲⟨ ≤⁻-mono (λ e → bind cost e λ _ → binomial (length xs * n)) (f-bound x) ⟩
       ( bind cost (binomial n) λ _ →
         binomial (length xs * n)
       )

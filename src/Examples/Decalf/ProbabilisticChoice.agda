@@ -64,7 +64,7 @@ module _ where
     let open ≤⁻-Reasoning cost in
     begin
       flip cost ½ (step⋆ 0) (step⋆ 1)
-    ≤⟨ ≤⁻-mono {cost} (λ e → flip cost ½ e (step⋆ 1)) (≤⁺-mono step⋆ (≤⇒≤⁺ (z≤n {1}))) ⟩
+    ≲⟨ ≤⁻-mono {cost} (λ e → flip cost ½ e (step⋆ 1)) (≤⁺-mono step⋆ (≤⇒≤⁺ (z≤n {1}))) ⟩
       flip cost ½ (step⋆ 1) (step⋆ 1)
     ≡⟨ flip/same cost (step⋆ 1) {½} ⟩
       step⋆ 1
@@ -123,13 +123,13 @@ module _ where
       ( bind cost bernoulli λ _ →
         binomial n
       )
-    ≤⟨ ≤⁻-mono (λ e → bind cost e λ _ → binomial n) bernoulli/upper ⟩
+    ≲⟨ ≤⁻-mono (λ e → bind cost e λ _ → binomial n) bernoulli/upper ⟩
       ( bind cost (step⋆ 1) λ _ →
         binomial n
       )
     ≡⟨⟩
       step cost 1 (binomial n)
-    ≤⟨ ≤⁻-mono (step cost 1) (binomial/upper n) ⟩
+    ≲⟨ ≤⁻-mono (step cost 1) (binomial/upper n) ⟩
       step⋆ (suc n)
     ∎
 
@@ -161,7 +161,7 @@ sublist/is-bounded {A} (x ∷ xs) =
       ( bind cost (sublist {A} xs) λ _ →
         bernoulli
       )
-    ≤⟨ ≤⁻-mono (λ e → bind cost e λ _ → bernoulli) (sublist/is-bounded {A} xs) ⟩
+    ≲⟨ ≤⁻-mono (λ e → bind cost e λ _ → bernoulli) (sublist/is-bounded {A} xs) ⟩
       ( bind cost (binomial (length xs)) λ _ →
         bernoulli
       )

@@ -118,16 +118,15 @@ bind-irr-monoˡ-≤⁻ e₁≤e₁' =
   bind-irr-mono-≤⁻ e₁≤e₁' ≤⁻-refl
 
 
+open import Level using (0ℓ)
+open import Relation.Binary using (Preorder)
 open import Relation.Binary.Structures
 
+≤⁻-preorder : tp⁻ → Preorder 0ℓ 0ℓ 0ℓ
+Preorder.Carrier (≤⁻-preorder X) = cmp X
+Preorder._≈_ (≤⁻-preorder X) = _≡_
+Preorder._≲_ (≤⁻-preorder X) = _≤⁻_ {X}
+Preorder.isPreorder (≤⁻-preorder X) = ≤⁻-isPreorder {X}
+
 module ≤⁻-Reasoning (X : tp⁻) where
-  open import Relation.Binary.Reasoning.Base.Triple
-    (≤⁻-isPreorder {X})
-    ≤⁻-trans
-    (resp₂ _≤⁻_)
-    (λ h → h)
-    ≤⁻-trans
-    ≤⁻-trans
-    public
-    hiding (begin-strict_; step-<; step-≈; step-≈˘)
-    renaming (step-≤ to step-≤⁻)
+  open import Relation.Binary.Reasoning.Preorder (≤⁻-preorder X) public

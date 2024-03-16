@@ -50,7 +50,7 @@ private
   ... | zero | ()
 
 pred[2^]-mono : pred[2^_] Preserves _≤_ ⟶ _≤_
-pred[2^]-mono m≤n = pred-mono (2^-mono m≤n)
+pred[2^]-mono m≤n = pred-mono-≤ (2^-mono m≤n)
   where
     2^-mono : (2 ^_) Preserves _≤_ ⟶ _≤_
     2^-mono {y = y} z≤n = lemma/1≤2^n y

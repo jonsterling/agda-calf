@@ -37,7 +37,7 @@ sort/clocked (suc k) l h =
   bind (F (sort-result l)) (split l) λ ((l₁ , l₂) , length₁ , length₂ , l↭l₁++l₂) →
   let
     h₁ , h₂ =
-      let open ≤-Reasoning in
+      let open N.≤-Reasoning in
       (begin
         ⌈log₂ length l₁ ⌉
       ≡⟨ Eq.cong ⌈log₂_⌉ length₁ ⟩
@@ -66,7 +66,7 @@ sort/clocked/total (suc k) l h u rewrite Valuable.proof (split/total l u) = ↓
   let
     ((l₁ , l₂) , length₁ , length₂ , l↭l₁++l₂) = Valuable.value (split/total l u)
     h₁ , h₂ =
-      let open ≤-Reasoning in
+      let open N.≤-Reasoning in
       (begin
         ⌈log₂ length l₁ ⌉
       ≡⟨ Eq.cong ⌈log₂_⌉ length₁ ⟩

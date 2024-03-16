@@ -38,9 +38,9 @@ boundg/relax {b = b} {b'} h {e = e} ib-b =
   let open ≤⁻-Reasoning cost in
   begin
     bind cost e (λ _ → ret triv)
-  ≤⟨ ib-b ⟩
+  ≲⟨ ib-b ⟩
     b
-  ≤⟨ h ⟩
+  ≲⟨ h ⟩
     b'
   ∎
 
@@ -53,7 +53,7 @@ boundg/step c {b} e h =
     bind cost (step (F _) c e) (λ _ → ret triv)
   ≡⟨⟩
     step cost c (bind cost e (λ _ → ret triv))
-  ≤⟨ step-monoʳ-≤⁻ c h ⟩
+  ≲⟨ step-monoʳ-≤⁻ c h ⟩
     step cost c b
   ∎
 
@@ -67,6 +67,6 @@ boundg/bind {e = e} {f} b hf =
     bind cost (bind (F _) e f) (λ _ → ret triv)
   ≡⟨⟩
     bind cost e (λ a → bind cost (f a) λ _ → ret triv)
-  ≤⟨ bind-monoʳ-≤⁻ e hf ⟩
+  ≲⟨ bind-monoʳ-≤⁻ e hf ⟩
     bind cost e b
   ∎

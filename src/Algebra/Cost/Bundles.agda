@@ -4,7 +4,7 @@ module Algebra.Cost.Bundles where
 
 open import Algebra.Core
 open import Algebra.Cost.Structures
-open import Relation.Binary using (Rel; _Preserves_⟶_; _Preserves₂_⟶_⟶_)
+open import Relation.Binary using (Rel; Preorder; _Preserves_⟶_; _Preserves₂_⟶_⟶_)
 open import Relation.Binary.PropositionalEquality using (_≡_; resp₂)
 open import Level using (0ℓ)
 
@@ -21,16 +21,14 @@ record CostMonoid : Set₁ where
 
   open IsCostMonoid isCostMonoid public
 
+  ≤-preorder : Preorder 0ℓ 0ℓ 0ℓ
+  Preorder.Carrier ≤-preorder = ℂ
+  Preorder._≈_ ≤-preorder = _≡_
+  Preorder._≲_ ≤-preorder = _≤_
+  Preorder.isPreorder ≤-preorder = isPreorder
+
   module ≤-Reasoning where
-    open import Relation.Binary.Reasoning.Base.Triple
-      isPreorder
-      ≤-trans
-      (resp₂ _≤_)
-      (λ h → h)
-      ≤-trans
-      ≤-trans
-      public
-      hiding (step-≈; step-≈˘; step-<)
+    open import Relation.Binary.Reasoning.Preorder ≤-preorder public
 
 
 record ParCostMonoid : Set₁ where
@@ -60,13 +58,11 @@ record ParCostMonoid : Set₁ where
       }
     }
 
+  ≤-preorder : Preorder 0ℓ 0ℓ 0ℓ
+  Preorder.Carrier ≤-preorder = ℂ
+  Preorder._≈_ ≤-preorder = _≡_
+  Preorder._≲_ ≤-preorder = _≤_
+  Preorder.isPreorder ≤-preorder = isPreorder
+
   module ≤-Reasoning where
-    open import Relation.Binary.Reasoning.Base.Triple
-      isPreorder
-      ≤-trans
-      (resp₂ _≤_)
-      (λ h → h)
-      ≤-trans
-      ≤-trans
-      public
-      hiding (step-≈; step-≈˘; step-<)
+    open import Relation.Binary.Reasoning.Preorder ≤-preorder public

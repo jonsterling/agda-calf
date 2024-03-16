@@ -118,7 +118,7 @@ sort/is-bounded (x ∷ xs) =
       bind cost (insert x xs' sorted-xs') λ _ →
       step⋆ zero
     )
-  ≤⟨ bind-monoʳ-≤⁻ (sort xs) (λ (xs' , xs↭xs' , sorted-xs') → insert/is-bounded x xs' sorted-xs') ⟩
+  ≲⟨ bind-monoʳ-≤⁻ (sort xs) (λ (xs' , xs↭xs' , sorted-xs') → insert/is-bounded x xs' sorted-xs') ⟩
     ( bind cost (sort xs) λ (xs' , xs↭xs' , sorted-xs') →
       step⋆ (length xs')
     )
@@ -130,9 +130,9 @@ sort/is-bounded (x ∷ xs) =
     ( bind cost (sort xs) λ _ →
       step⋆ (length xs)
     )
-  ≤⟨ bind-monoˡ-≤⁻ (λ _ → step⋆ (length xs)) (sort/is-bounded xs) ⟩
+  ≲⟨ bind-monoˡ-≤⁻ (λ _ → step⋆ (length xs)) (sort/is-bounded xs) ⟩
     step⋆ ((length xs ²) + length xs)
-  ≤⟨ step⋆-mono-≤⁻ (N.+-mono-≤ (N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs))) (N.n≤1+n (length xs))) ⟩
+  ≲⟨ step⋆-mono-≤⁻ (N.+-mono-≤ (N.*-monoʳ-≤ (length xs) (N.n≤1+n (length xs))) (N.n≤1+n (length xs))) ⟩
     step⋆ (length xs * length (x ∷ xs) + length (x ∷ xs))
   ≡⟨ Eq.cong step⋆ (N.+-comm (length xs * length (x ∷ xs)) (length (x ∷ xs))) ⟩
     step⋆ (length (x ∷ xs) ²)

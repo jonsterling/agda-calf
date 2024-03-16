@@ -80,8 +80,8 @@ step-mono-≤⁻ {X} {c} {c'} {e} {e'} c≤c' e≤e' =
   let open ≤⁻-Reasoning X in
   begin
     step X c e
-  ≤⟨ step-monoˡ-≤⁻ e c≤c' ⟩
+  ≲⟨ step-monoˡ-≤⁻ e c≤c' ⟩
     step X c' e
-  ≤⟨ step-monoʳ-≤⁻ c' e≤e' ⟩
+  ≲⟨ step-monoʳ-≤⁻ c' e≤e' ⟩
     step X c' e'
   ∎
