@@ -37,14 +37,14 @@ module _ {X : 𝒱} where
   isPreorderList isPreorderX = isLocalRetract bwd fwd fwd-bwd (isPreorderΣ ℕ₌ isPreorderVec)
     where
       isPreorderVec : (n : ℕ) → isPreorder (Vec n)
-      isPreorderVec zero = isPreorder⊤
+      isPreorderVec zero = isPreorder1ᵛ
       isPreorderVec (suc n) = isPreorder× isPreorderX (isPreorderVec n)
 
   isDiscreteList : isDiscrete X → isDiscrete (List X)
   isDiscreteList isDiscreteX = isLocalRetract bwd fwd fwd-bwd (isDiscreteΣ isDiscreteℕ isDiscreteVec)
     where
       isDiscreteVec : (n : ℕ) → isDiscrete (Vec n)
-      isDiscreteVec zero = isDiscrete⊤
+      isDiscreteVec zero = isDiscrete1ᵛ
       isDiscreteVec (suc n) = isDiscrete× isDiscreteX (isDiscreteVec n)
 
 List₌ : 𝒱₌ → 𝒱₌

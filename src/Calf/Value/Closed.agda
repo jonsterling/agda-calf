@@ -186,7 +186,7 @@ opaque
     where
       ●-encode : ∀ {X} → X → ● X → 𝒱
       ●-encode x (η• x') = ● (x ≡ x')
-      ●-encode x (∗ abs) = ⊤
+      ●-encode x (∗ abs) = 1ᵛ
       ●-encode x (push x' abs i) = isContr→≡Unit (◯-isConnected {X = x ≡ x'} abs) i
 
       ●-lex : ∀ {X} {x : X} {y : ● X} → η• x ≡ y → ●-encode x y

@@ -53,7 +53,7 @@ opaque
 
 instance
   fromNatℂ : HasFromNat ℂ
-  fromNatℂ = record { Constraint = λ _ → ⊤ ; fromNat = λ n → iter n (1ℂ +ℂ_) 0ℂ }
+  fromNatℂ = record { Constraint = λ _ → 1ᵛ ; fromNat = λ n → iter n (1ℂ +ℂ_) 0ℂ }
 
 ℕ→ℂ : ℕ → ℂ
 ℕ→ℂ n = # n

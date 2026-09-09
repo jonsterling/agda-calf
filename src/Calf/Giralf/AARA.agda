@@ -31,7 +31,7 @@ data AARA : 𝒱₁ where
 
 ⟦_⟧ : AARA → 𝒱
 ⟦ Fᴬ X ⟧ = X
-⟦ ⊤ᴬ ⟧ = Unit.⊤
+⟦ ⊤ᴬ ⟧ = 1ᵛ
 ⟦ A ⊗ᴬ B ⟧ = ⟦ A ⟧ × ⟦ B ⟧
 ⟦ 0ᴬ ⟧ = ⊥
 ⟦ A +ᴬ B ⟧ = ⟦ A ⟧ ⊎ ⟦ B ⟧
@@ -52,7 +52,7 @@ data AARA : 𝒱₁ where
 
 ι : AARA → 𝒞
 ι (Fᴬ X) = F X
-ι ⊤ᴬ = Tensor.⊤
+ι ⊤ᴬ = ⊤
 ι (A ⊗ᴬ B) = ι A ⊗ ι B
 ι 0ᴬ = 0ᶜ
 ι (A +ᴬ B) = ι A +ᶜ ι B
