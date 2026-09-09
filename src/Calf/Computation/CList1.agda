@@ -36,5 +36,6 @@ opaque
   CList₁-credit : CList₁ c X₌ ≡ ([ l ∈ List₌ X₌ ] ⋊ ▷[ length l ⊙ c ] ⊤)
   CList₁-credit = refl
 
-  CList₁-open : ⟨ ABS ⟩ → CList₁ c X₌ ≃ᶜ F (List ⟨ X₌ ⟩)
-  CList₁-open abs = {!   !}
+  CList₁-open : ⟨ ABS ⟩ → CList₁ c X₌ ≡ F (List ⟨ X₌ ⟩)
+  CList₁-open {X₌ = X₌} abs =
+    cong (Σᶜ (List₌ X₌)) (funExt λ l → ▷-open abs _ ⊤) ∙ sym (F-Σᶜ (List₌ X₌))

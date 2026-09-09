@@ -46,5 +46,6 @@ opaque
   CList₂-credit : CList₂ c₁ c₂ X₌ ≡ ([ l ∈ List₌ X₌ ] ⋊ ▷[ CList₂-potential c₁ c₂ (length l) ] ⊤)
   CList₂-credit = refl
 
-  CList₂-open : ⟨ ABS ⟩ → CList₂ c₁ c₂ X₌ ≃ᶜ F (List ⟨ X₌ ⟩)
-  CList₂-open abs = {!   !}
+  CList₂-open : ⟨ ABS ⟩ → CList₂ c₁ c₂ X₌ ≡ F (List ⟨ X₌ ⟩)
+  CList₂-open {X₌ = X₌} abs =
+    cong (Σᶜ (List₌ X₌)) (funExt λ l → ▷-open abs _ ⊤) ∙ sym (F-Σᶜ (List₌ X₌))
