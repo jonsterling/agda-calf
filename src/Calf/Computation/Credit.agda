@@ -28,9 +28,6 @@ opaque
       f
       (sym ∘ f .charge c)
 
-  ▷-mapᵈ : (A ⊸ᵈ B) → (▷[ c ] A ⊸ᵈ ▷[ c ] B)
-  ▷-mapᵈ f = {!   !}
-
   ▷-0 : ▷[ 0ℂ ] A ≡ A
   ▷-0 {A} = cong (Abstractionᶜ A A) chargeᶜ-0 ∙ Abstractionᶜ-id A
 
@@ -83,23 +80,10 @@ opaque
   ▷-coherence c A =
     Abstractionᶜ-coherence (chargeᶜ c)
 
-  waste-all : (c : ℂ) → ▷[ c ] A ⊸ᵈ A
-  waste-all {A} c =
-    subst (▷[ c ] A ⊸ᵈ_) (Abstractionᶜ-id A) $
-    squareᵈᶜ (chargeᶜ c) idᶜ idᶜ idᶜ λ _ →
-    ≡∙⊑ (sym (A .charge-0)) (⊑-mono (flip (A .charge) _) (0⊑c c))
-
-  waste : (A : 𝒞) {c c' : ℂ} → c ⊑ c' → ▷[ c' ] A ⊸ᵈ ▷[ c ] A
-  waste A {c} {c'} c⊑c' =
-    subst (λ c'' → ▷[ c'' ] A ⊸ᵈ ▷[ c ] A) todo $
-    subst (_⊸ᵈ ▷[ c ] A) (sym ▷-+) $
-    ▷-mapᵈ (waste-all c'∸c)
-    where
-      c'∸c : ℂ
-      c'∸c = {!   !}
-
-      todo : c +ℂ c'∸c ≡ c'
-      todo = {!   !}
+  waste : (A : 𝒞) → c ⊑ c' → ▷[ c' ] A ⊸ᵈ ▷[ c ] A
+  waste {c} {c'} A c⊑c' =
+    squareᵈᶜ (chargeᶜ c') (chargeᶜ c) idᶜ idᶜ λ a →
+    ⊑-mono (flip (A .charge) a) c⊑c'
 
   save : (A : 𝒞) (c : ℂ) → A ⊸ ▷[ c ] A
   save A c = triangle-⊤ (chargeᶜ c) idᶜ
