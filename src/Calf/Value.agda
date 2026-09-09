@@ -27,5 +27,8 @@ variable
 𝒱ₚ : 𝒱₁
 𝒱ₚ = TypeWithStr _ isPreorder
 
+variable
+  Xₚ Yₚ Zₚ : 𝒱ₚ
+
 ⟨_⟩ₚ : 𝒱₌ → 𝒱ₚ
 ⟨ X ⟩ₚ = ⟨ X ⟩ , isSet∧isDiscrete→isPreorder (str X .fst) (str X .snd)

@@ -14,3 +14,11 @@ opaque
 
   isPreorder× : isPreorder X → isPreorder Y → isPreorder (X × Y)
   isPreorder× = isLocal×
+
+infixr 5 _×₌_
+
+_×₌_ : 𝒱₌ → 𝒱₌ → 𝒱₌
+X ×₌ Y =
+  (⟨ X ⟩ × ⟨ Y ⟩) ,
+  isSet× (str X .fst) (str Y .fst) ,
+  isDiscrete× (str X .snd) (str Y .snd)

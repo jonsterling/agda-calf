@@ -11,3 +11,6 @@ opaque
 
   isPreorder1ᵛ : isPreorder 1ᵛ
   isPreorder1ᵛ = isLocalUnit {F = Fᴾ}
+
+1ᵛ₌ : 𝒱₌
+1ᵛ₌ = 1ᵛ , isSet1ᵛ , isDiscrete1ᵛ

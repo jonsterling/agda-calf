@@ -7,3 +7,10 @@ open import Cubical.Data.Empty public
 
 isSet⊥ : isSet ⊥
 isSet⊥ = isProp→isSet isProp⊥
+
+opaque
+  isDiscrete⊥ : isDiscrete ⊥
+  isDiscrete⊥ = isProp→isLocal (λ _ → 0𝟚) isProp⊥
+
+⊥₌ : 𝒱₌
+⊥₌ = ⊥ , isSet⊥ , isDiscrete⊥
