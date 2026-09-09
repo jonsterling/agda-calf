@@ -1,699 +1,196 @@
 module Examples.Queue where
 
-open import Algebra.Cost
+import Cubical.Data.List.Properties as List
+import Cubical.Data.Nat.Properties as Nat
+
+open import Calf.Core.Abstract
+open import Calf.Core.Cost
+open import Calf.Value hiding (empty)
+open import Calf.Value.List
+open import Calf.Value.Nat
+open import Calf.Computation
+open import Calf.Computation.Abstraction
+open import Calf.Computation.Copower
+open import Calf.Computation.Free
 
 
-costMonoid = ℕ-CostMonoid
-open CostMonoid costMonoid using (ℂ)
-
-open import Calf costMonoid
-open import Calf.Data.Nat
-open import Calf.Data.Unit
-open import Calf.Data.Sum
-open import Calf.Data.IsBounded costMonoid
-
-open import Function
-open import Data.Nat
-open import Data.Nat.Properties
-import Data.Integer as Int
-import Data.Integer.Properties as IntP
-open import Data.List renaming (sum to lsum)
-open import Data.Product
-open import Relation.Binary.PropositionalEquality as P
-
-record Queue (A : tp⁺) : Set where
+record PreQueue : 𝒱₁ where
   field
-    Q : tp⁺
-    emp : val Q
-    enq : cmp (Π Q λ _ → Π A λ _ → F Q)
-    deq : cmp (Π Q λ _ → F (sum unit (Σ⁺ Q λ _ → A)))
+    Q : 𝒞
+    empty : U Q
+    enqueue : ℕ → Q ⊸ Q
+    dequeue : Q ⊸ ℕₚ ⋊ Q
+open PreQueue
 
-module CostList (A : tp⁺) (n : ℕ) where
-  -- Suppose we want to implement the Queue signature above using lists.
-  -- One cost model is to count the number of times a cons node is inspected.
-  -- This is implemented by the following annotated list type:
-  -- destructing a cons node of type list n A consumes n steps.
-  postulate
-    list : tp⁺
-    nil : val list
-    cons : val A → val list → val list
+LQ : 𝒞
+LQ = F (List ℕ)
 
-    list/ind : (l : val list) → (X : val list → tp⁻) → cmp (X nil) →
-      ((a : val A) → (l : val list) → (r : val (U (X l))) →
-        cmp (X (cons a l))) →
-      cmp (X l)
-    list/ind/nil : ∀ {X} → (e0 : cmp (X nil)) →
-        (e1 : (a : val A) → (l : val list) → (r : val (U (X l))) →
-        cmp (X (cons a l))) →
-      list/ind nil X e0 e1 ≡ e0
-    {-# REWRITE list/ind/nil #-}
-    list/ind/cons : ∀ {X} → (a : val A) → (l : val list) → (e0 : cmp (X nil)) →
-        (e1 : (a : val A) → (l : val list) → (r : val (U (X l))) →
-        cmp (X (cons a l))) →
-      list/ind (cons a l) X e0 e1 ≡ step (X (cons a l)) n (e1 a l (list/ind l X e0 e1))
-    {-# REWRITE list/ind/cons #-}
+emptyᴸ : U LQ
+emptyᴸ = ret []
 
-  list/match : (l : val list) → (X : val list → tp⁻) → cmp (X nil) →
-    ((a : val A) → (l : val list) → cmp (X (cons a l))) →
-    cmp (X l)
-  list/match l X e0 e1 = list/ind l X e0 (λ a l _ → e1 a l)
+enqueueᴸ : ℕ → LQ ⊸ LQ
+enqueueᴸ e = F-rec λ l → LQ .charge 1 (ret (l ++ [ e ]))
 
-  bound/list/match : ∀ (l : val list) (X : val list → tp⁺)
-    {e0 : val (U (F (X nil)))} {e1 : (a : val A) → (l : val list) → val (U (F (X (cons a l))))}
-    {p0 : val (U cost)} {p1 : (a : val A) → (l : val list) → val (U cost)} →
-    IsBounded (X nil) e0 p0 →
-    ((a : val A) → (l : val list) → IsBounded (X (cons a l)) (e1 a l) (p1 a l)) →
-    IsBounded (X l) (list/match l (F ∘ X) e0 e1) (list/match l (λ _ → cost) p0 (λ a l → n + p1 a l))
-  bound/list/match l X {e0} {e1} {p0} {p1} ub0 ub1 =
-    list/match l (λ l → meta (IsBounded (X l) (list/match l (F ∘ X) e0 e1) (list/match l (λ _ → cost) p0 (λ a l → n + p1 a l))))
-      ub0
-      λ a l → bound/circ n (bound/step n (p1 a l) (ub1 a l))
+dequeueᴸ : LQ ⊸ ℕₚ ⋊ LQ
+dequeueᴸ = F-rec λ
+  { []      → 0 , ret []
+  ; (x ∷ l) → x , ret l }
 
-  len : val list → ℕ
-  len l = list/ind l (λ _ → meta ℕ) 0 λ a l r → 1 + r
+list-prequeue : PreQueue
+list-prequeue .Q = LQ
+list-prequeue .empty = emptyᴸ
+list-prequeue .enqueue = enqueueᴸ
+list-prequeue .dequeue = dequeueᴸ
 
-module Ex/CostList where
-  open CostList nat 0
+BQ : 𝒞
+BQ = F (List ℕ × List ℕ)
 
-  ex : val list
-  ex = cons 0 (cons 1 nil)
+emptyᴮ : U BQ
+emptyᴮ = ret ([] , [])
 
-module Rev (A : tp⁺) where
-  open CostList A 1
+enqueueᴮ : ℕ → BQ ⊸ BQ
+enqueueᴮ e = F-rec λ (back , front) → ret (e ∷ back , front)
 
-  revAppend : cmp (Π list λ _ → Π list λ _ → F list)
-  revAppend l =
-    list/ind l (λ _ → Π list λ _ → F list)
-      (λ l' → ret l')
-      λ x _ r → λ l' → r (cons x l')
+reverse-front : List ℕ → U (ℕₚ ⋊ BQ)
+reverse-front back with reverse back
+... | []    = 0 , BQ .charge (# length back) (ret ([] , []))
+... | x ∷ l = x , BQ .charge (# length back) (ret ([] , l))
 
-  revAppend/lemma/cons : ∀ x xs l' → ◯ (∃ λ y → ∃ λ ys → (len ys ≡ len xs + len l') × revAppend (cons x xs) l' ≡ ret (cons y ys))
-  revAppend/lemma/cons x xs =
-    list/ind xs (λ xs → meta (∀ x l' → ◯ (∃ λ y → ∃ λ ys → (len ys ≡ len xs + len l') × revAppend (cons x xs) l' ≡ ret (cons y ys))))
-      (λ x l' u → (x , l' , refl , step/ext (F list) (ret (cons x l')) 1 u))
-      (λ x' xs' ih x l' u →
-        let (y , ys , h , ≡) = ih x' (cons x l') u in
-        let open ≡-Reasoning in
-        y , ys , (
-          begin
-            len ys
-          ≡⟨ h ⟩
-            len xs' + len (cons x l')
-          ≡⟨⟩
-            len xs' + step (meta ℕ) 1 (suc (len l'))
-          ≡⟨ cong (len xs' +_) (step/ext (meta ℕ) (suc (len l')) 1 u) ⟩
-            len xs' + suc (len l')
-          ≡⟨ +-suc (len xs') (len l') ⟩
-            suc (len xs' + len l')
-          ≡⟨⟩
-            suc (len xs') + len l'
-          ≡˘⟨ cong (_+ len l') (step/ext (meta ℕ) (suc (len xs')) 1 u) ⟩
-            step (meta ℕ) 1 (suc (len xs')) + len l'
-          ≡⟨⟩
-            len (cons x' xs') + len l'
+dequeueᴮ : BQ ⊸ (ℕₚ ⋊ BQ)
+dequeueᴮ = F-rec λ
+  { (back , x ∷ front) → x , ret (back , front)
+  ; (back , [])        → reverse-front back }
+
+batched-prequeue : PreQueue
+batched-prequeue .Q = BQ
+batched-prequeue .empty = emptyᴮ
+batched-prequeue .enqueue = enqueueᴮ
+batched-prequeue .dequeue = dequeueᴮ
+
+
+record Queue : 𝒱₁ where
+  field
+    prequeue : PreQueue
+    spec : ⟨ ABS ⟩ → prequeue ≡ list-prequeue
+open Queue
+
+α : BQ ⊸ LQ
+α = F-rec λ (l₁ , l₂) → LQ .charge (# length l₁) (ret (l₂ ++ reverse l₁))
+
+
+opaque
+  unfolding ℂ
+
+  empty-coherent : α .U emptyᴮ ≡ emptyᴸ
+  empty-coherent = F-rec-β ∙ F _ .charge-0
+
+  enqueue-coherent :
+    (e : ℕ) (q : U BQ)
+    → α .U (enqueueᴮ e .U q) ≡ enqueueᴸ e .U (α .U q)
+  enqueue-coherent e q =
+    cong (λ h → h .U q)
+      ( costed-map (λ (back , front) → e ∷ back , front) _ _
+      ∙ costed-cong
+          (λ (back , front) → sym (List.++-assoc front (reverse back) [ e ]))
+          (λ (back , _) → cong ℕ→ℂ (Nat.+-comm 1 (length back)) ∙ ℕ→ℂ-+ (length back) 1)
+      ∙ sym (costed-⨾ᶜ _ _ _ _))
+
+module Dequeue where
+  BLQ = Abstractionᶜ BQ LQ α
+
+  opaque
+    unfolding ℂ
+
+    dequeue-coherent :
+      (q : U BQ) → ⋊-map ℕₚ α .U (dequeueᴮ .U q) ≡ dequeueᴸ .U (α .U q)
+    dequeue-coherent q =
+      cong (λ f → f .U q)
+        (F-rec-path
+          (dequeueᴮ ⨾ᶜ ⋊-map ℕₚ α)
+          (α ⨾ᶜ dequeueᴸ)
+          (funExt dequeue-lemma))
+      where
+        dequeue-lemma : (x : List ℕ × List ℕ)
+          → (dequeueᴮ ⨾ᶜ ⋊-map ℕₚ α) .U (ret x) ≡ (α ⨾ᶜ dequeueᴸ) .U (ret x)
+        dequeue-lemma (back , x ∷ front) =
+            dequeueᴮ .U (ret (back , x ∷ front)) .proj₁ ,
+            α .U (dequeueᴮ .U (ret (back , x ∷ front)) .proj₂)
+          ≡⟨ cong (λ e → e .proj₁ , α .U (e .proj₂)) F-rec-β ⟩
+            x , α .U (ret (back , front))
+          ≡⟨ cong (x ,_) F-rec-β ⟩
+            x , LQ .charge (# length back) (ret (front ++ reverse back))
+          ≡⟨ refl ⟩
+            (ℕₚ ⋊ LQ) .charge (# length back) (x , ret (front ++ reverse back))
+          ≡⟨ sym (cong ((ℕₚ ⋊ LQ) .charge (# length back)) F-rec-β) ⟩
+            (ℕₚ ⋊ LQ) .charge (# length back) (dequeueᴸ .U (ret (x ∷ front ++ reverse back)))
+          ≡⟨ sym (dequeueᴸ .charge (# length back) (ret _)) ⟩
+            dequeueᴸ .U (LQ .charge (# length back) (ret ((x ∷ front) ++ reverse back)))
+          ≡⟨ sym (cong (dequeueᴸ .U) F-rec-β) ⟩
+            dequeueᴸ .U (α .U (ret (back , x ∷ front)))
           ∎
-        ) , (
-          begin
-            revAppend (cons x (cons x' xs')) l'
-          ≡⟨⟩
-            step (F list) 1 (revAppend (cons x' xs') (cons x l'))
-          ≡⟨ step/ext (F list) _ 1 u ⟩
-            revAppend (cons x' xs') (cons x l')
-          ≡⟨ (≡) ⟩
-            ret (cons y ys)
+        dequeue-lemma (back , []) =
+            dequeueᴮ .U (ret (back , [])) .proj₁ ,
+            α .U (dequeueᴮ .U (ret (back , [])) .proj₂)
+          ≡⟨ cong (λ e → e .proj₁ , α .U (e .proj₂)) F-rec-β ⟩
+            reverse-front back .proj₁ , α .U (reverse-front back .proj₂)
+          ≡⟨ lemma ⟩
+            dequeueᴸ .U (LQ .charge (# length back) (ret (reverse back)))
+          ≡⟨ sym (cong (dequeueᴸ .U) F-rec-β) ⟩
+            dequeueᴸ .U (α .U (ret (back , [])))
           ∎
-        ))
-      x
+          where
+            lemma :
+              (reverse-front back .proj₁ , α .U (reverse-front back .proj₂))
+              ≡ dequeueᴸ .U (LQ .charge (# length back) (ret (reverse back)))
+            lemma with reverse back
+            ... | [] =
+                0 , α .U (BQ .charge (# length back) (ret ([] , [])))
+              ≡⟨ cong (0 ,_) (α .charge (# length back) _) ⟩
+                0 , F _ .charge (# length back) (α .U (ret ([] , [])))
+              ≡⟨ cong (λ e → 0 , F _ .charge (# length back) e) F-rec-β ⟩
+                0 , F _ .charge (# length back) (LQ .charge 0 (ret []))
+              ≡⟨ cong (λ e → 0 , F _ .charge (# length back) e) (LQ .charge-0) ⟩
+                (ℕₚ ⋊ LQ) .charge (# length back) (0 , ret [])
+              ≡⟨ sym (cong ((ℕₚ ⋊ LQ) .charge (# length back)) F-rec-β) ⟩
+                (ℕₚ ⋊ LQ) .charge (# length back) (dequeueᴸ .U (ret []))
+              ≡⟨ sym (dequeueᴸ .charge (# length back) _) ⟩
+                dequeueᴸ .U (LQ .charge (# length back) (ret []))
+              ∎
+            ... | x ∷ front =
+                x , α .U (BQ .charge (# length back) (ret ([] , front)))
+              ≡⟨ cong (x ,_) (α .charge (# length back) _) ⟩
+                x , F _ .charge (# length back) (α .U (ret ([] , front)))
+              ≡⟨ cong (λ e → x , F _ .charge (# length back) e) F-rec-β ⟩
+                x , F _ .charge (# length back) (LQ .charge 0 (ret (front ++ [])))
+              ≡⟨ cong (λ e → x , F _ .charge (# length back) e) (LQ .charge-0) ⟩
+                x , F _ .charge (# length back) (ret (front ++ []))
+              ≡⟨ cong (λ l → x , F _ .charge (# length back) (ret l)) (List.++-unit-r front) ⟩
+                x , F _ .charge (# length back) (ret front)
+              ≡⟨ refl ⟩
+                (ℕₚ ⋊ LQ) .charge (# length back) (x , ret front)
+              ≡⟨ sym (cong ((ℕₚ ⋊ LQ) .charge (# length back)) F-rec-β) ⟩
+                (ℕₚ ⋊ LQ) .charge (# length back) (dequeueᴸ .U (ret (x ∷ front)))
+              ≡⟨ sym (dequeueᴸ .charge (# length back) _) ⟩
+                dequeueᴸ .U (LQ .charge (# length back) (ret (x ∷ front)))
+              ∎
 
-  revAppend/cost : cmp (Π list λ _ → Π list λ _ → cost)
-  revAppend/cost l l' = len l
 
-  revAppend≤revAppend/cost : ∀ l l' → IsBounded list (revAppend l l') (revAppend/cost l l')
-  revAppend≤revAppend/cost l =
-    list/ind l (λ l → meta (∀ l' → IsBounded list (revAppend l l') (revAppend/cost l l')))
-      (λ l' → bound/ret)
-      (λ a l r → λ l' → bound/circ 1 (bound/step 1 (len l) (r (cons a l'))))
-
-  rev : cmp (Π list λ _ → F list)
-  rev l = revAppend l nil
-
-  rev/lemma/cons : ∀ x xs → ◯ (∃ λ y → ∃ λ ys → len ys ≡ len xs × rev (cons x xs) ≡ ret (cons y ys))
-  rev/lemma/cons x xs =
-    subst (λ n → ◯ (∃ λ y → ∃ λ ys → len ys ≡ n × rev (cons x xs) ≡ ret (cons y ys)))
-      (+-identityʳ _)
-      (revAppend/lemma/cons x xs nil)
-
-  rev/cost : cmp (Π list λ _ → cost)
-  rev/cost l = len l
-
-  rev≤rev/cost : ∀ l → IsBounded list (rev l) (rev/cost l)
-  rev≤rev/cost l = revAppend≤revAppend/cost l nil
+  dequeueᴬ : BLQ ⊸ ℕₚ ⋊ BLQ
+  dequeueᴬ = squareᶜ α (⋊-map ℕₚ α) dequeueᴮ dequeueᴸ dequeue-coherent ⨾ᶜ ⋊-Abstractionᶜ ℕₚ α
 
 
--- Implement Queue with a pair of lists; (f , b) represents the queue f :: rev b.
-module FrontBack (A : tp⁺) where
-  -- For simplicity, we charge 1 step for each cons node destruction.
-  open CostList A 1
-  open Rev A
-
-  Q : tp⁺
-  Q = Σ⁺ list λ _ → list
-
-  emp : val Q
-  emp = (nil , nil)
-
-  enq : cmp (Π Q λ _ → Π A λ _ → F Q)
-  enq (f , b) x = ret (f , cons x b)
-
-  enq/cost : cmp (Π Q λ _ → Π A λ _ → cost)
-  enq/cost (f , b) x = 0
-
-  enq≤enq/cost : ∀ q x → IsBounded Q (enq q x) (enq/cost q x)
-  enq≤enq/cost q x = bound/ret
-
-  deq-tp = sum unit (Σ⁺ Q λ _ → A)
-
-  deq/emp : cmp (Π list λ _ → F deq-tp)
-  deq/emp l =
-    list/match l (λ _ → F deq-tp)
-      (ret (inj₁ triv))
-      λ a l' → ret (inj₂ ((l' , nil) , a))
-
-  deq/emp/cost : cmp (Π list λ _ → cost)
-  deq/emp/cost l =
-    list/match l (λ _ → cost)
-      0
-      λ a l' → 1 + 0
-
-  deq/emp≤deq/emp/cost : ∀ l → IsBounded deq-tp (deq/emp l) (deq/emp/cost l)
-  deq/emp≤deq/emp/cost l =
-    bound/list/match l (λ _ → deq-tp)
-      bound/ret
-      λ a l' → bound/ret
-
-  deq : cmp (Π Q λ _ → F deq-tp)
-  deq (f , b) =
-    list/match f (λ _ → F deq-tp)
-      (bind (F deq-tp) (rev b) (λ b' → deq/emp b'))
-      λ a l → ret (inj₂ ((l , b) , a))
-
-  deq/cost : cmp (Π Q λ _ → cost)
-  deq/cost (f , b) =
-    list/match f (λ _ → cost)
-      (bind cost (rev b) (λ b' → rev/cost b + deq/emp/cost b'))
-      λ a l → 1 + 0
-
-  deq/cost/closed : cmp (Π Q λ _ → cost)
-  deq/cost/closed (f , b) =
-    list/match f (λ _ → cost)
-      (list/match b (λ _ → cost) 0 (λ _ b' → 1 + len b))
-      λ _ _ → 1
-
-  deq/cost≤deq/cost/closed : ∀ q → ◯ (deq/cost q ≤ deq/cost/closed q)
-  deq/cost≤deq/cost/closed (f , b) u =
-    list/match f (λ f → meta (deq/cost (f , b) ≤ deq/cost/closed (f , b)))
-      (list/match b (λ b → meta (deq/cost (nil , b) ≤ deq/cost/closed (nil , b)))
-        ≤-refl
-        λ x xs →
-          let open ≤-Reasoning in
-          let (y , ys , _ , ≡) = rev/lemma/cons x xs u in
-          begin
-            deq/cost (nil , cons x xs)
-          ≡⟨⟩
-            bind cost (rev (cons x xs)) (λ b' → rev/cost (cons x xs) + deq/emp/cost b')
-          ≡⟨⟩
-            bind cost (rev (cons x xs)) (λ b' → rev/cost (cons x xs) + deq/emp/cost b')
-          ≡⟨ cong (λ e → bind cost e (λ b' → rev/cost (cons x xs) + deq/emp/cost b')) (≡) ⟩
-            rev/cost (cons x xs) + deq/emp/cost (cons y ys)
-          ≡⟨⟩
-            step cost 1 (suc (len xs)) + step cost 1 1
-          ≡⟨ cong₂ _+_ (step/ext cost (suc (len xs)) 1 u) (step/ext cost 1 1 u) ⟩
-            suc (len xs) + 1
-          ≡⟨ +-comm (suc (len xs)) 1 ⟩
-            suc (suc (len xs))
-          ≡˘⟨ cong suc (step/ext cost _ 1 u) ⟩
-            suc (step cost 1 (suc (len xs)))
-          ≡⟨⟩
-            suc (len (cons x xs))
-          ≡˘⟨ step/ext cost _ 1 u ⟩
-            step cost 1 (suc (len (cons x xs)))
-          ≡⟨⟩
-            list/match (cons x xs) (λ _ → cost) 0 (λ _ b' → 1 + len (cons x xs))
-          ≡⟨⟩
-            deq/cost/closed (nil , cons x xs)
-          ∎
-      )
-      λ _ _ → ≤-refl
-
-  deq≤deq/cost : ∀ q → IsBounded deq-tp (deq q) (deq/cost q)
-  deq≤deq/cost (f , b) =
-    bound/list/match f (λ _ → deq-tp)
-      (bound/bind (rev/cost b) _ (rev≤rev/cost b) λ b' → deq/emp≤deq/emp/cost b')
-      λ a l → bound/ret
-
-  deq≤deq/cost/closed : ∀ q → IsBounded deq-tp (deq q) (deq/cost/closed q)
-  deq≤deq/cost/closed q = bound/relax (deq/cost≤deq/cost/closed q) (deq≤deq/cost q)
-
-  -- Amortized analysis for front-back queue.
-  -- The goal is to bound the cost of a single-thread sequence of queue operations staring with an initial queue q0,
-  -- where an operation is either an enqueue or a dequeue.
-  data op : Set where
-    op/enq : (x : val A) → op
-    op/deq : op
-
-  -- Potential function
-  ϕ : val Q → ℕ
-  ϕ (f , b) = len f + 2 * len b
-
-  -- o operate q is the computation induced by operation o on queue q.
-  -- Needed because deq doesn't always return a queue (e.g., deq emp).
-  -- In these cases we just return the empty queue.
-  _operate_ : op → val Q → cmp (F Q)
-  (op/enq x) operate q = enq q x
-  op/deq operate q =
-    bind (F Q) (deq q) λ s → (sum/case unit (Σ⁺ Q λ _ → A) (λ _ → F Q) s
-    (λ _ → ret (nil , nil))
-    (λ (q , x) → ret q))
-
-  _operate'_ : ∀ o q → Σ (val Q) λ q' → ◯ (o operate q ≡ ret q')
-  (op/enq x) operate' (f , b) = (f , cons x b) , (λ _ → refl)
-  op/deq operate' q with deq' q
-    where
-      revAppend' : (l l' : val list) → Σ (val list) λ x → ◯ (revAppend l l' ≡ ret x)
-      revAppend' l =
-        list/ind l (λ l → meta (∀ l' → Σ (val list) λ x → ◯ (revAppend l l' ≡ ret x)))
-          (λ l' → l' , (λ _ → refl))
-          λ x l₁ r l' →
-            proj₁ (r (cons x l')) ,
-            λ u → P.trans
-              (step/ext (F list) (list/ind l₁ (λ _ → Π list (λ _ → F list)) ret (λ r₁ l₂ a l'' → a (cons r₁ l'')) (cons x l')) 1 u)
-              (proj₂ (r (cons x l')) u)
-
-      rev' : (l : val list) → Σ (val list) λ l' → ◯ (rev l ≡ ret l')
-      rev' l = revAppend' l nil
-
-      deq/emp' : (l : val list) → Σ (val deq-tp) λ x → ◯ (deq/emp l ≡ ret x)
-      deq/emp' l =
-        list/match l (λ l → meta (Σ (val deq-tp) λ x → ◯ (deq/emp l ≡ ret x)))
-          ((inj₁ triv) , (λ _ → refl))
-          λ a l₁ → (inj₂ ((l₁ , nil) , a)) , (step/ext (F deq-tp) (ret _) 1)
-
-      deq' : (q : val Q) → Σ (val deq-tp) λ x → ◯ (deq q ≡ ret x)
-      deq' (f , b) =
-        list/match f (λ f → meta (Σ (val deq-tp) λ x → ◯ (deq (f , b) ≡ ret x)))
-          (proj₁ (deq/emp' (proj₁ (rev' b))) , (λ u →
-            begin
-              deq (nil , b)
-            ≡⟨⟩
-              bind (F deq-tp) (rev b) deq/emp
-            ≡⟨ P.cong (λ e → bind (F deq-tp) e deq/emp) (proj₂ (rev' b) u) ⟩
-              deq/emp (proj₁ (rev' b))
-            ≡⟨ proj₂ (deq/emp' (proj₁ (rev' b))) u ⟩
-              ret (proj₁ (deq/emp' (proj₁ (rev' b))))
-            ∎))
-          (λ a l → (inj₂ ((l , b) , a)) , (step/ext (F deq-tp) (ret _) 1))
-        where open ≡-Reasoning
-  ... | inj₁ triv , h = (nil , nil) , λ u →
-    P.cong (λ e → bind (F Q) e λ s → sum/case unit (Σ⁺ Q (λ _ → A)) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ (q , x) → ret q)) (h u)
-  ... | inj₂ (q , x) , h = q , (λ u → P.cong (λ e → bind (F Q) e λ s → sum/case unit (Σ⁺ Q (λ _ → A)) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ (q , x) → ret q)) (h u))
-
-  -- o operateϕ q is morally ϕ (o operate q), which doesn't type-check since o operate q is a computation.
-  -- Easier to work with than bind cost (o operate q) ϕ (but they are equivalent, as shown below).
-  _operateϕ_ : op → val Q → ℂ
-  (op/enq x) operateϕ (f , b) = len f + 2 * (1 + len b)
-  (op/deq) operateϕ (f , b) = list/match f (λ _ → cost) (list/match b (λ _ → cost) 0 (λ _ b' → len b')) (λ _ f' → len f' + 2 * len b)
-
-  operateϕ≡ϕ∘operate : ∀ o q → ◯ (o operateϕ q ≡ bind cost (o operate q) ϕ)
-  operateϕ≡ϕ∘operate (op/enq x) (f , b) u =
-    begin
-      len f + 2 * (1 + len b)
-    ≡˘⟨ cong (λ n → len f + 2 * n) (step/ext cost (1 + len b) 1 u) ⟩
-      len f + 2 * step cost 1 (1 + len b)
-    ≡⟨⟩
-      bind cost (enq (f , b) x) ϕ
-    ∎
-      where open ≡-Reasoning
-  operateϕ≡ϕ∘operate op/deq (f , b) u = list/match f
-        (λ f →
-          meta
-          ((op/deq operateϕ (f , b)) ≡
-            bind cost (op/deq operate (f , b)) ϕ))
-        (list/ind b (λ b → meta ((op/deq operateϕ (nil , b)) ≡ bind cost (op/deq operate (nil , b)) ϕ))
-        refl
-        λ a l ih → emp/cons a l)
-        λ a l → refl
-
-    where
-    emp/cons : ∀ a l → op/deq operateϕ (nil , cons a l) ≡ bind cost (op/deq operate (nil , cons a l)) ϕ
-    emp/cons a l with rev/lemma/cons a l u
-    ... | (x' , l' , eqn1 , eqn2) =
-      begin
-        op/deq operateϕ (nil , cons a l)
-      ≡⟨⟩
-        step cost 1 (len l)
-      ≡⟨ step/ext cost (len l) 1 u ⟩
-        len l
-      ≡⟨ P.sym eqn1 ⟩
-        len l'
-      ≡⟨ P.sym (+-identityʳ (len l')) ⟩
-        len l' + 0
-      ≡⟨⟩
-        len l' + 2 * len nil
-      ≡⟨⟩
-        ϕ (l' , nil)
-      ≡˘⟨ step/ext cost (ϕ (l' , nil)) 1 u ⟩
-        step cost 1 (ϕ (l' , nil))
-      ≡⟨⟩
-        bind cost
-          (step (F Q) 1 (ret (l' , nil)))
-          ϕ
-      ≡⟨⟩
-        bind cost
-          (bind (F Q) (step (F deq-tp) 1 (ret (inj₂ ((l' , nil) , x')))) λ s → (sum/case unit (Σ⁺ Q λ _ → A) (λ _ → F Q) s
-            (λ _ → ret (nil , nil))
-            (λ (q , x) → ret q)))
-          ϕ
-      ≡⟨⟩
-        bind cost
-          (bind (F Q) (deq/emp (cons x' l')) λ s → (sum/case unit (Σ⁺ Q λ _ → A) (λ _ → F Q) s
-            (λ _ → ret (nil , nil))
-            (λ (q , x) → ret q)))
-          ϕ
-      ≡˘⟨
-        cong
-          (λ e →
-            bind cost
-              (bind (F Q) e λ l' →
-                bind (F Q) (deq/emp l') λ s → (sum/case unit (Σ⁺ Q λ _ → A) (λ _ → F Q) s
-                  (λ _ → ret (nil , nil))
-                  (λ (q , x) → ret q)))
-              ϕ
-          )
-          eqn2
-      ⟩
-        bind cost
-          (bind (F Q) (rev (cons a l)) λ l' →
-            bind (F Q) (deq/emp l') λ s → (sum/case unit (Σ⁺ Q λ _ → A) (λ _ → F Q) s
-              (λ _ → ret (nil , nil))
-              (λ (q , x) → ret q)))
-          ϕ
-      ≡⟨⟩
-        bind cost
-          (bind (F Q) (deq (nil , cons a l)) λ s → (sum/case unit (Σ⁺ Q λ _ → A) (λ _ → F Q) s
-            (λ _ → ret (nil , nil))
-            (λ (q , x) → ret q)))
-          ϕ
-      ≡⟨⟩
-        bind cost (op/deq operate (nil , cons a l)) ϕ
-      ∎
-      where open ≡-Reasoning
-
-  -- op/cost o q is the cost of o operate q.
-  op/cost : op → val Q → ℕ
-  op/cost (op/enq x) q = 0
-  op/cost (op/deq) (f , b) = list/match f (λ _ → cost) (list/match b (λ _ → cost) 0 (λ _ b' → 2 + len b')) (λ _ _ → 1)
-
-  deq/cost≡cost/deq : ∀ q → ◯ (deq/cost/closed q ≡ op/cost op/deq q)
-  deq/cost≡cost/deq (f , b) u =
-    P.cong (λ x → list/match f (λ _ → cost) x (λ _ _ → 1)) (
-      list/match b
-        (λ b →
-          meta
-            (list/match b (λ _ → cost) 0 (λ _ b' → 1 + len b) ≡
-              list/match b (λ _ → cost) 0 (λ _ b' → 2 + len b')))
-        refl
-        (λ a l →
-          let open ≡-Reasoning in
-          begin
-            list/match (cons a l) (λ _ → cost) 0 (λ _ b' → 1 + len (cons a l))
-          ≡⟨⟩
-            step cost 1 (1 + len (cons a l))
-          ≡⟨ step/ext cost (1 + len (cons a l)) 1 u ⟩
-            1 + len (cons a l)
-          ≡⟨⟩
-            1 + step cost 1 (suc (len l))
-          ≡⟨ cong (1 +_) (step/ext cost (suc (len l)) 1 u) ⟩
-            2 + len l
-          ≡˘⟨ step/ext cost (2 + len l) 1 u ⟩
-            step cost 1 (2 + len l)
-          ≡⟨⟩
-            list/match (cons a l) (λ _ → cost) 0 (λ _ b' → 2 + len b')
-          ∎
-        )
-    )
-
-  -- cost o q upperbounds the cost of o operate q.
-  op≤op/cost : ∀ o q → IsBounded Q (o operate q) (op/cost o q)
-  op≤op/cost (op/enq x) q = enq≤enq/cost q x
-  op≤op/cost op/deq q rewrite P.sym (+-identityʳ (op/cost (op/deq) q)) =
-    bound/bind/const {A = deq-tp} {e = deq q} {f = λ s → (sum/case unit (Σ⁺ Q λ _ → A) (λ _ → F Q) s (λ _ → ret (nil , nil)) (λ (q , x) → ret q))}
-      (op/cost op/deq q) 0
-      (bound/relax (λ u → ≤-reflexive (deq/cost≡cost/deq q u)) (deq≤deq/cost/closed q))
-      λ a →
-        bound/sum/case/const/const unit ((Σ⁺ Q λ _ → A)) (λ _ → Q) a ((λ _ → ret (nil , nil))) (λ (q , x) → ret q) 0
-          (λ _ → bound/ret)
-          (λ _ → bound/ret)
-
-  -- is/acost o k when for any state q, k suffices for the cost of o on q and the difference in the potential.
-  is/acost :  op → ℕ → Set
-  is/acost o k = ∀ q → (Int.+ (op/cost o q)) Int.+ ((o operateϕ q) Int.⊖ (ϕ q)) Int.≤ Int.+ k
-
-  acost/weaken : ∀ {m n o} → m ≤ n → is/acost o m → is/acost o n
-  acost/weaken h1 h2 = λ q → IntP.≤-trans (h2 q) (Int.+≤+ h1)
-
-  -- A sequence of operations induces a single computation by threading through the initial state q0.
-  _op/seq_ : List op → val Q → cmp (F Q)
-  [] op/seq q0 = ret q0
-  (o ∷ os) op/seq q = bind (F Q) (o operate q) λ q' → os op/seq q'
-
-  op/seq/cost : ∀ (l : List op) → val Q → ℂ
-  op/seq/cost [] q0 = 0
-  op/seq/cost (o ∷ os) q = bind cost (o operate q) λ q' → op/cost o q + op/seq/cost os q'
-
-  -- Cost of a sequence computation is bounded by the sum of cost of the constituents.
-  op/seq≤op/seq/cost : ∀ l q → IsBounded Q (l op/seq q) (op/seq/cost l q)
-  op/seq≤op/seq/cost [] q0 = bound/ret
-  op/seq≤op/seq/cost (o ∷ os) q = bound/bind {A = Q} {e = o operate q} {f = λ q → os op/seq q}
-   (op/cost o q) (op/seq/cost os) (op≤op/cost o q) λ q → op/seq≤op/seq/cost os q
-
-  -- Telescoping the potential.
-  op/seq/cost/tele : ∀ (l : List op) → val Q → Int.ℤ
-  op/seq/cost/tele [] q0 = Int.0ℤ
-  op/seq/cost/tele (o ∷ os) q = (Int.+ (op/cost o q)) Int.+ (o operateϕ q Int.⊖ ϕ q) Int.+ (op/seq/cost/tele os (proj₁ (o operate' q)))
-
-  ϕn : ℕ → List op → val Q → ℕ
-  ϕn zero l q0 = ϕ q0
-  ϕn (suc n) (o ∷ os) q = bind cost (o operate q) λ q' → ϕn n os q'
-  ϕn (suc n) [] q = 0
-
-  -- Potential of the initial state
-  ϕ/0 : List op → val Q → ℕ
-  ϕ/0 l = ϕn 0 l
-
-  -- Potential of the final state
-  ϕ/-1 : List op → val Q → ℕ
-  ϕ/-1 l = ϕn (length l) l
-
-  bind/dup : ∀ A 𝕊 𝕋 e f (g : val A → 𝕊 → 𝕋) → bind {A} (meta 𝕋) e (λ a → g a (bind {A} (meta 𝕊) e f)) ≡ bind {A} (meta 𝕋) e (λ a → g a (f a))
-  bind/dup A 𝕊 𝕋 e f g =
-    begin
-    bind (meta 𝕋) e (λ a → g a (bind (meta 𝕊) e f)) ≡⟨ P.cong (λ h → bind (meta 𝕋) e h) (funext (λ a → bind/meta A 𝕊 𝕋 e f (λ s → g a s))) ⟩
-    bind (meta 𝕋) e (λ a → bind (meta 𝕋) e (λ a' → g a (f a'))) ≡⟨ bind/idem A 𝕋 e (λ a a' → g a (f a')) ⟩
-    bind (meta 𝕋) e (λ a → g a (f a)) ≡⟨ refl ⟩
-    bind (meta 𝕋) e (λ a → g a (f a))
-    ∎
-    where open ≡-Reasoning
-
-  -- Telescoping sum:
-  -- Σᵢⁿ op/cost oᵢ + ϕ qᵢ - ϕ qᵢ­₋₁ = ϕ q_{n-1} - ϕ q_0 + Σᵢ costᵢ
-  cost≡cost/tele : ∀ l q → ◯ (op/seq/cost/tele l q ≡ (ϕ/-1 l q Int.⊖ ϕ/0 l q) Int.+ (Int.+ (op/seq/cost l q)))
-  cost≡cost/tele [] q u =
-    P.sym
-    (
-      begin
-      (ϕ q Int.⊖ ϕ q) Int.+ (Int.+ 0) ≡⟨ IntP.+-identityʳ (ϕ q Int.⊖ ϕ q) ⟩
-      ϕ q Int.⊖ ϕ q ≡⟨ IntP.n⊖n≡0 (ϕ q) ⟩
-      Int.+ 0 ≡⟨ refl ⟩
-      Int.+ 0
-      ∎
-    )
-    where open ≡-Reasoning
-  cost≡cost/tele (o ∷ os) q u rewrite operateϕ≡ϕ∘operate o q u
-                                  | bind/meta Q ℕ Int.ℤ
-                                    (o operate q)
-                                    (λ q' → op/cost o q + op/seq/cost os q')
-                                    (λ x → (ϕ/-1 (o ∷ os) q Int.⊖ ϕ/0 (o ∷ os) q) Int.+ (Int.+ x))
-                                  | bind/dup Q ℕ Int.ℤ (o operate q) (ϕ/-1 os) (λ q' x → (x Int.⊖ ϕ q) Int.+ (Int.+ (op/cost o q + op/seq/cost os q')))
-                                  | bind/dup Q ℕ Int.ℤ (o operate q) ϕ (λ q' x → Int.+ (op/cost o q) Int.+ (x Int.⊖ ϕ q) Int.+ (op/seq/cost/tele os q')) =
-      let q' = proj₁ (o operate' q) in
-      begin
-        (Int.+ (op/cost o q)) Int.+ (bind (meta ℕ) (o operate q) ϕ Int.⊖ ϕ q) Int.+ (op/seq/cost/tele os q')
-      ≡⟨ P.cong (λ e → Int.+ op/cost o q Int.+ (bind (meta ℕ) e ϕ Int.⊖ ϕ q) Int.+ op/seq/cost/tele os q') (proj₂ (o operate' q) u) ⟩
-        (Int.+ (op/cost o q)) Int.+ (ϕ q' Int.⊖ ϕ q) Int.+ (op/seq/cost/tele os q') ≡⟨ P.cong (λ x → (Int.+ (op/cost o q)) Int.+ (ϕ q' Int.⊖ ϕ q) Int.+ x) (cost≡cost/tele os q' u) ⟩
-        Int.+ op/cost o q Int.+ (ϕ q' Int.⊖ ϕ q) Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ op/seq/cost os q') ≡⟨ P.cong (λ x → x Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ op/seq/cost os q')) (IntP.+-comm (Int.+ op/cost o q) (ϕ q' Int.⊖ ϕ q)) ⟩
-        ϕ q' Int.⊖ ϕ q Int.+ Int.+ op/cost o q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ op/seq/cost os q') ≡⟨ IntP.+-assoc (ϕ q' Int.⊖ ϕ q) (Int.+ op/cost o q) (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ op/seq/cost os q') ⟩
-        ϕ q' Int.⊖ ϕ q Int.+ (Int.+ op/cost o q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ op/seq/cost os q')) ≡⟨ P.cong (λ x → ϕ q' Int.⊖ ϕ q Int.+ x) (P.sym (IntP.+-assoc (Int.+ op/cost o q) (ϕ/-1 os q' Int.⊖ ϕ/0 os q') (Int.+ op/seq/cost os q'))) ⟩
-        ϕ q' Int.⊖ ϕ q Int.+ (Int.+ op/cost o q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q') Int.+ Int.+ op/seq/cost os q') ≡⟨ P.cong (λ x → ϕ q' Int.⊖ ϕ q Int.+ (x Int.+ Int.+ op/seq/cost os q')) (IntP.+-comm (Int.+ op/cost o q) (ϕ/-1 os q' Int.⊖ ϕ/0 os q')) ⟩
-        ϕ q' Int.⊖ ϕ q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q') ≡⟨ P.cong (λ x → ϕ q' Int.⊖ ϕ q Int.+ x) (IntP.+-assoc (ϕ/-1 os q' Int.⊖ ϕ/0 os q') (Int.+ op/cost o q) (Int.+ op/seq/cost os q')) ⟩
-        ϕ q' Int.⊖ ϕ q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q' Int.+ (Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q')) ≡⟨ P.sym (IntP.+-assoc (ϕ q' Int.⊖ ϕ q) (ϕ/-1 os q' Int.⊖ ϕ/0 os q') (Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q')) ⟩
-        ϕ q' Int.⊖ ϕ q Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q') Int.+ (Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q') ≡⟨ P.cong (λ x → x Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q') Int.+ (Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q')) (P.sym (IntP.m-n≡m⊖n (ϕ q') (ϕ q))) ⟩
-        Int.+ ϕ q' Int.- (Int.+ ϕ q) Int.+ (ϕ/-1 os q' Int.⊖ ϕ/0 os q') Int.+ (Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q') ≡⟨ P.cong (λ x → Int.+ ϕ q' Int.- (Int.+ ϕ q) Int.+ x Int.+ (Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q')) (P.sym (IntP.m-n≡m⊖n (ϕ/-1 os q') (ϕ/0 os q'))) ⟩
-        Int.+ ϕ q' Int.- Int.+ ϕ q Int.+ (Int.+ ϕ/-1 os q' Int.- (Int.+ ϕ/0 os q')) Int.+ (Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q') ≡⟨ P.cong (λ x → x Int.+ (Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q')) (IntP.+-comm (Int.+ ϕ q' Int.- Int.+ ϕ q) (Int.+ ϕ/-1 os q' Int.- (Int.+ ϕ/0 os q'))) ⟩
-        Int.+ ϕ/-1 os q' Int.- Int.+ ϕ/0 os q' Int.+ (Int.+ ϕ q' Int.- Int.+ ϕ q) Int.+ (Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q') ≡⟨ P.cong (λ x → x Int.+ (Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q')) (IntP.+-minus-telescope (Int.+ ϕ/-1 os q') (Int.+ ϕ q') (Int.+ ϕ q)) ⟩
-        Int.+ ϕ/-1 os q' Int.- Int.+ ϕ q Int.+ (Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q') ≡⟨ P.cong (λ x → x Int.+ (Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q')) (IntP.m-n≡m⊖n (ϕ/-1 os q') (ϕ q )) ⟩
-        ϕ/-1 os q' Int.⊖ ϕ q Int.+ (Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q')
-      ≡˘⟨ P.cong (λ e → bind (meta Int.ℤ) e (λ q' → ϕ/-1 os q' Int.⊖ ϕ q Int.+ (Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q'))) (proj₂ (o operate' q) u) ⟩
-        bind (meta Int.ℤ) (o operate q) (λ q' → ϕ/-1 os q' Int.⊖ ϕ q Int.+ (Int.+ op/cost o q Int.+ Int.+ op/seq/cost os q'))
-      ∎
-        where open ≡-Reasoning
-
-  data Amortized : List op → List ℕ → Set where
-    a/emp : Amortized [] []
-    a/cons : ∀ o k l l' → is/acost o k → Amortized l l' → Amortized (o ∷ l) (k ∷ l')
-
-  amortized≥cost/tele : ∀ q0 l l' → Amortized l l' → (Int.+ (lsum l') Int.≥ op/seq/cost/tele l q0)
-  amortized≥cost/tele q .[] .[] a/emp = IntP.≤-refl
-  amortized≥cost/tele q .(o ∷ os) .(k ∷ l') (a/cons o k os l' x h) =
-    let q' = proj₁ (o operate' q) in
-    begin
-    Int.+ op/cost o q Int.+ ((o operateϕ q) Int.⊖ ϕ q) Int.+ op/seq/cost/tele os q' ≤⟨ IntP.+-monoˡ-≤ (op/seq/cost/tele os q') (x q) ⟩
-    Int.+ k Int.+ op/seq/cost/tele os q' ≤⟨ IntP.+-monoʳ-≤ (Int.+ k) (amortized≥cost/tele q' os l' h) ⟩
-    Int.+ k Int.+ Int.+ lsum l' ≤⟨ IntP.≤-refl ⟩
-    Int.+ k Int.+ Int.+ lsum l'
-    ∎
-      where open IntP.≤-Reasoning
-
-  -- Sum of a sequence of amortized costs (plus the initial potential) bounds the sum of the sequence of actual costs
-  amortized≥cost : ∀ q l l' → Amortized l l' → ◯ (Int.+ (ϕ q + lsum l') Int.≥ Int.+ (op/seq/cost l q))
-  amortized≥cost q l l' h u =
-    begin
-    Int.+ (op/seq/cost l q) ≤⟨ IntP.i≤j+i (Int.+ op/seq/cost l q) (Int.0ℤ Int.+ (Int.+ ϕ/-1 l q)) ⟩
-    Int.0ℤ Int.+ (Int.+ ϕ/-1 l q) Int.+ Int.+ op/seq/cost l q ≡⟨ P.cong (λ x → x Int.+ (Int.+ ϕ/-1 l q) Int.+ Int.+ op/seq/cost l q) (P.sym (IntP.n⊖n≡0 (ϕ q))) ⟩
-    ϕ q Int.⊖ ϕ q Int.+ Int.+ ϕ/-1 l q Int.+ Int.+ op/seq/cost l q ≡⟨ P.cong (λ x → x Int.+ (Int.+ ϕ/-1 l q) Int.+ Int.+ op/seq/cost l q) (P.sym (IntP.m-n≡m⊖n (ϕ q) (ϕ q))) ⟩
-    Int.+ ϕ q Int.+ Int.- (Int.+ ϕ q) Int.+ Int.+ ϕ/-1 l q Int.+ Int.+ op/seq/cost l q ≡⟨ P.cong (λ x → x Int.+ Int.+ op/seq/cost l q) (IntP.+-assoc (Int.+ ϕ q) (Int.- (Int.+ ϕ q)) (Int.+ ϕ/-1 l q)) ⟩
-    Int.+ ϕ q Int.+ (Int.- (Int.+ ϕ q) Int.+ Int.+ ϕ/-1 l q) Int.+ Int.+ op/seq/cost l q ≡⟨ P.cong (λ x → Int.+ ϕ q Int.+ x Int.+ Int.+ op/seq/cost l q) (IntP.+-comm (Int.- (Int.+ ϕ q)) (Int.+ ϕ/-1 l q)) ⟩
-    Int.+ ϕ q Int.+ (Int.+ ϕ/-1 l q Int.- (Int.+ ϕ q)) Int.+ Int.+ op/seq/cost l q ≡⟨ IntP.+-assoc (Int.+ ϕ q) (Int.+ ϕ/-1 l q Int.- (Int.+ ϕ q)) (Int.+ op/seq/cost l q) ⟩
-    Int.+ ϕ q Int.+ (Int.+ ϕ/-1 l q Int.- Int.+ ϕ q Int.+ Int.+ op/seq/cost l q) ≡⟨ P.cong (λ x → Int.+ ϕ q Int.+ (x Int.+ Int.+ op/seq/cost l q)) (IntP.m-n≡m⊖n (ϕ/-1 l q) (ϕ q)) ⟩
-    Int.+ ϕ q Int.+ (ϕ/-1 l q Int.⊖ ϕ q Int.+ Int.+ op/seq/cost l q) ≡⟨ P.cong (λ x → Int.+ ϕ q Int.+ x) (P.sym (cost≡cost/tele l q u)) ⟩
-    Int.+ ϕ q Int.+ op/seq/cost/tele l q ≤⟨ IntP.+-monoʳ-≤ (Int.+ ϕ q) (amortized≥cost/tele q l l' h) ⟩
-    Int.+ ϕ q Int.+ Int.+ lsum l' ≤⟨ IntP.≤-refl ⟩
-    Int.+ ϕ q Int.+ Int.+ lsum l'
-    ∎
-   where open IntP.≤-Reasoning
-
-  -- Amortized cost for enq and deq on a front-back queue
-  enq/acost : ∀ x → ◯ (is/acost (op/enq x) 2)
-  enq/acost x u (f , b) =
-    begin
-      (Int.+ (op/cost (op/enq x) (f , b))) Int.+ (((op/enq x) operateϕ (f , b)) Int.⊖ (ϕ (f , b)))
-    ≡⟨⟩
-      Int.0ℤ Int.+ ((len f + 2 * (1 + len b)) Int.⊖ (ϕ (f , b)))
-    ≡⟨ IntP.+-identityˡ ((len f + 2 * (1 + len b)) Int.⊖ (ϕ (f , b))) ⟩
-      len f + 2 * (1 + len b) Int.⊖ ϕ (f , b)
-    ≡⟨ P.cong (λ x → (len f + x) Int.⊖ (ϕ (f , b))) (*-distribˡ-+ 2 1 (len b)) ⟩
-      len f + (2 * 1 + 2 * len b) Int.⊖ ϕ (f , b)
-    ≡⟨ P.cong (λ x → (len f + x) Int.⊖ (ϕ (f , b)) ) (+-comm 2 (2 * len b)) ⟩
-      len f + (2 * len b + 2) Int.⊖ ϕ (f , b)
-    ≡⟨ P.cong (λ x → x Int.⊖ (ϕ (f , b))) (P.sym (+-assoc (len f) (2 * len b) 2)) ⟩
-      len f + 2 * len b + 2 Int.⊖ ϕ (f , b)
-    ≡⟨ P.cong (λ x → (len f + 2 * len b + 2) Int.⊖ x) (P.sym (+-identityʳ (ϕ (f , b)))) ⟩
-      len f + 2 * len b + 2 Int.⊖ (ϕ (f , b) + 0)
-    ≡⟨ IntP.+-cancelˡ-⊖ (len f + 2 * len b) 2 0 ⟩
-      Int.+ 2
-    ∎
-    where open IntP.≤-Reasoning
-
-  n+n≡2*n : ∀ n → n + n ≡ 2 * n
-  n+n≡2*n n =
-    begin
-    n + n ≡⟨ P.cong (λ x → n + x) (P.sym (+-identityʳ n)) ⟩
-    2 * n ∎
-    where open ≡-Reasoning
-
-  deq/acost : ◯ (is/acost op/deq 0)
-  deq/acost u (f , b) =
-    list/match f (λ f → meta ((Int.+ (op/cost op/deq (f , b))) Int.+ ((op/deq operateϕ (f , b)) Int.⊖ (ϕ (f , b))) Int.≤ Int.0ℤ))
-    (
-    list/match b (λ b → meta ((Int.+ (op/cost op/deq (nil , b))) Int.+ ((op/deq operateϕ (nil , b)) Int.⊖ (ϕ (nil , b))) Int.≤ Int.0ℤ))
-    IntP.≤-refl
-    λ a b' →
-      begin
-        (Int.+ (op/cost op/deq (nil , cons a b'))) Int.+ ((op/deq operateϕ (nil , cons a b')) Int.⊖ (ϕ (nil , cons a b')))
-      ≡⟨⟩
-        Int.+ (step cost 1 (2 + len b')) Int.+ (step cost 1 (len b') Int.⊖ (2 * (step cost 1 (1 + len b'))))
-      ≡⟨
-        cong₂ Int._+_
-          (cong Int.+_ (step/ext cost (2 + len b') 1 u))
-          (cong₂ Int._⊖_
-            (step/ext cost (len b') 1 u)
-            (cong (2 *_) (step/ext cost (1 + len b') 1 u))
-          )
-      ⟩
-        Int.+ (2 + len b') Int.+ (len b' Int.⊖ (2 * (1 + len b')))
-      ≡⟨ IntP.distribʳ-⊖-+-pos (2 + len b') (len b') (2 * (1 + len b')) ⟩
-        2 + len b' + len b' Int.⊖ 2 * (1 + len b')
-      ≡⟨ P.cong (λ x → x Int.⊖ 2 * (1 + len b')) (+-assoc 2 (len b') (len b')) ⟩
-        2 + (len b' + len b') Int.⊖ 2 * (1 + len b')
-      ≡⟨ P.cong (λ x → 2 + (len b'  + len b') Int.⊖ x) (*-distribˡ-+ 2 1 (len b')) ⟩
-        2 + (len b' + len b') Int.⊖ (2 * 1 + 2 * len b')
-      ≡⟨ P.cong (λ x → 2 + x Int.⊖ (2 + 2 * len b')) (n+n≡2*n (len b')) ⟩
-        2 + 2 * len b' Int.⊖ (2 + 2 * len b')
-      ≡⟨ IntP.n⊖n≡0 (2 + 2 * len b') ⟩
-        Int.0ℤ
-      ∎
-    )
-    λ a f' →
-      begin
-        (Int.+ (op/cost op/deq (cons a f' , b))) Int.+ ((op/deq operateϕ (cons a f' , b)) Int.⊖ (ϕ (cons a f' , b)))
-      ≡⟨⟩
-        Int.+ (step cost 1 1) Int.+ (step cost 1 (len f' + 2 * len b) Int.⊖ (step cost 1 (1 + len f') + 2 * len b))
-      ≡⟨
-        cong₂ Int._+_
-          (cong Int.+_ (step/ext cost 1 1 u))
-          (cong₂ Int._⊖_
-            (step/ext cost (len f' + 2 * len b) 1 u)
-            (cong (_+ 2 * len b) (step/ext cost (1 + len f') 1 u))
-          )
-      ⟩
-        Int.+ 1 Int.+ ((len f' + 2 * len b) Int.⊖ (1 + len f' + 2 * len b))
-      ≡⟨ IntP.distribʳ-⊖-+-pos 1 (len f' + 2 * len b) (1 + len f' + 2 * len b) ⟩
-        1 + (len f' + 2 * len b) Int.⊖ (1 + len f' + 2 * len b)
-      ≡⟨ P.cong (λ x → x Int.⊖ (1 + len f' + 2 * len b)) (P.sym (+-assoc 1 (len f') (2 * len b))) ⟩
-        1 + len f' + 2 * len b Int.⊖ (1 + len f' + 2 * len b)
-      ≡⟨ IntP.n⊖n≡0 (1 + len f' + 2 * len b) ⟩
-        Int.0ℤ
-      ∎
-    where open IntP.≤-Reasoning
-
-  all2s : ℕ → List ℕ
-  all2s n = tabulate {n = n} (λ _ → 2)
-
-  sum2s : ∀ n → lsum (all2s n) ≡ 2 * n
-  sum2s zero = refl
-  sum2s (suc n) =
-    begin
-    2 + lsum (all2s n) ≡⟨ P.cong (λ x → 2 + x) (sum2s n) ⟩
-    2 + 2 * n ≡⟨ P.cong (λ x → x + 2 * n) (*-identityʳ 2) ⟩
-    2 * 1 + 2 * n ≡⟨ P.sym (*-distribˡ-+ 2 1 n) ⟩
-    2 * (1 + n)
-    ∎
-   where open ≡-Reasoning
-
-  all2s/is/acost : ∀ l → ◯ (Amortized l (all2s (length l)))
-  all2s/is/acost [] u = a/emp
-  all2s/is/acost ((op/enq x) ∷ os) u = a/cons (op/enq x) 2 os (all2s (length os)) (enq/acost x u) (all2s/is/acost os u)
-  all2s/is/acost (op/deq ∷ os) u = a/cons op/deq 2 os (all2s (length os)) (acost/weaken z≤n (deq/acost u)) (all2s/is/acost os u)
-
-  op/seq/cost≤ϕ₀+2*|l| : ∀ q l → ◯ (Int.+ (op/seq/cost l q) Int.≤  Int.+ (ϕ q + 2 * length l))
-  op/seq/cost≤ϕ₀+2*|l| q l u =
-    begin
-    Int.+ (op/seq/cost l q) ≤⟨ amortized≥cost q l (all2s (length l)) (all2s/is/acost l u) u ⟩
-    Int.+ (ϕ q + lsum (all2s (length l))) ≡⟨ P.cong (λ x → Int.+ (ϕ q + x)) (sum2s (length l)) ⟩
-    Int.+ (ϕ q + 2 * length l) ≤⟨ IntP.≤-refl ⟩
-    Int.+ (ϕ q + 2 * length l)
-    ∎
-   where open IntP.≤-Reasoning
-
-  -- Starting with an empty queue, a sequence of n operations costs at most 2 * n
-  op/seq≤2*|l| : ∀ l → IsBounded Q (l op/seq emp) (2 * length l)
-  op/seq≤2*|l| l = bound/relax (λ u → IntP.drop‿+≤+ (op/seq/cost≤ϕ₀+2*|l| emp l u)) (op/seq≤op/seq/cost l emp)
+batched-queue : Queue
+batched-queue .prequeue .Q = Abstractionᶜ BQ LQ α
+batched-queue .prequeue .empty = triangle-U α emptyᴮ emptyᴸ empty-coherent
+batched-queue .prequeue .enqueue e = squareᶜ α α (enqueueᴮ e) (enqueueᴸ e) (enqueue-coherent e)
+batched-queue .prequeue .dequeue = Dequeue.dequeueᴬ
+batched-queue .spec abs i .Q = Abstractionᶜ-open α abs i
+batched-queue .spec abs i .empty =
+  triangle-U-openP α emptyᴮ emptyᴸ empty-coherent abs i
+batched-queue .spec abs i .enqueue e =
+  square-openP α α (enqueueᴮ e) (enqueueᴸ e) (enqueue-coherent e) abs i
+batched-queue .spec abs i .dequeue =
+  ( (λ i →
+      square-openP α (⋊-map ℕₚ α) dequeueᴮ dequeueᴸ Dequeue.dequeue-coherent abs i
+        ⨾ᶜ ⋊-Abstractionᶜ-openP ℕₚ α abs i)
+  ▷ ⨾ᶜ-identityʳ dequeueᴸ) i

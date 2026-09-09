@@ -1,78 +1,72 @@
-{-# OPTIONS --rewriting #-}
-
 module Examples.Id where
 
-open import Algebra.Cost
-
-costMonoid = ℕ-CostMonoid
-open CostMonoid costMonoid
-
-open import Calf costMonoid
-open import Calf.Data.Nat
-open import Calf.Data.IsBounded costMonoid
-open import Calf.Data.BigO costMonoid
-
-open import Function using (_∘_; _$_)
-open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; module ≡-Reasoning)
+open import Calf.Core.Cost
+open import Calf.Value hiding (id)
+open import Calf.Value.BigO
+open import Calf.Value.Nat
+open import Calf.Computation
+open import Calf.Computation.Free
+open import Calf.Computation.Power
+open import Calf.Computation.Tensor
 
 
 module Easy where
-  id : cmp (Π nat λ _ → F nat)
+  id : U (ℕ ⇀ F ℕ)
   id n = ret n
 
-  id/bound : cmp (Π nat λ _ → F nat)
-  id/bound n = ret n
+  id-bound : U (ℕ ⇀ F ℕ)
+  id-bound n = ret n
 
-  id/is-bounded : ∀ n → id n ≤⁻[ F nat ] id/bound n
-  id/is-bounded n = ≤⁻-refl
+  id-bounded : id ⊑ id-bound
+  id-bounded = ⊑-funext λ _ → ⊑-refl
 
-  id/correct : ∀ n → ◯ (id n ≡ ret n)
-  id/correct n u = ≤⁻-ext-≡ u (id/is-bounded n)
+  id-correct : BEH → id ≡ ret
+  id-correct beh = ⊑-BEH beh id-bounded
 
-  id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → 0)
-  id/asymptotic = f[n]≤g[n]via (≤⁻-mono (λ e → bind (F _) e (λ _ → ret _)) ∘ id/is-bounded)
-
+  id-asymptotic : given ℕ measured-via (λ n → n) , id ∈𝓞(λ n → 0)
+  id-asymptotic =
+    f[n]≤g[n]via λ n →
+      ⊑∙≡
+        (⊑-mono (λ e → bind {A = ⊤} (e n) (const 0ℂ)) id-bounded)
+        bind-β
 
 module Hard where
-  id : cmp (Π nat λ _ → F nat)
+  id : U (ℕ ⇀ F ℕ)
   id zero = ret 0
   id (suc n) =
-    step (F nat) 1 (
-      bind (F nat) (id n) λ n' →
-        ret (suc n')
-    )
+    chargeℕ (F _) 1 $
+    bind[ F _ ] n' ← id n ⨾
+    ret (suc n')
 
-  id/bound : cmp (Π nat λ _ → F nat)
-  id/bound n = step (F nat) n (ret n)
+  id-bound : U (ℕ ⇀ F ℕ)
+  id-bound n = chargeℕ (F _) n (ret n)
 
-  id/is-bounded : ∀ n → id n ≤⁻[ F nat ] id/bound n
-  id/is-bounded zero    = ≤⁻-refl
-  id/is-bounded (suc n) =
-    let open ≤⁻-Reasoning (F nat) in
-    ≤⁻-mono (step (F nat) 1) $
-    begin
-      bind (F nat) (id n) (λ n' → ret (suc n'))
-    ≲⟨ ≤⁻-mono (λ e → bind (F nat) e (ret ∘ suc)) (id/is-bounded n) ⟩
-      bind (F nat) (step (F nat) n (ret n)) (λ n' → ret (suc n'))
-    ≡⟨⟩
-      step (F nat) n (ret (suc n))
-    ∎
+  id-bounded : id ⊑ id-bound
+  id-bounded = ⊑-funext lemma
+    where
+      lemma : ∀ n → id n ⊑ id-bound n
+      lemma zero = ⊑-refl
+      lemma (suc n) =
+        let open ⊑-Reasoning (F ℕ) in
+        ⊑-mono (chargeℕ (F _) 1) $
+        begin
+          bind[ F _ ] n' ← id n ⨾ ret (suc n')
+        ⊑⟨ ⊑-mono (λ e → bind[ F _ ] n' ← e ⨾ ret (suc n')) (lemma n) ⟩
+          bind[ F _ ] n' ← id-bound n ⨾ ret (suc n')
+        ≡ᴾ⟨ bind-chargeℕ-ret n ⟩
+          chargeℕ (F _) n (ret (suc n))
+        ∎ᴾ
 
-  id/correct : ∀ n → ◯ (id n ≡ ret n)
-  id/correct n u = Eq.trans (≤⁻-ext-≡ u (id/is-bounded n)) (step/ext (F nat) (ret n) n u)
+  id-correct : BEH → id ≡ ret
+  id-correct beh = ⊑-BEH beh id-bounded ∙ funExt (λ n → chargeℕ-BEH (F _) n beh)
 
-  id/asymptotic : given nat measured-via (λ n → n) , id ∈𝓞(λ n → n)
-  id/asymptotic = f[n]≤g[n]via (≤⁻-mono (λ e → bind (F _) e _) ∘ id/is-bounded)
+  id-asymptotic : given ℕ measured-via (λ n → n) , id ∈𝓞(λ n → # n)
+  id-asymptotic =
+    f[n]≤g[n]via λ n →
+      ⊑∙≡
+        (⊑-mono (λ e → bind {A = ⊤} (e n) (const 0ℂ)) id-bounded)
+        (bind-chargeℕ-ret n ∙ chargeℕ-charge ⊤ n ∙ +ℂ-identityʳ _)
 
 
-easy≡hard : ◯ (Easy.id ≡ Hard.id)
-easy≡hard u =
-  funext λ n →
-    begin
-      Easy.id n
-    ≡⟨ Easy.id/correct n u ⟩
-      ret n
-    ≡˘⟨ Hard.id/correct n u ⟩
-      Hard.id n
-    ∎
-      where open ≡-Reasoning
+easy≡hard : BEH → Easy.id ≡ Hard.id
+easy≡hard beh = Easy.id-correct beh ∙ sym (Hard.id-correct beh)
