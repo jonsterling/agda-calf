@@ -2,6 +2,7 @@ module Calf.Directed.Path where
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Function
+open import Cubical.Foundations.HLevels
 open import Cubical.Data.Sigma
 open import Relation.Binary using (_⇒_)
 open import Relation.Binary.Definitions using (Reflexive)
@@ -48,3 +49,12 @@ private variable X Y : Type
     (λ 𝕚 x → path (pointwise x) 𝕚)
   , funExt (λ x → path₀ (pointwise x))
   , funExt (λ x → path₁ (pointwise x))
+
+isContr⊑ : isContr X → {x x' : X} → isContr (x ⊑ x')
+isContr⊑ isContrX =
+  isContrΣ
+    (isContrΠ (const isContrX))
+    (λ _ →
+      isContrΣ
+        (isContr→isContrPath isContrX _ _)
+        (const (isContr→isContrPath isContrX _ _)))

@@ -51,7 +51,7 @@ proj◦ᶜᵈ .U = ◦
 proj◦ᶜᵈ .charge c g = refl
 
 Sealᶜ-open : ⟨ ABS ⟩ → Sealᶜ A ≃ᶜ A
-Sealᶜ-open abs = {!   !} , equivIsEquiv (Seal-open abs)
+Sealᶜ-open {A} abs = proj◦ᶜᵈ ⨾ᶜ ◯ᶜ-eval-open abs A , equivIsEquiv (Seal-open abs)
 
 
 infix 1 _⊸ᵈ_

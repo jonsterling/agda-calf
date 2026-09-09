@@ -1,5 +1,7 @@
 module Calf.Value.Seal where
 
+open import Cubical.Data.Sigma using (ΣPathP; Σ≡Prop)
+
 open import Calf.Core.Abstract
 open import Calf.Value
 open import Calf.Value.Closed
@@ -42,4 +44,13 @@ opaque
     isPreorderGlueᵈ (● X) (◯ X) (isPreorder● isPreorderX) (isPreorder◯ isPreorderX)
 
 Seal-open : ⟨ ABS ⟩ → Seal X ≃ X
-Seal-open abs = {!   !}
+Seal-open abs =
+  isoToEquiv
+    (iso
+      ((_$ abs) ∘ ◦)
+      (λ x → (∗ abs , η◦ x) , ⊑-reflexive (◯-isProp● abs _ _))
+      (λ _ → refl)
+      (λ g →
+        Σ≡Prop
+        (λ _ → isContr→isProp (isContr⊑ (◯-isConnected abs)))
+        (ΣPathP (◯-isProp● abs _ _ , funExt λ abs' → cong (◦ g) (str ABS abs abs')))))
