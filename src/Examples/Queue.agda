@@ -5,19 +5,13 @@ import Cubical.Data.Nat.Properties as Nat
 
 open import Calf.Core.Abstract
 open import Calf.Core.Cost
-open import Calf.Core.Monad using (M)
 open import Calf.Value hiding (empty)
-open import Calf.Value.Abstraction using (square)
-open import Calf.Value.Closed as ●
 open import Calf.Value.List
 open import Calf.Value.Nat
-open import Calf.Value.Open as ◯
 open import Calf.Computation
 open import Calf.Computation.Abstraction
-open import Calf.Computation.Closed as ●ᶜ hiding (push)
 open import Calf.Computation.Copower
 open import Calf.Computation.Free
-open import Calf.Computation.Open as ◯ᶜ
 
 
 record PreQueue : 𝒱₁ where
@@ -37,7 +31,7 @@ emptyᴸ = ret []
 enqueueᴸ : ℕ → LQ ⊸ LQ
 enqueueᴸ e = F-rec λ l → LQ .charge 1 (ret (l ++ [ e ]))
 
-dequeueᴸ : LQ ⊸ (ℕₚ ⋊ LQ)
+dequeueᴸ : LQ ⊸ ℕₚ ⋊ LQ
 dequeueᴸ = F-rec λ
   { []      → 0 , ret []
   ; (x ∷ l) → x , ret l }
@@ -108,8 +102,7 @@ module Dequeue where
     unfolding ℂ
 
     dequeue-coherent :
-      (q : U BQ)
-      → ⋊-map ℕₚ α .U (dequeueᴮ .U q) ≡ dequeueᴸ .U (α .U q)
+      (q : U BQ) → ⋊-map ℕₚ α .U (dequeueᴮ .U q) ≡ dequeueᴸ .U (α .U q)
     dequeue-coherent q =
       cong (λ f → f .U q)
         (F-rec-path
@@ -191,8 +184,7 @@ batched-queue .prequeue .Q = Abstractionᶜ BQ LQ α
 batched-queue .prequeue .empty = triangle-U α emptyᴮ emptyᴸ empty-coherent
 batched-queue .prequeue .enqueue e = squareᶜ α α (enqueueᴮ e) (enqueueᴸ e) (enqueue-coherent e)
 batched-queue .prequeue .dequeue = Dequeue.dequeueᴬ
-batched-queue .spec abs i .Q =
-  Abstractionᶜ-open α abs i
+batched-queue .spec abs i .Q = Abstractionᶜ-open α abs i
 batched-queue .spec abs i .empty =
   triangle-U-openP α emptyᴮ emptyᴸ empty-coherent abs i
 batched-queue .spec abs i .enqueue e =
