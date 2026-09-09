@@ -20,7 +20,7 @@ absurdᶜ : 0ᶜ ⊸ A
 absurdᶜ {A} .U = rec (A .is-preorder) λ ()
 absurdᶜ {A} .charge c = rec-unique (A .is-preorder) _ _ λ ()
 
-Σᶜ-⊥ : ∀ {A} → Σᶜ ⊥₌ A ≡ 0ᶜ
+Σᶜ-⊥ : ∀ {A} → Σᶜ₌ ⊥₌ A ≡ 0ᶜ
 Σᶜ-⊥ =
   sym $
     conservativity

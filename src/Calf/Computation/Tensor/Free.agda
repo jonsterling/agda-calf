@@ -62,6 +62,10 @@ par ex ey = transport (cong U F-monoidal) (ex ∥ ey)
 
 
 module _ (X : 𝒱₌) where
+  private
+    Σᶜ-charge : (Φ : ⟨ X ⟩ → ℂ) → ([ x ∈ X ] ⋊ ⊤) ⊸ ([ x ∈ X ] ⋊ ⊤)
+    Σᶜ-charge Φ = Σᶜ-map {A = const ⊤} {B = const ⊤} (λ x → chargeᶜ (Φ x))
+
   opaque
     unfolding F
 
@@ -71,12 +75,12 @@ module _ (X : 𝒱₌) where
 
     F-Σᶜ-fwd : F ⟨ X ⟩ ⊸ ([ x ∈ X ] ⋊ ⊤)
     F-Σᶜ-fwd .U (c , x) =
-      rec (Σᶜ X (const ⊤) .is-preorder) (λ x → x , c) x
+      rec (Σᶜ₌ X (const ⊤) .is-preorder) (λ x → x , c) x
     F-Σᶜ-fwd .charge c (c' , x) =
       rec-unique
-        (Σᶜ X (const ⊤) .is-preorder)
+        (Σᶜ₌ X (const ⊤) .is-preorder)
         (λ x → F-Σᶜ-fwd .U (c +ℂ c' , x))
-        (λ x → Σᶜ X (const ⊤) .charge c (F-Σᶜ-fwd .U (c' , x)))
+        (λ x → Σᶜ₌ X (const ⊤) .charge c (F-Σᶜ-fwd .U (c' , x)))
         (λ _ → refl)
         x
 
@@ -102,23 +106,21 @@ module _ (X : 𝒱₌) where
     F-Σᶜ-potential : ∀ (Φ : ⟨ X ⟩ → ℂ)
       → PathP (λ i → F-Σᶜ i ⊸ F-Σᶜ i)
           (F-rec λ x → F _ .charge (Φ x) (ret x))
-          (Σᶜ-map {X} {const ⊤} (λ x → chargeᶜ (Φ x)))
+          (Σᶜ-charge Φ)
     F-Σᶜ-potential Φ =
       conservativity-⊸ F-Σᶜ-fwd F-Σᶜ-fwd-equiv F-Σᶜ-fwd F-Σᶜ-fwd-equiv
         (⊸-path refl refl (funExt naturality))
       where
         naturality : (e : U (F ⟨ X ⟩)) →
           F-Σᶜ-fwd .U (F-rec {A = F _} (λ x → F _ .charge (Φ x) (ret x)) .U e)
-          ≡ Σᶜ-map {X} {const ⊤} (λ x → chargeᶜ (Φ x)) .U (F-Σᶜ-fwd .U e)
+          ≡ Σᶜ-charge Φ .U (F-Σᶜ-fwd .U e)
         naturality (c , x) =
           rec-unique
-            (Σᶜ X (const ⊤) .is-preorder)
+            (Σᶜ₌ X (const ⊤) .is-preorder)
             (λ x →
               F-Σᶜ-fwd .U
                 (F-rec {A = F _} (λ x → F _ .charge (Φ x) (ret x)) .U (c , x)))
-            (λ x →
-              Σᶜ-map {X} {const ⊤} (λ x → chargeᶜ (Φ x)) .U
-                (F-Σᶜ-fwd .U (c , x)))
+            (λ x → Σᶜ-charge Φ .U (F-Σᶜ-fwd .U (c , x)))
             (λ x → cong (x ,_) (cong (c +ℂ_) (+ℂ-identityʳ _) ∙ +ℂ-comm c (Φ x)))
             x
 

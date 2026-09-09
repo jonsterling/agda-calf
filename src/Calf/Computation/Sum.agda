@@ -26,16 +26,16 @@ inj₂ᶜ .charge _ _ = refl
 
 opaque
   Σᶜ-⊎ : (A : ⟨ X₌ ⊎₌ Y₌ ⟩ → 𝒞)
-    → Σᶜ (X₌ ⊎₌ Y₌) A ≡ (Σᶜ X₌ (A ∘ inj₁) +ᶜ Σᶜ Y₌ (A ∘ inj₂))
+    → Σᶜ₌ (X₌ ⊎₌ Y₌) A ≡ (Σᶜ₌ X₌ (A ∘ inj₁) +ᶜ Σᶜ₌ Y₌ (A ∘ inj₂))
   Σᶜ-⊎ {X₌} {Y₌} A = conservativity fwd (isoToIsEquiv (iso (fwd .U) bwd sect retr))
     where
-      fwd : Σᶜ (X₌ ⊎₌ Y₌) A ⊸ (Σᶜ X₌ (A ∘ inj₁) +ᶜ Σᶜ Y₌ (A ∘ inj₂))
+      fwd : Σᶜ₌ (X₌ ⊎₌ Y₌) A ⊸ (Σᶜ₌ X₌ (A ∘ inj₁) +ᶜ Σᶜ₌ Y₌ (A ∘ inj₂))
       fwd .U (inj₁ x , a) = inj₁ (x , a)
       fwd .U (inj₂ y , a) = inj₂ (y , a)
       fwd .charge c (inj₁ x , a) = refl
       fwd .charge c (inj₂ y , a) = refl
 
-      bwd : U (Σᶜ X₌ (A ∘ inj₁) +ᶜ Σᶜ Y₌ (A ∘ inj₂)) → U (Σᶜ (X₌ ⊎₌ Y₌) A)
+      bwd : U (Σᶜ₌ X₌ (A ∘ inj₁) +ᶜ Σᶜ₌ Y₌ (A ∘ inj₂)) → U (Σᶜ₌ (X₌ ⊎₌ Y₌) A)
       bwd (inj₁ (x , a)) = inj₁ x , a
       bwd (inj₂ (y , a)) = inj₂ y , a
 

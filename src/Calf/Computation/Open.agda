@@ -132,16 +132,16 @@ Pullback-◯ᶜ {A} {B} {C} f g = conservativity fwd fwd-equiv
     p
 
 private
-  embed : ∀ {X A} → Σᶜ X A .U → Σᶜ X (◯ᶜ ∘ A) .U
+  embed : ∀ {X A} → Σᶜ₌ X A .U → Σᶜ₌ X (◯ᶜ ∘ A) .U
   embed (x , a) = x , η◦ a
 
-Σᶜ-◯ᶜ-fwd : (X : 𝒱₌) (A : ⟨ X ⟩ → 𝒞) → ◯ᶜ (Σᶜ X A) ⊸ ◯ᶜ (Σᶜ X (◯ᶜ ∘ A))
-Σᶜ-◯ᶜ-fwd X A = map (Σᶜ-map {X} {A} λ _ → η◦ᶜ)
+Σᶜ-◯ᶜ-fwd : (X : 𝒱₌) (A : ⟨ X ⟩ → 𝒞) → ◯ᶜ (Σᶜ₌ X A) ⊸ ◯ᶜ (Σᶜ₌ X (◯ᶜ ∘ A))
+Σᶜ-◯ᶜ-fwd X A = map (Σᶜ-map {A = A} {B = ◯ᶜ ∘ A} (λ _ → η◦ᶜ))
 
 Σᶜ-◯ᶜ-fwd-equiv : (X : 𝒱₌) (A : ⟨ X ⟩ → 𝒞) → isEquivᶜ (Σᶜ-◯ᶜ-fwd X A)
 Σᶜ-◯ᶜ-fwd-equiv X A =
   subst isEquiv (funExt⁻ ◯.map′≡map (embed {X} {A})) (invEquiv ○Σ○≃○Σ .snd)
 
-Σᶜ-◯ᶜ : (X : 𝒱₌) (A : ⟨ X ⟩ → 𝒞) → ◯ᶜ (Σᶜ X A) ≡ ◯ᶜ (Σᶜ X (◯ᶜ ∘ A))
+Σᶜ-◯ᶜ : (X : 𝒱₌) (A : ⟨ X ⟩ → 𝒞) → ◯ᶜ (Σᶜ₌ X A) ≡ ◯ᶜ (Σᶜ₌ X (◯ᶜ ∘ A))
 Σᶜ-◯ᶜ X A =
   conservativity (Σᶜ-◯ᶜ-fwd X A) (Σᶜ-◯ᶜ-fwd-equiv X A)

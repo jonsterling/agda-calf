@@ -27,7 +27,7 @@ opaque
     → ⟨ X₌ ⟩ → ▷[ c-lin ] CList₂ (c-quad +ℂ c-lin) c-quad X₌ ⊸ CList₂ c-lin c-quad X₌
   cons₂ {X} {c-lin} {c-quad} x =
     transport (cong (_⊸ CList₂ c-lin c-quad X) (sym (▷-Σᶜ c-lin))) $
-    Σᶜ-rec λ l → transport (cong (_⊸ CList₂ c-lin c-quad X) ▷-+) (Σᶜ-in (x ∷ l))
+    Σᶜ-rec λ l → transport (cong (_⊸ CList₂ c-lin c-quad X) ▷-+) (Σᶜ-in {A = λ l → ▷[ CList₂-potential c-lin c-quad (length l) ] ⊤} (x ∷ l))
 
   foldr₂ : ∀ {c-lin c-quad} (A : ℂ → 𝒞)
     → (∀ c → U (A c))
@@ -48,4 +48,4 @@ opaque
 
   CList₂-open : ⟨ ABS ⟩ → CList₂ c₁ c₂ X₌ ≡ F (List ⟨ X₌ ⟩)
   CList₂-open {X₌ = X₌} abs =
-    cong (Σᶜ (List₌ X₌)) (funExt λ l → ▷-open abs _ ⊤) ∙ sym (F-Σᶜ (List₌ X₌))
+    cong (Σᶜ₌ (List₌ X₌)) (funExt λ l → ▷-open abs _ ⊤) ∙ sym (F-Σᶜ (List₌ X₌))

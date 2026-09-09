@@ -62,22 +62,22 @@ data AARA : 𝒱₁ where
 
 aara-credit : (A : AARA) → ι A ≡ ([ a ∈ ⟦ A ⟧ ] ⋊ ▷[ Φ A a ] ⊤)
 aara-credit (Fᴬ X) =
-  F-Σᶜ X ∙ cong (Σᶜ X) (funExt λ _ → sym ▷-0)
+  F-Σᶜ X ∙ cong (Σᶜ₌ X) (funExt λ _ → sym ▷-0)
 aara-credit ⊤ᴬ =
-  sym F-⊤ ∙ F-Σᶜ 1ᵛ₌ ∙ cong (Σᶜ 1ᵛ₌) (funExt λ _ → sym ▷-0)
+  sym F-⊤ ∙ F-Σᶜ 1ᵛ₌ ∙ cong (Σᶜ₌ 1ᵛ₌) (funExt λ _ → sym ▷-0)
 aara-credit (A ⊗ᴬ B) =
     cong₂ _⊗_ (aara-credit A) (aara-credit B)
   ∙ Σᶜ-⊗
-  ∙ cong (Σᶜ (⟦ A ⟧ ×₌ ⟦ B ⟧)) (funExt λ (a , b) → ▷-⊗ (Φ A a) (Φ B b))
+  ∙ cong (Σᶜ₌ (⟦ A ⟧ ×₌ ⟦ B ⟧)) (funExt λ (a , b) → ▷-⊗ (Φ A a) (Φ B b))
 aara-credit 0ᴬ =
-  sym F-0 ∙ F-Σᶜ ⊥₌ ∙ cong (Σᶜ ⊥₌) (funExt λ ())
+  sym F-0 ∙ F-Σᶜ ⊥₌ ∙ cong (Σᶜ₌ ⊥₌) (funExt λ ())
 aara-credit (A +ᴬ B) =
     cong₂ _+ᶜ_ (aara-credit A) (aara-credit B)
   ∙ sym (Σᶜ-⊎ (λ z → ▷[ Φ (A +ᴬ B) z ] ⊤))
 aara-credit ((▷ᴬ c) A) =
     cong ▷[ c ]_ (aara-credit A)
   ∙ ▷-Σᶜ c
-  ∙ cong (Σᶜ ⟦ A ⟧) (funExt λ a → sym ▷-+)
+  ∙ cong (Σᶜ₌ ⟦ A ⟧) (funExt λ a → sym ▷-+)
 aara-credit (CList₁ᴬ c X₌) = CList₁-credit
 aara-credit (CList₂ᴬ c₁ c₂ X₌) = CList₂-credit
 

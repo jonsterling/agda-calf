@@ -21,7 +21,7 @@ opaque
   cons₁ : ∀ {c} → ⟨ X₌ ⟩ → ▷[ c ] CList₁ c X₌ ⊸ CList₁ c X₌
   cons₁ {X} {c} x =
     transport (cong (_⊸ CList₁ c X) (sym (▷-Σᶜ c))) $
-    Σᶜ-rec λ l → transport (cong (_⊸ CList₁ c X) ▷-+) (Σᶜ-in (x ∷ l))
+    Σᶜ-rec λ l → transport (cong (_⊸ CList₁ c X) ▷-+) (Σᶜ-in {A = λ l → ▷[ length l ⊙ c ] ⊤} (x ∷ l))
 
   foldr₁ : ∀ {c} → U A → (⟨ X₌ ⟩ → ▷[ c ] A ⊸ A) → CList₁ c X₌ ⊸ A
   foldr₁ {A} {X} {c} e-nil e-cons = Σᶜ-rec go
@@ -38,4 +38,4 @@ opaque
 
   CList₁-open : ⟨ ABS ⟩ → CList₁ c X₌ ≡ F (List ⟨ X₌ ⟩)
   CList₁-open {X₌ = X₌} abs =
-    cong (Σᶜ (List₌ X₌)) (funExt λ l → ▷-open abs _ ⊤) ∙ sym (F-Σᶜ (List₌ X₌))
+    cong (Σᶜ₌ (List₌ X₌)) (funExt λ l → ▷-open abs _ ⊤) ∙ sym (F-Σᶜ (List₌ X₌))
