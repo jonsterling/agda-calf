@@ -33,7 +33,7 @@ data AARA : 𝒱₁ where
 ⟦ Fᴬ X ⟧ = X
 ⟦ ⊤ᴬ ⟧ = 1ᵛ₌
 ⟦ A ⊗ᴬ B ⟧ = ⟦ A ⟧ ×₌ ⟦ B ⟧
-⟦ 0ᴬ ⟧ = ⊥₌
+⟦ 0ᴬ ⟧ = 0ᵛ₌
 ⟦ A +ᴬ B ⟧ = ⟦ A ⟧ ⊎₌ ⟦ B ⟧
 ⟦ (▷ᴬ c) A ⟧ = ⟦ A ⟧
 ⟦ CList₁ᴬ c X₌ ⟧ = List₌ X₌
@@ -70,7 +70,7 @@ aara-credit (A ⊗ᴬ B) =
   ∙ Σᶜ-⊗
   ∙ cong (Σᶜ₌ (⟦ A ⟧ ×₌ ⟦ B ⟧)) (funExt λ (a , b) → ▷-⊗ (Φ A a) (Φ B b))
 aara-credit 0ᴬ =
-  sym F-0 ∙ F-Σᶜ ⊥₌ ∙ cong (Σᶜ₌ ⊥₌) (funExt λ ())
+  sym F-0 ∙ F-Σᶜ 0ᵛ₌ ∙ cong (Σᶜ₌ 0ᵛ₌) (funExt λ ())
 aara-credit (A +ᴬ B) =
     cong₂ _+ᶜ_ (aara-credit A) (aara-credit B)
   ∙ sym (Σᶜ-⊎ (λ z → ▷[ Φ (A +ᴬ B) z ] ⊤))

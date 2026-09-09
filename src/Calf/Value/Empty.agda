@@ -3,14 +3,15 @@ module Calf.Value.Empty where
 open import Calf.Value
 
 open import Cubical.Data.Empty public
-  hiding (rec)
+  using ()
+  renaming (⊥ to 0ᵛ; isProp⊥ to isProp0ᵛ)
 
-isSet⊥ : isSet ⊥
-isSet⊥ = isProp→isSet isProp⊥
+isSet0ᵛ : isSet 0ᵛ
+isSet0ᵛ = isProp→isSet isProp0ᵛ
 
 opaque
-  isDiscrete⊥ : isDiscrete ⊥
-  isDiscrete⊥ = isProp→isLocal (λ _ → 0𝟚) isProp⊥
+  isDiscrete0ᵛ : isDiscrete 0ᵛ
+  isDiscrete0ᵛ = isProp→isLocal (λ _ → 0𝟚) isProp0ᵛ
 
-⊥₌ : 𝒱₌
-⊥₌ = ⊥ , isSet⊥ , isDiscrete⊥
+0ᵛ₌ : 𝒱₌
+0ᵛ₌ = 0ᵛ , isSet0ᵛ , isDiscrete0ᵛ
