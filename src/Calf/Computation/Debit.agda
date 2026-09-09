@@ -18,7 +18,7 @@ opaque
       (A ⊸ (▷[ c ] ⊤ ⊸ᶜ B))
     ≡⟨ sym lolli-currying ⟩
       ((A ⊗ (▷[ c ] ⊤)) ⊸ B)
-    ≡⟨ cong (_⊸ B) (⊗-▷-distrib _) ⟩
+    ≡⟨ cong (_⊸ B) (⊗-▷-distribʳ _) ⟩
       (▷[ c ] (A ⊗ ⊤) ⊸ B)
     ≡⟨ cong (λ C → (▷[ c ] C) ⊸ B) ⊗-identityʳ ⟩
       ((▷[ c ] A) ⊸ B)

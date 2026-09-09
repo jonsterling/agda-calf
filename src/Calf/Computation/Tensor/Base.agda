@@ -48,6 +48,8 @@ module _ where
       rec-unique isPreorderY f g
         (⊗₀-elimProp (λ _ → isPreorder→isSet isPreorderY _ _) p)
 
+  infixr 5 _⊗_
+
   _⊗_ : 𝒞 → 𝒞 → 𝒞
   (A ⊗ B) .U = ∥ A ⊗₀ B ∥ᴾ
   (A ⊗ B) .is-preorder = isPreorderᴾ
@@ -96,8 +98,23 @@ module _ where
           cong (λ z → ηᴾ (inj (f .U a) z)) (g .charge c b)
         ∙ sym (cong ηᴾ (slide c (f .U a) (g .U b))))
 
+⊗-comm : A ⊗ B ≡ B ⊗ A
+⊗-comm {A} {B} = conservativity fwd fwd-equiv
+  where
+    fwd : {A B : 𝒞} → A ⊗ B ⊸ B ⊗ A
+    fwd = ⊗-rec (flip _∥_) (λ _ _ _ → cong ηᴾ (sym (slide _ _ _))) (λ _ _ _ → refl)
+
+    fwd-equiv : isEquivᶜ fwd
+    fwd-equiv =
+      isoToIsEquiv
+        (iso
+          (fwd .U)
+          (fwd .U)
+          (⊗₀-rec-unique isPreorderᴾ _ id λ _ _ → refl)
+          (⊗₀-rec-unique isPreorderᴾ _ id λ _ _ → refl))
+
 ⊗-identityʳ : A ⊗ ⊤ ≡ A
-⊗-identityʳ {A = A} = conservativity fwd fwd-equiv
+⊗-identityʳ {A} = conservativity fwd fwd-equiv
   where
     fwd : A ⊗ ⊤ ⊸ A
     fwd = ⊗-rec (λ a c → A .charge c a) (λ _ _ _ → charge-comm A) (λ _ _ _ → A .charge-+)
@@ -117,6 +134,9 @@ module _ where
             (λ a c →
                 cong ηᴾ (slide c a 0ℂ)
               ∙ cong (λ d → ηᴾ (inj a d)) (+ℂ-identityʳ c))
+
+⊗-identityˡ : ⊤ ⊗ A ≡ A
+⊗-identityˡ = ⊗-comm ∙ ⊗-identityʳ
 
 opaque
   map₂-equivᶜ : ∀ {A₁ A₂ B₁ B₂} {f : A₁ ⊸ A₂} {g : B₁ ⊸ B₂}

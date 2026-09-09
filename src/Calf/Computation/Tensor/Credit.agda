@@ -80,6 +80,13 @@ map₂-idᶜ-chargeᶜ c =
 opaque
   unfolding ▷[_]_
 
-  ⊗-▷-distrib : ∀ c → (A ⊗ (▷[ c ] B)) ≡ (▷[ c ] (A ⊗ B))
-  ⊗-▷-distrib {A} {B} c =
+  ⊗-▷-distribʳ : ∀ c → (A ⊗ ▷[ c ] B) ≡ (▷[ c ] (A ⊗ B))
+  ⊗-▷-distribʳ {A} {B} c =
     ⊗-Abstractionᶜ A ∙ cong (Abstractionᶜ (A ⊗ B) (A ⊗ B)) (map₂-idᶜ-chargeᶜ c)
+
+  ⊗-▷-distribˡ : ∀ c → (▷[ c ] A ⊗ B) ≡ (▷[ c ] (A ⊗ B))
+  ⊗-▷-distribˡ c = ⊗-comm ∙ ⊗-▷-distribʳ c ∙ cong (▷[ c ]_) ⊗-comm
+
+opaque
+  ▷-⊗ : ∀ c₁ c₂ → ((▷[ c₁ ] ⊤) ⊗ (▷[ c₂ ] ⊤)) ≡ ▷[ c₁ +ℂ c₂ ] ⊤
+  ▷-⊗ c₁ c₂ = ⊗-▷-distribˡ c₁ ∙ cong (▷[ c₁ ]_) ⊗-identityˡ ∙ sym ▷-+
