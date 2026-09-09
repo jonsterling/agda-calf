@@ -40,5 +40,11 @@ opaque
       go (x ∷ l) c =
         transport (cong (_⊸ A c) (sym ▷-+)) (▷-map (go l (c-quad +ℂ c)) ⨾ᶜ e-cons c x)
 
-CList₂-open : ⟨ ABS ⟩ → CList₂ c₁ c₂ X₌ ≃ᶜ F (List ⟨ X₌ ⟩)
-CList₂-open abs = {!   !}
+opaque
+  unfolding CList₂
+
+  CList₂-credit : CList₂ c₁ c₂ X₌ ≡ ([ l ∈ List₌ X₌ ] ⋊ ▷[ CList₂-potential c₁ c₂ (length l) ] ⊤)
+  CList₂-credit = refl
+
+  CList₂-open : ⟨ ABS ⟩ → CList₂ c₁ c₂ X₌ ≃ᶜ F (List ⟨ X₌ ⟩)
+  CList₂-open abs = {!   !}

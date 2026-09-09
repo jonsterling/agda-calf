@@ -30,5 +30,11 @@ opaque
       go [] = ▷⊤-rec e-nil
       go (x ∷ l) = transport (cong (_⊸ A) (sym ▷-+)) (▷-map (go l) ⨾ᶜ e-cons x)
 
-CList₁-open : ⟨ ABS ⟩ → CList₁ c X₌ ≃ᶜ F (List ⟨ X₌ ⟩)
-CList₁-open abs = {!   !}
+opaque
+  unfolding CList₁
+
+  CList₁-credit : CList₁ c X₌ ≡ ([ l ∈ List₌ X₌ ] ⋊ ▷[ length l ⊙ c ] ⊤)
+  CList₁-credit = refl
+
+  CList₁-open : ⟨ ABS ⟩ → CList₁ c X₌ ≃ᶜ F (List ⟨ X₌ ⟩)
+  CList₁-open abs = {!   !}

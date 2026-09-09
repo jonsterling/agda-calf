@@ -4,8 +4,10 @@ open import Cubical.Foundations.Univalence using (ua→; ua-gluePath)
 
 open import Calf.Core.Cost
 open import Calf.Value
+open import Calf.Value.Unit
 open import Calf.Computation
 open import Calf.Computation.Copower
+open import Calf.Computation.Empty
 open import Calf.Computation.Free
 
 open import Calf.Computation.Tensor.Base
@@ -57,6 +59,14 @@ opaque
 
 par : U (F X) → U (F Y) → U (F (X × Y))
 par ex ey = transport (cong U F-monoidal) (ex ∥ ey)
+
+opaque
+  F-⊤ : F 1ᵛ ≡ ⊤
+  F-⊤ = {!   !}
+
+opaque
+  F-0 : F ⊥ ≡ 0ᶜ
+  F-0 = {!   !}
 
 module _ (X : 𝒱₌) where
   opaque
