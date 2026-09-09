@@ -60,13 +60,6 @@ opaque
 par : U (F X) → U (F Y) → U (F (X × Y))
 par ex ey = transport (cong U F-monoidal) (ex ∥ ey)
 
-opaque
-  F-⊤ : F 1ᵛ ≡ ⊤
-  F-⊤ = {!   !}
-
-opaque
-  F-0 : F ⊥ ≡ 0ᶜ
-  F-0 = {!   !}
 
 module _ (X : 𝒱₌) where
   opaque
@@ -128,3 +121,11 @@ module _ (X : 𝒱₌) where
                 (F-Σᶜ-fwd .U (c , x)))
             (λ x → cong (x ,_) (cong (c +ℂ_) (+ℂ-identityʳ _) ∙ +ℂ-comm c (Φ x)))
             x
+
+opaque
+  F-⊤ : F 1ᵛ ≡ ⊤
+  F-⊤ = F-Σᶜ 1ᵛ₌ ∙ Σᶜ-1ᵛ
+
+opaque
+  F-0 : F ⊥ ≡ 0ᶜ
+  F-0 = F-Σᶜ ⊥₌ ∙ Σᶜ-⊥

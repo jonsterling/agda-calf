@@ -1,6 +1,7 @@
 module Calf.Computation.Copower where
 
 open import Calf.Value
+open import Calf.Value.Unit
 open import Calf.Computation
 
 open import Calf.Value.Product public
@@ -38,6 +39,12 @@ syntax Σᶜ X₌ (λ x → A) = [ x ∈ X₌ ] ⋊ A
   Σᶜ-map {X₌ = X₌} f ⨾ᶜ Σᶜ-map {X₌ = X₌} g ≡
   Σᶜ-map {X₌ = X₌} (λ x → f x ⨾ᶜ g x)
 Σᶜ-map-⨾ᶜ f g = ⊸-path refl refl refl
+
+Σᶜ-1ᵛ : Σᶜ 1ᵛ₌ (λ _ → A) ≡ A
+Σᶜ-1ᵛ =
+  conservativity
+    (Σᶜ-rec λ _ → idᶜ)
+    (isoToIsEquiv (iso _ (λ c → tt , c) (λ _ → refl) (λ _ → refl)))
 
 _⋊_ : 𝒱ₚ → 𝒞 → 𝒞
 (Xₚ ⋊ A) .U = ⟨ Xₚ ⟩ × U A
