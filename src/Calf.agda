@@ -44,6 +44,7 @@ import Calf.Computation.Unit
 
 import Calf.Giralf
 import Calf.Giralf.Nat
+import Calf.Giralf.AARA
 
 import Examples
 
