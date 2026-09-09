@@ -1,5 +1,6 @@
 module Calf.Computation.CList2 where
 
+open import Calf.Core.Abstract
 open import Calf.Core.Cost
 open import Calf.Value
 open import Calf.Value.List
@@ -7,6 +8,7 @@ open import Calf.Value.Nat
 open import Calf.Computation
 open import Calf.Computation.Copower
 open import Calf.Computation.Credit
+open import Calf.Computation.Free
 open import Calf.Computation.Potential using (▷-Σᶜ)
 open import Calf.Computation.Tensor
 
@@ -37,3 +39,6 @@ opaque
       go [] c = ▷⊤-rec (e-nil c)
       go (x ∷ l) c =
         transport (cong (_⊸ A c) (sym ▷-+)) (▷-map (go l (c-quad +ℂ c)) ⨾ᶜ e-cons c x)
+
+CList₂-open : ⟨ ABS ⟩ → CList₂ c₁ c₂ X₌ ≃ᶜ F (List ⟨ X₌ ⟩)
+CList₂-open abs = {!   !}

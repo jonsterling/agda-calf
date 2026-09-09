@@ -35,8 +35,8 @@ isTransitive X = Transitive (_⊑_ {X})
     (λ { false → inl 0𝟚 ; true → inr 1𝟚 })
     (λ { false → 0𝟚 ; true → 1𝟚 })
 
-ι : Λ² → Δ²
-ι = inl
+ι-horn : Λ² → Δ²
+ι-horn = inl
 
 open Iso
 
@@ -64,7 +64,7 @@ open Iso
 Λ²-elim .leftInv k i (push tt j) = k (push tt j)
 
 isPathTransitive : Type → Type
-isPathTransitive = isLocal {A = Unit} (const ι)
+isPathTransitive = isLocal {A = Unit} (const ι-horn)
 
 isEquivFst→isContrFibers : {B : Type} {P : B → Type}
   → isEquiv (fst {A = B} {B = P}) → (b : B) → isContr (P b)

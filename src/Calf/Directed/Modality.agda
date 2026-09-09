@@ -37,7 +37,7 @@ opaque
   Tᴾ hset = Unit
 
   Fᴾ : (α : Requirements) → Sᴾ α → Tᴾ α
-  Fᴾ transitive = ι
+  Fᴾ transitive = ι-horn
   Fᴾ thin = 𝕊-map (terminal Bool)
   Fᴾ hset = terminal S¹
 

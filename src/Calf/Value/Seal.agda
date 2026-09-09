@@ -1,5 +1,6 @@
 module Calf.Value.Seal where
 
+open import Calf.Core.Abstract
 open import Calf.Value
 open import Calf.Value.Closed
 open import Calf.Value.Glue using (Fracture; toFracture)
@@ -39,3 +40,6 @@ opaque
   isPreorderSeal : isPreorder X → isPreorder (Seal X)
   isPreorderSeal {X} isPreorderX =
     isPreorderGlueᵈ (● X) (◯ X) (isPreorder● isPreorderX) (isPreorder◯ isPreorderX)
+
+Seal-open : ⟨ ABS ⟩ → Seal X ≃ X
+Seal-open abs = {!   !}

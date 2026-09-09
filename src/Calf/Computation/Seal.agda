@@ -2,6 +2,7 @@ module Calf.Computation.Seal where
 
 open import Cubical.Data.Sigma using (ΣPathP; Σ≡Prop)
 
+open import Calf.Core.Abstract
 open import Calf.Value
 import Calf.Value.Closed as ●
 import Calf.Value.Open as ◯
@@ -49,7 +50,11 @@ proj◦ᶜᵈ : Sealᶜ A ⊸ ◯ᶜ A
 proj◦ᶜᵈ .U = ◦
 proj◦ᶜᵈ .charge c g = refl
 
+Sealᶜ-open : ⟨ ABS ⟩ → Sealᶜ A ≃ᶜ A
+Sealᶜ-open abs = {!   !} , equivIsEquiv (Seal-open abs)
 
+
+infix 1 _⊸ᵈ_
 _⊸ᵈ_ : 𝒞 → 𝒞 → 𝒱
 A ⊸ᵈ B = A ⊸ Sealᶜ B
 
@@ -67,6 +72,9 @@ pairᵈ {B = B} = glueᵈ (toFractureᶜ B)
 idᵈ : A ⊸ᵈ A
 idᵈ .U a = (η• a , η◦ a) , ⊑-refl
 idᵈ {A} .charge c a = Σ≡Prop (λ _ → thin● (◯ᶜ A) _ _) refl
+
+⌈_⌉ : (A ⊸ B) → (A ⊸ᵈ B)
+⌈ f ⌉ = f ⨾ᶜ idᵈ
 
 infixl 9 _⨾ᵈ_
 _⨾ᵈ_ : (A ⊸ᵈ B) → (B ⊸ᵈ C) → (A ⊸ᵈ C)
@@ -110,7 +118,7 @@ opaque
     → (α : A-⊤ ⊸ A-abs) (β : B-⊤ ⊸ B-abs)
     → (f-⊤ : A-⊤ ⊸ B-⊤)
     → (f-abs : A-abs ⊸ B-abs)
-    → ((a-⊤ : U A-⊤) → U β (U f-⊤ a-⊤) ⊑[ B-abs ] U f-abs (U α a-⊤))
+    → ((a-⊤ : U A-⊤) → U β (U f-⊤ a-⊤) ⊑ U f-abs (U α a-⊤))
     → Abstractionᶜ A-⊤ A-abs α ⊸ᵈ Abstractionᶜ B-⊤ B-abs β
   squareᵈᶜ {A-⊤} {A-abs} {B-⊤} {B-abs} α β f-⊤ f-abs f-coh =
     subst (Abstractionᶜ A-⊤ A-abs α ⊸_) (sym (Sealᶜ-fromFracture (Abstractionᶜ-Fracture B-⊤ B-abs β)))

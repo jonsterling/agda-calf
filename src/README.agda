@@ -179,6 +179,21 @@ import Examples.Queue using
   ; batched-queue
   )
 
+{-
+  Section 3.2. Sealing and lax commutative squares.
+-}
+{-
+    Definitions of the sealing monad and lax homomorphisms.
+    Lemma 3.5. The sealing monad is abstractly trivial.
+-}
+import Calf.Computation.Seal using
+  ( Sealᶜ
+  ; _⊸ᵈ_
+  ; idᵈ
+  ; _⨾ᵈ_
+  ; Sealᶜ-open
+  )
+
 -- Section 4. The Banker's View
 
 -- Section 4.1. Credits and Debits
@@ -186,19 +201,27 @@ import Examples.Queue using
 {-
     Definition 4.1. The credit operator.
     Lemma 4.4. Credits are invisible to the modalities.
+    Lemma 4.5. Credits admit weakening.
     Lemma 4.6. Credits compose monoidally.
     Definition 4.7. Saving and spending credits.
     Lemma 4.8. Spending after saving is the cost effect.
 -}
 import Calf.Computation.Credit using
   ( ▷[_]_
-  ; ▷-0
-  ; ▷-+
   ; ▷-●ᶜ
   ; ▷-◯ᶜ
+  ; waste
+  ; ▷-0
+  ; ▷-+
   ; save
   ; spend
   ; save⨾spend≡chargeᶜ
+  )
+{-
+    Lemma 4.10. Potential can be recharacterized as credits.
+-}
+import Calf.Computation.Potential using
+  ( Potential-credit
   )
 
 {-
@@ -215,19 +238,23 @@ import Calf.Computation.Debit using
 
 {-
     Definition 4.13. Linear-credit lists.
+    Corollary 4.14. Linear-credit lists are abstractly lists.
     Definition 4.18. Linear-and-triangular-credit lists.
+    Corollary 4.19. Linear-and-triangular-credit lists are abstractly lists.
 -}
 import Calf.Computation.CList1 using
   ( CList₁
   ; nil₁
   ; cons₁
   ; foldr₁
+  ; CList₁-open
   )
 import Calf.Computation.CList2 using
   ( CList₂
   ; nil₂
   ; cons₂
   ; foldr₂
+  ; CList₂-open
   )
 
 -- Section 5. Giralf: A Graded, Inferential, Resource-Aware Logical Framework
@@ -281,6 +308,13 @@ import Examples.Giralf.Reverse using
 import Examples.Giralf.InsertionSort using
   ( insert
   ; isort
+  )
+
+{-
+    Theorem 5.7. AARA types can be rendered as Potential types.
+-}
+import Calf.Giralf.AARA using
+  ( aara-potential
   )
 
 -- Section 5.3. An Inference Algorithm
