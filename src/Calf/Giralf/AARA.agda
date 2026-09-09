@@ -48,7 +48,7 @@ data AARA : 𝒱₁ where
 Φ (A +ᴬ B) (inj₂ b) = Φ B b
 Φ ((▷ᴬ c) A) a = c +ℂ Φ A a
 Φ (CList₁ᴬ c X₌) l = length l ⊙ c
-Φ (CList₂ᴬ c₁ c₂ X₌) l = {!   !}
+Φ (CList₂ᴬ c₁ c₂ X₌) l = CList₂-potential c₁ c₂ (length l)
 
 ι : AARA → 𝒞
 ι (Fᴬ X) = F X
